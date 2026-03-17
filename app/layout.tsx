@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Manrope } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,13 +38,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${manrope.variable} antialiased bg-background text-foreground`}
       >
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
-          <main className="flex-1">
-            <div className="dm-container py-8">{children}</div>
-          </main>
-          <Footer />
-        </div>
+        {children}
       </body>
     </html>
   );

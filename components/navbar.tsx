@@ -92,9 +92,9 @@ export default function Navbar() {
   }, [displayName]);
 
   return (
-    <header className="sticky top-0 z-40 ">
+    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
       <div className="dm-container">
-        <div className="flex h-16 items-center justify-between gap-4">
+        <div className="flex h-14 items-center justify-between gap-6">
           <Link
             href="/"
             className="inline-flex items-center gap-2"
@@ -108,7 +108,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
+          <nav className="hidden items-center gap-3 md:flex" aria-label="Main">
             {navItems.map((item) => {
               const active = item.href === activeHref;
               return (
@@ -193,15 +193,7 @@ export default function Navbar() {
                     </span>
                     <span className="max-w-[140px] truncate">{displayName}</span>
                   </Link>
-                ) : (
-                  <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="mt-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground/80 dm-focus hover:bg-foreground/5 transition-colors text-center"
-                  >
-                    Login
-                  </Link>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

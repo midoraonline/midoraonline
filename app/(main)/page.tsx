@@ -18,12 +18,12 @@ export default function Home() {
           </p>
 
           <div className="mt-7 flex flex-col sm:flex-row gap-3">
-            <a
-              href="#open-a-shop"
+            <Link
+              href="/open-shop"
               className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 transition-opacity px-5 py-3"
             >
               Spin up my shop
-            </a>
+            </Link>
             <Link
               href="/shops"
               className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-5 py-3"
@@ -67,25 +67,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="open-a-shop" className="dm-card p-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">
-              Open a Shop
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              This is where your 3-step wizard will live (Name → AI Bio → Pay
-              Rent).
-            </p>
-          </div>
-          <button
-            type="button"
-            className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 transition-opacity px-5 py-3"
-          >
-            Coming soon
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

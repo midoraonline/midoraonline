@@ -9,4 +9,5 @@ export * as apiAdmin from "./admin";
 export * as apiOrders from "./orders";
 export * as apiAiContext from "./aiContext";
 export * as apiAiImages from "./aiImages";
+export * as apiMidoraInfoChat from "./midoraInfoChat";
 
