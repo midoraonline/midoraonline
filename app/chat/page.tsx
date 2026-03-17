@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import ShopChat from "@/components/shopChat";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -11,19 +12,25 @@ export default function ChatPage() {
       <section className="dm-card p-6 sm:p-8">
         <p className="text-sm font-semibold text-muted">Chat agent</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          In-shop concierge (Gemini) coming soon
+          In-shop concierge (Gemini)
         </h1>
         <p className="mt-3 text-sm text-muted max-w-2xl">
-          This page will host the Midora Online AI concierge for each shop. It
-          will answer questions using that shop&apos;s products, policies, and context.
+          Talk directly to the AI assistant for this shop. Ask about products,
+          availability, or policies.
         </p>
         {shopId ? (
           <p className="mt-3 text-xs text-muted">
-            You opened chat for shop ID:{" "}
+            Chatting with shop ID:{" "}
             <span className="font-mono text-foreground/90">{shopId}</span>.
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-3 text-xs text-red-600">
+            No shop selected. Open chat from a specific shop page.
+          </p>
+        )}
       </section>
+
+      {shopId ? <ShopChat shopId={shopId} /> : null}
     </div>
   );
 }

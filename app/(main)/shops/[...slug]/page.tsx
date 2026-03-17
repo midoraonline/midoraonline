@@ -1,4 +1,5 @@
 import ProductCard, { ProductCardData } from "@/components/productcard";
+import ShopChat from "@/components/shopChat";
 import { apiProducts, apiShops } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -126,17 +127,19 @@ export default async function ShopDetails({
         ))}
       </div>
 
-      <section className="dm-card p-6">
-        <h2 className="text-base font-semibold tracking-tight">
-          In-shop concierge (Gemini)
-        </h2>
-        <p className="mt-2 text-sm text-muted">
-          This is where your shop-specific AI assistant will answer customer
-          questions based only on this shop’s data and policies.
-        </p>
-        <div className="mt-4 rounded-2xl border border-border bg-background p-4 text-sm text-muted">
-          Coming soon.
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="dm-card p-6">
+          <h2 className="text-base font-semibold tracking-tight">
+            In-shop concierge (Gemini)
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            Ask anything about {shop.name}&apos;s products, availability, or policies.
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Answers are generated from Midora Online&apos;s understanding of this shop.
+          </p>
         </div>
+        <ShopChat shopId={shop.id} shopName={shop.name} />
       </section>
     </div>
   );

@@ -24,54 +24,89 @@ export default function Navbar() {
   const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("midora_access_token")
-        : null;
-    if (!token) return;
+    function syncUserFromToken() {
+      const token =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("midora_access_token")
+          : null;
+      if (!token) {
+        setUserName(null);
+        return;
+      }
 
-    let cancelled = false;
-    apiAuth
-      .me(token)
-      .then((me) => {
-        if (!cancelled) {
-          setUserName(me.full_name || me.email);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setUserName(null);
-        }
-      });
+      let cancelled = false;
+      apiAuth
+        .me(token)
+        .then((me) => {
+          if (!cancelled) {
+            setUserName(me.full_name || me.email);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setUserName(null);
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const cleanup = syncUserFromToken();
+
+    function handleAuthChanged() {
+      syncUserFromToken();
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("midora-auth-changed", handleAuthChanged);
+    }
 
     return () => {
-      cancelled = true;
+      cleanup && cleanup();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("midora-auth-changed", handleAuthChanged);
+      }
     };
-  }, []);
+  }, [pathname]);
 
   const activeHref = useMemo(() => {
     const hit = navItems.find((i) => isActivePath(pathname, i.href));
     return hit?.href ?? "/";
   }, [pathname]);
 
+  const displayName = useMemo(
+    () => userName ?? "",
+    [userName]
+  );
+
+  const initials = useMemo(() => {
+    if (!displayName) return "";
+    return displayName
+      .split(" ")
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [displayName]);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-surface/85 backdrop-blur">
+    <header className="sticky top-0 z-40 ">
       <div className="dm-container">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 dm-focus"
-              onClick={() => setOpen(false)}
-            >
-              <div className="leading-tight">
-                <p className="text-sm font-semibold tracking-tight">
-                  Midora Online
-                </p>
-                <p className="text-xs text-muted">Brand-first discovery</p>
-              </div>
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2"
+            onClick={() => setOpen(false)}
+          >
+            <div className="leading-tight">
+              <p className="text-sm font-semibold tracking-tight">
+                Midora Online
+              </p>
+              <p className="text-xs text-muted">Brand-first discovery</p>
+            </div>
+          </Link>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
             {navItems.map((item) => {
@@ -94,20 +129,15 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
-            {userName ? (
+            {displayName ? (
               <Link
                 href="/account"
                 className="hidden sm:inline-flex items-center gap-2 rounded-full bg-foreground text-background px-3 py-1.5 text-xs font-medium dm-focus hover:opacity-95 transition-opacity"
               >
                 <span className="grid size-7 place-items-center rounded-full bg-background/10 text-[11px] font-semibold">
-                  {userName
-                    .split(" ")
-                    .map((p) => p[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
+                  {initials}
                 </span>
-                <span className="max-w-[140px] truncate">{userName}</span>
+                <span className="max-w-[140px] truncate">{displayName}</span>
               </Link>
             ) : (
               <Link
@@ -152,21 +182,16 @@ export default function Navbar() {
                     </Link>
                   );
                 })}
-                {userName ? (
+                {displayName ? (
                   <Link
                     href="/account"
                     onClick={() => setOpen(false)}
                     className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-foreground px-4 py-3 text-sm font-semibold text-background dm-focus hover:opacity-95 transition-opacity"
                   >
                     <span className="grid size-7 place-items-center rounded-full bg-background/10 text-[11px] font-semibold">
-                      {userName
-                        .split(" ")
-                        .map((p) => p[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
+                      {initials}
                     </span>
-                    <span className="max-w-[140px] truncate">{userName}</span>
+                    <span className="max-w-[140px] truncate">{displayName}</span>
                   </Link>
                 ) : (
                   <Link

@@ -23,6 +23,7 @@ export default function LoginPage() {
       if (tokens.refresh_token) {
         window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
       }
+      window.dispatchEvent(new Event("midora-auth-changed"));
       router.push("/");
     } catch (err) {
       setError(

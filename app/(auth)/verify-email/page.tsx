@@ -34,6 +34,7 @@ export default function VerifyEmailPage() {
         if (res.refresh_token) {
           window.localStorage.setItem("midora_refresh_token", res.refresh_token);
         }
+        window.dispatchEvent(new Event("midora-auth-changed"));
         setStatus("success");
         setMessage(res.message || "Email verified successfully.");
         setTimeout(() => {
