@@ -73,7 +73,11 @@ export default async function ShopDetails({
                 {shop.category ?? "Shop"}
               </span>
               <span className="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80">
-                {shop.location ?? "Online"}
+                {typeof shop.location === "string"
+                  ? shop.location
+                  : shop.location && typeof shop.location === "object" && "display" in shop.location
+                    ? String((shop.location as { display?: string }).display ?? "Online")
+                    : "Online"}
               </span>
             </div>
           </div>

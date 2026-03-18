@@ -70,23 +70,19 @@ export default function ShopChat({
     try {
       const res = await apiChat.sendMessage(
         sessionId,
-        { content },
-        undefined // optional token; public chat supported
+        { message: content },
+        undefined
       );
-      if (res.message) {
-        const aiMessage: Message = {
-          id: res.message.id,
-          role: res.message.role,
-          content: res.message.content,
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-      } else if (res.reply) {
-        const aiMessage: Message = {
-          id: `local-ai-${Date.now()}`,
-          role: "assistant",
-          content: res.reply,
-        };
-        setMessages((prev) => [...prev, aiMessage]);
+      const replyText = res.message ?? "";
+      if (replyText) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `local-ai-${Date.now()}`,
+            role: "assistant",
+            content: replyText,
+          },
+        ]);
       }
     } catch (err) {
       setError(

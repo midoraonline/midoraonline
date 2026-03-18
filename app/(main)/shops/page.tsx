@@ -1,6 +1,12 @@
 import ShopCard from "@/components/shopcard";
 import { apiShops } from "@/lib/api";
 
+function locationDisplay(loc: unknown): string {
+  if (typeof loc === "string") return loc;
+  if (loc && typeof loc === "object" && "display" in loc) return String((loc as { display?: string }).display ?? "Online");
+  return "Online";
+}
+
 export default async function ShopListing() {
   let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
 
@@ -52,7 +58,7 @@ export default async function ShopListing() {
               slug: shop.slug,
               name: shop.name,
               category: shop.category ?? "Shop",
-              location: shop.location ?? "Online",
+              location: locationDisplay(shop.location),
               tagline: shop.description ?? "",
               verified: shop.is_active ?? true,
             }}

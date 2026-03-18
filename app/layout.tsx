@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Manrope } from "next/font/google";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,6 +41,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${manrope.variable} antialiased bg-background text-foreground`}
       >
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         {children}
       </body>
     </html>

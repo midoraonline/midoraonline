@@ -1,6 +1,6 @@
 import { apiFetch } from "./base";
 
-export type ShopType = "online" | "downtown" | "other";
+export type ShopType = "product" | "service" | "both";
 
 export type Contact = {
   label?: string | null;
@@ -59,18 +59,28 @@ export function myShops(token: string) {
   return apiFetch<Paginated<Shop>>("/api/v1/shops/me", { token });
 }
 
+/** Location as expected by API (object, e.g. for display/city). */
+export type ShopLocation = {
+  display?: string;
+  city?: string;
+  country?: string;
+};
+
+export type ThemeConfig = Record<string, unknown>;
+
 export type CreateShopRequest = {
   name: string;
-  slug?: string;
-  category?: string;
-  location?: string;
+  slug: string;
   description?: string;
   about?: string;
+  logo_url?: string;
   shop_email?: string;
   whatsapp_number?: string;
   contacts?: Contact[];
   social_links?: SocialLink[];
+  location?: ShopLocation;
   availability?: Availability;
+  theme_config?: ThemeConfig;
   shop_type?: ShopType;
 };
 

@@ -33,12 +33,27 @@ export function listSessions(opts?: { shop_id?: string; token?: string }) {
   );
 }
 
+/** In-shop or create-shop: API expects { message } and may return suggested_shop. */
+export type SendMessageResponse = {
+  message?: string;
+  sender_type?: string;
+  suggested_shop?: SuggestedShop | null;
+};
+
+export type SuggestedShop = {
+  name: string;
+  slug: string;
+  description?: string | null;
+  logo_url?: string | null;
+  shop_type?: string;
+};
+
 export function sendMessage(
   sessionId: string,
-  body: { content: string },
+  body: { message: string },
   token?: string
 ) {
-  return apiFetch<{ reply?: string; message?: ChatMessage }>(
+  return apiFetch<SendMessageResponse>(
     `/api/v1/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
     {
       method: "POST",

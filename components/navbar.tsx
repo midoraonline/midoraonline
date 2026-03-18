@@ -193,7 +193,15 @@ export default function Navbar() {
                     </span>
                     <span className="max-w-[140px] truncate">{displayName}</span>
                   </Link>
-                ) : null}
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="mt-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground/80 dm-focus hover:bg-foreground/5 transition-colors text-center"
+                  >
+                    Login
+                  </Link>
+                )}
               </div>
             </div>
           </div>
