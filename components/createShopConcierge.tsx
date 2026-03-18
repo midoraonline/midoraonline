@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiChat, apiShops } from "@/lib/api";
-import type { SuggestedShop } from "@/lib/api";
+import type { SuggestedShop } from "@/lib/api/chat";
 import { ImageUpload } from "@/components/image-upload";
 
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };

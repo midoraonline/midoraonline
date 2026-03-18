@@ -140,7 +140,7 @@ export default function OpenShopWizard() {
                 className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
                 placeholder="e.g. My Coffee Shop"
                 value={name}
-                onChange={(e) => { const v = e.target.value; setName(v); setSlug(slugFromName(v)); }}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
