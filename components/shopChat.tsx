@@ -23,12 +23,34 @@ export default function ShopChat({
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  function getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem("midora_access_token");
+  }
+
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
       try {
-        const session = await apiChat.createSession({ shop_id: shopId }, undefined);
+        const token = getToken();
+        if (!token) {
+          setError("Please log in to use the in-shop concierge.");
+          setInitializing(false);
+          return;
+        }
+
+        // If the user navigates to a different shop, make sure UI state resets
+        // so messages always match the active concierge session.
+        setInitializing(true);
+        setError(null);
+        setMessages([]);
+        setSessionId(null);
+
+        const session = await apiChat.createSession(
+          { shop_id: shopId },
+          token
+        );
         if (cancelled) return;
         setSessionId(session.id);
       } catch (err) {
@@ -56,37 +78,59 @@ export default function ShopChat({
     e.preventDefault();
     if (!sessionId || !input.trim()) return;
     const content = input.trim();
+    const userId = `local-user-${Date.now()}`;
+    const pendingAssistantId = `local-ai-pending-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`;
     setInput("");
     setError(null);
-
-    const userMessage: Message = {
-      id: `local-user-${Date.now()}`,
-      role: "user",
-      content,
-    };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: userId,
+        role: "user",
+        content,
+      },
+      {
+        id: pendingAssistantId,
+        role: "assistant",
+        content: "Thinking…",
+      },
+    ]);
     setLoading(true);
 
     try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("Please log in to send messages.");
+      }
       const res = await apiChat.sendMessage(
         sessionId,
         { message: content },
-        undefined
+        token
       );
       const replyText = res.message ?? "";
-      if (replyText) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `local-ai-${Date.now()}`,
-            role: "assistant",
-            content: replyText,
-          },
-        ]);
-      }
+      setMessages((prev) => {
+        const hasPending = prev.some((m) => m.id === pendingAssistantId);
+        if (!hasPending) return prev;
+        if (replyText) {
+          return prev.map((m) =>
+            m.id === pendingAssistantId
+              ? {
+                  ...m,
+                  content: replyText,
+                }
+              : m
+          );
+        }
+        return prev.filter((m) => m.id !== pendingAssistantId);
+      });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "The AI assistant could not reply."
+      );
+      setMessages((prev) =>
+        prev.filter((m) => m.id !== pendingAssistantId)
       );
     } finally {
       setLoading(false);
@@ -160,7 +204,7 @@ export default function ShopChat({
           disabled={initializing || loading || !input.trim()}
           className="h-9 px-3 rounded-2xl bg-foreground text-background text-xs font-semibold dm-focus disabled:opacity-60"
         >
-          Send
+          {loading ? "Thinking…" : "Send"}
         </button>
       </form>
     </div>

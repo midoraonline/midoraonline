@@ -29,32 +29,57 @@ export default function MidoraInfoChat() {
     if (!input.trim()) return;
 
     const content = input.trim();
+    const userId = `user-${Date.now()}`;
+    const pendingAssistantId = `assistant-pending-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`;
     setInput("");
     setError(null);
 
     const userMessage: InfoMessage = {
-      id: `user-${Date.now()}`,
+      id: userId,
       role: "user",
       content,
     };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      {
+        id: pendingAssistantId,
+        role: "assistant",
+        content: "Thinking…",
+      },
+    ]);
     setLoading(true);
 
     try {
       const res = await apiMidoraInfoChat.sendMidoraInfoMessage({
         message: content,
       });
-      const aiMessage: InfoMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: res.message,
-      };
-      setMessages((prev) => [...prev, aiMessage]);
+      const replyText = res.message ?? "";
+      setMessages((prev) => {
+        const hasPending = prev.some((m) => m.id === pendingAssistantId);
+        if (!hasPending) return prev;
+        if (replyText) {
+          return prev.map((m) =>
+            m.id === pendingAssistantId
+              ? {
+                  ...m,
+                  content: replyText,
+                }
+              : m
+          );
+        }
+        return prev.filter((m) => m.id !== pendingAssistantId);
+      });
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : "The Midora info assistant could not reply."
+      );
+      setMessages((prev) =>
+        prev.filter((m) => m.id !== pendingAssistantId)
       );
     } finally {
       setLoading(false);

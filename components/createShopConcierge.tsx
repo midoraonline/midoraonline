@@ -82,17 +82,37 @@ export default function CreateShopConcierge({
     if (!sessionId || !input.trim()) return;
     const token = getToken();
     const text = input.trim();
+    const userId = `u-${Date.now()}`;
+    const pendingAssistantId = `a-pending-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`;
     setInput("");
     setError(null);
-    setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", content: text }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: userId, role: "user", content: text },
+      { id: pendingAssistantId, role: "assistant", content: "Thinking…" },
+    ]);
     setLoading(true);
 
     try {
       const res = await apiChat.sendMessage(sessionId, { message: text }, token ?? undefined);
       const reply = res.message ?? "";
-      if (reply) {
-        setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: reply }]);
-      }
+      setMessages((prev) => {
+        const hasPending = prev.some((m) => m.id === pendingAssistantId);
+        if (!hasPending) return prev;
+        if (reply) {
+          return prev.map((m) =>
+            m.id === pendingAssistantId
+              ? {
+                  ...m,
+                  content: reply,
+                }
+              : m
+          );
+        }
+        return prev.filter((m) => m.id !== pendingAssistantId);
+      });
       if (res.suggested_shop) {
         const s = res.suggested_shop;
         setSuggestedShop(s);
@@ -106,6 +126,7 @@ export default function CreateShopConcierge({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
+      setMessages((prev) => prev.filter((m) => m.id !== pendingAssistantId));
     } finally {
       setLoading(false);
     }
@@ -292,7 +313,7 @@ export default function CreateShopConcierge({
           disabled={loading || !input.trim()}
           className="h-9 px-3 rounded-2xl bg-foreground text-background text-xs font-semibold dm-focus disabled:opacity-60"
         >
-          Send
+          {loading ? "Thinking…" : "Send"}
         </button>
       </form>
     </div>
