@@ -60,7 +60,7 @@ export default function ShopActions({
         aria-label={liked ? "Unlike shop" : "Like shop"}
         aria-pressed={liked}
         className={[
-          "inline-flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium dm-focus transition-all",
+          "inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all",
           liked
             ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/70"
             : "border-border bg-surface text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
@@ -79,7 +79,7 @@ export default function ShopActions({
         aria-label={followed ? "Unfollow shop" : "Follow shop"}
         aria-pressed={followed}
         className={[
-          "inline-flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium dm-focus transition-all",
+          "inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all",
           followed
             ? "border-border bg-foreground text-background hover:opacity-90"
             : "border-border bg-surface text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
@@ -101,7 +101,7 @@ export default function ShopActions({
         onClick={handleShare}
         aria-label="Share shop"
         className={[
-          "inline-flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium dm-focus transition-all",
+          "inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all",
           shareState === "copied"
             ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400"
             : "border-border bg-surface text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
