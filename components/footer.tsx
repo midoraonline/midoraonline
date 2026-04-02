@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -6,8 +7,17 @@ export default function Footer() {
       <div className="dm-container py-10">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <p className="text-sm font-semibold tracking-tight">Midora Online</p>
-            <p className="mt-2 text-sm text-muted">
+            <Link href="/" className="inline-flex items-center gap-2 mb-3">
+              <Image
+                src="/logo.png"
+                alt="Midora Online"
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+              <p className="text-sm font-semibold tracking-tight">Midora Online</p>
+            </Link>
+            <p className="text-sm text-muted">
               SaaS-as-a-Mall for brand-first discovery across Africa.
             </p>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiAuth } from "@/lib/api";
@@ -100,6 +101,14 @@ export default function Navbar() {
             className="inline-flex items-center gap-2"
             onClick={() => setOpen(false)}
           >
+            <Image
+              src="/logo.png"
+              alt="Midora Online"
+              width={36}
+              height={36}
+              className="rounded-lg"
+              priority
+            />
             <div className="leading-tight">
               <p className="text-sm font-semibold tracking-tight">
                 Midora Online
