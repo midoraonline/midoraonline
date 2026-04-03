@@ -1,24 +1,53 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, UserPlus, UserCheck, Share2, Check, Copy } from "lucide-react";
+import Link from "next/link";
+import { Heart, UserPlus, UserCheck, Share2, Check, Pencil } from "lucide-react";
+
+import { apiShops } from "@/lib/api";
 
 export default function ShopActions({
   shopSlug,
   shopName,
+  shopId,
 }: {
   shopSlug: string;
   shopName: string;
+  shopId: string;
 }) {
   const [liked, setLiked] = useState(false);
   const [followed, setFollowed] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+  const [isOwner, setIsOwner] = useState(false);
 
   // persist follow/like per shop in localStorage
   useEffect(() => {
     setLiked(localStorage.getItem(`shop_liked_${shopSlug}`) === "1");
     setFollowed(localStorage.getItem(`shop_followed_${shopSlug}`) === "1");
   }, [shopSlug]);
+
+  // check if the current signed-in user owns this shop
+  useEffect(() => {
+    const token =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("midora_access_token")
+        : null;
+    if (!token) return;
+
+    let cancelled = false;
+    apiShops
+      .myShops(token)
+      .then((result) => {
+        if (!cancelled) {
+          setIsOwner(result.items.some((s) => s.id === shopId));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shopId]);
 
   function toggleLike() {
     const next = !liked;
@@ -53,6 +82,18 @@ export default function ShopActions({
 
   return (
     <div className="flex items-center gap-2">
+      {/* edit — owner only */}
+      {isOwner && (
+        <Link
+          href={`/shops/${shopSlug}/edit`}
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all text-foreground/70 hover:bg-foreground/5 hover:text-foreground"
+          aria-label="Edit shop"
+        >
+          <Pencil className="size-3.5" />
+          <span className="hidden sm:inline">Edit shop</span>
+        </Link>
+      )}
+
       {/* like */}
       <button
         type="button"

@@ -85,7 +85,11 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
 
             {/* actions — shrink-0 so they never get compressed */}
             <div className="shrink-0">
-              <ShopActions shopSlug={shop.slug} shopName={shop.name} />
+              <ShopActions
+                shopSlug={shop.slug}
+                shopName={shop.name}
+                shopId={shop.id}
+              />
             </div>
           </div>
         </div>
