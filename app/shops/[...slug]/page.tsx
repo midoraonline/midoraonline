@@ -2,6 +2,7 @@ import ProductCard, { ProductCardData } from "@/components/productcard";
 import { apiProducts, apiShops } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EditShopForm from "@/components/shop/EditShopForm";
 
 export default async function ShopDetails({
   params,
@@ -10,6 +11,7 @@ export default async function ShopDetails({
 }) {
   const { slug } = await params;
   const slugValue = Array.isArray(slug) ? slug[0] : slug;
+  const isEditRoute = Array.isArray(slug) && slug[1] === "edit";
 
   let shop: Awaited<ReturnType<typeof apiShops.bySlug>> | null = null;
   let items: ProductCardData[] = [];
@@ -21,6 +23,10 @@ export default async function ShopDetails({
   }
 
   if (!shop) return notFound();
+
+  if (isEditRoute) {
+    return <EditShopForm shop={shop} />;
+  }
 
   try {
     const { items: products } = await apiProducts.listShopProducts(shop.id);
