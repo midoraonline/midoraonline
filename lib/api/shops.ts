@@ -61,10 +61,17 @@ export type Paginated<T> = {
   page_size?: number;
 };
 
-export function listPublic(opts?: { search?: string; shop_type?: string }) {
+export function listPublic(opts?: {
+  search?: string;
+  shop_type?: string;
+  page?: number;
+  limit?: number;
+}) {
   const params = new URLSearchParams();
   if (opts?.search) params.set("search", opts.search);
   if (opts?.shop_type) params.set("shop_type", opts.shop_type);
+  if (opts?.page != null) params.set("page", String(opts.page));
+  if (opts?.limit != null) params.set("limit", String(opts.limit));
   const qs = params.toString();
   return apiFetch<Paginated<Shop>>(`/api/v1/shops${qs ? `?${qs}` : ""}`);
 }

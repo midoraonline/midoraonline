@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useAtomValue } from "jotai/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
@@ -19,7 +18,7 @@ import { apiProducts, apiShops } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { sessionAtom } from "@/lib/state";
+import { useAppSession } from "@/lib/state";
 
 const ACCENT = ["#4a6767", "#66798f", "#757779"];
 
@@ -28,7 +27,7 @@ function formatNum(n: number) {
 }
 
 export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
-  const session = useAtomValue(sessionAtom);
+  const session = useAppSession();
   const isOwner = session.ownedShopIds.includes(shop.id);
   const hydrated = session.hydrated;
 

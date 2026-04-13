@@ -86,6 +86,7 @@ export function ImageUpload({
               fill
               sizes="40px"
               className="object-cover"
+              unoptimized
             />
           </div>
         )}

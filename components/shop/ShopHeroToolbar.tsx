@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useAtomValue } from "jotai/react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { sessionAtom } from "@/lib/state";
+import { useAppSession } from "@/lib/state";
 import type { ShopQuickNavFlags } from "./shopUtils";
 
 const pill =
@@ -22,7 +21,7 @@ export default function ShopHeroToolbar({
   shopSlug: string;
   quickNav: ShopQuickNavFlags;
 }) {
-  const session = useAtomValue(sessionAtom);
+  const session = useAppSession();
   const isOwner = session.ownedShopIds.includes(shopId);
 
   const hasAnyNav =

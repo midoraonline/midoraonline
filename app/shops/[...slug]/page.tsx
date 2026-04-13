@@ -42,6 +42,7 @@ export default async function ShopDetails({
       title: p.title,
       priceUGX: apiProducts.productPriceUgx(p),
       imageUrl: apiProducts.productPrimaryImage(p),
+      shopLogoUrl: shop!.logo_url ?? undefined,
       shop: {
         id: shop!.id,
         name: shop!.name,

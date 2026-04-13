@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useAtomValue } from "jotai/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiShops } from "@/lib/api";
@@ -10,7 +9,7 @@ import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import { locationDisplay } from "./shopUtils";
 import { AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
-import { sessionAtom } from "@/lib/state";
+import { useAppSession } from "@/lib/state";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -74,7 +73,7 @@ function themeFromShop(shop: Shop): AppearanceState {
 
 export default function EditShopForm({ shop }: { shop: Shop }) {
   const router = useRouter();
-  const session = useAtomValue(sessionAtom);
+  const session = useAppSession();
 
   const [tab, setTab] = useState<EditTab>("details");
   const [form, setForm] = useState<FormState>(shopToFormState(shop));

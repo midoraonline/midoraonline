@@ -1,18 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useAtomValue } from "jotai/react";
 import { useCallback, useEffect, useState } from "react";
-import { Eye, EyeOff, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Trash2, X } from "lucide-react";
 import { apiProducts } from "@/lib/api";
 import {
   productPrimaryImage,
   productPriceUgx,
+  type CreateProductRequest,
   type ItemType,
   type Product,
 } from "@/lib/api/products";
 import { ImageUpload } from "@/components/image-upload";
-import { sessionAtom } from "@/lib/state";
+import { useAppSession } from "@/lib/state";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -31,7 +31,7 @@ export default function ShopCatalogEditor({
   itemType: ItemType;
   heading: string;
 }) {
-  const session = useAtomValue(sessionAtom);
+  const session = useAppSession();
   const token = session.token;
 
   const [items, setItems] = useState<Product[]>([]);
@@ -80,18 +80,19 @@ export default function ShopCatalogEditor({
     const price = Number(draft.price_ugx.replace(/,/g, ""));
     setError(null);
     try {
-      await apiProducts.createProduct(token, shopId, {
+      const body: CreateProductRequest = {
         title: draft.title.trim(),
         description: draft.description.trim() || undefined,
         price_ugx: Number.isFinite(price) && price >= 0 ? price : undefined,
-        stock_quantity: draft.stock_quantity
-          ? Math.max(0, parseInt(draft.stock_quantity, 10) || 0)
-          : undefined,
         category: draft.category.trim() || undefined,
         item_type: itemType,
-        image_urls: draft.image_urls.length ? draft.image_urls : undefined,
+        image_urls: draft.image_urls.length ? [...draft.image_urls] : undefined,
         is_published: draft.is_published,
-      });
+      };
+      if (itemType === "product" && draft.stock_quantity.trim()) {
+        body.stock_quantity = Math.max(0, parseInt(draft.stock_quantity, 10) || 0);
+      }
+      await apiProducts.createProduct(token, shopId, body);
       setDraft({
         title: "",
         description: "",
@@ -177,7 +178,7 @@ export default function ShopCatalogEditor({
               placeholder="What buyers should know"
             />
           </div>
-          <div className="space-y-1.5">
+          <div className={itemType === "service" ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}>
             <label className="text-xs font-medium text-foreground/80">Price (UGX)</label>
             <input
               className="dm-input-xs dm-focus"
@@ -187,16 +188,18 @@ export default function ShopCatalogEditor({
               placeholder="5000"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">Stock</label>
-            <input
-              className="dm-input-xs dm-focus"
-              inputMode="numeric"
-              value={draft.stock_quantity}
-              onChange={(e) => setDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
-              placeholder="10"
-            />
-          </div>
+          {itemType === "product" ? (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground/80">Stock quantity</label>
+              <input
+                className="dm-input-xs dm-focus"
+                inputMode="numeric"
+                value={draft.stock_quantity}
+                onChange={(e) => setDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
+                placeholder="10"
+              />
+            </div>
+          ) : null}
           <div className="space-y-1.5 sm:col-span-2">
             <label className="text-xs font-medium text-foreground/80">Category</label>
             <input
@@ -208,6 +211,9 @@ export default function ShopCatalogEditor({
           </div>
           <div className="space-y-2 sm:col-span-2">
             <label className="text-xs font-medium text-foreground/80">Images</label>
+            <p className="text-[11px] text-muted">
+              Preview matches storefront aspect (~4:3). Remove any image before saving if you change your mind.
+            </p>
             <ImageUpload
               endpoint="productImage"
               multiple
@@ -217,13 +223,25 @@ export default function ShopCatalogEditor({
               }
             />
             {draft.image_urls.length > 0 ? (
-              <ul className="flex flex-wrap gap-2 pt-1">
+              <ul className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
                 {draft.image_urls.map((url, i) => (
-                  <li key={`${url}-${i}`} className="relative h-16 w-16 overflow-hidden rounded-xl border border-border">
-                    <Image src={url} alt="" fill className="object-cover" sizes="64px" />
+                  <li
+                    key={`${url}-${i}`}
+                    className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border bg-foreground/[0.04] shadow-sm"
+                  >
+                    <Image
+                      src={url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, 28rem"
+                      unoptimized
+                    />
                     <button
                       type="button"
-                      className="absolute inset-0 grid place-items-center bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity hover:opacity-100"
+                      className="absolute right-2 top-2 inline-flex size-10 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/75 dm-focus"
+                      aria-label={`Remove image ${i + 1}`}
+                      title="Remove image"
                       onClick={() =>
                         setDraft((d) => ({
                           ...d,
@@ -231,7 +249,7 @@ export default function ShopCatalogEditor({
                         }))
                       }
                     >
-                      Remove
+                      <X className="size-5" strokeWidth={2.25} />
                     </button>
                   </li>
                 ))}
@@ -270,7 +288,14 @@ export default function ShopCatalogEditor({
                 <li key={p.id} className="dm-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
                   <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:h-16 sm:w-20">
                     {img ? (
-                      <Image src={img} alt="" fill className="object-cover" sizes="80px" />
+                      <Image
+                        src={img}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                        unoptimized
+                      />
                     ) : (
                       <div className="grid h-full place-items-center text-xs text-muted">No image</div>
                     )}

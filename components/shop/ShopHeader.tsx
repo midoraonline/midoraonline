@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Contact, Shop } from "@/lib/api/shops";
 import ShopHeroToolbar from "./ShopHeroToolbar";
 import ShopActions from "./ShopActions";
+import ShopHeaderAuth from "./ShopHeaderAuth";
 import {
   filterDuplicateContacts,
   locationDisplay,
@@ -115,7 +116,8 @@ export default function ShopHeader({
                   )}
                 </div>
 
-                <div className="shrink-0">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                  <ShopHeaderAuth />
                   <ShopActions shopSlug={shop.slug} shopName={shop.name} shopId={shop.id} />
                 </div>
             </div>

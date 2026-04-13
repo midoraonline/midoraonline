@@ -3,9 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useAtomValue } from "jotai/react";
 import { useMemo, useState } from "react";
-import { sessionAtom } from "@/lib/state";
+import { useAppSession } from "@/lib/state";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -26,7 +25,7 @@ const shell =
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const session = useAtomValue(sessionAtom);
+  const session = useAppSession();
 
   /** No main-nav item is active on routes outside this list (e.g. /account, /login). */
   const activeHref = useMemo(() => {
@@ -54,6 +53,10 @@ export default function Navbar() {
   }, [displayName]);
 
   const authLoading = session.hydrated && session.token && session.user === undefined;
+
+  const onAccount =
+    pathname === "/account" || pathname.startsWith("/account/");
+  const accountPillBg = onAccount ? "bg-primary" : "bg-primary/90";
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-5">
@@ -105,7 +108,10 @@ export default function Navbar() {
               <>
                 <Link
                   href="/account"
-                  className="hidden items-center gap-2 rounded-full bg-primary/90 px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:inline-flex"
+                  className={[
+                    "hidden items-center gap-2 rounded-full px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:inline-flex",
+                    accountPillBg,
+                  ].join(" ")}
                 >
                   <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-[11px] font-semibold">
                     {initials}
@@ -114,7 +120,10 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/account"
-                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:hidden"
+                  className={[
+                    "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:hidden",
+                    accountPillBg,
+                  ].join(" ")}
                   aria-label="Account"
                   title="Account"
                   onClick={() => setOpen(false)}

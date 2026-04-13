@@ -2,12 +2,11 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAtomValue } from "jotai/react";
-import { sessionAtom } from "@/lib/state";
+import { useAppSession } from "@/lib/state";
 
 export default function AccountPage() {
   const router = useRouter();
-  const session = useAtomValue(sessionAtom);
+  const session = useAppSession();
 
   const loading =
     !session.hydrated || (Boolean(session.token) && session.user === undefined);

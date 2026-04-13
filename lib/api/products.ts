@@ -18,7 +18,8 @@ export type Product = {
   /** Legacy / alternate field name */
   price?: number | null;
   stock_quantity?: number | null;
-  image_urls?: string[] | null;
+  /** API may return a list or a single string depending on backend serialization */
+  image_urls?: string[] | string | null;
   image_url?: string | null;
   category?: string | null;
   tags?: string[] | null;
@@ -43,9 +44,50 @@ export type CreateProductRequest = {
   stock_quantity?: number;
   category?: string;
   item_type?: ItemType;
-  image_urls?: string[];
+  image_urls?: string[] | string;
   is_published?: boolean;
 };
+
+/** Ensure Postgres `text[]` / API list fields always get a real JSON array of strings. */
+function normalizeImageUrlsForApi(value: CreateProductRequest["image_urls"]): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  const arr = Array.isArray(value) ? value : [value];
+  const urls = arr.map((u) => String(u).trim()).filter(Boolean);
+  return urls.length ? urls : undefined;
+}
+
+function buildCreatePayload(body: CreateProductRequest): Record<string, unknown> {
+  const o: Record<string, unknown> = { title: body.title };
+  if (body.description !== undefined && body.description !== "") o.description = body.description;
+  if (body.price_ugx !== undefined && body.price_ugx !== null && !Number.isNaN(body.price_ugx)) {
+    o.price_ugx = body.price_ugx;
+  }
+  if (body.stock_quantity !== undefined && body.stock_quantity !== null && !Number.isNaN(body.stock_quantity)) {
+    o.stock_quantity = body.stock_quantity;
+  }
+  if (body.category !== undefined && body.category !== "") o.category = body.category;
+  if (body.item_type !== undefined) o.item_type = body.item_type;
+  if (body.is_published !== undefined) o.is_published = body.is_published;
+  const imgs = normalizeImageUrlsForApi(body.image_urls);
+  if (imgs?.length) o.image_urls = imgs;
+  return o;
+}
+
+function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, unknown> {
+  const o: Record<string, unknown> = {};
+  if (body.title !== undefined) o.title = body.title;
+  if (body.description !== undefined) o.description = body.description;
+  if (body.price_ugx !== undefined) o.price_ugx = body.price_ugx;
+  if (body.stock_quantity !== undefined) o.stock_quantity = body.stock_quantity;
+  if (body.category !== undefined) o.category = body.category;
+  if (body.item_type !== undefined) o.item_type = body.item_type;
+  if (body.is_published !== undefined) o.is_published = body.is_published;
+  if (body.image_urls !== undefined) {
+    const imgs = normalizeImageUrlsForApi(body.image_urls);
+    if (imgs?.length) o.image_urls = imgs;
+  }
+  return o;
+}
 
 /** Resolved price for display (UGX). */
 export function productPriceUgx(p: Product): number {
@@ -53,17 +95,44 @@ export function productPriceUgx(p: Product): number {
   return typeof n === "number" && !Number.isNaN(n) ? n : 0;
 }
 
+function parseProductImageUrls(p: Product): string[] {
+  const raw = p.image_urls;
+  const fallback = p.image_url ? [String(p.image_url)] : [];
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return fallback;
+    if (s.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(s) as unknown;
+        if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+      } catch {
+        /* fall through */
+      }
+    }
+    return s.split(/[;,]/).map((x) => x.trim()).filter(Boolean);
+  }
+  if (Array.isArray(raw)) {
+    const urls = raw.map(String).filter(Boolean);
+    return urls.length ? urls : fallback;
+  }
+  return fallback;
+}
+
+/** All image URLs for galleries and cards. */
+export function productImageUrls(p: Product): string[] {
+  return parseProductImageUrls(p);
+}
+
 /** First image URL for cards. */
 export function productPrimaryImage(p: Product): string | undefined {
-  const fromArr = p.image_urls?.filter(Boolean)[0];
-  return fromArr ?? p.image_url ?? undefined;
+  return parseProductImageUrls(p)[0];
 }
 
 export function createProduct(token: string, shopId: string, body: CreateProductRequest) {
   return apiFetch<Product>(`/api/v1/shops/${encodeURIComponent(shopId)}/products`, {
     method: "POST",
     token,
-    body: JSON.stringify(body),
+    body: JSON.stringify(buildCreatePayload(body)),
   });
 }
 
@@ -122,7 +191,7 @@ export function updateProduct(token: string, productId: string, body: Partial<Cr
   return apiFetch<Product>(productBase(productId), {
     method: "PATCH",
     token,
-    body: JSON.stringify(body),
+    body: JSON.stringify(buildPatchPayload(body)),
   });
 }
 
