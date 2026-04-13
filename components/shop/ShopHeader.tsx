@@ -1,8 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Contact, Shop } from "@/lib/api/shops";
-import { locationDisplay, platformLabel } from "./shopUtils";
+import ShopHeroToolbar from "./ShopHeroToolbar";
 import ShopActions from "./ShopActions";
+import {
+  filterDuplicateContacts,
+  locationDisplay,
+  platformLabel,
+  type ShopQuickNavFlags,
+} from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -64,20 +70,13 @@ function ContactChipIcon({ c }: { c: Contact }) {
 const contactIcon =
   "inline-flex items-center justify-center p-1.5 text-foreground/70 outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none";
 
-function filterDuplicateContacts(shop: Shop) {
-  const emailNorm = shop.shop_email?.trim().toLowerCase() ?? "";
-  const waNorm = shop.whatsapp_number?.replace(/\D/g, "") ?? "";
-  return (
-    shop.contacts?.filter((c) => {
-      const v = c.value.trim();
-      if (emailNorm && v.toLowerCase() === emailNorm) return false;
-      if (waNorm && v.replace(/\D/g, "") === waNorm) return false;
-      return true;
-    }) ?? []
-  );
-}
-
-export default function ShopHeader({ shop }: { shop: Shop }) {
+export default function ShopHeader({
+  shop,
+  quickNav,
+}: {
+  shop: Shop;
+  quickNav: ShopQuickNavFlags;
+}) {
   const location = locationDisplay(shop.location);
   const heroContacts = filterDuplicateContacts(shop);
 
@@ -178,6 +177,8 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
               </span>
             )}
           </div>
+
+          <ShopHeroToolbar shopId={shop.id} shopSlug={shop.slug} quickNav={quickNav} />
 
           <div className="flex flex-wrap items-center justify-center gap-1">
             {shop.whatsapp_number && (

@@ -30,9 +30,9 @@ export const ourFileRouter = {
       return { url: file.ufsUrl };
     }),
 
-  /** Product image: single image, 4MB. Use for product image_url. */
+  /** Product images: up to 8 per batch for `image_urls`. */
   productImage: f({
-    image: { maxFileSize: "4MB", maxFileCount: 1 },
+    image: { maxFileSize: "4MB", maxFileCount: 8 },
   })
     .middleware(async ({ req }) => {
       const auth = getAuth(req);

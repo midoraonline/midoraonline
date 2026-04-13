@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { apiAuth } from "@/lib/api";
+import { useAtomValue } from "jotai/react";
+import { useMemo, useState } from "react";
+import { sessionAtom } from "@/lib/state";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -25,62 +26,22 @@ const shell =
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
+  const session = useAtomValue(sessionAtom);
 
-  useEffect(() => {
-    function syncUserFromToken() {
-      const token =
-        typeof window !== "undefined"
-          ? window.localStorage.getItem("midora_access_token")
-          : null;
-      if (!token) {
-        setUserName(null);
-        return;
-      }
-
-      let cancelled = false;
-      apiAuth
-        .me(token)
-        .then((me) => {
-          if (!cancelled) {
-            setUserName(me.full_name || me.email);
-          }
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setUserName(null);
-          }
-        });
-
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const cleanup = syncUserFromToken();
-
-    function handleAuthChanged() {
-      syncUserFromToken();
-    }
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("midora-auth-changed", handleAuthChanged);
-    }
-
-    return () => {
-      cleanup && cleanup();
-      if (typeof window !== "undefined") {
-        window.removeEventListener("midora-auth-changed", handleAuthChanged);
-      }
-    };
-  }, [pathname]);
-
+  /** No main-nav item is active on routes outside this list (e.g. /account, /login). */
   const activeHref = useMemo(() => {
     const hit = navItems.find((i) => isActivePath(pathname, i.href));
-    return hit?.href ?? "/";
+    return hit?.href ?? null;
   }, [pathname]);
 
-  const displayName = useMemo(() => userName ?? "", [userName]);
+  const displayName = useMemo(() => {
+    if (!session.user) return "";
+    return (
+      session.user.full_name?.trim() ||
+      session.user.email?.trim() ||
+      `Account ${session.user.id.slice(0, 8)}`
+    );
+  }, [session.user]);
 
   const initials = useMemo(() => {
     if (!displayName) return "";
@@ -92,10 +53,15 @@ export default function Navbar() {
       .toUpperCase();
   }, [displayName]);
 
+  const authLoading = session.hydrated && session.token && session.user === undefined;
+
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-5">
       <div className={shell}>
-        <div className="flex h-[3.25rem] items-center justify-between gap-3 sm:h-14 sm:gap-5">
+        <div
+          className="flex h-[3.25rem] items-center justify-between gap-3 sm:h-14 sm:gap-5"
+          suppressHydrationWarning
+        >
           <Link
             href="/"
             className="inline-flex min-w-0 items-center gap-2 rounded-xl py-1 dm-focus"
@@ -116,7 +82,7 @@ export default function Navbar() {
 
           <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">
             {navItems.map((item) => {
-              const active = item.href === activeHref;
+              const active = activeHref !== null && item.href === activeHref;
               return (
                 <Link
                   key={item.href}
@@ -134,7 +100,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2" suppressHydrationWarning>
             {displayName ? (
               <>
                 <Link
@@ -158,6 +124,10 @@ export default function Navbar() {
                   </span>
                 </Link>
               </>
+            ) : authLoading ? (
+              <span className="inline-flex size-9 items-center justify-center rounded-full bg-foreground/[0.06] text-muted md:hidden">
+                <span className="size-4 animate-pulse rounded-full bg-foreground/20" />
+              </span>
             ) : (
               <>
                 <Link
@@ -192,7 +162,7 @@ export default function Navbar() {
           <div className="border-t border-foreground/[0.06] pb-3 pt-2 md:hidden">
             <div className="flex flex-col gap-0.5 rounded-xl bg-foreground/[0.03] p-1.5">
               {navItems.map((item) => {
-                const active = item.href === activeHref;
+                const active = activeHref !== null && item.href === activeHref;
                 return (
                   <Link
                     key={item.href}

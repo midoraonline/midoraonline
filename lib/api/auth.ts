@@ -22,11 +22,14 @@ export type RefreshRequest = {
   refresh_token: string;
 };
 
+/** Matches `/auth/me` (profile-style; some fields optional depending on backend). */
 export type MeResponse = {
   id: string;
-  email: string;
+  email?: string | null;
   full_name?: string | null;
-  user_role?: "customer" | "merchant" | "admin" | null;
+  avatar_url?: string | null;
+  phone_number?: string | null;
+  user_role?: "customer" | "merchant" | "admin" | "staff" | null;
   email_verified?: boolean | null;
 };
 

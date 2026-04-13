@@ -8,20 +8,27 @@ type Endpoint = "shopLogo" | "productImage" | "imageUploader";
 
 type ImageUploadProps = {
   endpoint: Endpoint;
-  onUploadComplete: (url: string) => void;
+  /** Single-file success (first file when multiple). */
+  onUploadComplete?: (url: string) => void;
+  /** Multi-file batch (all URLs from one picker batch). Prefer for product galleries. */
+  onUploadManyComplete?: (urls: string[]) => void;
   label?: string;
   accept?: string;
   className?: string;
   previewUrl?: string;
+  /** Allow selecting several files at once (endpoint must allow maxFileCount &gt; 1). */
+  multiple?: boolean;
 };
 
 export function ImageUpload({
   endpoint,
   onUploadComplete,
+  onUploadManyComplete,
   label = "Upload image",
   accept = "image/*",
   className = "",
   previewUrl,
+  multiple = false,
 }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,8 +36,15 @@ export function ImageUpload({
   const { startUpload, isUploading } = useUploadThing(endpoint, {
     headers: getUploadThingAuthHeaders,
     onClientUploadComplete: (res) => {
-      const url = res?.[0]?.ufsUrl ?? res?.[0]?.url;
-      if (url) onUploadComplete(url);
+      const urls = (res ?? [])
+        .map((r) => r.ufsUrl ?? r.url)
+        .filter((u): u is string => Boolean(u));
+      if (onUploadManyComplete && urls.length) {
+        onUploadManyComplete(urls);
+        return;
+      }
+      const url = urls[0];
+      if (url && onUploadComplete) onUploadComplete(url);
     },
     onUploadError: (e) => setError(e.message),
   });
@@ -50,6 +64,7 @@ export function ImageUpload({
           ref={inputRef}
           type="file"
           accept={accept}
+          multiple={multiple}
           className="hidden"
           aria-hidden
           onChange={handleChange}

@@ -3,6 +3,7 @@ import { Fraunces, IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
+import AppStateProvider from "@/components/providers/AppStateProvider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -58,7 +59,7 @@ export default function RootLayout({
         className={`${plusJakarta.variable} ${fraunces.variable} ${ibmPlexMono.variable} font-sans antialiased bg-background text-foreground`}
       >
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-        {children}
+        <AppStateProvider>{children}</AppStateProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import { apiProducts, apiShops } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditShopForm from "@/components/shop/EditShopForm";
+import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
 
 export default async function ShopDetails({
   params,
@@ -12,6 +13,7 @@ export default async function ShopDetails({
   const { slug } = await params;
   const slugValue = Array.isArray(slug) ? slug[0] : slug;
   const isEditRoute = Array.isArray(slug) && slug[1] === "edit";
+  const isAnalyticsRoute = Array.isArray(slug) && slug[1] === "analytics";
 
   let shop: Awaited<ReturnType<typeof apiShops.bySlug>> | null = null;
   let items: ProductCardData[] = [];
@@ -28,14 +30,18 @@ export default async function ShopDetails({
     return <EditShopForm shop={shop} />;
   }
 
+  if (isAnalyticsRoute) {
+    return <ShopAnalyticsPage shop={shop} />;
+  }
+
   try {
     const { items: products } = await apiProducts.listShopProducts(shop.id);
     items = products.map((p) => ({
       id: p.id,
       slug: p.id,
       title: p.title,
-      priceUGX: p.price ?? 0,
-      imageUrl: p.image_url ?? undefined,
+      priceUGX: apiProducts.productPriceUgx(p),
+      imageUrl: apiProducts.productPrimaryImage(p),
       shop: {
         id: shop!.id,
         name: shop!.name,
@@ -63,7 +69,7 @@ export default async function ShopDetails({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <section>
+      <section id="shop-products" className="scroll-mt-28 sm:scroll-mt-32">
         <div className="mb-4 sm:mb-6">
           <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
             Products &amp; Services
@@ -91,7 +97,7 @@ export default async function ShopDetails({
       </section>
 
       {showAboutSection ? (
-        <section className="dm-card p-6 sm:p-8">
+        <section id="shop-about" className="dm-card scroll-mt-28 p-6 sm:scroll-mt-32 sm:p-8">
           <h2 className="text-base font-semibold tracking-tight sm:text-lg">
             About {shop.name}
           </h2>
@@ -100,7 +106,7 @@ export default async function ShopDetails({
       ) : null}
 
       {extraContacts.length > 0 ? (
-        <section className="dm-card p-6 sm:p-8">
+        <section id="shop-contacts" className="dm-card scroll-mt-28 p-6 sm:scroll-mt-32 sm:p-8">
           <h2 className="text-base font-semibold tracking-tight sm:text-lg">
             More contact details
           </h2>
@@ -117,7 +123,7 @@ export default async function ShopDetails({
         </section>
       ) : null}
 
-      <section className="dm-card p-6 sm:p-8">
+      <section id="shop-concierge" className="dm-card scroll-mt-28 p-6 sm:scroll-mt-32 sm:p-8">
         <h2 className="text-base font-semibold tracking-tight sm:text-lg">
           Have a question?
         </h2>

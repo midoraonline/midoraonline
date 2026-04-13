@@ -18,14 +18,25 @@ export type Availability = {
   hours?: string | null;
 };
 
+/** Location as expected by API (object, e.g. for display/city). */
+export type ShopLocation = {
+  display?: string;
+  city?: string;
+  country?: string;
+};
+
+export type ThemeConfig = Record<string, unknown>;
+
 export type Shop = {
   id: string;
+  owner_id?: string | null;
   slug: string;
   name: string;
   shop_type?: ShopType | null;
   is_active?: boolean;
   category?: string | null;
-  location?: string | null;
+  /** API may return a string or structured object */
+  location?: string | ShopLocation | null;
   description?: string | null;
   about?: string | null;
   shop_email?: string | null;
@@ -33,7 +44,14 @@ export type Shop = {
   contacts?: Contact[] | null;
   social_links?: SocialLink[] | null;
   availability?: Availability | null;
+  theme_config?: ThemeConfig | null;
   logo_url?: string | null;
+  subscription_end_date?: string | null;
+  view_count?: number | null;
+  follower_count?: number | null;
+  like_count?: number | null;
+  viewer_following?: boolean | null;
+  viewer_liked_shop?: boolean | null;
 };
 
 export type Paginated<T> = {
@@ -48,25 +66,70 @@ export function listPublic(opts?: { search?: string; shop_type?: string }) {
   if (opts?.search) params.set("search", opts.search);
   if (opts?.shop_type) params.set("shop_type", opts.shop_type);
   const qs = params.toString();
-  return apiFetch<Paginated<Shop>>(`/api/v1/shops/${qs ? `?${qs}` : ""}`);
+  return apiFetch<Paginated<Shop>>(`/api/v1/shops${qs ? `?${qs}` : ""}`);
 }
 
-export function bySlug(slug: string) {
-  return apiFetch<Shop>(`/api/v1/shops/by-slug/${encodeURIComponent(slug)}`);
+export function bySlug(slug: string, opts?: { token?: string }) {
+  return apiFetch<Shop>(`/api/v1/shops/by-slug/${encodeURIComponent(slug)}`, {
+    ...(opts?.token ? { token: opts.token } : {}),
+  });
+}
+
+export type ShopEngagement = {
+  follower_count?: number;
+  like_count?: number;
+  view_count?: number;
+  viewer_following?: boolean;
+  viewer_liked_shop?: boolean;
+};
+
+export function getShopEngagement(shopId: string, opts?: { token?: string }) {
+  return apiFetch<ShopEngagement>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/engagement`,
+    opts?.token ? { token: opts.token } : {}
+  );
+}
+
+export function recordShopView(shopId: string) {
+  return apiFetch<{ view_count?: number }>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/views`,
+    { method: "POST", body: "{}" }
+  );
+}
+
+export function followShop(token: string, shopId: string) {
+  return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/follow`, {
+    method: "POST",
+    token,
+    body: "{}",
+  });
+}
+
+export function unfollowShop(token: string, shopId: string) {
+  return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/follow`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export function likeShop(token: string, shopId: string) {
+  return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/like`, {
+    method: "POST",
+    token,
+    body: "{}",
+  });
+}
+
+export function unlikeShop(token: string, shopId: string) {
+  return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/like`, {
+    method: "DELETE",
+    token,
+  });
 }
 
 export function myShops(token: string) {
   return apiFetch<Paginated<Shop>>("/api/v1/shops/me", { token });
 }
-
-/** Location as expected by API (object, e.g. for display/city). */
-export type ShopLocation = {
-  display?: string;
-  city?: string;
-  country?: string;
-};
-
-export type ThemeConfig = Record<string, unknown>;
 
 export type CreateShopRequest = {
   name: string;
@@ -92,8 +155,10 @@ export function createShop(token: string, body: CreateShopRequest) {
   });
 }
 
-export function getShop(shopId: string) {
-  return apiFetch<Shop>(`/api/v1/shops/${encodeURIComponent(shopId)}`);
+export function getShop(shopId: string, opts?: { token?: string }) {
+  return apiFetch<Shop>(`/api/v1/shops/${encodeURIComponent(shopId)}`, {
+    ...(opts?.token ? { token: opts.token } : {}),
+  });
 }
 
 export type UpdateShopRequest = Partial<CreateShopRequest> & {

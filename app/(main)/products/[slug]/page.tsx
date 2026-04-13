@@ -1,3 +1,5 @@
+import ProductPageEffects from "@/components/product/ProductPageEffects";
+
 export default async function ProductDetails({
   params,
 }: {
@@ -7,6 +9,7 @@ export default async function ProductDetails({
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-8 sm:space-y-10">
+      <ProductPageEffects productId={slug} />
       <section className="dm-card p-6 sm:p-8 lg:p-10">
         <p className="text-sm font-semibold text-muted">Product</p>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">

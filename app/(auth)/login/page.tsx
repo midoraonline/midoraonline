@@ -46,7 +46,8 @@ export default function LoginPage() {
           window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
         }
         window.dispatchEvent(new Event("midora-auth-changed"));
-        router.replace("/");
+        const next = searchParams.get("next");
+        router.replace(next && next.startsWith("/") ? next : "/");
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -79,7 +80,8 @@ export default function LoginPage() {
         window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
       }
       window.dispatchEvent(new Event("midora-auth-changed"));
-      router.push("/");
+      const next = searchParams.get("next");
+      router.push(next && next.startsWith("/") ? next : "/");
     } catch (err) {
       setError(
         err instanceof Error
