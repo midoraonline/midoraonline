@@ -7,8 +7,8 @@ const footerLink =
 export default function Footer() {
   return (
     <footer className="border-t border-foreground/[0.06] bg-surface/40 backdrop-blur-xl">
-      <div className="dm-container py-8 sm:py-10">
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+      <div className="dm-container py-6 sm:py-8">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
           <div>
             <Link href="/" className="mb-3 inline-flex items-center gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-background">
               <Image

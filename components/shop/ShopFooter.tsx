@@ -16,8 +16,8 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
 
   return (
     <footer className="mt-auto border-t border-foreground/[0.06] bg-surface/40 backdrop-blur-xl">
-      <div className="dm-container py-8 sm:py-10">
-        <div className="grid gap-8 md:grid-cols-3">
+      <div className="dm-container py-6 sm:py-8">
+        <div className="grid gap-6 md:grid-cols-3">
           <div>
             <div className="mb-3 flex items-center gap-3">
               {shop.logo_url ? (

@@ -71,10 +71,10 @@ const softCard =
 
 export default function HomeLanding() {
   return (
-    <div className="space-y-12 sm:space-y-16 lg:space-y-20">
+    <div className="space-y-8 sm:space-y-12 lg:space-y-16">
       <Reveal>
         <section className="relative overflow-hidden rounded-3xl">
-          <div className="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12 lg:p-10">
+          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10 lg:p-8">
             <div>
               <p className="inline-flex items-center gap-2 rounded-full bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-foreground/70">
                 <Sparkles className="size-3.5 shrink-0" aria-hidden />

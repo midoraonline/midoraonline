@@ -81,7 +81,9 @@ export default async function ShopLayout({
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-background text-foreground">
       <ShopHeader shop={shop} />
       <main className="flex-1">
-        <div className="dm-container py-6 sm:py-10 lg:py-12">{children}</div>
+        <div className="dm-container pt-3 pb-5 sm:pt-5 sm:pb-8 lg:pt-6 lg:pb-10">
+          {children}
+        </div>
       </main>
       <ShopFooter shop={shop} />
       <ShopChatWidget shopId={shop.id} shopName={shop.name} />

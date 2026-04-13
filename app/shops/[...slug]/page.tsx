@@ -62,9 +62,9 @@ export default async function ShopDetails({
     }) ?? [];
 
   return (
-    <div className="space-y-8 sm:space-y-10">
+    <div className="space-y-6 sm:space-y-8">
       <section>
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6">
           <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
             Products &amp; Services
           </h2>
