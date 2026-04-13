@@ -113,70 +113,91 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="dm-card p-6 sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Create your Midora Online account</h1>
-      <p className="mt-2 text-sm text-muted">
-        Start your 60-second shop setup journey. We&apos;ll email you a link to verify
-        your address.
-      </p>
+    <div className="w-full space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-pretty text-xl font-semibold tracking-tight sm:text-2xl">
+          Create your Midora Online account
+        </h1>
+        <p className="text-sm leading-relaxed text-muted">
+          Start your 60-second shop setup journey. We&apos;ll email you a link to verify your
+          address.
+        </p>
+      </header>
 
-      <button
-        type="button"
-        disabled={googleLoading || loading}
-        onClick={handleGoogleSignUp}
-        className="mt-6 w-full dm-pill dm-focus border border-border bg-surface hover:bg-surface/80 transition-colors justify-center h-11 gap-2"
-      >
-        <img src="/icons/google.svg" alt="" className="h-5 w-5" />
-        {googleLoading ? "Connecting to Google…" : "Continue with Google"}
-      </button>
+      <div className="space-y-4">
+        <button
+          type="button"
+          disabled={googleLoading || loading}
+          onClick={handleGoogleSignUp}
+          className="dm-pill flex min-h-12 w-full items-center justify-center gap-2 border border-border bg-transparent text-sm font-medium transition-colors hover:bg-foreground/[0.03] active:bg-foreground/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/25 disabled:opacity-60"
+        >
+          <img src="/icons/google.svg" alt="" className="h-5 w-5 shrink-0" />
+          {googleLoading ? "Connecting to Google…" : "Continue with Google"}
+        </button>
 
-      <div className="my-4 flex items-center gap-3 text-xs text-muted">
-        <div className="h-px flex-1 bg-border" />
-        <span>or</span>
-        <div className="h-px flex-1 bg-border" />
+        <div className="flex items-center gap-3 text-xs text-muted">
+          <div className="h-px min-w-0 flex-1 bg-border" />
+          <span className="shrink-0">or</span>
+          <div className="h-px min-w-0 flex-1 bg-border" />
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/90">Full name</label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="register-name" className="text-sm font-medium text-foreground/90">
+            Full name
+          </label>
           <input
+            id="register-name"
             type="text"
             required
-            className="h-11 w-full rounded-2xl border border-border bg-surface px-4 text-sm dm-focus"
+            autoComplete="name"
+            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Your name"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/90">Email</label>
+        <div className="space-y-2">
+          <label htmlFor="register-email" className="text-sm font-medium text-foreground/90">
+            Email
+          </label>
           <input
+            id="register-email"
             type="email"
             required
-            className="h-11 w-full rounded-2xl border border-border bg-surface px-4 text-sm dm-focus"
+            autoComplete="email"
+            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/90">Password</label>
+        <div className="space-y-2">
+          <label htmlFor="register-password" className="text-sm font-medium text-foreground/90">
+            Password
+          </label>
           <input
+            id="register-password"
             type="password"
             required
-            className="h-11 w-full rounded-2xl border border-border bg-surface px-4 text-sm dm-focus"
+            autoComplete="new-password"
+            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/90">I&apos;m signing up as</label>
+        <div className="space-y-2">
+          <label htmlFor="register-role" className="text-sm font-medium text-foreground/90">
+            I&apos;m signing up as
+          </label>
           <select
-            className="h-11 w-full rounded-2xl border border-border bg-surface px-4 text-sm dm-focus"
+            id="register-role"
+            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
             value={role}
             onChange={(e) => setRole(e.target.value as "customer" | "merchant")}
           >
@@ -186,7 +207,7 @@ export default function RegisterPage() {
         </div>
 
         {error ? (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-2xl px-3 py-2">
+          <p role="alert" className="text-sm leading-snug text-red-600">
             {error}
           </p>
         ) : null}
@@ -194,15 +215,15 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading || googleLoading}
-          className="w-full dm-pill dm-focus bg-foreground text-background hover:opacity-95 transition-opacity justify-center h-11"
+          className="dm-pill flex min-h-12 w-full items-center justify-center bg-foreground text-sm font-medium text-background transition-opacity hover:opacity-95 active:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/30 disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
 
-      <p className="mt-4 text-xs text-muted">
+      <p className="text-center text-xs leading-relaxed text-muted sm:text-left">
         Already have an account?{" "}
-        <a href="/login" className="font-semibold text-foreground/80 hover:text-foreground">
+        <a href="/login" className="font-semibold text-foreground underline-offset-2 hover:underline">
           Sign in
         </a>
       </p>
