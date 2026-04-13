@@ -32,7 +32,7 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
         </div>
 
         <div
-          className="grid size-10 place-items-center rounded-2xl bg-foreground/5 text-foreground/80"
+          className="grid size-10 place-items-center rounded-2xl bg-primary/5 text-foreground/80"
           aria-hidden
         >
           ↗
@@ -40,10 +40,10 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80">
+        <span className="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
           {shop.category}
         </span>
-        <span className="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80">
+        <span className="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
           {shop.location}
         </span>
       </div>

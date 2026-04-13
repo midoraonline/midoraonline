@@ -269,7 +269,7 @@ export default function CreateShopConcierge({
             <button
               type="submit"
               disabled={creating}
-              className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
+              className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               {creating ? "Creating…" : "Create shop"}
             </button>
@@ -290,7 +290,7 @@ export default function CreateShopConcierge({
               <div
                 className={
                   "max-w-[85%] rounded-2xl px-3 py-2 text-xs " +
-                  (m.role === "user" ? "bg-foreground text-background" : "bg-foreground/5 text-foreground/90")
+                  (m.role === "user" ? "bg-primary text-primary-foreground" : "bg-primary/5 text-foreground/90")
                 }
               >
                 {m.content}
@@ -311,7 +311,7 @@ export default function CreateShopConcierge({
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="h-9 px-3 rounded-2xl bg-foreground text-background text-xs font-semibold dm-focus disabled:opacity-60"
+          className="h-9 px-3 rounded-2xl bg-primary text-primary-foreground text-xs font-semibold dm-focus disabled:opacity-60"
         >
           {loading ? "Thinking…" : "Send"}
         </button>

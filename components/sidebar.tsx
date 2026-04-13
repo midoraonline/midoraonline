@@ -35,8 +35,8 @@ export default function Sidebar({
               className={[
                 "rounded-2xl px-3 py-2 text-sm font-medium dm-focus transition-colors",
                 active
-                  ? "bg-foreground text-background"
-                  : "text-foreground/80 hover:bg-foreground/5",
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground/80 hover:bg-primary/5",
               ].join(" ")}
             >
               {item.label}

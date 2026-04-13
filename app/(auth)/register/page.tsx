@@ -129,7 +129,7 @@ export default function RegisterPage() {
           type="button"
           disabled={googleLoading || loading}
           onClick={handleGoogleSignUp}
-          className="dm-pill flex min-h-12 w-full items-center justify-center gap-2 border border-border bg-transparent text-sm font-medium transition-colors hover:bg-foreground/[0.03] active:bg-foreground/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/25 disabled:opacity-60"
+          className="dm-pill flex min-h-12 w-full items-center justify-center gap-2 border border-border bg-transparent text-sm font-medium transition-colors hover:bg-primary/[0.03] active:bg-primary/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/25 disabled:opacity-60"
         >
           <img src="/icons/google.svg" alt="" className="h-5 w-5 shrink-0" />
           {googleLoading ? "Connecting to Google…" : "Continue with Google"}
@@ -152,7 +152,7 @@ export default function RegisterPage() {
             type="text"
             required
             autoComplete="name"
-            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
+            className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-primary/35 sm:text-sm"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Your name"
@@ -168,7 +168,7 @@ export default function RegisterPage() {
             type="email"
             required
             autoComplete="email"
-            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
+            className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-primary/35 sm:text-sm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
@@ -184,7 +184,7 @@ export default function RegisterPage() {
             type="password"
             required
             autoComplete="new-password"
-            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
+            className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-primary/35 sm:text-sm"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
@@ -197,7 +197,7 @@ export default function RegisterPage() {
           </label>
           <select
             id="register-role"
-            className="min-h-12 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-foreground/25 sm:text-sm"
+            className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 text-base text-foreground shadow-none outline-none ring-0 transition-[border-color] focus-visible:border-primary/35 sm:text-sm"
             value={role}
             onChange={(e) => setRole(e.target.value as "customer" | "merchant")}
           >
@@ -215,7 +215,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading || googleLoading}
-          className="dm-pill flex min-h-12 w-full items-center justify-center bg-foreground text-sm font-medium text-background transition-opacity hover:opacity-95 active:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/30 disabled:opacity-60"
+          className="dm-pill flex min-h-12 w-full items-center justify-center bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:opacity-95 active:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/30 disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Create account"}
         </button>

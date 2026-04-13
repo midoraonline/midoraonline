@@ -25,7 +25,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   />
                 </div>
               ) : (
-                <div className="size-9 rounded-xl border border-border bg-foreground/5 grid place-items-center shrink-0">
+                <div className="size-9 rounded-xl border border-border bg-primary/5 grid place-items-center shrink-0">
                   <span className="text-xs font-bold text-foreground/30 select-none">
                     {shop.name.slice(0, 2).toUpperCase()}
                   </span>

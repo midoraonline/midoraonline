@@ -2,15 +2,24 @@
 
 :root {
   color-scheme: light;
-  --background: #ffffff;
+  /* Brand */
+  --primary: #4a6767;
+  --primary-foreground: #f9f9f8;
+  --accent: #66798f;
+  --secondary: #757779;
+  /* Surfaces */
+  --background: #f9f9f8;
   --surface: #ffffff;
-  --foreground: #0b1220;
-  --muted: #5b6475;
-  --border: rgba(15, 23, 42, 0.10);
-  --ring: rgba(15, 23, 42, 0.18);
-  --shadow: 0 18px 50px rgba(2, 6, 23, 0.08);
-  --shadow-sm: 0 8px 22px rgba(2, 6, 23, 0.07);
-  --radius: 20px;
+  /* Text */
+  --foreground: #2a3331;
+  --muted: #757779;
+  --border: rgba(74, 103, 103, 0.14);
+  --ring: rgba(74, 103, 103, 0.28);
+  /* Minimal elevation */
+  --shadow: 0 4px 14px rgba(42, 51, 49, 0.06);
+  --shadow-sm: 0 1px 3px rgba(42, 51, 49, 0.05);
+  --radius: 1.125rem;
+  --radius-inner: 0.875rem;
 }
 
 @theme inline {
@@ -20,11 +29,17 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-secondary: var(--secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
 }
 
-/* Intentionally no dark-mode overrides: Midora Online is pure-white by default. */
+/* Midora Online — light, minimal brand system */
 
 body {
   background: var(--background);
@@ -39,7 +54,8 @@ body {
   }
 
   ::selection {
-    background: rgba(99, 102, 241, 0.22);
+    background: rgba(74, 103, 103, 0.18);
+    color: var(--foreground);
   }
 }
 
@@ -48,6 +64,7 @@ body {
     @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
 
+  /* Cards: clear boundary, almost no shadow */
   .dm-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -56,22 +73,31 @@ body {
   }
 
   .dm-card-hover {
-    transition: transform 180ms ease, box-shadow 180ms ease,
-      border-color 180ms ease;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
   }
 
   .dm-card-hover:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow);
-    border-color: rgba(15, 23, 42, 0.14);
+    border-color: rgba(74, 103, 103, 0.22);
+    box-shadow: var(--shadow-sm);
   }
 
   .dm-focus {
     @apply focus:outline-none;
-    box-shadow: 0 0 0 4px var(--ring);
+    box-shadow: 0 0 0 3px var(--ring);
   }
 
   .dm-pill {
     @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium;
+  }
+
+  /* Subtle text link using accent */
+  .dm-link {
+    color: var(--accent);
+    text-underline-offset: 2px;
+  }
+
+  .dm-link:hover {
+    color: var(--primary);
+    text-decoration: underline;
   }
 }

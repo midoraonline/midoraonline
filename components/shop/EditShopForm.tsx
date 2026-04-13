@@ -365,7 +365,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 checked={form.isActive}
                 onChange={(e) => set("isActive", e.target.checked)}
               />
-              <div className="h-5 w-9 rounded-full border border-border bg-surface transition-colors peer-checked:bg-foreground peer-checked:border-foreground" />
+              <div className="h-5 w-9 rounded-full border border-border bg-surface transition-colors peer-checked:bg-primary peer-checked:border-primary" />
               <div className="absolute top-0.5 left-0.5 size-4 rounded-full bg-muted transition-transform peer-checked:translate-x-4 peer-checked:bg-background" />
             </div>
             <div>
@@ -390,7 +390,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           <button
             type="submit"
             disabled={saving}
-            className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-6 py-2.5 text-sm font-semibold disabled:opacity-60 transition-opacity"
+            className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-6 py-2.5 text-sm font-semibold disabled:opacity-60 transition-opacity"
           >
             {saving ? "Saving…" : "Save changes"}
           </button>

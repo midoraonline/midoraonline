@@ -121,9 +121,9 @@ export default function OpenShopWizard() {
           </p>
         </div>
         <div className="flex items-center gap-1 text-xs text-muted">
-          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 1 ? "border-foreground text-foreground" : "border-border")}>1 · Details</span>
-          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 2 ? "border-foreground text-foreground" : "border-border")}>2 · AI concierge</span>
-          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 3 ? "border-foreground text-foreground" : "border-border")}>3 · Done</span>
+          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 1 ? "border-primary text-primary" : "border-border")}>1 · Details</span>
+          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 2 ? "border-primary text-primary" : "border-border")}>2 · AI concierge</span>
+          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 3 ? "border-primary text-primary" : "border-border")}>3 · Done</span>
         </div>
       </div>
 
@@ -215,7 +215,7 @@ export default function OpenShopWizard() {
             <button
               type="submit"
               disabled={creating}
-              className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
+              className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               {creating ? "Creating…" : "Create shop"}
             </button>
@@ -239,7 +239,7 @@ export default function OpenShopWizard() {
           </div>
           <div className="flex items-center justify-between gap-2 pt-2">
             <button type="button" onClick={() => setStep(1)} className="text-xs text-muted hover:text-foreground dm-focus rounded-full px-3 py-1.5">Back</button>
-            <button type="submit" disabled={savingContext} className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60">
+            <button type="submit" disabled={savingContext} className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60">
               {savingContext ? "Saving…" : "Save & finish"}
             </button>
           </div>
@@ -251,13 +251,13 @@ export default function OpenShopWizard() {
           <p className="text-sm font-semibold">You’re all set</p>
           <p className="text-xs text-muted">Your shop is live. Add products and share your link.</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <a href={`/shops/${encodeURIComponent(createdShop.slug)}`} className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-4 py-2.5 text-sm text-center font-semibold">
+            <a href={`/shops/${encodeURIComponent(createdShop.slug)}`} className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-4 py-2.5 text-sm text-center font-semibold">
               View my shop
             </a>
-            <a href={`/open-shop/settings/${createdShop.id}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-4 py-2.5 text-sm text-center font-semibold">
+            <a href={`/open-shop/settings/${createdShop.id}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold">
               Shop settings
             </a>
-            <a href={`/chat?shop_id=${encodeURIComponent(createdShop.id)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-4 py-2.5 text-sm text-center font-semibold sm:col-span-2">
+            <a href={`/chat?shop_id=${encodeURIComponent(createdShop.id)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold sm:col-span-2">
               Chat with concierge
             </a>
           </div>

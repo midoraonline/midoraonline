@@ -24,20 +24,20 @@ export default function OpenShopPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href={`/shops/${encodeURIComponent(shop.slug)}`}
-              className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-4 py-2.5 text-sm font-semibold"
+              className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-4 py-2.5 text-sm font-semibold"
             >
               View my shop
             </Link>
             <Link
               href={`/open-shop/settings/${shop.id}`}
-              className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-4 py-2.5 text-sm font-semibold"
+              className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm font-semibold"
             >
               Shop settings
             </Link>
             <button
               type="button"
               onClick={() => setCreatedFromQuick(null)}
-              className="dm-pill dm-focus border border-border bg-surface text-foreground/80 hover:bg-foreground/5 px-4 py-2.5 text-sm"
+              className="dm-pill dm-focus border border-border bg-surface text-foreground/80 hover:bg-primary/5 px-4 py-2.5 text-sm"
             >
               Create another
             </button>
@@ -58,14 +58,14 @@ export default function OpenShopPage() {
           <button
             type="button"
             onClick={() => setMode("quick")}
-            className={"dm-pill dm-focus px-4 py-2.5 text-sm font-semibold " + (mode === "quick" ? "bg-foreground text-background" : "border border-border bg-surface text-foreground/85 hover:bg-foreground/5")}
+            className={"dm-pill dm-focus px-4 py-2.5 text-sm font-semibold " + (mode === "quick" ? "bg-primary text-primary-foreground" : "border border-border bg-surface text-foreground/85 hover:bg-primary/5")}
           >
             Quick start (AI)
           </button>
           <button
             type="button"
             onClick={() => setMode("manual")}
-            className={"dm-pill dm-focus px-4 py-2.5 text-sm font-semibold " + (mode === "manual" ? "bg-foreground text-background" : "border border-border bg-surface text-foreground/85 hover:bg-foreground/5")}
+            className={"dm-pill dm-focus px-4 py-2.5 text-sm font-semibold " + (mode === "manual" ? "bg-primary text-primary-foreground" : "border border-border bg-surface text-foreground/85 hover:bg-primary/5")}
           >
             Set up manually
           </button>

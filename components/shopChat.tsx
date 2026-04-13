@@ -174,8 +174,8 @@ export default function ShopChat({
                 className={
                   "max-w-[80%] rounded-2xl px-3 py-2 text-xs " +
                   (m.role === "user"
-                    ? "bg-foreground text-background"
-                    : "bg-foreground/5 text-foreground/90")
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-primary/5 text-foreground/90")
                 }
               >
                 {m.content}
@@ -202,7 +202,7 @@ export default function ShopChat({
         <button
           type="submit"
           disabled={initializing || loading || !input.trim()}
-          className="h-9 px-3 rounded-2xl bg-foreground text-background text-xs font-semibold dm-focus disabled:opacity-60"
+          className="h-9 px-3 rounded-2xl bg-primary text-primary-foreground text-xs font-semibold dm-focus disabled:opacity-60"
         >
           {loading ? "Thinking…" : "Send"}
         </button>

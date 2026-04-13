@@ -127,8 +127,8 @@ export default function Navbar() {
                   className={[
                     "dm-pill dm-focus transition-colors",
                     active
-                      ? "bg-foreground text-background"
-                      : "text-foreground/80 hover:bg-foreground/5",
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground/80 hover:bg-primary/5",
                   ].join(" ")}
                 >
                   {item.label}
@@ -141,7 +141,7 @@ export default function Navbar() {
             {displayName ? (
               <Link
                 href="/account"
-                className="hidden sm:inline-flex items-center gap-2 rounded-full bg-foreground text-background px-3 py-1.5 text-xs font-medium dm-focus hover:opacity-95 transition-opacity"
+                className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium dm-focus hover:opacity-95 transition-opacity"
               >
                 <span className="grid size-7 place-items-center rounded-full bg-background/10 text-[11px] font-semibold">
                   {initials}
@@ -151,7 +151,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="hidden sm:inline-flex dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 transition-colors px-4 py-2 text-sm"
+                className="hidden sm:inline-flex dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 transition-colors px-4 py-2 text-sm"
               >
                 Login
               </Link>
@@ -183,8 +183,8 @@ export default function Navbar() {
                       className={[
                         "rounded-2xl px-4 py-3 text-sm font-medium dm-focus transition-colors",
                         active
-                          ? "bg-foreground text-background"
-                          : "text-foreground/85 hover:bg-foreground/5",
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground/85 hover:bg-primary/5",
                       ].join(" ")}
                     >
                       {item.label}
@@ -195,7 +195,7 @@ export default function Navbar() {
                   <Link
                     href="/account"
                     onClick={() => setOpen(false)}
-                    className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-foreground px-4 py-3 text-sm font-semibold text-background dm-focus hover:opacity-95 transition-opacity"
+                    className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground dm-focus hover:opacity-95 transition-opacity"
                   >
                     <span className="grid size-7 place-items-center rounded-full bg-background/10 text-[11px] font-semibold">
                       {initials}
@@ -206,7 +206,7 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setOpen(false)}
-                    className="mt-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground/80 dm-focus hover:bg-foreground/5 transition-colors text-center"
+                    className="mt-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground/80 dm-focus hover:bg-primary/5 transition-colors text-center"
                   >
                     Login
                   </Link>

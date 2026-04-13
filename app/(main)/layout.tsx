@@ -11,7 +11,7 @@ export default function MainLayout({
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
-        <div className="dm-container py-8">{children}</div>
+        <div className="dm-container py-6 sm:py-10">{children}</div>
       </main>
       <Footer />
       <MidoraInfoChatWidget />

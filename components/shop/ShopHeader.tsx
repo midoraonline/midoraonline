@@ -36,7 +36,7 @@ function ShopLogo({
   }
 
   return (
-    <div className="size-8 rounded-xl border border-border bg-foreground/5 grid place-items-center shrink-0">
+    <div className="size-8 rounded-xl border border-border bg-primary/5 grid place-items-center shrink-0">
       <span className="text-[11px] font-bold text-foreground/30 select-none">
         {name.slice(0, 2).toUpperCase()}
       </span>
@@ -110,7 +110,7 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
                   Verified
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-semibold text-foreground/50">
+                <span className="inline-flex items-center rounded-full bg-primary/5 px-2.5 py-1 text-xs font-semibold text-foreground/50">
                   Temporarily Closed
                 </span>
               )}
@@ -126,25 +126,25 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
             {/* meta pills */}
             <div className="flex flex-wrap gap-2">
               {shop.category && (
-                <span className="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80">
+                <span className="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
                   {shop.category}
                 </span>
               )}
               {shop.shop_type && (
-                <span className="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80 capitalize">
+                <span className="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80 capitalize">
                   {shop.shop_type === "both"
                     ? "Products & Services"
                     : shop.shop_type}
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
                   <MapPin className="size-3 shrink-0" />
                   {location}
                 </span>
               )}
               {shop.availability?.hours && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/80">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
                   <Clock className="size-3 shrink-0" />
                   {shop.availability.hours}
                   {shop.availability.days
@@ -161,7 +161,7 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
                   href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-foreground/5 dm-focus transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
                 >
                   <Phone className="size-3" />
                   WhatsApp
@@ -170,7 +170,7 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
               {shop.shop_email && (
                 <a
                   href={`mailto:${shop.shop_email}`}
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-foreground/5 dm-focus transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
                 >
                   <Mail className="size-3" />
                   Email
@@ -194,7 +194,7 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
                       ? "noopener noreferrer"
                       : undefined
                   }
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-foreground/5 dm-focus transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
                 >
                   {c.label ?? c.value}
                 </a>
@@ -205,7 +205,7 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-foreground/5 dm-focus transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
                 >
                   <ExternalLink className="size-3" />
                   {platformLabel(s.platform)}

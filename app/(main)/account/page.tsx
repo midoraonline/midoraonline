@@ -119,7 +119,7 @@ export default function AccountPage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="dm-pill dm-focus border border-border bg-surface hover:bg-foreground/5 text-sm font-semibold px-4 py-2"
+            className="dm-pill dm-focus border border-border bg-surface hover:bg-primary/5 text-sm font-semibold px-4 py-2"
           >
             Logout
           </button>

@@ -8,9 +8,9 @@ export default function MidoraInfoChatWidget() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
       {open ? (
-        <div className="w-[320px] sm:w-[360px] shadow-xl rounded-3xl overflow-hidden bg-background border border-border">
+        <div className="w-[min(100%,320px)] sm:w-[360px] rounded-2xl border border-border bg-surface shadow-sm overflow-hidden sm:rounded-3xl">
           <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-surface/95">
             <div>
               <p className="text-xs font-semibold tracking-tight">
@@ -37,7 +37,7 @@ export default function MidoraInfoChatWidget() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-xs font-semibold shadow-lg dm-focus"
+        className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm dm-focus"
       >
         <span className="grid size-6 place-items-center rounded-full bg-background/15">
           <MessageCircle className="size-3.5" />

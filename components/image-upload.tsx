@@ -59,7 +59,7 @@ export function ImageUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
-          className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-4 py-2 text-sm font-medium disabled:opacity-60"
+          className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-medium disabled:opacity-60"
         >
           {isUploading ? "Uploading…" : label}
         </button>

@@ -4,8 +4,8 @@ import Image from "next/image";
 export default function Footer() {
   return (
     <footer className="border-t border-border/80 bg-surface">
-      <div className="dm-container py-10">
-        <div className="grid gap-8 md:grid-cols-3">
+      <div className="dm-container py-8 sm:py-10">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           <div>
             <Link href="/" className="inline-flex items-center gap-2 mb-3">
               <Image

@@ -152,7 +152,7 @@ export default async function ShopDetails({
       </section>
 
       {/* concierge prompt */}
-      <section className="dm-card p-6 bg-foreground/[0.02]">
+      <section className="dm-card p-6 bg-primary/[0.02]">
         <h2 className="text-base font-semibold tracking-tight">
           Have a question?
         </h2>

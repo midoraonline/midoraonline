@@ -157,7 +157,7 @@ export default function ShopSettingsPage() {
             <h1 className="text-2xl font-semibold tracking-tight">Shop settings</h1>
             <p className="mt-1 text-sm text-muted">{shop.name}</p>
           </div>
-          <Link href={`/shops/${encodeURIComponent(shop.slug)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-4 py-2 text-sm font-semibold">
+          <Link href={`/shops/${encodeURIComponent(shop.slug)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-semibold">
             View shop
           </Link>
         </div>
@@ -226,7 +226,7 @@ export default function ShopSettingsPage() {
             </div>
           </div>
           <div className="pt-2">
-            <button type="submit" disabled={saving} className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60">
+            <button type="submit" disabled={saving} className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60">
               {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
@@ -257,7 +257,7 @@ export default function ShopSettingsPage() {
             <label className="text-xs font-medium text-foreground/80">Content</label>
             <textarea className="mt-1 min-h-[100px] w-full rounded-2xl border border-border bg-surface px-3 py-2 text-sm dm-focus" value={newContextContent} onChange={(e) => setNewContextContent(e.target.value)} placeholder="e.g. We ship worldwide within 5–7 days." />
           </div>
-          <button type="submit" disabled={addingContext || !newContextContent.trim()} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-foreground/5 px-4 py-2 text-sm font-semibold disabled:opacity-60">
+          <button type="submit" disabled={addingContext || !newContextContent.trim()} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-semibold disabled:opacity-60">
             {addingContext ? "Adding…" : "Add context"}
           </button>
         </form>

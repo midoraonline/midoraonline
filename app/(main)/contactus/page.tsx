@@ -37,7 +37,7 @@ export default function ContactUs() {
             />
             <button
               type="button"
-              className="dm-pill dm-focus bg-foreground text-background hover:opacity-95 transition-opacity px-5 py-3 justify-self-start"
+              className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 transition-opacity px-5 py-3 justify-self-start"
               disabled
             >
               Send (soon)
