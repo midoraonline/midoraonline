@@ -1,5 +1,6 @@
 import { apiProducts, apiShops } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
+import { productPageSlug } from "@/lib/productUrl";
 
 const MAX_CARDS = 72;
 const SHOPS_TO_SCAN = 20;
@@ -27,7 +28,7 @@ export async function loadPublicProductFeed(): Promise<ProductCardData[]> {
         if (p.is_published === false) continue;
         out.push({
           id: p.id,
-          slug: p.id,
+          slug: productPageSlug(p),
           title: p.title,
           priceUGX: apiProducts.productPriceUgx(p),
           imageUrl: apiProducts.productPrimaryImage(p),

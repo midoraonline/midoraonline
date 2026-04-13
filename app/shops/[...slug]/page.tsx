@@ -1,5 +1,6 @@
 import ProductCard, { ProductCardData } from "@/components/productcard";
 import { apiProducts, apiShops } from "@/lib/api";
+import { productPageSlug } from "@/lib/productUrl";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditShopForm from "@/components/shop/EditShopForm";
@@ -38,7 +39,7 @@ export default async function ShopDetails({
     const { items: products } = await apiProducts.listShopProducts(shop.id);
     items = products.map((p) => ({
       id: p.id,
-      slug: p.id,
+      slug: productPageSlug(p),
       title: p.title,
       priceUGX: apiProducts.productPriceUgx(p),
       imageUrl: apiProducts.productPrimaryImage(p),

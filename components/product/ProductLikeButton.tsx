@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiProducts } from "@/lib/api";
@@ -20,6 +20,7 @@ export default function ProductLikeButton({
   size?: "default" | "compact";
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const session = useAppSession();
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState<number | null>(null);
@@ -44,17 +45,22 @@ export default function ProductLikeButton({
   async function toggle() {
     const t = session.token;
     if (!t) {
-      router.push(`/login?next=${encodeURIComponent(`/products/${productId}`)}`);
+      const nextPath = pathname && pathname.startsWith("/") ? pathname : `/products/${productId}`;
+      router.push(`/login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
+    const prevLiked = liked;
+    const prevCount = count;
     const next = !liked;
+    setLiked(next);
+    setCount((c) => Math.max(0, (c ?? 0) + (next ? 1 : -1)));
     try {
       if (next) await apiProducts.likeProduct(t, productId);
       else await apiProducts.unlikeProduct(t, productId);
-      setLiked(next);
-      await sync();
+      void sync();
     } catch {
-      /* keep prior */
+      setLiked(prevLiked);
+      setCount(prevCount);
     }
   }
 
