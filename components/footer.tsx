@@ -6,7 +6,7 @@ const footerLink =
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border/80 bg-surface">
+    <footer className="border-t border-foreground/[0.06] bg-surface/40 backdrop-blur-xl">
       <div className="dm-container py-8 sm:py-10">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           <div>

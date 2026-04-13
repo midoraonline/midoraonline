@@ -2,7 +2,7 @@
 
 :root {
   color-scheme: light;
-  /* Brand */
+  /* Brand — full palette + logo rules: docs/BRAND.md */
   --primary: #4a6767;
   --primary-foreground: #f9f9f8;
   --accent: #66798f;
@@ -102,25 +102,45 @@ body {
     @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
 
+  /* Glass panels — pages, cards, chat shells */
   .dm-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: none;
+    @apply rounded-3xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,51,49,0.14)] backdrop-blur-2xl backdrop-saturate-150;
+  }
+
+  /* Compact glass strip — floating navbars */
+  .dm-glass-bar {
+    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,51,49,0.18)] backdrop-blur-2xl backdrop-saturate-150;
   }
 
   .dm-card-hover {
-    transition: border-color 200ms ease, transform 200ms ease;
+    @apply transition-[border-color,transform,box-shadow] duration-200 ease-out;
   }
 
   .dm-card-hover:hover {
-    border-color: rgba(102, 121, 143, 0.2);
+    @apply border-foreground/[0.1] shadow-[0_18px_50px_-14px_rgba(42,51,49,0.2)];
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .dm-card-hover:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
+  }
+
+  /* Form controls — soft fill, no heavy borders */
+  .dm-input {
+    @apply w-full min-h-11 rounded-2xl border-0 bg-foreground/[0.05] px-4 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
+
+  .dm-textarea {
+    @apply w-full min-h-32 rounded-2xl border-0 bg-foreground/[0.05] px-4 py-3 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
+
+  .dm-input-xs {
+    @apply w-full min-h-9 rounded-2xl border-0 bg-foreground/[0.05] px-3 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
+
+  .dm-textarea-xs {
+    @apply w-full min-h-[100px] resize-none rounded-2xl border-0 bg-foreground/[0.05] px-3 py-2 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
   }
 
   .dm-focus {

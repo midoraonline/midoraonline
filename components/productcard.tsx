@@ -29,7 +29,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
       href={`/products/${product.slug}`}
       className="block dm-card dm-card-hover overflow-hidden dm-focus"
     >
-      <div className="relative aspect-[4/3] w-full bg-primary/5">
+      <div className="relative aspect-[4/3] w-full bg-foreground/[0.04]">
         {product.imageUrl ? (
           <Image
             src={product.imageUrl}
@@ -57,11 +57,11 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           <span className="text-xs text-muted">Sold by</span>
           <Link
             href={`/shops/${product.shop.slug}`}
-            className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-semibold text-foreground/80 dm-focus"
+            className="dm-focus inline-flex items-center gap-2 rounded-full bg-foreground/[0.07] px-3 py-1 text-xs font-semibold text-foreground/85"
           >
             {product.shop.name}
             {product.shop.verified ? (
-              <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-foreground/70">
+              <span className="rounded-full bg-foreground/[0.08] px-2 py-0.5 text-[10px] font-semibold text-foreground/70">
                 Verified
               </span>
             ) : null}

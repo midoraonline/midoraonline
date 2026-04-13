@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiAuth } from "@/lib/api";
 
 const navItems = [
-  { href: "/", label: "Mall" },
+  { href: "/", label: "Home" },
   { href: "/shops", label: "Shops" },
   { href: "/products", label: "Products" },
   { href: "/aboutus", label: "About" },
@@ -18,6 +18,9 @@ function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+const shell =
+  "pointer-events-auto mx-auto w-full max-w-5xl dm-glass-bar px-3 sm:px-4";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -77,10 +80,7 @@ export default function Navbar() {
     return hit?.href ?? "/";
   }, [pathname]);
 
-  const displayName = useMemo(
-    () => userName ?? "",
-    [userName]
-  );
+  const displayName = useMemo(() => userName ?? "", [userName]);
 
   const initials = useMemo(() => {
     if (!displayName) return "";
@@ -93,31 +93,28 @@ export default function Navbar() {
   }, [displayName]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
-      <div className="dm-container">
-        <div className="flex h-14 items-center justify-between gap-6">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-5">
+      <div className={shell}>
+        <div className="flex h-[3.25rem] items-center justify-between gap-3 sm:h-14 sm:gap-5">
           <Link
             href="/"
-            className="inline-flex items-center gap-2"
+            className="inline-flex min-w-0 items-center gap-2 rounded-xl py-1 dm-focus"
             onClick={() => setOpen(false)}
           >
             <Image
               src="/logo.png"
               alt="Midora Online"
-              width={36}
-              height={36}
-              className="rounded-lg"
+              width={34}
+              height={34}
+              className="size-[34px] shrink-0 rounded-lg sm:size-9"
               priority
             />
-            <div className="leading-tight">
-              <p className="text-sm font-semibold tracking-tight">
-                Midora Online
-              </p>
-              <p className="text-xs text-muted">Brand-first discovery</p>
-            </div>
+            <span className="truncate text-sm font-semibold tracking-tight text-foreground">
+              Midora Online
+            </span>
           </Link>
 
-          <nav className="hidden items-center gap-3 md:flex" aria-label="Main">
+          <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">
             {navItems.map((item) => {
               const active = item.href === activeHref;
               return (
@@ -125,10 +122,10 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={[
-                    "dm-pill dm-focus transition-colors",
+                    "rounded-full px-3.5 py-2 text-sm font-medium transition-colors dm-focus",
                     active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/80 hover:bg-primary/5",
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground",
                   ].join(" ")}
                 >
                   {item.label}
@@ -137,21 +134,21 @@ export default function Navbar() {
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {displayName ? (
               <Link
                 href="/account"
-                className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium dm-focus hover:opacity-95 transition-opacity"
+                className="hidden items-center gap-2 rounded-full bg-primary/90 px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 sm:inline-flex"
               >
-                <span className="grid size-7 place-items-center rounded-full bg-background/10 text-[11px] font-semibold">
+                <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-[11px] font-semibold">
                   {initials}
                 </span>
-                <span className="max-w-[140px] truncate">{displayName}</span>
+                <span className="max-w-[120px] truncate lg:max-w-[140px]">{displayName}</span>
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="hidden sm:inline-flex dm-pill dm-focus bg-background px-4 py-2 text-sm text-foreground/85 transition-colors hover:bg-primary/10"
+                className="hidden rounded-full bg-foreground/[0.07] px-4 py-2 text-sm font-medium text-foreground/90 transition-colors dm-focus hover:bg-foreground/[0.11] sm:inline-flex"
               >
                 Login
               </Link>
@@ -159,7 +156,7 @@ export default function Navbar() {
 
             <button
               type="button"
-              className="inline-flex md:hidden items-center justify-center rounded-xl bg-background px-3 py-2 text-sm transition-colors hover:bg-primary/10 dm-focus"
+              className="inline-flex items-center justify-center rounded-full bg-foreground/[0.07] px-3 py-2 text-sm font-medium text-foreground/85 transition-colors hover:bg-foreground/[0.11] md:hidden dm-focus"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
@@ -170,48 +167,46 @@ export default function Navbar() {
         </div>
 
         {open ? (
-          <div className="md:hidden pb-4">
-            <div className="rounded-xl bg-background p-2">
-              <div className="flex flex-col">
-                {navItems.map((item) => {
-                  const active = item.href === activeHref;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className={[
-                        "rounded-2xl px-4 py-3 text-sm font-medium dm-focus transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground"
-                          : "text-foreground/85 hover:bg-primary/5",
-                      ].join(" ")}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-                {displayName ? (
+          <div className="border-t border-foreground/[0.06] pb-3 pt-2 md:hidden">
+            <div className="flex flex-col gap-0.5 rounded-xl bg-foreground/[0.03] p-1.5">
+              {navItems.map((item) => {
+                const active = item.href === activeHref;
+                return (
                   <Link
-                    href="/account"
+                    key={item.href}
+                    href={item.href}
                     onClick={() => setOpen(false)}
-                    className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground dm-focus hover:opacity-95 transition-opacity"
+                    className={[
+                      "rounded-xl px-3 py-2.5 text-sm font-medium dm-focus transition-colors",
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground/85 hover:bg-foreground/[0.06]",
+                    ].join(" ")}
                   >
-                    <span className="grid size-7 place-items-center rounded-full bg-background/10 text-[11px] font-semibold">
-                      {initials}
-                    </span>
-                    <span className="max-w-[140px] truncate">{displayName}</span>
+                    {item.label}
                   </Link>
-                ) : (
-                  <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="mt-2 rounded-2xl bg-background px-4 py-3 text-center text-sm font-semibold text-foreground/80 transition-colors hover:bg-primary/10 dm-focus"
-                  >
-                    Login
-                  </Link>
-                )}
-              </div>
+                );
+              })}
+              {displayName ? (
+                <Link
+                  href="/account"
+                  onClick={() => setOpen(false)}
+                  className="mt-1 inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground dm-focus"
+                >
+                  <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-[11px] font-semibold">
+                    {initials}
+                  </span>
+                  <span className="max-w-[180px] truncate">{displayName}</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="mt-1 rounded-xl px-3 py-2.5 text-center text-sm font-semibold text-foreground/80 transition-colors hover:bg-foreground/[0.06] dm-focus"
+                >
+                  Login
+                </Link>
+              )}
             </div>
           </div>
         ) : null}

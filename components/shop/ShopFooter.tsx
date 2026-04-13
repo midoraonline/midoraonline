@@ -15,13 +15,13 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
   const location = locationDisplay(shop.location);
 
   return (
-    <footer className="mt-auto border-t border-border/80 bg-surface">
+    <footer className="mt-auto border-t border-foreground/[0.06] bg-surface/40 backdrop-blur-xl">
       <div className="dm-container py-8 sm:py-10">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
             <div className="mb-3 flex items-center gap-3">
               {shop.logo_url ? (
-                <div className="relative size-9 shrink-0 overflow-hidden rounded-xl border border-border">
+                <div className="relative size-9 shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/[0.06]">
                   <Image
                     src={shop.logo_url}
                     alt={`${shop.name} logo`}
@@ -31,7 +31,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   />
                 </div>
               ) : (
-                <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-primary/5">
+                <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
                   <span className="select-none text-xs font-bold text-foreground/30">
                     {shop.name.slice(0, 2).toUpperCase()}
                   </span>

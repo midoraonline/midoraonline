@@ -132,15 +132,18 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
 
   if (!authChecked) {
     return (
+      <div className="mx-auto w-full max-w-4xl">
       <div className="dm-card p-8 text-center">
         <p className="text-sm text-muted">Checking permissions…</p>
+      </div>
       </div>
     );
   }
 
   if (!isOwner) {
     return (
-      <div className="dm-card p-8 text-center space-y-4">
+      <div className="mx-auto w-full max-w-4xl">
+      <div className="dm-card space-y-4 p-8 text-center">
         <AlertCircle className="mx-auto size-8 text-muted" />
         <p className="text-sm font-semibold">Access denied</p>
         <p className="text-xs text-muted">
@@ -155,21 +158,24 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           Back to shop
         </button>
       </div>
+      </div>
     );
   }
 
   if (success) {
     return (
-      <div className="dm-card p-8 text-center space-y-3">
+      <div className="mx-auto w-full max-w-4xl">
+      <div className="dm-card space-y-3 p-8 text-center">
         <CheckCircle2 className="mx-auto size-8 text-green-600" />
         <p className="text-sm font-semibold">Changes saved!</p>
         <p className="text-xs text-muted">Redirecting to your shop…</p>
+      </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>
@@ -206,7 +212,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 Shop name <span className="text-red-500">*</span>
               </label>
               <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="e.g. My Coffee Shop"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
@@ -218,7 +224,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 Short description
               </label>
               <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="Tagline shown on the shop page"
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
@@ -230,7 +236,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 About
               </label>
               <textarea
-                className="min-h-[100px] w-full rounded-2xl border border-border bg-surface px-3 py-2 text-xs dm-focus resize-none"
+                className="dm-textarea-xs dm-focus"
                 placeholder="Longer description of your shop"
                 value={form.about}
                 onChange={(e) => set("about", e.target.value)}
@@ -242,7 +248,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 Shop type
               </label>
               <select
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs appearance-none pr-9 dm-focus"
                 value={form.shopType}
                 onChange={(e) =>
                   set("shopType", e.target.value as apiShops.ShopType)
@@ -259,7 +265,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 Location
               </label>
               <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="e.g. Kampala, Uganda"
                 value={form.location}
                 onChange={(e) => set("location", e.target.value)}
@@ -301,7 +307,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
               </label>
               <input
                 type="email"
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="hello@shop.com"
                 value={form.shopEmail}
                 onChange={(e) => set("shopEmail", e.target.value)}
@@ -312,7 +318,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 WhatsApp number
               </label>
               <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="+256700000000"
                 value={form.whatsappNumber}
                 onChange={(e) => set("whatsappNumber", e.target.value)}
@@ -332,7 +338,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 Open days
               </label>
               <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="e.g. Mon – Fri"
                 value={form.availabilityDays}
                 onChange={(e) => set("availabilityDays", e.target.value)}
@@ -343,7 +349,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
                 Hours
               </label>
               <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
+                className="dm-input-xs dm-focus"
                 placeholder="e.g. 9 AM – 6 PM"
                 value={form.availabilityHours}
                 onChange={(e) => set("availabilityHours", e.target.value)}

@@ -26,10 +26,10 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="block dm-card dm-card-hover p-5 dm-focus"
+      className="dm-focus block dm-card dm-card-hover p-5 sm:p-6"
     >
       <div className="flex gap-4">
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-xl border border-border bg-accent/[0.08]">
+        <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.06] ring-1 ring-foreground/[0.06] sm:size-[3.75rem]">
           {shop.logoUrl ? (
             <img
               src={shop.logoUrl}
@@ -39,7 +39,7 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
             />
           ) : (
             <span
-              className="grid size-full place-items-center text-sm font-semibold tracking-tight text-primary"
+              className="grid size-full place-items-center text-sm font-semibold tracking-tight text-foreground/45"
               aria-hidden
             >
               {initial}
@@ -51,7 +51,7 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-semibold tracking-tight">{shop.name}</h3>
             {shop.verified ? (
-              <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-foreground/80">
+              <span className="inline-flex items-center rounded-full bg-foreground/[0.07] px-2.5 py-1 text-xs font-semibold text-foreground/80">
                 Verified
               </span>
             ) : null}
@@ -59,10 +59,10 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
           <p className="mt-1 line-clamp-2 text-sm text-muted">{shop.tagline}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center rounded-full bg-accent/[0.08] px-3 py-1 text-xs font-medium text-secondary">
+            <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-3 py-1 text-xs font-medium text-muted">
               {shop.category}
             </span>
-            <span className="inline-flex items-center rounded-full bg-accent/[0.08] px-3 py-1 text-xs font-medium text-secondary">
+            <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-3 py-1 text-xs font-medium text-muted">
               {shop.location}
             </span>
           </div>

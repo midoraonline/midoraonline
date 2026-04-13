@@ -62,13 +62,13 @@ export default async function ShopDetails({
     }) ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 sm:space-y-10">
       <section>
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold tracking-tight">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
             Products &amp; Services
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-2 text-sm leading-relaxed text-muted">
             {items.length > 0
               ? `${items.length} item${items.length === 1 ? "" : "s"} from ${shop.name}`
               : `${shop.name} hasn't listed any items yet.`}
@@ -76,13 +76,13 @@ export default async function ShopDetails({
         </div>
 
         {items.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {items.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
         ) : (
-          <div className="dm-card p-8 text-center">
+          <div className="dm-card p-8 text-center sm:p-10">
             <p className="text-sm text-muted">
               No products listed yet. Check back soon.
             </p>
@@ -91,20 +91,20 @@ export default async function ShopDetails({
       </section>
 
       {showAboutSection ? (
-        <section className="dm-card p-6">
-          <h2 className="text-base font-semibold tracking-tight">
+        <section className="dm-card p-6 sm:p-8">
+          <h2 className="text-base font-semibold tracking-tight sm:text-lg">
             About {shop.name}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{about}</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">{about}</p>
         </section>
       ) : null}
 
       {extraContacts.length > 0 ? (
-        <section className="dm-card p-6">
-          <h2 className="text-base font-semibold tracking-tight">
+        <section className="dm-card p-6 sm:p-8">
+          <h2 className="text-base font-semibold tracking-tight sm:text-lg">
             More contact details
           </h2>
-          <ul className="mt-3 space-y-2 text-sm">
+          <ul className="mt-4 space-y-2.5 text-sm">
             {extraContacts.map((c, i) => (
               <li key={i} className="text-foreground/90">
                 <span className="text-muted capitalize">
@@ -117,21 +117,21 @@ export default async function ShopDetails({
         </section>
       ) : null}
 
-      <section className="dm-card bg-primary/[0.02] p-6">
-        <h2 className="text-base font-semibold tracking-tight">
+      <section className="dm-card p-6 sm:p-8">
+        <h2 className="text-base font-semibold tracking-tight sm:text-lg">
           Have a question?
         </h2>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
           Ask the {shop.name} AI concierge about products, pricing, availability
           or delivery — it&apos;s powered by Midora Online and ready to help.
         </p>
         <p className="mt-3 text-xs text-muted">
           Use the chat button in the bottom-right corner to get started.
         </p>
-        <p className="mt-4">
+        <p className="mt-6">
           <Link
             href="/policies"
-            className="inline-flex rounded-lg bg-background px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-primary/10 hover:text-foreground dm-focus"
+            className="dm-pill dm-focus inline-flex bg-foreground/[0.07] px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
           >
             View platform policies
           </Link>

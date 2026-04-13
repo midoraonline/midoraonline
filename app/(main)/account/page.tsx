@@ -57,16 +57,16 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="dm-card p-6 sm:p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Account</h1>
-        <p className="mt-2 text-sm text-muted">
+    <div className="mx-auto w-full max-w-4xl space-y-8 sm:space-y-10">
+      <section className="dm-card p-6 sm:p-8 lg:p-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Account</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
           Manage your Midora Online profile and session.
         </p>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="dm-card p-6 space-y-4">
+      <section className="grid gap-4 sm:gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="dm-card space-y-5 p-6 sm:p-7">
           <div>
             <p className="text-sm font-semibold tracking-tight">Profile</p>
             <p className="mt-1 text-xs text-muted">
@@ -77,7 +77,7 @@ export default function AccountPage() {
           {loading ? (
             <p className="text-sm text-muted">Loading your profile…</p>
           ) : user ? (
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2.5 text-sm">
               <p>
                 <span className="font-semibold text-foreground/90">Name: </span>
                 {user.full_name || "Not set"}
@@ -102,7 +102,7 @@ export default function AccountPage() {
               You&apos;re not signed in.{" "}
               <a
                 href="/login"
-                className="font-semibold text-foreground/80 hover:text-foreground"
+                className="font-semibold text-foreground/85 underline-offset-2 hover:underline"
               >
                 Log in
               </a>
@@ -111,7 +111,7 @@ export default function AccountPage() {
           )}
 
           {error ? (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-2xl px-3 py-2">
+            <p className="rounded-2xl border border-red-200/80 bg-red-50/90 px-3 py-2 text-xs text-red-700 backdrop-blur-sm">
               {error}
             </p>
           ) : null}
@@ -119,15 +119,15 @@ export default function AccountPage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="dm-pill dm-focus border border-border bg-surface hover:bg-primary/5 text-sm font-semibold px-4 py-2"
+            className="dm-pill dm-focus bg-foreground/[0.07] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
           >
             Logout
           </button>
         </div>
 
-        <div className="dm-card p-6 space-y-3">
+        <div className="dm-card space-y-3 p-6 sm:p-7">
           <p className="text-sm font-semibold tracking-tight">Session</p>
-          <p className="text-xs text-muted">
+          <p className="text-xs leading-relaxed text-muted sm:text-sm">
             This area can later show your active shops, subscriptions, and recent
             AI chats. For now it&apos;s a simple placeholder.
           </p>
@@ -136,4 +136,3 @@ export default function AccountPage() {
     </div>
   );
 }
-

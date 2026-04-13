@@ -132,17 +132,23 @@ export default function ShopSettingsPage() {
 
   if (loading) {
     return (
-      <div className="dm-card p-6">
-        <p className="text-sm text-muted">Loading shop settings…</p>
+      <div className="mx-auto w-full max-w-4xl">
+        <div className="dm-card p-6 sm:p-8">
+          <p className="text-sm text-muted">Loading shop settings…</p>
+        </div>
       </div>
     );
   }
 
   if (error && !shop) {
     return (
-      <div className="dm-card p-6">
-        <p className="text-sm text-red-600">{error}</p>
-        <Link href="/open-shop" className="mt-3 inline-block text-sm font-semibold text-foreground/80 hover:text-foreground">Back to Open shop</Link>
+      <div className="mx-auto w-full max-w-4xl">
+        <div className="dm-card space-y-3 p-6 sm:p-8">
+          <p className="text-sm text-red-600">{error}</p>
+          <Link href="/open-shop" className="inline-block text-sm font-semibold text-foreground/85 underline-offset-2 hover:underline">
+            Back to Open shop
+          </Link>
+        </div>
       </div>
     );
   }
@@ -150,14 +156,17 @@ export default function ShopSettingsPage() {
   if (!shop) return null;
 
   return (
-    <div className="space-y-6">
-      <section className="dm-card p-6 sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Shop settings</h1>
+    <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-8">
+      <section className="dm-card p-6 sm:p-8 lg:p-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Shop settings</h1>
             <p className="mt-1 text-sm text-muted">{shop.name}</p>
           </div>
-          <Link href={`/shops/${encodeURIComponent(shop.slug)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-semibold">
+          <Link
+            href={`/shops/${encodeURIComponent(shop.slug)}`}
+            className="dm-pill dm-focus inline-flex w-full shrink-0 justify-center bg-foreground/[0.07] px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1] sm:w-auto"
+          >
             View shop
           </Link>
         </div>
@@ -168,19 +177,19 @@ export default function ShopSettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">Shop name *</label>
-              <input className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={name} onChange={(e) => setName(e.target.value)} />
+              <input className="dm-input dm-focus" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">Slug (URL) *</label>
-              <input className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={slug} onChange={(e) => setSlug(e.target.value)} />
+              <input className="dm-input dm-focus" value={slug} onChange={(e) => setSlug(e.target.value)} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">Description</label>
-              <input className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={description} onChange={(e) => setDescription(e.target.value)} />
+              <input className="dm-input dm-focus" value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">About</label>
-              <textarea className="min-h-[80px] w-full rounded-2xl border border-border bg-surface px-3 py-2 text-sm dm-focus" value={about} onChange={(e) => setAbout(e.target.value)} />
+              <textarea className="dm-textarea !min-h-[80px] dm-focus" value={about} onChange={(e) => setAbout(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">Logo</label>
@@ -192,7 +201,7 @@ export default function ShopSettingsPage() {
               />
               {logoUrl && (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-background">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-foreground/[0.06] ring-1 ring-foreground/[0.08]">
                     <Image
                       src={logoUrl}
                       alt="Shop logo"
@@ -206,7 +215,7 @@ export default function ShopSettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">Shop type</label>
-              <select className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={shopType} onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}>
+              <select className="dm-input appearance-none pr-10 dm-focus" value={shopType} onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}>
                 <option value="product">Product</option>
                 <option value="service">Service</option>
                 <option value="both">Both</option>
@@ -214,15 +223,15 @@ export default function ShopSettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">Shop email</label>
-              <input type="email" className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={shopEmail} onChange={(e) => setShopEmail(e.target.value)} />
+              <input type="email" className="dm-input dm-focus" value={shopEmail} onChange={(e) => setShopEmail(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">WhatsApp</label>
-              <input className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} />
+              <input className="dm-input dm-focus" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">Location</label>
-              <input className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={locationDisplay} onChange={(e) => setLocationDisplay(e.target.value)} placeholder="e.g. Kampala, Uganda" />
+              <input className="dm-input dm-focus" value={locationDisplay} onChange={(e) => setLocationDisplay(e.target.value)} placeholder="e.g. Kampala, Uganda" />
             </div>
           </div>
           <div className="pt-2">
@@ -233,12 +242,12 @@ export default function ShopSettingsPage() {
         </form>
       </section>
 
-      <section className="dm-card p-6 sm:p-8">
+      <section className="dm-card p-6 sm:p-8 lg:p-10">
         <h2 className="text-lg font-semibold tracking-tight">AI concierge context</h2>
         <p className="mt-1 text-sm text-muted">Policies, FAQs, and notes the in-shop concierge uses to answer questions.</p>
         <ul className="mt-4 space-y-2">
           {contextEntries.map((entry) => (
-            <li key={entry.id} className="rounded-2xl border border-border bg-surface/50 px-3 py-2 text-xs">
+            <li key={entry.id} className="rounded-2xl bg-foreground/[0.04] px-3 py-2 text-xs ring-1 ring-foreground/[0.06]">
               <span className="font-medium text-foreground/80">{entry.context_type ?? entry.key ?? "context"}:</span>{" "}
               {(entry.content ?? entry.value ?? "").slice(0, 120)}{(entry.content ?? entry.value ?? "").length > 120 ? "…" : ""}
             </li>
@@ -247,7 +256,7 @@ export default function ShopSettingsPage() {
         <form onSubmit={handleAddContext} className="mt-4 space-y-3">
           <div>
             <label className="text-xs font-medium text-foreground/80">Type</label>
-            <select className="mt-1 h-9 w-full max-w-[200px] rounded-2xl border border-border bg-surface px-3 text-sm dm-focus" value={newContextType} onChange={(e) => setNewContextType(e.target.value)}>
+            <select className="dm-input mt-1 max-w-[220px] appearance-none pr-10 dm-focus" value={newContextType} onChange={(e) => setNewContextType(e.target.value)}>
               <option value="policy">Policy</option>
               <option value="faq">FAQ</option>
               <option value="tone">Tone / brief</option>
@@ -255,9 +264,9 @@ export default function ShopSettingsPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-foreground/80">Content</label>
-            <textarea className="mt-1 min-h-[100px] w-full rounded-2xl border border-border bg-surface px-3 py-2 text-sm dm-focus" value={newContextContent} onChange={(e) => setNewContextContent(e.target.value)} placeholder="e.g. We ship worldwide within 5–7 days." />
+            <textarea className="dm-textarea mt-1 !min-h-[100px] dm-focus" value={newContextContent} onChange={(e) => setNewContextContent(e.target.value)} placeholder="e.g. We ship worldwide within 5–7 days." />
           </div>
-          <button type="submit" disabled={addingContext || !newContextContent.trim()} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-semibold disabled:opacity-60">
+          <button type="submit" disabled={addingContext || !newContextContent.trim()} className="dm-pill dm-focus bg-foreground/[0.07] px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1] disabled:opacity-60">
             {addingContext ? "Adding…" : "Add context"}
           </button>
         </form>
