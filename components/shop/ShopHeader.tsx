@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { Contact, Shop } from "@/lib/api/shops";
 import { locationDisplay, platformLabel } from "./shopUtils";
 import ShopActions from "./ShopActions";
-import ShopHeaderAuth from "./ShopHeaderAuth";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -117,8 +116,7 @@ export default function ShopHeader({ shop }: { shop: Shop }) {
                   )}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-                  <ShopHeaderAuth />
+                <div className="shrink-0">
                   <ShopActions shopSlug={shop.slug} shopName={shop.name} shopId={shop.id} />
                 </div>
             </div>
