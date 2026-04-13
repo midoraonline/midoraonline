@@ -35,6 +35,16 @@ export type VerifyEmailResponse = {
   user: MeResponse;
 } & TokenPair;
 
+export type GoogleAuthUrlResponse = {
+  url: string;
+  state: string;
+};
+
+export type GoogleExchangeRequest = {
+  code: string;
+  state: string;
+};
+
 export function register(body: RegisterRequest) {
   return apiFetch<TokenPair>("/api/v1/auth/register", {
     method: "POST",
@@ -63,5 +73,16 @@ export function me(token: string) {
 export function verifyEmail(token: string) {
   const qs = new URLSearchParams({ token }).toString();
   return apiFetch<VerifyEmailResponse>(`/api/v1/auth/verify-email?${qs}`);
+}
+
+export function getGoogleAuthUrl() {
+  return apiFetch<GoogleAuthUrlResponse>("/api/v1/auth/google/url");
+}
+
+export function exchangeGoogleCode(body: GoogleExchangeRequest) {
+  return apiFetch<TokenPair>("/api/v1/auth/google/exchange", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
