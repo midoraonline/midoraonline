@@ -1,17 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Shop } from "@/lib/api/shops";
+import type { Contact, Shop } from "@/lib/api/shops";
 import { locationDisplay, platformLabel } from "./shopUtils";
 import ShopActions from "./ShopActions";
-import {
-  ArrowLeft,
-  MapPin,
-  Mail,
-  Phone,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-} from "lucide-react";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 function ShopLogo({
   logoUrl,
@@ -44,181 +37,209 @@ function ShopLogo({
   );
 }
 
+function contactHref(c: Contact): { href: string; external?: boolean } {
+  const v = c.value;
+  const t = (c.type ?? "").toLowerCase();
+  if (t === "email") return { href: `mailto:${v}` };
+  if (t === "whatsapp")
+    return { href: `https://wa.me/${v.replace(/\D/g, "")}`, external: true };
+  if (t === "phone") return { href: `tel:${v.replace(/\s/g, "")}` };
+  if (v.startsWith("http")) return { href: v, external: true };
+  return { href: `tel:${v}` };
+}
+
+function ContactChipIcon({ c }: { c: Contact }) {
+  const t = (c.type ?? "").toLowerCase();
+  if (t === "whatsapp") return <WhatsAppIcon className="size-5 shrink-0" />;
+  if (t === "email")
+    return <MaterialSymbol name="mail" className="!text-[22px] leading-none" />;
+  if (t === "phone")
+    return <MaterialSymbol name="call" className="!text-[22px] leading-none" />;
+  if (c.value.startsWith("http"))
+    return <MaterialSymbol name="open_in_new" className="!text-[22px] leading-none" />;
+  return <MaterialSymbol name="contact_mail" className="!text-[22px] leading-none" />;
+}
+
+/** Plain icon control — no fill, ring, or focus box */
+const contactIcon =
+  "inline-flex items-center justify-center p-1.5 text-foreground/70 outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none";
+
+function filterDuplicateContacts(shop: Shop) {
+  const emailNorm = shop.shop_email?.trim().toLowerCase() ?? "";
+  const waNorm = shop.whatsapp_number?.replace(/\D/g, "") ?? "";
+  return (
+    shop.contacts?.filter((c) => {
+      const v = c.value.trim();
+      if (emailNorm && v.toLowerCase() === emailNorm) return false;
+      if (waNorm && v.replace(/\D/g, "") === waNorm) return false;
+      return true;
+    }) ?? []
+  );
+}
+
 export default function ShopHeader({ shop }: { shop: Shop }) {
   const location = locationDisplay(shop.location);
+  const heroContacts = filterDuplicateContacts(shop);
 
   return (
     <>
-      {/* ── sticky floating nav bar ──────────────────────────────────────
-          Must be a direct sibling of the hero (not wrapped inside the same
-          container) so that sticky positioning works for the full page scroll. */}
       <div className="sticky top-0 z-40 border-b border-border/60 bg-surface/80 backdrop-blur-md">
         <div className="dm-container">
-          <div className="flex h-14 items-center gap-3">
-            {/* back arrow — always visible, never shrinks */}
+          <div className="flex h-14 items-center gap-2 sm:gap-3">
             <Link
               href="/shops"
-              className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground dm-focus rounded-xl px-2 py-1.5 transition-colors shrink-0"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted transition-colors hover:bg-accent/10 hover:text-foreground dm-focus"
             >
-              <ArrowLeft className="size-3.5" />
-              <span className="hidden sm:inline">Mall</span>
+              <MaterialSymbol name="arrow_back" className="!text-[18px] leading-none" />
+              <span className="hidden sm:inline">Shops</span>
             </Link>
 
-            {/* shop identity — flex-1 so it claims all remaining space and
-                name truncates gracefully instead of being squeezed out */}
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 border-l border-border/60 pl-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1 sm:pl-2">
               <ShopLogo logoUrl={shop.logo_url} name={shop.name} />
               <div className="min-w-0">
-                <p className="text-sm font-semibold tracking-tight truncate leading-tight">
+                <p className="truncate text-sm font-semibold leading-tight tracking-tight">
                   {shop.name}
                 </p>
                 {shop.category && (
-                  <p className="text-[11px] text-muted truncate leading-tight hidden sm:block">
+                  <p className="hidden truncate text-[11px] leading-tight text-muted sm:block">
                     {shop.category}
                   </p>
                 )}
               </div>
               {shop.is_active && (
-                <CheckCircle2 className="size-3.5 text-green-600 shrink-0 hidden sm:block" />
+                <MaterialSymbol
+                  name="verified"
+                  className="!text-[18px] leading-none shrink-0 text-green-600 hidden sm:inline-block"
+                  filled
+                />
               )}
             </div>
 
-            {/* actions — shrink-0 so they never get compressed */}
             <div className="shrink-0">
-              <ShopActions
-                shopSlug={shop.slug}
-                shopName={shop.name}
-                shopId={shop.id}
-              />
+              <ShopActions shopSlug={shop.slug} shopName={shop.name} shopId={shop.id} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── hero banner ──────────────────────────────────────────────────── */}
       <div className="border-b border-border/60 bg-surface">
         <div className="dm-container py-8 sm:py-10">
           <div className="max-w-2xl space-y-4">
-            {/* name + badges */}
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 {shop.name}
               </h1>
               {shop.is_active ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-foreground/80">
-                  <CheckCircle2 className="size-3 text-green-600" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/5 px-2.5 py-1 text-xs font-semibold text-foreground/80">
+                  <MaterialSymbol
+                    name="verified"
+                    className="!text-[14px] leading-none text-green-600"
+                    filled
+                  />
                   Verified
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-primary/5 px-2.5 py-1 text-xs font-semibold text-foreground/50">
+                <span className="inline-flex items-center rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-foreground/50">
                   Temporarily Closed
                 </span>
               )}
             </div>
 
-            {/* description */}
             {shop.description && (
-              <p className="text-sm text-muted leading-relaxed">
-                {shop.description}
-              </p>
+              <p className="text-sm leading-relaxed text-muted">{shop.description}</p>
             )}
 
-            {/* meta pills */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {shop.category && (
-                <span className="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
+                <span className="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground/80">
                   {shop.category}
                 </span>
               )}
               {shop.shop_type && (
-                <span className="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80 capitalize">
+                <span className="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium capitalize text-foreground/80">
                   {shop.shop_type === "both"
                     ? "Products & Services"
                     : shop.shop_type}
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
-                  <MapPin className="size-3 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground/80">
+                  <MaterialSymbol name="location_on" className="!text-[14px] shrink-0 leading-none" />
                   {location}
                 </span>
               )}
               {shop.availability?.hours && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80">
-                  <Clock className="size-3 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground/80">
+                  <MaterialSymbol name="schedule" className="!text-[14px] shrink-0 leading-none" />
                   {shop.availability.hours}
-                  {shop.availability.days
-                    ? ` · ${shop.availability.days}`
-                    : ""}
+                  {shop.availability.days ? ` · ${shop.availability.days}` : ""}
                 </span>
               )}
             </div>
 
-            {/* contact + social links */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1">
               {shop.whatsapp_number && (
                 <a
                   href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
+                  className={contactIcon}
+                  title={`WhatsApp ${shop.whatsapp_number}`}
+                  aria-label={`Open WhatsApp ${shop.whatsapp_number}`}
                 >
-                  <Phone className="size-3" />
-                  WhatsApp
+                  <WhatsAppIcon className="size-5" />
                 </a>
               )}
               {shop.shop_email && (
                 <a
                   href={`mailto:${shop.shop_email}`}
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
+                  className={contactIcon}
+                  title={shop.shop_email}
+                  aria-label={`Email ${shop.shop_email}`}
                 >
-                  <Mail className="size-3" />
-                  Email
+                  <MaterialSymbol name="mail" className="!text-[22px] leading-none" />
                 </a>
               )}
-              {shop.contacts?.map((c, i) => (
-                <a
-                  key={i}
-                  href={
-                    c.type === "email"
-                      ? `mailto:${c.value}`
-                      : c.type === "phone" || c.type === "whatsapp"
-                        ? `tel:${c.value}`
-                        : c.value.startsWith("http")
-                          ? c.value
-                          : `tel:${c.value}`
-                  }
-                  target={c.value.startsWith("http") ? "_blank" : undefined}
-                  rel={
-                    c.value.startsWith("http")
-                      ? "noopener noreferrer"
-                      : undefined
-                  }
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
-                >
-                  {c.label ?? c.value}
-                </a>
-              ))}
-              {shop.social_links?.map((s, i) => (
-                <a
-                  key={i}
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-primary/5 dm-focus transition-colors"
-                >
-                  <ExternalLink className="size-3" />
-                  {platformLabel(s.platform)}
-                </a>
-              ))}
+              {heroContacts.map((c, i) => {
+                const { href, external } = contactHref(c);
+                const label = c.label ?? c.type ?? c.value;
+                return (
+                  <a
+                    key={i}
+                    href={href}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noopener noreferrer" : undefined}
+                    className={contactIcon}
+                    title={label}
+                    aria-label={label}
+                  >
+                    <ContactChipIcon c={c} />
+                  </a>
+                );
+              })}
+              {shop.social_links?.map((s, i) => {
+                const label = platformLabel(s.platform);
+                return (
+                  <a
+                    key={i}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={contactIcon}
+                    title={label}
+                    aria-label={`${label} (opens in new tab)`}
+                  >
+                    <MaterialSymbol name="open_in_new" className="!text-[22px] leading-none" />
+                  </a>
+                );
+              })}
             </div>
 
-            {/* powered by */}
-            <p className="text-[11px] text-muted pt-1">
+            <p className="pt-1 text-[11px] text-muted">
               Powered by{" "}
               <Link
                 href="/"
-                className="font-semibold text-foreground/60 hover:text-foreground transition-colors"
+                className="font-semibold text-foreground/60 outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none"
               >
                 Midora Online
               </Link>

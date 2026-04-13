@@ -2,9 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Heart, UserPlus, UserCheck, Share2, Check, Pencil } from "lucide-react";
-
+import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
+
+const baseIcon =
+  "inline-flex size-9 items-center justify-center rounded-lg text-foreground/70 outline-none ring-0 shadow-none transition-all duration-200 focus:outline-none focus-visible:outline-none";
+
+/** Default + cool accent wash on hover */
+const hoverNeutral = "hover:bg-accent/18 hover:text-accent";
 
 export default function ShopActions({
   shopSlug,
@@ -20,13 +25,11 @@ export default function ShopActions({
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const [isOwner, setIsOwner] = useState(false);
 
-  // persist follow/like per shop in localStorage
   useEffect(() => {
     setLiked(localStorage.getItem(`shop_liked_${shopSlug}`) === "1");
     setFollowed(localStorage.getItem(`shop_followed_${shopSlug}`) === "1");
   }, [shopSlug]);
 
-  // check if the current signed-in user owns this shop
   useEffect(() => {
     const token =
       typeof window !== "undefined"
@@ -69,93 +72,87 @@ export default function ShopActions({
         return;
       }
     } catch {
-      // user cancelled or API unavailable — fall through to clipboard
+      // fall through
     }
     try {
       await navigator.clipboard.writeText(url);
       setShareState("copied");
       setTimeout(() => setShareState("idle"), 2200);
     } catch {
-      // clipboard unavailable — no-op
+      // no-op
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {/* edit — owner only */}
+    <div className="flex items-center gap-0.5 sm:gap-1">
       {isOwner && (
         <Link
           href={`/shops/${shopSlug}/edit`}
-          className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-surface px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all text-foreground/70 hover:bg-primary/5 hover:text-foreground"
+          className={`${baseIcon} ${hoverNeutral}`}
+          title="Edit shop"
           aria-label="Edit shop"
         >
-          <Pencil className="size-3.5" />
-          <span className="hidden sm:inline">Edit shop</span>
+          <MaterialSymbol name="edit" className="!text-[20px] leading-none sm:!text-[22px]" />
         </Link>
       )}
 
-      {/* like */}
       <button
         type="button"
         onClick={toggleLike}
         aria-label={liked ? "Unlike shop" : "Like shop"}
         aria-pressed={liked}
+        title={liked ? "Unlike" : "Like"}
         className={[
-          "inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all",
+          baseIcon,
           liked
-            ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/70"
-            : "border-border bg-surface text-foreground/70 hover:bg-primary/5 hover:text-foreground",
+            ? "text-rose-600 hover:bg-rose-100/90 hover:text-rose-700"
+            : hoverNeutral,
         ].join(" ")}
       >
-        <Heart
-          className={["size-3.5 transition-transform", liked ? "fill-current scale-110" : ""].join(" ")}
+        <MaterialSymbol
+          name="favorite"
+          className="!text-[20px] leading-none sm:!text-[22px]"
+          filled={liked}
         />
-        <span className="hidden sm:inline">{liked ? "Liked" : "Like"}</span>
       </button>
 
-      {/* follow */}
       <button
         type="button"
         onClick={toggleFollow}
         aria-label={followed ? "Unfollow shop" : "Follow shop"}
         aria-pressed={followed}
+        title={followed ? "Following" : "Follow"}
         className={[
-          "inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all",
+          baseIcon,
           followed
-            ? "border-border bg-primary text-primary-foreground hover:opacity-90"
-            : "border-border bg-surface text-foreground/70 hover:bg-primary/5 hover:text-foreground",
+            ? "text-primary hover:bg-primary/15 hover:text-primary"
+            : hoverNeutral,
         ].join(" ")}
       >
-        {followed ? (
-          <UserCheck className="size-3.5" />
-        ) : (
-          <UserPlus className="size-3.5" />
-        )}
-        <span className="hidden sm:inline">
-          {followed ? "Following" : "Follow"}
-        </span>
+        <MaterialSymbol
+          name={followed ? "how_to_reg" : "person_add"}
+          className="!text-[20px] leading-none sm:!text-[22px]"
+          filled={followed}
+        />
       </button>
 
-      {/* share */}
       <button
         type="button"
         onClick={handleShare}
-        aria-label="Share shop"
+        aria-label={shareState === "copied" ? "Link copied" : "Share shop"}
+        title={shareState === "copied" ? "Copied" : "Share"}
         className={[
-          "inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 sm:px-3 text-xs font-medium dm-focus transition-all",
+          baseIcon,
           shareState === "copied"
-            ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400"
-            : "border-border bg-surface text-foreground/70 hover:bg-primary/5 hover:text-foreground",
+            ? "text-green-700 hover:bg-emerald-100/90 hover:text-green-800"
+            : hoverNeutral,
         ].join(" ")}
       >
         {shareState === "copied" ? (
-          <Check className="size-3.5" />
+          <MaterialSymbol name="check" className="!text-[20px] leading-none sm:!text-[22px]" />
         ) : (
-          <Share2 className="size-3.5" />
+          <MaterialSymbol name="share" className="!text-[20px] leading-none sm:!text-[22px]" />
         )}
-        <span className="hidden sm:inline">
-          {shareState === "copied" ? "Copied!" : "Share"}
-        </span>
       </button>
     </div>
   );

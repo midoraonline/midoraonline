@@ -31,10 +31,10 @@ export default async function ShopListing() {
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
                   <h1 className="text-2xl font-semibold tracking-tight">
-                    Mall Map
+                    Shop List
                   </h1>
                   <p className="mt-1 text-sm text-muted">
-                    Browse shops by category or location. Brands come first.
+                    Browse shops by category or location.
                   </p>
                 </div>
                 <div className="grid w-full gap-3 md:max-w-xl md:grid-cols-3">

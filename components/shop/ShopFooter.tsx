@@ -2,20 +2,26 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Shop } from "@/lib/api/shops";
 import { locationDisplay, platformLabel } from "./shopUtils";
-import { MapPin, Mail, Phone, ExternalLink } from "lucide-react";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+
+const footerIcon =
+  "inline-flex items-center justify-center p-1.5 text-foreground/70 outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none";
+
+const footerLink =
+  "block rounded-lg px-2 py-1.5 text-sm text-muted transition-colors hover:bg-background hover:text-foreground";
 
 export default function ShopFooter({ shop }: { shop: Shop }) {
   const location = locationDisplay(shop.location);
 
   return (
-    <footer className="border-t border-border/80 bg-surface mt-auto">
-      <div className="dm-container py-10">
+    <footer className="mt-auto border-t border-border/80 bg-surface">
+      <div className="dm-container py-8 sm:py-10">
         <div className="grid gap-8 md:grid-cols-3">
-          {/* brand */}
           <div>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="mb-3 flex items-center gap-3">
               {shop.logo_url ? (
-                <div className="relative size-9 overflow-hidden rounded-xl border border-border shrink-0">
+                <div className="relative size-9 shrink-0 overflow-hidden rounded-xl border border-border">
                   <Image
                     src={shop.logo_url}
                     alt={`${shop.name} logo`}
@@ -25,104 +31,81 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   />
                 </div>
               ) : (
-                <div className="size-9 rounded-xl border border-border bg-primary/5 grid place-items-center shrink-0">
-                  <span className="text-xs font-bold text-foreground/30 select-none">
+                <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-primary/5">
+                  <span className="select-none text-xs font-bold text-foreground/30">
                     {shop.name.slice(0, 2).toUpperCase()}
                   </span>
                 </div>
               )}
-              <p className="text-sm font-semibold tracking-tight">
-                {shop.name}
-              </p>
+              <p className="text-sm font-semibold tracking-tight">{shop.name}</p>
             </div>
-            {(shop.about ?? shop.description) && (
-              <p className="text-sm text-muted leading-relaxed">
-                {shop.about ?? shop.description}
-              </p>
-            )}
             {location && (
-              <p className="mt-3 inline-flex items-center gap-1 text-xs text-muted">
-                <MapPin className="size-3 shrink-0" />
+              <p className="inline-flex items-center gap-1.5 text-xs text-muted">
+                <MaterialSymbol name="location_on" className="!text-[14px] leading-none" />
                 {location}
               </p>
             )}
           </div>
 
-          {/* contact */}
           <div>
-            <p className="text-sm font-semibold">Contact</p>
-            <ul className="mt-3 space-y-2 text-sm">
+            <p className="text-sm font-semibold text-foreground">Reach out</p>
+            <div className="mt-3 flex flex-wrap gap-1">
               {shop.shop_email && (
-                <li>
-                  <a
-                    href={`mailto:${shop.shop_email}`}
-                    className="inline-flex items-center gap-1.5 text-muted hover:text-foreground transition-colors"
-                  >
-                    <Mail className="size-3.5 shrink-0" />
-                    {shop.shop_email}
-                  </a>
-                </li>
+                <a
+                  href={`mailto:${shop.shop_email}`}
+                  className={footerIcon}
+                  title={shop.shop_email}
+                  aria-label={`Email ${shop.shop_email}`}
+                >
+                  <MaterialSymbol name="mail" className="!text-[22px] leading-none" />
+                </a>
               )}
               {shop.whatsapp_number && (
-                <li>
-                  <a
-                    href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-muted hover:text-foreground transition-colors"
-                  >
-                    <Phone className="size-3.5 shrink-0" />
-                    {shop.whatsapp_number}
-                  </a>
-                </li>
+                <a
+                  href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={footerIcon}
+                  title={`WhatsApp ${shop.whatsapp_number}`}
+                  aria-label={`WhatsApp ${shop.whatsapp_number}`}
+                >
+                  <WhatsAppIcon className="size-5" />
+                </a>
               )}
-              {shop.contacts?.map((c, i) => (
-                <li key={i}>
-                  <span className="text-muted">{c.label ?? c.type}: </span>
-                  <span className="text-foreground/80">{c.value}</span>
-                </li>
-              ))}
-              {shop.social_links?.map((s, i) => (
-                <li key={i}>
+              {shop.social_links?.map((s, i) => {
+                const label = platformLabel(s.platform);
+                return (
                   <a
+                    key={i}
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-muted hover:text-foreground transition-colors"
+                    className={footerIcon}
+                    title={label}
+                    aria-label={`${label} (opens in new tab)`}
                   >
-                    <ExternalLink className="size-3.5 shrink-0" />
-                    {platformLabel(s.platform)}
+                    <MaterialSymbol name="open_in_new" className="!text-[22px] leading-none" />
                   </a>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
           </div>
 
-          {/* platform */}
           <div>
-            <p className="text-sm font-semibold">Platform</p>
-            <ul className="mt-3 space-y-2 text-sm">
+            <p className="text-sm font-semibold text-foreground">Platform</p>
+            <ul className="mt-3 space-y-1">
               <li>
-                <Link
-                  className="text-muted hover:text-foreground transition-colors"
-                  href="/policies"
-                >
+                <Link href="/policies" className={footerLink}>
                   Platform policies
                 </Link>
               </li>
               <li>
-                <Link
-                  className="text-muted hover:text-foreground transition-colors"
-                  href="/termsandconditions"
-                >
+                <Link href="/termsandconditions" className={footerLink}>
                   Terms &amp; Conditions
                 </Link>
               </li>
               <li>
-                <Link
-                  className="text-muted hover:text-foreground transition-colors"
-                  href="/shops"
-                >
+                <Link href="/shops" className={footerLink}>
                   Browse all shops
                 </Link>
               </li>
@@ -130,14 +113,13 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
           </div>
         </div>
 
-        {/* bottom bar */}
-        <div className="mt-10 flex flex-col gap-3 border-t border-border/80 pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-3 border-t border-border/80 pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {shop.name}. All rights reserved.
           </p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 hover:text-foreground transition-colors dm-focus rounded-xl"
+            className="inline-flex items-center gap-2 text-muted outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none"
           >
             <Image
               src="/logo.png"

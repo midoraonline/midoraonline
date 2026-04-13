@@ -50,6 +50,19 @@ body {
   font-family: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
 }
 
+/* Google Material Symbols Outlined — loaded via layout <link> */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.25rem;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  user-select: none;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
 /* Home & marketing: scroll reveal (respects reduced motion) */
 .home-reveal {
   opacity: 0;
@@ -93,16 +106,15 @@ body {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
   }
 
   .dm-card-hover {
-    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+    transition: border-color 200ms ease, transform 200ms ease;
   }
 
   .dm-card-hover:hover {
-    border-color: rgba(102, 121, 143, 0.22);
-    box-shadow: var(--shadow);
+    border-color: rgba(102, 121, 143, 0.2);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -113,7 +125,11 @@ body {
 
   .dm-focus {
     @apply focus:outline-none;
-    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  .dm-focus:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 
   .dm-pill {

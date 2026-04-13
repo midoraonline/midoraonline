@@ -16,7 +16,7 @@ export default function ShopChatWidget({
   return (
     <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
       {open ? (
-        <div className="w-[min(100%,320px)] sm:w-[360px] rounded-2xl border border-border bg-surface shadow-sm overflow-hidden sm:rounded-3xl">
+        <div className="w-[min(100%,320px)] sm:w-[360px] overflow-hidden rounded-2xl border border-border bg-surface sm:rounded-3xl">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-surface/95">
             <div>
               <p className="text-xs font-semibold tracking-tight">
@@ -44,7 +44,7 @@ export default function ShopChatWidget({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold shadow-sm dm-focus hover:opacity-95 transition-opacity"
+        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-95 dm-focus"
       >
         <span className="grid size-6 place-items-center rounded-full bg-background/15">
           <MessageCircle className="size-3.5" />

@@ -1,13 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
 
+const footerLink =
+  "inline-block rounded-lg px-2 py-1.5 text-muted transition-colors hover:bg-background hover:text-foreground";
+
 export default function Footer() {
   return (
     <footer className="border-t border-border/80 bg-surface">
       <div className="dm-container py-8 sm:py-10">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           <div>
-            <Link href="/" className="inline-flex items-center gap-2 mb-3">
+            <Link href="/" className="mb-3 inline-flex items-center gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-background">
               <Image
                 src="/logo.png"
                 alt="Midora Online"
@@ -24,39 +27,30 @@ export default function Footer() {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <p className="text-sm font-semibold">Explore</p>
-              <ul className="mt-3 space-y-2 text-sm">
+              <p className="text-sm font-semibold text-foreground">Explore</p>
+              <ul className="mt-3 space-y-1 text-sm">
                 <li>
-                  <Link className="text-muted hover:text-foreground" href="/shops">
+                  <Link href="/shops" className={footerLink}>
                     Shops
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    className="text-muted hover:text-foreground"
-                    href="/products"
-                  >
+                  <Link href="/products" className={footerLink}>
                     Products
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <p className="text-sm font-semibold">Company</p>
-              <ul className="mt-3 space-y-2 text-sm">
+              <p className="text-sm font-semibold text-foreground">Company</p>
+              <ul className="mt-3 space-y-1 text-sm">
                 <li>
-                  <Link
-                    className="text-muted hover:text-foreground"
-                    href="/aboutus"
-                  >
+                  <Link href="/aboutus" className={footerLink}>
                     About
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    className="text-muted hover:text-foreground"
-                    href="/contactus"
-                  >
+                  <Link href="/contactus" className={footerLink}>
                     Contact
                   </Link>
                 </li>
@@ -65,33 +59,25 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold">Legal</p>
-            <ul className="mt-3 space-y-2 text-sm">
+            <p className="text-sm font-semibold text-foreground">Legal</p>
+            <ul className="mt-3 space-y-1 text-sm">
               <li>
-                <Link
-                  className="text-muted hover:text-foreground"
-                  href="/policies"
-                >
+                <Link href="/policies" className={footerLink}>
                   Policies
                 </Link>
               </li>
               <li>
-                <Link
-                  className="text-muted hover:text-foreground"
-                  href="/termsandconditions"
-                >
+                <Link href="/termsandconditions" className={footerLink}>
                   Terms & Conditions
                 </Link>
               </li>
             </ul>
 
-            <p className="mt-6 text-sm text-muted">
-              Kampala • Uganda • Online
-            </p>
+            <p className="mt-6 text-sm text-muted">Kampala • Uganda • Online</p>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-2 border-t border-border/80 pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-2 border-t border-border/80 pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Midora Online. All rights reserved.</p>
           <p>
             Rent a shop for{" "}

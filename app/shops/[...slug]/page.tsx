@@ -47,9 +47,22 @@ export default async function ShopDetails({
     items = [];
   }
 
+  const desc = (shop.description ?? "").trim();
+  const about = (shop.about ?? "").trim();
+  const showAboutSection = Boolean(about && about !== desc);
+
+  const emailNorm = shop.shop_email?.trim().toLowerCase() ?? "";
+  const waNorm = shop.whatsapp_number?.replace(/\D/g, "") ?? "";
+  const extraContacts =
+    shop.contacts?.filter((c) => {
+      const v = c.value.trim();
+      if (emailNorm && v.toLowerCase() === emailNorm) return false;
+      if (waNorm && v.replace(/\D/g, "") === waNorm) return false;
+      return true;
+    }) ?? [];
+
   return (
     <div className="space-y-8">
-      {/* products */}
       <section>
         <div className="mb-5">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -77,82 +90,34 @@ export default async function ShopDetails({
         )}
       </section>
 
-      {/* about + info */}
-      {(shop.about ?? shop.description) && (
+      {showAboutSection ? (
         <section className="dm-card p-6">
           <h2 className="text-base font-semibold tracking-tight">
             About {shop.name}
           </h2>
-          <p className="mt-2 text-sm text-muted leading-relaxed">
-            {shop.about ?? shop.description}
-          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{about}</p>
         </section>
-      )}
+      ) : null}
 
-      {/* shop info */}
-      <section className="dm-card p-6">
-        <h2 className="text-base font-semibold tracking-tight">Shop info</h2>
-        <div className="mt-4 space-y-3 text-sm">
-          {shop.availability?.days && (
-            <div className="flex gap-3">
-              <span className="w-28 shrink-0 text-muted">Open days</span>
-              <span className="text-foreground/90">{shop.availability.days}</span>
-            </div>
-          )}
-          {shop.availability?.hours && (
-            <div className="flex gap-3">
-              <span className="w-28 shrink-0 text-muted">Hours</span>
-              <span className="text-foreground/90">
-                {shop.availability.hours}
-              </span>
-            </div>
-          )}
-          {shop.shop_email && (
-            <div className="flex gap-3">
-              <span className="w-28 shrink-0 text-muted">Email</span>
-              <a
-                href={`mailto:${shop.shop_email}`}
-                className="text-foreground/90 hover:text-foreground transition-colors"
-              >
-                {shop.shop_email}
-              </a>
-            </div>
-          )}
-          {shop.whatsapp_number && (
-            <div className="flex gap-3">
-              <span className="w-28 shrink-0 text-muted">WhatsApp</span>
-              <a
-                href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground/90 hover:text-foreground transition-colors"
-              >
-                {shop.whatsapp_number}
-              </a>
-            </div>
-          )}
-          {shop.contacts?.map((c, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="w-28 shrink-0 text-muted capitalize">
-                {c.label ?? c.type ?? "Contact"}
-              </span>
-              <span className="text-foreground/90">{c.value}</span>
-            </div>
-          ))}
-        </div>
+      {extraContacts.length > 0 ? (
+        <section className="dm-card p-6">
+          <h2 className="text-base font-semibold tracking-tight">
+            More contact details
+          </h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {extraContacts.map((c, i) => (
+              <li key={i} className="text-foreground/90">
+                <span className="text-muted capitalize">
+                  {c.label ?? c.type ?? "Contact"}:{" "}
+                </span>
+                {c.value}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
-        <div className="mt-5 pt-4 border-t border-border/60">
-          <Link
-            className="text-sm font-medium text-foreground/80 hover:text-foreground dm-focus rounded-xl px-2 py-1 transition-colors"
-            href="/policies"
-          >
-            View platform policies →
-          </Link>
-        </div>
-      </section>
-
-      {/* concierge prompt */}
-      <section className="dm-card p-6 bg-primary/[0.02]">
+      <section className="dm-card bg-primary/[0.02] p-6">
         <h2 className="text-base font-semibold tracking-tight">
           Have a question?
         </h2>
@@ -162,6 +127,14 @@ export default async function ShopDetails({
         </p>
         <p className="mt-3 text-xs text-muted">
           Use the chat button in the bottom-right corner to get started.
+        </p>
+        <p className="mt-4">
+          <Link
+            href="/policies"
+            className="inline-flex rounded-lg bg-background px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-primary/10 hover:text-foreground dm-focus"
+          >
+            View platform policies
+          </Link>
         </p>
       </section>
     </div>
