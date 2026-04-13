@@ -7,19 +7,18 @@
   --primary-foreground: #f9f9f8;
   --accent: #66798f;
   --secondary: #757779;
-  /* Surfaces */
-  --background: #f9f9f8;
+  /* Surfaces — cool neutral aligned with accent #66798f */
+  --background: #f1f4f8;
   --surface: #ffffff;
   /* Text */
   --foreground: #2a3331;
   --muted: #757779;
-  --border: rgba(74, 103, 103, 0.14);
-  --ring: rgba(74, 103, 103, 0.28);
-  /* Minimal elevation */
-  --shadow: 0 4px 14px rgba(42, 51, 49, 0.06);
-  --shadow-sm: 0 1px 3px rgba(42, 51, 49, 0.05);
-  --radius: 1.125rem;
-  --radius-inner: 0.875rem;
+  --border: rgba(102, 121, 143, 0.14);
+  --ring: rgba(102, 121, 143, 0.22);
+  --shadow: 0 4px 20px rgba(102, 121, 143, 0.06);
+  --shadow-sm: 0 1px 2px rgba(102, 121, 143, 0.05);
+  --radius: 0.875rem;
+  --radius-inner: 0.625rem;
 }
 
 @theme inline {
@@ -33,19 +32,45 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-secondary: var(--secondary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plus-jakarta);
+  --font-mono: var(--font-ibm-plex-mono);
   --radius-lg: var(--radius);
   --radius-xl: var(--radius);
 }
 
-/* Midora Online — light, minimal brand system */
+/* Midora Online — soft borders, accent-tinted neutrals */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-manrope), var(--font-geist-sans), ui-sans-serif,
-    system-ui, -apple-system, Segoe UI, Roboto, Arial, Helvetica, sans-serif;
+  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
+}
+
+/* Home & marketing: scroll reveal (respects reduced motion) */
+.home-reveal {
+  opacity: 0;
+  transform: translateY(1.15rem);
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-reveal--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-reveal,
+  .home-reveal--in {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 @layer base {
@@ -54,7 +79,7 @@ body {
   }
 
   ::selection {
-    background: rgba(74, 103, 103, 0.18);
+    background: rgba(102, 121, 143, 0.2);
     color: var(--foreground);
   }
 }
@@ -64,7 +89,6 @@ body {
     @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
 
-  /* Cards: clear boundary, almost no shadow */
   .dm-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -73,12 +97,18 @@ body {
   }
 
   .dm-card-hover {
-    transition: border-color 180ms ease, box-shadow 180ms ease;
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
   }
 
   .dm-card-hover:hover {
-    border-color: rgba(74, 103, 103, 0.22);
-    box-shadow: var(--shadow-sm);
+    border-color: rgba(102, 121, 143, 0.22);
+    box-shadow: var(--shadow);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dm-card-hover:hover {
+      transform: translateY(-1px);
+    }
   }
 
   .dm-focus {

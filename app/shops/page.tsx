@@ -71,6 +71,7 @@ export default async function ShopListing() {
                     location: locationDisplay(shop.location),
                     tagline: shop.description ?? "",
                     verified: shop.is_active ?? true,
+                    logoUrl: shop.logo_url ?? null,
                   }}
                 />
               ))}
