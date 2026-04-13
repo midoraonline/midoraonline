@@ -113,16 +113,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-pretty text-xl font-semibold tracking-tight sm:text-2xl">
-          Create your Midora Online account
-        </h1>
-        <p className="text-sm leading-relaxed text-muted">
-          Start your 60-second shop setup journey. We&apos;ll email you a link to verify your
-          address.
-        </p>
-      </header>
+    <div className="mx-auto w-full space-y-6">
+      <h1 className="sr-only">Sign up</h1>
 
       <div className="space-y-4">
         <button
@@ -221,7 +213,7 @@ export default function RegisterPage() {
         </button>
       </form>
 
-      <p className="text-center text-xs leading-relaxed text-muted sm:text-left">
+      <p className="text-center text-xs leading-relaxed text-muted">
         Already have an account?{" "}
         <a href="/login" className="font-semibold text-foreground underline-offset-2 hover:underline">
           Sign in

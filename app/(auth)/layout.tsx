@@ -4,27 +4,22 @@ import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div
-      className="flex min-h-[100dvh] min-h-screen flex-col items-stretch justify-start px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:items-center sm:justify-center sm:px-6 sm:pt-10 sm:pb-10"
-    >
+    <div className="flex min-h-[100dvh] min-h-screen flex-col items-center justify-center px-4 py-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-10">
       <Link
         href="/"
-        className="mb-6 inline-flex shrink-0 items-center gap-2.5 self-start sm:mb-8 sm:self-center"
+        className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-10"
       >
         <Image
           src="/logo.png"
           alt="Midora Online"
-          width={48}
-          height={48}
-          className="rounded-xl sm:h-[52px] sm:w-[52px]"
+          width={56}
+          height={56}
+          className="rounded-xl sm:h-[60px] sm:w-[60px]"
           priority
         />
-        <div className="leading-tight">
-          <p className="text-base font-semibold tracking-tight">Midora Online</p>
-          <p className="text-xs text-muted">Brand-first discovery</p>
-        </div>
+        <p className="text-base font-semibold tracking-tight sm:text-lg">Midora Online</p>
       </Link>
-      <div className="w-full max-w-md flex-1 sm:flex-none">{children}</div>
+      <div className="w-full max-w-sm">{children}</div>
     </div>
   );
 }
