@@ -10,7 +10,7 @@ export type AiContextEntry = {
   created_at?: string;
 };
 
-export function listAiContext(token: string, shopId: string) {
+export function listAiContext(shopId: string, token?: string | null) {
   return apiFetch<AiContextEntry[]>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/ai-context`,
     { token }
@@ -19,17 +19,16 @@ export function listAiContext(token: string, shopId: string) {
 
 /** API expects context_type (e.g. "policy") and content. */
 export function createAiContext(
-  token: string,
   shopId: string,
-  body: { context_type?: string; content: string }
+  body: { context_type?: string; content: string },
+  token?: string | null,
 ) {
   return apiFetch<AiContextEntry>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/ai-context`,
     {
       method: "POST",
       token,
-      body: JSON.stringify(body),
+      body,
     }
   );
 }
-

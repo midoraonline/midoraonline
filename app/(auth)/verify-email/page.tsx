@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiAuth } from "@/lib/api";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -28,13 +29,8 @@ export default function VerifyEmailPage() {
       try {
         const res = await apiAuth.verifyEmail(token);
         if (cancelled) return;
-        if (res.access_token) {
-          window.localStorage.setItem("midora_access_token", res.access_token);
-        }
-        if (res.refresh_token) {
-          window.localStorage.setItem("midora_refresh_token", res.refresh_token);
-        }
-        window.dispatchEvent(new Event("midora-auth-changed"));
+        // API sets cookies on the verify endpoint; rehydrate session.
+        notifyAuthChanged();
         setStatus("success");
         setMessage(res.message || "Email verified successfully.");
         setTimeout(() => {
@@ -83,6 +79,14 @@ export default function VerifyEmailPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailPageInner />
+    </Suspense>
   );
 }
 

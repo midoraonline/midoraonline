@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
 type CallbackStatus = "processing" | "success" | "error";
 
@@ -20,10 +21,8 @@ export default function GoogleAuthCallbackPage() {
       ? window.location.hash.slice(1)
       : window.location.hash;
     const hash = new URLSearchParams(fragment);
-
-    const accessToken = hash.get("access_token");
-    const refreshToken = hash.get("refresh_token");
     const error = hash.get("error");
+    const provider = hash.get("provider");
 
     if (error) {
       setStatus("error");
@@ -31,18 +30,10 @@ export default function GoogleAuthCallbackPage() {
       return;
     }
 
-    if (!accessToken || !refreshToken) {
-      setStatus("error");
-      setMessage("Missing authentication tokens. Please try Google sign-in again.");
-      return;
-    }
-
-    window.localStorage.setItem("midora_access_token", accessToken);
-    window.localStorage.setItem("midora_refresh_token", refreshToken);
-    window.dispatchEvent(new Event("midora-auth-changed"));
-
-    // Remove sensitive token fragment from browser URL.
+    // Auth cookies were set by the API callback redirect. Strip the hash and
+    // rehydrate the session from `/auth/me`.
     window.history.replaceState(null, "", window.location.pathname);
+    if (provider) notifyAuthChanged();
     setStatus("success");
     setMessage("Sign-in successful. Redirecting to your dashboard...");
     router.replace("/");

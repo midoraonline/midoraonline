@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiChat } from "@/lib/api";
+import { useAppSession } from "@/lib/state";
 
 type Message = {
   id: string;
@@ -16,6 +17,7 @@ export default function ShopChat({
   shopId: string;
   shopName?: string;
 }) {
+  const session = useAppSession();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -23,36 +25,26 @@ export default function ShopChat({
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  function getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem("midora_access_token");
-  }
-
   useEffect(() => {
+    if (!session.hydrated) return;
     let cancelled = false;
 
     async function init() {
       try {
-        const token = getToken();
-        if (!token) {
+        if (!session.isAuthenticated) {
           setError("Please log in to use the in-shop concierge.");
           setInitializing(false);
           return;
         }
 
-        // If the user navigates to a different shop, make sure UI state resets
-        // so messages always match the active concierge session.
         setInitializing(true);
         setError(null);
         setMessages([]);
         setSessionId(null);
 
-        const session = await apiChat.createSession(
-          { shop_id: shopId },
-          token
-        );
+        const created = await apiChat.createSession({ shop_id: shopId });
         if (cancelled) return;
-        setSessionId(session.id);
+        setSessionId(created.id);
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -72,7 +64,7 @@ export default function ShopChat({
     return () => {
       cancelled = true;
     };
-  }, [shopId]);
+  }, [shopId, session.hydrated, session.isAuthenticated]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -100,15 +92,10 @@ export default function ShopChat({
     setLoading(true);
 
     try {
-      const token = getToken();
-      if (!token) {
+      if (!session.isAuthenticated) {
         throw new Error("Please log in to send messages.");
       }
-      const res = await apiChat.sendMessage(
-        sessionId,
-        { message: content },
-        token
-      );
+      const res = await apiChat.sendMessage(sessionId, { message: content });
       const replyText = res.message ?? "";
       setMessages((prev) => {
         const hasPending = prev.some((m) => m.id === pendingAssistantId);

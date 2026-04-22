@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiAuth } from "@/lib/api";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -37,15 +38,9 @@ export default function LoginPage() {
       setGoogleLoading(true);
       setError(null);
       try {
-        const tokens = await apiAuth.exchangeGoogleCode({ code, state });
+        await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
-        if (tokens.access_token) {
-          window.localStorage.setItem("midora_access_token", tokens.access_token);
-        }
-        if (tokens.refresh_token) {
-          window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
-        }
-        window.dispatchEvent(new Event("midora-auth-changed"));
+        notifyAuthChanged();
         const next = searchParams.get("next");
         router.replace(next && next.startsWith("/") ? next : "/");
       } catch (err) {
@@ -72,14 +67,8 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const tokens = await apiAuth.login({ email, password });
-      if (tokens.access_token) {
-        window.localStorage.setItem("midora_access_token", tokens.access_token);
-      }
-      if (tokens.refresh_token) {
-        window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
-      }
-      window.dispatchEvent(new Event("midora-auth-changed"));
+      await apiAuth.login({ email, password });
+      notifyAuthChanged();
       const next = searchParams.get("next");
       router.push(next && next.startsWith("/") ? next : "/");
     } catch (err) {
@@ -184,6 +173,14 @@ export default function LoginPage() {
         </a>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   );
 }
 

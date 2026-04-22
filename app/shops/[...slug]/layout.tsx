@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { apiShops } from "@/lib/api";
-import type { Shop } from "@/lib/api/shops";
 import ShopHeader from "@/components/shop/ShopHeader";
 import ShopFooter from "@/components/shop/ShopFooter";
 import ShopPageEffects from "@/components/shop/ShopPageEffects";
@@ -11,14 +9,7 @@ import {
   shopQuickNavFlags,
   type ShopQuickNavFlags,
 } from "@/components/shop/shopUtils";
-
-async function fetchShop(slug: string): Promise<Shop | null> {
-  try {
-    return await apiShops.bySlug(slug);
-  } catch {
-    return null;
-  }
-}
+import { getShopBySlug } from "@/lib/api/server";
 
 export async function generateMetadata({
   params,
@@ -27,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const slugParts = Array.isArray(slug) ? slug : slug ? [slug] : [];
-  const shop = await fetchShop(slugParts[0] ?? "");
+  const shop = await getShopBySlug(slugParts[0] ?? "");
 
   if (!shop) return { title: "Shop not found | Midora Online" };
 
@@ -87,7 +78,7 @@ export default async function ShopLayout({
 }) {
   const { slug } = await params;
   const slugParts = Array.isArray(slug) ? slug : slug ? [slug] : [];
-  const shop = await fetchShop(slugParts[0] ?? "");
+  const shop = await getShopBySlug(slugParts[0] ?? "");
 
   if (!shop) notFound();
 

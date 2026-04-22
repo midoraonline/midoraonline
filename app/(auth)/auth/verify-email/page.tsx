@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
 type VerifyStatus = "processing" | "success" | "error";
 
@@ -22,8 +23,6 @@ export default function VerifyEmailCallbackPage() {
     const hash = new URLSearchParams(fragment);
 
     const verified = hash.get("verified");
-    const accessToken = hash.get("access_token");
-    const refreshToken = hash.get("refresh_token");
     const error = hash.get("error");
 
     if (error || verified === "false") {
@@ -38,16 +37,9 @@ export default function VerifyEmailCallbackPage() {
       return;
     }
 
-    if (accessToken) {
-      window.localStorage.setItem("midora_access_token", accessToken);
-    }
-    if (refreshToken) {
-      window.localStorage.setItem("midora_refresh_token", refreshToken);
-    }
-    window.dispatchEvent(new Event("midora-auth-changed"));
-
-    // Remove sensitive token fragment from browser URL.
+    // Auth cookies were set by the backend on the verify redirect.
     window.history.replaceState(null, "", window.location.pathname);
+    notifyAuthChanged();
     setStatus("success");
     setMessage("Email verified successfully. Redirecting...");
     setTimeout(() => {

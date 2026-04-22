@@ -20,15 +20,30 @@ export default function ShopHeaderAuth() {
   }, [pathname]);
 
   const onAccount =
-    pathname === "/account" || (pathname?.startsWith("/account/") ?? false);
+    pathname === "/account" ||
+    (pathname?.startsWith("/account/") ?? false) ||
+    pathname === "/admin" ||
+    (pathname?.startsWith("/admin/") ?? false) ||
+    pathname === "/merchant" ||
+    (pathname?.startsWith("/merchant/") ?? false) ||
+    pathname === "/customer" ||
+    (pathname?.startsWith("/customer/") ?? false);
+
+  const role = session.user?.user_role ?? null;
+  const dashboardHref =
+    role === "admin"
+      ? "/admin"
+      : role === "merchant"
+      ? "/merchant"
+      : "/customer";
 
   if (!session.hydrated) {
+    // Reserve the space without a shimmer so the header doesn't flash a
+    // "loading" pill on every navigation — feels much more seamless.
     return (
       <div className="flex items-center gap-2" aria-hidden>
-        <div className="hidden h-9 min-w-[8rem] animate-pulse rounded-full bg-foreground/[0.06] md:block" />
-        <span className="inline-flex size-9 items-center justify-center rounded-full bg-foreground/[0.06] md:hidden">
-          <span className="size-4 animate-pulse rounded-full bg-foreground/20" />
-        </span>
+        <div className="hidden h-9 min-w-[8rem] rounded-full md:block" />
+        <span className="inline-flex size-9 rounded-full md:hidden" />
       </div>
     );
   }
@@ -50,7 +65,7 @@ export default function ShopHeaderAuth() {
     return (
       <>
         <Link
-          href="/account"
+          href={dashboardHref}
           className={[
             "hidden items-center gap-2 rounded-full px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:inline-flex",
             accountBg,
@@ -64,7 +79,7 @@ export default function ShopHeaderAuth() {
           <span className="max-w-[120px] truncate lg:max-w-[140px]">{label}</span>
         </Link>
         <Link
-          href="/account"
+          href={dashboardHref}
           className={[
             "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:hidden",
             accountBg,

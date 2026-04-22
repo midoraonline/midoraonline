@@ -32,7 +32,7 @@ export default function ShopCatalogEditor({
   heading: string;
 }) {
   const session = useAppSession();
-  const token = session.token;
+  const isAuthed = session.isAuthenticated;
 
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,13 +49,13 @@ export default function ShopCatalogEditor({
   });
 
   const load = useCallback(async () => {
-    if (!token) {
+    if (!isAuthed) {
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const { items: all } = await apiProducts.listShopProducts(shopId, { token });
+      const { items: all } = await apiProducts.listShopProducts(shopId);
       const filtered = all.filter((p) => (p.item_type ?? "product") === itemType);
       setItems(filtered);
       setError(null);
@@ -64,7 +64,7 @@ export default function ShopCatalogEditor({
     } finally {
       setLoading(false);
     }
-  }, [shopId, token]);
+  }, [shopId, itemType, isAuthed]);
 
   useEffect(() => {
     void load();
@@ -72,7 +72,7 @@ export default function ShopCatalogEditor({
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!isAuthed) return;
     if (!draft.title.trim()) {
       setError("Title is required.");
       return;
@@ -92,7 +92,7 @@ export default function ShopCatalogEditor({
       if (itemType === "product" && draft.stock_quantity.trim()) {
         body.stock_quantity = Math.max(0, parseInt(draft.stock_quantity, 10) || 0);
       }
-      await apiProducts.createProduct(token, shopId, body);
+      await apiProducts.createProduct(shopId, body);
       setDraft({
         title: "",
         description: "",
@@ -109,11 +109,11 @@ export default function ShopCatalogEditor({
   }
 
   async function removeProduct(id: string) {
-    if (!token) return;
+    if (!isAuthed) return;
     if (!window.confirm("Remove this listing? This cannot be undone.")) return;
     setError(null);
     try {
-      await apiProducts.deleteProduct(token, id);
+      await apiProducts.deleteProduct(id);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Delete failed.");
@@ -121,10 +121,10 @@ export default function ShopCatalogEditor({
   }
 
   async function togglePublish(p: Product) {
-    if (!token) return;
+    if (!isAuthed) return;
     setError(null);
     try {
-      await apiProducts.updateProduct(token, p.id, {
+      await apiProducts.updateProduct(p.id, {
         is_published: !p.is_published,
       });
       await load();
@@ -133,7 +133,7 @@ export default function ShopCatalogEditor({
     }
   }
 
-  if (!token) {
+  if (!isAuthed) {
     return (
       <p className="text-sm text-muted">
         Sign in to manage {itemType === "service" ? "services" : "products"}.

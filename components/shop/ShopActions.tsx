@@ -36,10 +36,8 @@ export default function ShopActions({
 
   const syncEngagement = useCallback(async () => {
     try {
-      const e = await apiShops.getShopEngagement(shopId, {
-        token: session.token ?? undefined,
-      });
-      if (session.token) {
+      const e = await apiShops.getShopEngagement(shopId);
+      if (session.isAuthenticated) {
         setLiked(Boolean(e.viewer_liked_shop));
         setFollowed(Boolean(e.viewer_following));
       } else {
@@ -48,7 +46,7 @@ export default function ShopActions({
     } catch {
       loadLocalFlags();
     }
-  }, [shopId, session.token, loadLocalFlags]);
+  }, [shopId, session.isAuthenticated, loadLocalFlags]);
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -56,12 +54,11 @@ export default function ShopActions({
   }, [session.hydrated, syncEngagement]);
 
   async function toggleLike() {
-    const token = session.token;
     const next = !liked;
-    if (token) {
+    if (session.isAuthenticated) {
       try {
-        if (next) await apiShops.likeShop(token, shopId);
-        else await apiShops.unlikeShop(token, shopId);
+        if (next) await apiShops.likeShop(shopId);
+        else await apiShops.unlikeShop(shopId);
         setLiked(next);
         await syncEngagement();
       } catch {
@@ -74,12 +71,11 @@ export default function ShopActions({
   }
 
   async function toggleFollow() {
-    const token = session.token;
     const next = !followed;
-    if (token) {
+    if (session.isAuthenticated) {
       try {
-        if (next) await apiShops.followShop(token, shopId);
-        else await apiShops.unfollowShop(token, shopId);
+        if (next) await apiShops.followShop(shopId);
+        else await apiShops.unfollowShop(shopId);
         setFollowed(next);
         await syncEngagement();
       } catch {

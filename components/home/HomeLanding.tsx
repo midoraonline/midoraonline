@@ -57,7 +57,7 @@ function Reveal({
 const quickLinks = [
   { href: "/shops", label: "Browse shops", desc: "Discover brands" },
   { href: "/products", label: "Browse products", desc: "Shop the catalog" },
-  { href: "/open-shop", label: "Open a shop", desc: "Go live fast" },
+  { href: "/merchant/new", label: "Open a shop", desc: "Go live fast" },
   { href: "/register", label: "Create account", desc: "Merchants & shoppers" },
   { href: "/login", label: "Sign in", desc: "Access your space" },
   { href: "/aboutus", label: "About us", desc: "Our story" },
@@ -89,7 +89,7 @@ export default function HomeLanding() {
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
-                  href="/open-shop"
+                  href="/merchant/new"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform duration-300 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   Open your shop

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { apiShops, apiAiContext } from "@/lib/api";
 import { ImageUpload } from "@/components/image-upload";
+import { useAppSession } from "@/lib/state";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
 type Step = 1 | 2 | 3;
 
@@ -16,6 +18,7 @@ function slugFromName(name: string): string {
 }
 
 export default function OpenShopWizard() {
+  const session = useAppSession();
   const [step, setStep] = useState<Step>(1);
   const [creating, setCreating] = useState(false);
   const [savingContext, setSavingContext] = useState(false);
@@ -36,20 +39,13 @@ export default function OpenShopWizard() {
 
   const [createdShop, setCreatedShop] = useState<apiShops.Shop | null>(null);
 
-  function getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem("midora_access_token");
-  }
-
-
   async function handleCreateShop(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
       setError("Please enter a shop name.");
       return;
     }
-    const token = getToken();
-    if (!token) {
+    if (!session.isAuthenticated) {
       setError("Please log in to open a shop.");
       return;
     }
@@ -62,7 +58,7 @@ export default function OpenShopWizard() {
     setError(null);
     setCreating(true);
     try {
-      const shop = await apiShops.createShop(token, {
+      const shop = await apiShops.createShop({
         name: name.trim(),
         slug: finalSlug,
         description: description.trim() || undefined,
@@ -76,6 +72,10 @@ export default function OpenShopWizard() {
         social_links: [],
       });
       setCreatedShop(shop);
+      // The API may have promoted us from customer → merchant and re-issued
+      // the auth cookie; refresh the session so the navbar / dashboards
+      // reflect the new role without a manual reload.
+      notifyAuthChanged();
       setStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your shop. Please try again.");
@@ -87,8 +87,7 @@ export default function OpenShopWizard() {
   async function handleSaveContext(e: React.FormEvent) {
     e.preventDefault();
     if (!createdShop) return;
-    const token = getToken();
-    if (!token) {
+    if (!session.isAuthenticated) {
       setError("Please log in again to continue.");
       return;
     }
@@ -99,7 +98,7 @@ export default function OpenShopWizard() {
     setError(null);
     setSavingContext(true);
     try {
-      await apiAiContext.createAiContext(token, createdShop.id, {
+      await apiAiContext.createAiContext(createdShop.id, {
         context_type: "policy",
         content: contextContent.trim(),
       });
@@ -254,7 +253,7 @@ export default function OpenShopWizard() {
             <a href={`/shops/${encodeURIComponent(createdShop.slug)}`} className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-4 py-2.5 text-sm text-center font-semibold">
               View my shop
             </a>
-            <a href={`/open-shop/settings/${createdShop.id}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold">
+            <a href={`/merchant/shops/${createdShop.id}/settings`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold">
               Shop settings
             </a>
             <a href={`/chat?shop_id=${encodeURIComponent(createdShop.id)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold sm:col-span-2">

@@ -3,24 +3,24 @@ import type { MeResponse } from "@/lib/api/auth";
 
 export type AppSession = {
   hydrated: boolean;
-  token: string | null;
-  /** `undefined` = loading profile while `token` is set */
+  /** True once we've confirmed an auth cookie by successfully calling `/auth/me`. */
+  isAuthenticated: boolean;
+  /** `undefined` = loading profile while auth state is still settling. */
   user: MeResponse | null | undefined;
   ownedShopIds: string[];
-  /** Set when `me()` fails but a token was present */
+  /** Set when `me()` fails despite an apparent session. */
   profileError: string | null;
 };
 
 const initialSession: AppSession = {
   hydrated: false,
-  token: null,
+  isAuthenticated: false,
   user: null,
   ownedShopIds: [],
   profileError: null,
 };
 
 type SessionStore = AppSession & {
-  /** Merge partial session (used by hydration and future auth updates). */
   setSession: (patch: Partial<AppSession>) => void;
   resetSession: () => void;
 };
@@ -28,15 +28,14 @@ type SessionStore = AppSession & {
 export const useSessionStore = create<SessionStore>((set) => ({
   ...initialSession,
   setSession: (patch) => set((state) => ({ ...state, ...patch })),
-  resetSession: () => set({ ...initialSession }),
+  resetSession: () => set({ ...initialSession, hydrated: true }),
 }));
 
-/** Read session outside React (e.g. event handlers, one-off sync). */
 export function getSessionState(): AppSession {
   const s = useSessionStore.getState();
   return {
     hydrated: s.hydrated,
-    token: s.token,
+    isAuthenticated: s.isAuthenticated,
     user: s.user,
     ownedShopIds: s.ownedShopIds,
     profileError: s.profileError,

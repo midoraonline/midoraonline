@@ -128,11 +128,15 @@ export function productPrimaryImage(p: Product): string | undefined {
   return parseProductImageUrls(p)[0];
 }
 
-export function createProduct(token: string, shopId: string, body: CreateProductRequest) {
+export function createProduct(
+  shopId: string,
+  body: CreateProductRequest,
+  token?: string | null,
+) {
   return apiFetch<Product>(`/api/v1/shops/${encodeURIComponent(shopId)}/products`, {
     method: "POST",
     token,
-    body: JSON.stringify(buildCreatePayload(body)),
+    body: buildCreatePayload(body),
   });
 }
 
@@ -172,7 +176,7 @@ export function recordProductView(productId: string) {
   });
 }
 
-export function likeProduct(token: string, productId: string) {
+export function likeProduct(productId: string, token?: string | null) {
   return apiFetch<unknown>(`${productBase(productId)}/like`, {
     method: "POST",
     token,
@@ -180,32 +184,39 @@ export function likeProduct(token: string, productId: string) {
   });
 }
 
-export function unlikeProduct(token: string, productId: string) {
+export function unlikeProduct(productId: string, token?: string | null) {
   return apiFetch<unknown>(`${productBase(productId)}/like`, {
     method: "DELETE",
     token,
   });
 }
 
-export function updateProduct(token: string, productId: string, body: Partial<CreateProductRequest>) {
+export function updateProduct(
+  productId: string,
+  body: Partial<CreateProductRequest>,
+  token?: string | null,
+) {
   return apiFetch<Product>(productBase(productId), {
     method: "PATCH",
     token,
-    body: JSON.stringify(buildPatchPayload(body)),
+    body: buildPatchPayload(body),
   });
 }
 
-export function deleteProduct(token: string, productId: string) {
+export function deleteProduct(productId: string, token?: string | null) {
   return apiFetch<{ deleted?: boolean }>(productBase(productId), {
     method: "DELETE",
     token,
   });
 }
 
-export function generateFromImage(token: string, body: { image_url: string }) {
+export function generateFromImage(
+  body: { image_url: string },
+  token?: string | null,
+) {
   return apiFetch<Record<string, unknown>>("/api/v1/products/generate-from-image", {
     method: "POST",
     token,
-    body: JSON.stringify(body),
+    body,
   });
 }

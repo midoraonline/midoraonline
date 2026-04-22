@@ -38,14 +38,14 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!session.token) return;
+    if (!session.isAuthenticated) return;
     setLoading(true);
     setError(null);
     try {
       const [e, list, full] = await Promise.all([
-        apiShops.getShopEngagement(shop.id, { token: session.token }),
-        apiProducts.listShopProducts(shop.id, { token: session.token }),
-        apiShops.getShop(shop.id, { token: session.token }).catch(() => null),
+        apiShops.getShopEngagement(shop.id),
+        apiProducts.listShopProducts(shop.id),
+        apiShops.getShop(shop.id).catch(() => null),
       ]);
       setEngagement(e);
       setProducts(list.items);
@@ -55,7 +55,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     } finally {
       setLoading(false);
     }
-  }, [shop.id, session.token]);
+  }, [shop.id, session.isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;

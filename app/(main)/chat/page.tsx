@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ShopChat from "@/components/shopChat";
 
-export default function ChatPage() {
+function ChatPageInner() {
   const searchParams = useSearchParams();
   const shopId = searchParams.get("shop_id");
 
@@ -32,5 +33,13 @@ export default function ChatPage() {
 
       {shopId ? <ShopChat shopId={shopId} /> : null}
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChatPageInner />
+    </Suspense>
   );
 }

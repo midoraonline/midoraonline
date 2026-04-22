@@ -1,0 +1,320 @@
+"use client";
+
+import Image from "next/image";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { ImageUpload } from "@/components/image-upload";
+import { apiAiContext, apiShops } from "@/lib/api";
+import { useAppSession } from "@/lib/state";
+
+function slugFromName(name: string): string {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "") || "shop"
+  );
+}
+
+export default function MerchantShopSettingsPage() {
+  const params = useParams();
+  const shopId = typeof params.shopId === "string" ? params.shopId : "";
+  const session = useAppSession();
+
+  const [shop, setShop] = useState<apiShops.Shop | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [about, setAbout] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [shopEmail, setShopEmail] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [locationDisplay, setLocationDisplay] = useState("");
+  const [shopType, setShopType] = useState<apiShops.ShopType>("product");
+
+  const [contextEntries, setContextEntries] = useState<apiAiContext.AiContextEntry[]>([]);
+  const [newContextType, setNewContextType] = useState("policy");
+  const [newContextContent, setNewContextContent] = useState("");
+  const [addingContext, setAddingContext] = useState(false);
+
+  useEffect(() => {
+    if (!shopId) return;
+    if (!session.hydrated) return;
+    if (!session.isAuthenticated) {
+      setLoading(false);
+      setError("Please log in to manage shop settings.");
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const [shopData, contextList] = await Promise.all([
+          apiShops.getShop(shopId),
+          apiAiContext.listAiContext(shopId),
+        ]);
+        if (cancelled) return;
+        setShop(shopData);
+        setName(shopData.name ?? "");
+        setSlug(shopData.slug ?? "");
+        setDescription(shopData.description ?? "");
+        setAbout(shopData.about ?? "");
+        setLogoUrl(shopData.logo_url ?? "");
+        setShopEmail(shopData.shop_email ?? "");
+        setWhatsappNumber(shopData.whatsapp_number ?? "");
+        const loc = shopData.location;
+        setLocationDisplay(
+          typeof loc === "string"
+            ? loc
+            : typeof loc === "object" && loc !== null && "display" in loc
+            ? String((loc as { display?: string }).display ?? "")
+            : "",
+        );
+        setShopType((shopData.shop_type as apiShops.ShopType) ?? "product");
+        setContextEntries(contextList);
+      } catch (err) {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Failed to load shop.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [shopId, session.hydrated, session.isAuthenticated]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!shopId || !session.isAuthenticated) return;
+    setError(null);
+    setSaving(true);
+    try {
+      const updated = await apiShops.updateShop(shopId, {
+        name: name.trim(),
+        slug: slug.trim() ? slugFromName(slug) : slugFromName(name),
+        description: description.trim() || undefined,
+        about: about.trim() || undefined,
+        logo_url: logoUrl.trim() || undefined,
+        shop_email: shopEmail.trim() || undefined,
+        whatsapp_number: whatsappNumber.trim() || undefined,
+        location: locationDisplay.trim()
+          ? { display: locationDisplay.trim() }
+          : undefined,
+        shop_type: shopType,
+      });
+      setShop(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddContext(e: React.FormEvent) {
+    e.preventDefault();
+    if (!shopId || !newContextContent.trim() || !session.isAuthenticated) return;
+    setAddingContext(true);
+    setError(null);
+    try {
+      const entry = await apiAiContext.createAiContext(shopId, {
+        context_type: newContextType,
+        content: newContextContent.trim(),
+      });
+      setContextEntries((prev) => [...prev, entry]);
+      setNewContextContent("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add context.");
+    } finally {
+      setAddingContext(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="dm-card p-8 text-sm text-muted">Loading settings…</div>;
+  }
+  if (error && !shop) {
+    return (
+      <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
+        {error}
+      </p>
+    );
+  }
+  if (!shop) return null;
+
+  return (
+    <div className="space-y-6">
+      <section className="dm-card p-5 sm:p-6">
+        {error ? (
+          <p className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
+            {error}
+          </p>
+        ) : null}
+
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">Shop name *</label>
+              <input
+                className="dm-input dm-focus"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">Slug *</label>
+              <input
+                className="dm-input dm-focus"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">Description</label>
+              <input
+                className="dm-input dm-focus"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">About</label>
+              <textarea
+                className="dm-textarea !min-h-[80px] dm-focus"
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground/80">Logo</label>
+              <ImageUpload
+                endpoint="shopLogo"
+                onUploadComplete={setLogoUrl}
+                label="Upload logo"
+                previewUrl={logoUrl || undefined}
+              />
+              {logoUrl ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-foreground/[0.06] ring-1 ring-foreground/[0.08]">
+                    <Image
+                      src={logoUrl}
+                      alt="Shop logo"
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground/80">Shop type</label>
+              <select
+                className="dm-input appearance-none pr-10 dm-focus"
+                value={shopType}
+                onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
+              >
+                <option value="product">Product</option>
+                <option value="service">Service</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground/80">Shop email</label>
+              <input
+                type="email"
+                className="dm-input dm-focus"
+                value={shopEmail}
+                onChange={(e) => setShopEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground/80">WhatsApp</label>
+              <input
+                className="dm-input dm-focus"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">Location</label>
+              <input
+                className="dm-input dm-focus"
+                value={locationDisplay}
+                onChange={(e) => setLocationDisplay(e.target.value)}
+                placeholder="e.g. Kampala, Uganda"
+              />
+            </div>
+          </div>
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="dm-pill dm-focus bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="dm-card p-5 sm:p-6">
+        <h2 className="font-display text-lg font-semibold tracking-tight">
+          AI concierge context
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Policies, FAQs, and notes the in-shop concierge uses to answer questions.
+        </p>
+        <ul className="mt-4 space-y-2">
+          {contextEntries.map((entry) => (
+            <li
+              key={entry.id}
+              className="rounded-2xl bg-foreground/[0.04] px-3 py-2 text-xs ring-1 ring-foreground/[0.06]"
+            >
+              <span className="font-medium text-foreground/80">
+                {entry.context_type ?? entry.key ?? "context"}:
+              </span>{" "}
+              {(entry.content ?? entry.value ?? "").slice(0, 120)}
+              {(entry.content ?? entry.value ?? "").length > 120 ? "…" : ""}
+            </li>
+          ))}
+        </ul>
+        <form onSubmit={handleAddContext} className="mt-4 space-y-3">
+          <div>
+            <label className="text-xs font-medium text-foreground/80">Type</label>
+            <select
+              className="dm-input mt-1 max-w-[220px] appearance-none pr-10 dm-focus"
+              value={newContextType}
+              onChange={(e) => setNewContextType(e.target.value)}
+            >
+              <option value="policy">Policy</option>
+              <option value="faq">FAQ</option>
+              <option value="tone">Tone / brief</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-foreground/80">Content</label>
+            <textarea
+              className="dm-textarea mt-1 !min-h-[100px] dm-focus"
+              value={newContextContent}
+              onChange={(e) => setNewContextContent(e.target.value)}
+              placeholder="e.g. We ship worldwide within 5–7 days."
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={addingContext || !newContextContent.trim()}
+            className="dm-pill dm-focus bg-foreground/[0.07] px-4 py-2 text-sm font-semibold text-foreground hover:bg-foreground/[0.1] disabled:opacity-60"
+          >
+            {addingContext ? "Adding…" : "Add context"}
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}

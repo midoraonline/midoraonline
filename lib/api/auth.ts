@@ -18,10 +18,6 @@ export type LoginRequest = {
   password: string;
 };
 
-export type RefreshRequest = {
-  refresh_token: string;
-};
-
 /** Matches `/auth/me` (profile-style; some fields optional depending on backend). */
 export type MeResponse = {
   id: string;
@@ -48,29 +44,46 @@ export type GoogleExchangeRequest = {
   state: string;
 };
 
+/**
+ * Register. The server sets httpOnly auth cookies on success; the returned
+ * token pair is kept for non-browser clients (mobile apps, scripts).
+ */
 export function register(body: RegisterRequest) {
   return apiFetch<TokenPair>("/api/v1/auth/register", {
     method: "POST",
-    body: JSON.stringify(body),
+    body,
   });
 }
 
 export function login(body: LoginRequest) {
   return apiFetch<TokenPair>("/api/v1/auth/login", {
     method: "POST",
-    body: JSON.stringify(body),
+    body,
   });
 }
 
-export function refresh(body: RefreshRequest) {
+/**
+ * Rotate the refresh cookie. The request body is empty in the browser flow —
+ * the refresh token lives in the `midora_refresh` cookie.
+ */
+export function refresh() {
   return apiFetch<TokenPair>("/api/v1/auth/refresh", {
     method: "POST",
-    body: JSON.stringify(body),
+    body: {},
+    skipAuthRefresh: true,
   });
 }
 
-export function me(token: string) {
-  return apiFetch<MeResponse>("/api/v1/auth/me", { token });
+export function me(token?: string) {
+  // Explicit `token` supports server-components; the browser carries the cookie.
+  return apiFetch<MeResponse>("/api/v1/auth/me", token ? { token } : undefined);
+}
+
+export function logout() {
+  return apiFetch<{ message: string }>("/api/v1/auth/logout", {
+    method: "POST",
+    skipAuthRefresh: true,
+  });
 }
 
 export function verifyEmail(token: string) {
@@ -85,7 +98,6 @@ export function getGoogleAuthUrl() {
 export function exchangeGoogleCode(body: GoogleExchangeRequest) {
   return apiFetch<TokenPair>("/api/v1/auth/google/exchange", {
     method: "POST",
-    body: JSON.stringify(body),
+    body,
   });
 }
-

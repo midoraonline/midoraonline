@@ -11,11 +11,6 @@ import { locationDisplay } from "./shopUtils";
 import { AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useAppSession } from "@/lib/state";
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("midora_access_token");
-}
-
 type EditTab = "details" | "products" | "services" | "appearance";
 
 type FormState = {
@@ -86,8 +81,8 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
   const [success, setSuccess] = useState(false);
 
   const isOwner = session.ownedShopIds.includes(shop.id);
-  const denied = session.hydrated && session.token && !isOwner;
-  const needsLogin = session.hydrated && !session.token;
+  const denied = session.hydrated && session.isAuthenticated && !isOwner;
+  const needsLogin = session.hydrated && !session.isAuthenticated;
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -95,8 +90,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = getToken();
-    if (!token) {
+    if (!session.isAuthenticated) {
       setError("You must be logged in to save changes.");
       return;
     }
@@ -108,7 +102,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
     setError(null);
     setSaving(true);
     try {
-      await apiShops.updateShop(token, shop.id, {
+      await apiShops.updateShop(shop.id, {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         about: form.about.trim() || undefined,
@@ -143,8 +137,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
 
   async function handleSaveAppearance(e: React.FormEvent) {
     e.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!session.isAuthenticated) return;
 
     let metadata: Record<string, unknown> = {};
     try {
@@ -172,7 +165,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
     setAppearanceError(null);
     setSavingAppearance(true);
     try {
-      await apiShops.updateShop(token, shop.id, { theme_config });
+      await apiShops.updateShop(shop.id, { theme_config });
       setAppearanceError(null);
     } catch (err) {
       setAppearanceError(

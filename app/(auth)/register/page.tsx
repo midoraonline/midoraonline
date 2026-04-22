@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiAuth } from "@/lib/api";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
@@ -39,15 +40,9 @@ export default function RegisterPage() {
       setGoogleLoading(true);
       setError(null);
       try {
-        const tokens = await apiAuth.exchangeGoogleCode({ code, state });
+        await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
-        if (tokens.access_token) {
-          window.localStorage.setItem("midora_access_token", tokens.access_token);
-        }
-        if (tokens.refresh_token) {
-          window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
-        }
-        window.dispatchEvent(new Event("midora-auth-changed"));
+        notifyAuthChanged();
         router.replace("/");
       } catch (err) {
         if (cancelled) return;
@@ -73,19 +68,13 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      const tokens = await apiAuth.register({
+      await apiAuth.register({
         email,
         password,
         full_name: fullName,
         user_role: role,
       });
-      if (tokens.access_token) {
-        window.localStorage.setItem("midora_access_token", tokens.access_token);
-      }
-      if (tokens.refresh_token) {
-        window.localStorage.setItem("midora_refresh_token", tokens.refresh_token);
-      }
-      window.dispatchEvent(new Event("midora-auth-changed"));
+      notifyAuthChanged();
       router.push("/");
     } catch (err) {
       setError(
@@ -220,6 +209,14 @@ export default function RegisterPage() {
         </a>
       </p>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPageInner />
+    </Suspense>
   );
 }
 

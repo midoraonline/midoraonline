@@ -1,25 +1,14 @@
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
-import ShopCard from "@/components/shopcard";
-import { apiShops } from "@/lib/api";
+import ShopListRealtime from "@/components/shop/ShopListRealtime";
+import { listPublicShops } from "@/lib/api/server";
 
-function locationDisplay(loc: unknown): string {
-  if (typeof loc === "string") return loc;
-  if (loc && typeof loc === "object" && "display" in loc)
-    return String((loc as { display?: string }).display ?? "Online");
-  return "Online";
-}
+/** Shop directory is fully dynamic so newly-activated shops show up instantly. */
+export const dynamic = "force-dynamic";
 
 export default async function ShopListing() {
-  let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
-
-  try {
-    const data = await apiShops.listPublic();
-    shops = data.items;
-  } catch {
-    shops = [];
-  }
+  const shops = await listPublicShops();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -56,23 +45,7 @@ export default async function ShopListing() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-              {shops.map((shop) => (
-                <ShopCard
-                  key={shop.id}
-                  shop={{
-                    id: shop.id,
-                    slug: shop.slug,
-                    name: shop.name,
-                    category: shop.category ?? "Shop",
-                    location: locationDisplay(shop.location),
-                    tagline: shop.description ?? "",
-                    verified: shop.is_active ?? true,
-                    logoUrl: shop.logo_url ?? null,
-                  }}
-                />
-              ))}
-            </div>
+            <ShopListRealtime initialShops={shops} />
           </div>
         </div>
       </main>

@@ -1,10 +1,9 @@
-import ProductCard, { ProductCardData } from "@/components/productcard";
-import { apiProducts, apiShops } from "@/lib/api";
-import { productPageSlug } from "@/lib/productUrl";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditShopForm from "@/components/shop/EditShopForm";
 import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
+import ShopProductGridRealtime from "@/components/shop/ShopProductGridRealtime";
+import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export default async function ShopDetails({
   params,
@@ -16,14 +15,7 @@ export default async function ShopDetails({
   const isEditRoute = Array.isArray(slug) && slug[1] === "edit";
   const isAnalyticsRoute = Array.isArray(slug) && slug[1] === "analytics";
 
-  let shop: Awaited<ReturnType<typeof apiShops.bySlug>> | null = null;
-  let items: ProductCardData[] = [];
-
-  try {
-    shop = await apiShops.bySlug(slugValue);
-  } catch {
-    shop = null;
-  }
+  const shop = await getShopBySlug(slugValue);
 
   if (!shop) return notFound();
 
@@ -35,25 +27,7 @@ export default async function ShopDetails({
     return <ShopAnalyticsPage shop={shop} />;
   }
 
-  try {
-    const { items: products } = await apiProducts.listShopProducts(shop.id);
-    items = products.map((p) => ({
-      id: p.id,
-      slug: productPageSlug(p),
-      title: p.title,
-      priceUGX: apiProducts.productPriceUgx(p),
-      imageUrl: apiProducts.productPrimaryImage(p),
-      shopLogoUrl: shop!.logo_url ?? undefined,
-      shop: {
-        id: shop!.id,
-        name: shop!.name,
-        slug: shop!.slug,
-        verified: shop!.is_active ?? true,
-      },
-    }));
-  } catch {
-    items = [];
-  }
+  const items = !isEditRoute && !isAnalyticsRoute ? await listShopProducts(shop.id) : [];
 
   const desc = (shop.description ?? "").trim();
   const about = (shop.about ?? "").trim();
@@ -83,19 +57,16 @@ export default async function ShopDetails({
           </p>
         </div>
 
-        {items.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-            {items.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        ) : (
-          <div className="dm-card p-8 text-center sm:p-10">
-            <p className="text-sm text-muted">
-              No products listed yet. Check back soon.
-            </p>
-          </div>
-        )}
+        <ShopProductGridRealtime
+          shop={{
+            id: shop.id,
+            name: shop.name,
+            slug: shop.slug,
+            verified: shop.is_active ?? true,
+            logoUrl: shop.logo_url ?? null,
+          }}
+          initialProducts={items}
+        />
       </section>
 
       {showAboutSection ? (

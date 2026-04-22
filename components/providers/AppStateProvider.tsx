@@ -2,78 +2,63 @@
 
 import { useCallback, useEffect, useLayoutEffect } from "react";
 import { apiAuth, apiShops } from "@/lib/api";
+import { AUTH_CHANGED_EVENT } from "@/lib/auth/token-storage";
 import { useSessionStore } from "@/lib/state/session-store";
 
+/**
+ * Phase 3 cookie-based hydration:
+ *   1. On mount, call `/auth/me`. The cookie (if present) is sent
+ *      automatically because apiFetch uses `credentials: "include"`.
+ *   2. If that 401s, apiFetch tries `/auth/refresh` once and retries.
+ *   3. When any auth surface (login / register / verify / logout) fires
+ *      `AUTH_CHANGED_EVENT`, we re-hydrate.
+ */
 export default function AppStateProvider({ children }: { children: React.ReactNode }) {
-  const runHydrate = useCallback(async (token: string | null) => {
+  const runHydrate = useCallback(async () => {
     const { setSession } = useSessionStore.getState();
 
-    if (!token) {
-      setSession({
-        hydrated: true,
-        token: null,
-        user: null,
-        ownedShopIds: [],
-        profileError: null,
-      });
-      return;
-    }
-
-    setSession({
-      hydrated: true,
-      token,
-      user: undefined,
-      ownedShopIds: [],
-      profileError: null,
-    });
+    setSession({ user: undefined, profileError: null });
 
     try {
-      const user = await apiAuth.me(token);
+      const user = await apiAuth.me();
       let ownedShopIds: string[] = [];
       try {
-        const mine = await apiShops.myShops(token);
+        const mine = await apiShops.myShops();
         ownedShopIds = mine.items.map((s) => s.id);
       } catch {
         /* non-merchants or API error */
       }
       setSession({
         hydrated: true,
-        token,
+        isAuthenticated: true,
         user,
         ownedShopIds,
         profileError: null,
       });
-    } catch (e) {
-      const profileError =
-        e instanceof Error ? e.message : "Could not load your profile.";
+    } catch {
+      // Any unauthenticated / network error → logged-out state. We suppress
+      // the error message for anonymous visitors; if you need it, surface it
+      // in the page that actually triggered the auth expectation.
       setSession({
         hydrated: true,
-        token,
+        isAuthenticated: false,
         user: null,
         ownedShopIds: [],
-        profileError,
+        profileError: null,
       });
     }
   }, []);
 
   useLayoutEffect(() => {
-    const token =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("midora_access_token")
-        : null;
-    void runHydrate(token);
+    void runHydrate();
   }, [runHydrate]);
 
   useEffect(() => {
     function onAuthChanged() {
-      const token =
-        typeof window !== "undefined"
-          ? window.localStorage.getItem("midora_access_token")
-          : null;
-      void runHydrate(token);
+      void runHydrate();
     }
-    window.addEventListener("midora-auth-changed", onAuthChanged);
-    return () => window.removeEventListener("midora-auth-changed", onAuthChanged);
+    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
   }, [runHydrate]);
 
   return <>{children}</>;

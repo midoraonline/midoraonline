@@ -52,10 +52,31 @@ export default function Navbar() {
       .toUpperCase();
   }, [displayName]);
 
-  const authLoading = session.hydrated && session.token && session.user === undefined;
+  const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
+
+  /**
+   * Role → dashboard mapping. We point the account pill at the user's own
+   * dashboard so they land directly on the right surface (admin console,
+   * merchant workspace, or customer area) instead of the generic /account
+   * redirect stub.
+   */
+  const role = session.user?.user_role ?? null;
+  const dashboardHref =
+    role === "admin"
+      ? "/admin"
+      : role === "merchant"
+      ? "/merchant"
+      : "/customer";
 
   const onAccount =
-    pathname === "/account" || pathname.startsWith("/account/");
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/merchant" ||
+    pathname.startsWith("/merchant/") ||
+    pathname === "/customer" ||
+    pathname.startsWith("/customer/");
   const accountPillBg = onAccount ? "bg-primary" : "bg-primary/90";
 
   return (
@@ -107,7 +128,7 @@ export default function Navbar() {
             {displayName ? (
               <>
                 <Link
-                  href="/account"
+                  href={dashboardHref}
                   className={[
                     "hidden items-center gap-2 rounded-full px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:inline-flex",
                     accountPillBg,
@@ -119,7 +140,7 @@ export default function Navbar() {
                   <span className="max-w-[120px] truncate lg:max-w-[140px]">{displayName}</span>
                 </Link>
                 <Link
-                  href="/account"
+                  href={dashboardHref}
                   className={[
                     "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-primary-foreground shadow-sm backdrop-blur-sm transition-opacity dm-focus hover:opacity-95 md:hidden",
                     accountPillBg,
@@ -134,9 +155,8 @@ export default function Navbar() {
                 </Link>
               </>
             ) : authLoading ? (
-              <span className="inline-flex size-9 items-center justify-center rounded-full bg-foreground/[0.06] text-muted md:hidden">
-                <span className="size-4 animate-pulse rounded-full bg-foreground/20" />
-              </span>
+              // Reserve space without a shimmer so navigation feels seamless.
+              <span className="inline-flex size-9 shrink-0 rounded-full md:hidden" aria-hidden />
             ) : (
               <>
                 <Link

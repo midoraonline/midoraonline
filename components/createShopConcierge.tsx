@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
 import { ImageUpload } from "@/components/image-upload";
+import { useAppSession } from "@/lib/state";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };
 
@@ -43,6 +45,7 @@ export default function CreateShopConcierge({
 }: {
   onShopCreated: (shop: apiShops.Shop) => void;
 }) {
+  const appSession = useAppSession();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatLine[]>([]);
   const [input, setInput] = useState("");
@@ -52,22 +55,16 @@ export default function CreateShopConcierge({
   const [suggestedShop, setSuggestedShop] = useState<SuggestedShop | null>(null);
   const [confirmForm, setConfirmForm] = useState<ConfirmForm>(emptyConfirmForm);
 
-  function getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem("midora_access_token");
-  }
-
   useEffect(() => {
-    let cancelled = false;
-    const token = getToken();
-    if (!token) {
+    if (!appSession.hydrated) return;
+    if (!appSession.isAuthenticated) {
       setError("Please log in to use the quick start.");
-      return () => {};
+      return;
     }
-
+    let cancelled = false;
     (async () => {
       try {
-        const session = await apiChat.createSession({ intent: "create_shop" }, token);
+        const session = await apiChat.createSession({ intent: "create_shop" });
         if (cancelled) return;
         setSessionId(session.id);
       } catch (err) {
@@ -75,12 +72,11 @@ export default function CreateShopConcierge({
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [appSession.hydrated, appSession.isAuthenticated]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!sessionId || !input.trim()) return;
-    const token = getToken();
     const text = input.trim();
     const userId = `u-${Date.now()}`;
     const pendingAssistantId = `a-pending-${Date.now()}-${Math.random()
@@ -96,7 +92,7 @@ export default function CreateShopConcierge({
     setLoading(true);
 
     try {
-      const res = await apiChat.sendMessage(sessionId, { message: text }, token ?? undefined);
+      const res = await apiChat.sendMessage(sessionId, { message: text });
       const reply = res.message ?? "";
       setMessages((prev) => {
         const hasPending = prev.some((m) => m.id === pendingAssistantId);
@@ -134,8 +130,7 @@ export default function CreateShopConcierge({
 
   async function handleCreateFromSuggestion(e: React.FormEvent) {
     e.preventDefault();
-    const token = getToken();
-    if (!token) {
+    if (!appSession.isAuthenticated) {
       setError("Please log in again.");
       return;
     }
@@ -147,7 +142,7 @@ export default function CreateShopConcierge({
     setError(null);
     setCreating(true);
     try {
-      const shop = await apiShops.createShop(token, {
+      const shop = await apiShops.createShop({
         name: name.trim(),
         slug: slugFromName(name),
         description: description.trim() || undefined,
@@ -160,6 +155,8 @@ export default function CreateShopConcierge({
         contacts: [],
         social_links: [],
       });
+      // Pick up the auto-issued cookie with the new merchant role.
+      notifyAuthChanged();
       onShopCreated(shop);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create shop.");

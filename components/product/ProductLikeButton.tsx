@@ -27,15 +27,13 @@ export default function ProductLikeButton({
 
   const sync = useCallback(async () => {
     try {
-      const e = await apiProducts.getProductEngagement(productId, {
-        token: session.token ?? undefined,
-      });
+      const e = await apiProducts.getProductEngagement(productId);
       setLiked(Boolean(e.viewer_liked));
       setCount(typeof e.like_count === "number" ? e.like_count : 0);
     } catch {
       setCount(null);
     }
-  }, [productId, session.token]);
+  }, [productId]);
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -43,8 +41,7 @@ export default function ProductLikeButton({
   }, [session.hydrated, sync]);
 
   async function toggle() {
-    const t = session.token;
-    if (!t) {
+    if (!session.isAuthenticated) {
       const nextPath = pathname && pathname.startsWith("/") ? pathname : `/products/${productId}`;
       router.push(`/login?next=${encodeURIComponent(nextPath)}`);
       return;
@@ -55,8 +52,8 @@ export default function ProductLikeButton({
     setLiked(next);
     setCount((c) => Math.max(0, (c ?? 0) + (next ? 1 : -1)));
     try {
-      if (next) await apiProducts.likeProduct(t, productId);
-      else await apiProducts.unlikeProduct(t, productId);
+      if (next) await apiProducts.likeProduct(productId);
+      else await apiProducts.unlikeProduct(productId);
       void sync();
     } catch {
       setLiked(prevLiked);
@@ -74,7 +71,7 @@ export default function ProductLikeButton({
         " "
       )}
       aria-pressed={liked}
-      title={session.token ? (liked ? "Unlike" : "Like") : "Sign in to like"}
+      title={session.isAuthenticated ? (liked ? "Unlike" : "Like") : "Sign in to like"}
     >
       <MaterialSymbol name="favorite" className={`${iconClass} leading-none`} filled={liked} />
       {count !== null ? (

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { apiProducts, apiShops } from "@/lib/api";
 import { productImageUrls, productPriceUgx } from "@/lib/api/products";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
 import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
 import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl";
+import { getProductById, getShopById } from "@/lib/api/server";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -19,14 +19,6 @@ function formatUGX(value: number) {
   }).format(value);
 }
 
-async function loadProduct(id: string) {
-  try {
-    return await apiProducts.getProduct(id);
-  } catch {
-    return null;
-  }
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -34,7 +26,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const id = resolveProductIdFromPageSlug(slug);
-  const product = await loadProduct(id);
+  const product = await getProductById(id);
   if (!product) {
     return { title: "Product | Midora Online" };
   }
@@ -80,7 +72,7 @@ export default async function ProductDetails({
 }) {
   const { slug } = await params;
   const id = resolveProductIdFromPageSlug(slug);
-  const product = await loadProduct(id);
+  const product = await getProductById(id);
   if (!product) notFound();
 
   const canonicalSlug = productPageSlug(product);
@@ -88,12 +80,7 @@ export default async function ProductDetails({
     redirect(`/products/${canonicalSlug}`);
   }
 
-  let shop: Awaited<ReturnType<typeof apiShops.getShop>> | null = null;
-  try {
-    shop = await apiShops.getShop(product.shop_id);
-  } catch {
-    shop = null;
-  }
+  const shop = await getShopById(product.shop_id);
 
   const images = productImageUrls(product);
   const price = productPriceUgx(product);

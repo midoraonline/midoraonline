@@ -17,27 +17,26 @@ export type Paginated<T> = {
 
 // NOTE: Orders are currently mounted at `/api/v1/`.
 
-export function createOrder(token: string, body: Record<string, unknown>) {
+export function createOrder(body: Record<string, unknown>, token?: string | null) {
   return apiFetch<Order>("/api/v1/", {
     method: "POST",
     token,
-    body: JSON.stringify(body),
+    body,
   });
 }
 
-export function listOrders(token: string) {
+export function listOrders(token?: string | null) {
   return apiFetch<Paginated<Order>>("/api/v1/", { token });
 }
 
 export function updateOrder(
-  token: string,
   orderId: string,
-  body: Partial<{ status: OrderStatus }>
+  body: Partial<{ status: OrderStatus }>,
+  token?: string | null,
 ) {
   return apiFetch<Order>(`/api/v1/${encodeURIComponent(orderId)}`, {
     method: "PATCH",
     token,
-    body: JSON.stringify(body),
+    body,
   });
 }
-

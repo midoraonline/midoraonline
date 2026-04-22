@@ -104,7 +104,13 @@ export function recordShopView(shopId: string) {
   );
 }
 
-export function followShop(token: string, shopId: string) {
+/**
+ * All mutating / authed endpoints below take an optional `token`. The browser
+ * carries the auth cookie automatically, so callers can omit it. Server-side
+ * (RSC) callers that need to impersonate a user can still pass one.
+ */
+
+export function followShop(shopId: string, token?: string | null) {
   return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/follow`, {
     method: "POST",
     token,
@@ -112,14 +118,14 @@ export function followShop(token: string, shopId: string) {
   });
 }
 
-export function unfollowShop(token: string, shopId: string) {
+export function unfollowShop(shopId: string, token?: string | null) {
   return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/follow`, {
     method: "DELETE",
     token,
   });
 }
 
-export function likeShop(token: string, shopId: string) {
+export function likeShop(shopId: string, token?: string | null) {
   return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/like`, {
     method: "POST",
     token,
@@ -127,14 +133,14 @@ export function likeShop(token: string, shopId: string) {
   });
 }
 
-export function unlikeShop(token: string, shopId: string) {
+export function unlikeShop(shopId: string, token?: string | null) {
   return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/like`, {
     method: "DELETE",
     token,
   });
 }
 
-export function myShops(token: string) {
+export function myShops(token?: string | null) {
   return apiFetch<Paginated<Shop>>("/api/v1/shops/me", { token });
 }
 
@@ -154,11 +160,11 @@ export type CreateShopRequest = {
   shop_type?: ShopType;
 };
 
-export function createShop(token: string, body: CreateShopRequest) {
+export function createShop(body: CreateShopRequest, token?: string | null) {
   return apiFetch<Shop>("/api/v1/shops/", {
     method: "POST",
     token,
-    body: JSON.stringify(body),
+    body,
   });
 }
 
@@ -172,18 +178,57 @@ export type UpdateShopRequest = Partial<CreateShopRequest> & {
   is_active?: boolean;
 };
 
-export function updateShop(token: string, shopId: string, body: UpdateShopRequest) {
+export function updateShop(
+  shopId: string,
+  body: UpdateShopRequest,
+  token?: string | null,
+) {
   return apiFetch<Shop>(`/api/v1/shops/${encodeURIComponent(shopId)}`, {
     method: "PATCH",
     token,
-    body: JSON.stringify(body),
+    body,
   });
 }
 
-export function generateLogo(token: string, shopId: string) {
+export function generateLogo(shopId: string, token?: string | null) {
   return apiFetch<{ logo_url?: string | null }>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/logo/generate`,
     { method: "POST", token }
+  );
+}
+
+export type VerificationStatus =
+  | "unverified"
+  | "pending"
+  | "verified"
+  | "rejected";
+
+export type Verification = {
+  id: string;
+  shop_id: string;
+  status: VerificationStatus;
+  requested_at?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  notes?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+export function getVerification(shopId: string, token?: string | null) {
+  return apiFetch<Verification>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/verification`,
+    { token }
+  );
+}
+
+export function submitForVerification(
+  shopId: string,
+  body: { notes?: string; metadata?: Record<string, unknown> } = {},
+  token?: string | null
+) {
+  return apiFetch<Verification>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/verification/submit`,
+    { method: "POST", token, body }
   );
 }
 
