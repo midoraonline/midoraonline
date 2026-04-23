@@ -9,7 +9,7 @@ import {
   shopQuickNavFlags,
   type ShopQuickNavFlags,
 } from "@/components/shop/shopUtils";
-import { getShopBySlug } from "@/lib/api/server";
+import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export async function generateMetadata({
   params,
@@ -91,10 +91,15 @@ export default async function ShopLayout({
       ? { products: false, about: false, contacts: false, concierge: false }
       : shopQuickNavFlags(shop);
 
+  // Fetch products for the hero carousel (same React.cache call as the page —
+  // no extra network round-trip is made).
+  const heroProducts =
+    !isEditRoute && !isAnalyticsRoute ? await listShopProducts(shop.id) : [];
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-background text-foreground">
       {!skipShopViewPing ? <ShopPageEffects shopId={shop.id} /> : null}
-      <ShopHeader shop={shop} quickNav={quickNav} />
+      <ShopHeader shop={shop} quickNav={quickNav} products={heroProducts} />
       <main className="flex-1">
         <div className="dm-container pt-3 pb-5 sm:pt-5 sm:pb-8 lg:pt-6 lg:pb-10">
           {children}

@@ -44,8 +44,14 @@ export type SuggestedShop = {
   name: string;
   slug: string;
   description?: string | null;
+  about?: string | null;
   logo_url?: string | null;
   shop_type?: string;
+  shop_email?: string | null;
+  whatsapp_number?: string | null;
+  location?: string | null;
+  category?: string | null;
+  availability?: string | null;
 };
 
 export function sendMessage(

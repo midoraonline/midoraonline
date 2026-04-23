@@ -55,6 +55,23 @@ export const ourFileRouter = {
     .onUploadComplete(async ({ metadata, file }) => {
       return { uploadedBy: metadata.userId, url: file.ufsUrl };
     }),
+
+  /**
+   * Short product videos (hero reels, demo clips).  Clients are expected to
+   * compress to 720p/H.264 in the browser before upload — this cap is a
+   * safety net, not a target.
+   */
+  productVideo: f({
+    video: { maxFileSize: "32MB", maxFileCount: 4 },
+  })
+    .middleware(async ({ req }) => {
+      const auth = getAuth(req);
+      if (!auth) throw new UploadThingError("Unauthorized");
+      return { userId: auth.userId };
+    })
+    .onUploadComplete(async ({ file }) => {
+      return { url: file.ufsUrl };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

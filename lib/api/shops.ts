@@ -144,6 +144,42 @@ export function myShops(token?: string | null) {
   return apiFetch<Paginated<Shop>>("/api/v1/shops/me", { token });
 }
 
+export type EngagementShop = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  logo_url?: string | null;
+  shop_type?: string | null;
+  is_active?: boolean;
+  view_count?: number;
+  follower_count?: number;
+  like_count?: number;
+};
+
+export type MerchantStats = {
+  total_shops: number;
+  active_shops: number;
+  total_shop_views: number;
+  total_followers: number;
+  total_shop_likes: number;
+  total_products: number;
+  total_product_views: number;
+  total_product_likes: number;
+};
+
+export function myFollowedShops() {
+  return apiFetch<{ items: EngagementShop[]; total: number }>("/api/v1/shops/me/followed");
+}
+
+export function myLikedShops() {
+  return apiFetch<{ items: EngagementShop[]; total: number }>("/api/v1/shops/me/liked");
+}
+
+export function myStats() {
+  return apiFetch<MerchantStats>("/api/v1/shops/me/stats");
+}
+
 export type CreateShopRequest = {
   name: string;
   slug: string;

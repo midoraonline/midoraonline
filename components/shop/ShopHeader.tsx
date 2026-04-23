@@ -1,9 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Contact, Shop } from "@/lib/api/shops";
+import type { Product } from "@/lib/api/products";
+import { productMediaItems } from "@/lib/api/products";
 import ShopHeroToolbar from "./ShopHeroToolbar";
 import ShopActions from "./ShopActions";
 import ShopHeaderAuth from "./ShopHeaderAuth";
+import ShopHeroCarousel, { type HeroMedia } from "./ShopHeroCarousel";
 import {
   filterDuplicateContacts,
   locationDisplay,
@@ -67,19 +70,43 @@ function ContactChipIcon({ c }: { c: Contact }) {
   return <MaterialSymbol name="contact_mail" className="!text-[22px] leading-none" />;
 }
 
-/** Plain icon control — no fill, ring, or focus box */
-const contactIcon =
-  "inline-flex items-center justify-center p-1.5 text-foreground/70 outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none";
+/**
+ * Plain icon control used inside the hero.  Colours are sourced from the CSS
+ * vars set by `ShopHeroCarousel`, so a dark image gets white icons and a light
+ * image gets foreground-coloured icons — without any JS on this component.
+ */
+const contactIconClass =
+  "inline-flex items-center justify-center p-1.5 outline-none ring-0 shadow-none transition-colors focus:outline-none focus-visible:outline-none drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]";
+
+const contactIconStyle: React.CSSProperties = {
+  color: "var(--hero-icon)",
+};
 
 export default function ShopHeader({
   shop,
   quickNav,
+  products = [],
 }: {
   shop: Shop;
   quickNav: ShopQuickNavFlags;
+  products?: Product[];
 }) {
   const location = locationDisplay(shop.location);
   const heroContacts = filterDuplicateContacts(shop);
+
+  // Harvest every product image + video + the shop logo as fallback so the
+  // carousel always has *something* to show.  Duplicates are filtered by the
+  // carousel.  We interleave videos naturally so they show up as slides.
+  const productMedia: HeroMedia[] = products.flatMap((p) =>
+    productMediaItems(p).map<HeroMedia>((m) =>
+      m.kind === "video" ? { kind: "video", src: m.src } : { kind: "image", src: m.src }
+    )
+  );
+  const media: HeroMedia[] = productMedia.length
+    ? productMedia
+    : shop.logo_url
+      ? [{ kind: "image", src: shop.logo_url }]
+      : [];
 
   return (
     <>
@@ -87,92 +114,151 @@ export default function ShopHeader({
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-7">
           <div className="shop-header-bar px-2 sm:px-3">
             <div className="flex h-14 items-center gap-2 sm:h-16 sm:gap-3">
-                <Link
-                  href="/shops"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground dm-focus"
-                >
-                  <MaterialSymbol name="arrow_back" className="!text-[18px] leading-none" />
-                  <span className="hidden sm:inline">Shops</span>
-                </Link>
+              <Link
+                href="/shops"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground dm-focus"
+              >
+                <MaterialSymbol name="arrow_back" className="!text-[18px] leading-none" />
+                <span className="hidden sm:inline">Shops</span>
+              </Link>
 
-                <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1 sm:pl-2">
-                  <ShopLogo logoUrl={shop.logo_url} name={shop.name} />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold leading-tight tracking-tight">
-                      {shop.name}
+              <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1 sm:pl-2">
+                <ShopLogo logoUrl={shop.logo_url} name={shop.name} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold leading-tight tracking-tight">
+                    {shop.name}
+                  </p>
+                  {shop.category && (
+                    <p className="hidden truncate text-[11px] leading-tight text-muted sm:block">
+                      {shop.category}
                     </p>
-                    {shop.category && (
-                      <p className="hidden truncate text-[11px] leading-tight text-muted sm:block">
-                        {shop.category}
-                      </p>
-                    )}
-                  </div>
-                  {shop.is_active && (
-                    <MaterialSymbol
-                      name="verified"
-                      className="hidden !text-[18px] leading-none shrink-0 text-green-600 sm:inline-block"
-                      filled
-                    />
                   )}
                 </div>
+                {shop.is_active && (
+                  <MaterialSymbol
+                    name="verified"
+                    className="hidden !text-[18px] leading-none shrink-0 text-green-600 sm:inline-block"
+                    filled
+                  />
+                )}
+              </div>
 
-                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                  <ShopHeaderAuth />
-                  <ShopActions shopSlug={shop.slug} shopName={shop.name} shopId={shop.id} />
-                </div>
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <ShopHeaderAuth />
+                <ShopActions shopSlug={shop.slug} shopName={shop.name} shopId={shop.id} />
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Single full-bleed glass panel: bar + body share bg (no strip of page color between) */}
-      <section className="shop-hero-section shop-hero-panel relative z-0 box-border w-full min-w-0 pb-3 sm:pb-5">
-        <div className="mx-auto w-full max-w-2xl space-y-4 px-3 pt-6 text-center sm:max-w-3xl sm:space-y-5 sm:px-5 sm:pt-8 lg:max-w-3xl lg:px-7">
+      {/*
+        Hero: the carousel OWNS the section's layout.  It sets CSS custom
+        properties (`--hero-text-strong`, `--hero-chip-bg`, etc.) on its
+        wrapper so everything inside colours itself accordingly, with zero
+        client-side state plumbing here.
+      */}
+      <ShopHeroCarousel
+        media={media}
+        className="shop-hero-section border-b border-white/[0.06]"
+      >
+        <div
+          className="mx-auto w-full max-w-2xl space-y-4 px-3 pt-6 pb-14 text-center sm:max-w-3xl sm:space-y-5 sm:px-5 sm:pt-10 sm:pb-16 lg:max-w-3xl lg:px-7"
+          style={{ color: "var(--hero-text-strong)" }}
+        >
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1
+              className="text-2xl font-semibold tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)] sm:text-3xl"
+              style={{ color: "var(--hero-text-strong)" }}
+            >
               {shop.name}
             </h1>
             {shop.is_active ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-2.5 py-1 text-xs font-semibold text-foreground/80">
+              <span
+                className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
+                style={{
+                  background: "var(--hero-chip-bg)",
+                  borderColor: "var(--hero-chip-border)",
+                  color: "var(--hero-text-strong)",
+                }}
+              >
                 <MaterialSymbol
                   name="verified"
-                  className="!text-[14px] leading-none text-green-600"
+                  className="!text-[14px] leading-none text-green-400"
                   filled
                 />
                 Verified
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-2.5 py-1 text-xs font-semibold text-foreground/50">
+              <span
+                className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
+                style={{
+                  background: "var(--hero-chip-bg)",
+                  borderColor: "var(--hero-chip-border)",
+                  color: "var(--hero-text-quiet)",
+                }}
+              >
                 Temporarily Closed
               </span>
             )}
           </div>
 
           {shop.description && (
-            <p className="text-sm leading-relaxed text-muted">{shop.description}</p>
+            <p
+              className="text-sm leading-relaxed drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]"
+              style={{ color: "var(--hero-text-soft)" }}
+            >
+              {shop.description}
+            </p>
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             {shop.category && (
-              <span className="inline-flex items-center rounded-full bg-foreground/[0.05] px-3 py-1 text-xs font-medium text-foreground/80">
+              <span
+                className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium backdrop-blur-sm"
+                style={{
+                  background: "var(--hero-chip-bg)",
+                  borderColor: "var(--hero-chip-border)",
+                  color: "var(--hero-text-strong)",
+                }}
+              >
                 {shop.category}
               </span>
             )}
             {shop.shop_type && (
-              <span className="inline-flex items-center rounded-full bg-foreground/[0.05] px-3 py-1 text-xs font-medium capitalize text-foreground/80">
-                {shop.shop_type === "both"
-                  ? "Products & Services"
-                  : shop.shop_type}
+              <span
+                className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium capitalize backdrop-blur-sm"
+                style={{
+                  background: "var(--hero-chip-bg)",
+                  borderColor: "var(--hero-chip-border)",
+                  color: "var(--hero-text-strong)",
+                }}
+              >
+                {shop.shop_type === "both" ? "Products & Services" : shop.shop_type}
               </span>
             )}
             {location && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.05] px-3 py-1 text-xs font-medium text-foreground/80">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur-sm"
+                style={{
+                  background: "var(--hero-chip-bg)",
+                  borderColor: "var(--hero-chip-border)",
+                  color: "var(--hero-text-strong)",
+                }}
+              >
                 <MaterialSymbol name="location_on" className="!text-[14px] shrink-0 leading-none" />
                 {location}
               </span>
             )}
             {shop.availability?.hours && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.05] px-3 py-1 text-xs font-medium text-foreground/80">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur-sm"
+                style={{
+                  background: "var(--hero-chip-bg)",
+                  borderColor: "var(--hero-chip-border)",
+                  color: "var(--hero-text-strong)",
+                }}
+              >
                 <MaterialSymbol name="schedule" className="!text-[14px] shrink-0 leading-none" />
                 {shop.availability.hours}
                 {shop.availability.days ? ` · ${shop.availability.days}` : ""}
@@ -188,7 +274,8 @@ export default function ShopHeader({
                 href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={contactIcon}
+                className={contactIconClass}
+                style={contactIconStyle}
                 title={`WhatsApp ${shop.whatsapp_number}`}
                 aria-label={`Open WhatsApp ${shop.whatsapp_number}`}
               >
@@ -198,7 +285,8 @@ export default function ShopHeader({
             {shop.shop_email && (
               <a
                 href={`mailto:${shop.shop_email}`}
-                className={contactIcon}
+                className={contactIconClass}
+                style={contactIconStyle}
                 title={shop.shop_email}
                 aria-label={`Email ${shop.shop_email}`}
               >
@@ -214,7 +302,8 @@ export default function ShopHeader({
                   href={href}
                   target={external ? "_blank" : undefined}
                   rel={external ? "noopener noreferrer" : undefined}
-                  className={contactIcon}
+                  className={contactIconClass}
+                  style={contactIconStyle}
                   title={label}
                   aria-label={label}
                 >
@@ -230,7 +319,8 @@ export default function ShopHeader({
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={contactIcon}
+                  className={contactIconClass}
+                  style={contactIconStyle}
                   title={label}
                   aria-label={`${label} (opens in new tab)`}
                 >
@@ -240,17 +330,21 @@ export default function ShopHeader({
             })}
           </div>
 
-          <p className="pt-1 text-center text-[11px] text-muted">
+          <p
+            className="pt-1 text-center text-[11px]"
+            style={{ color: "var(--hero-text-quiet)" }}
+          >
             Powered by{" "}
             <Link
               href="/"
-              className="font-semibold text-foreground/60 outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none"
+              className="font-semibold outline-none ring-0 shadow-none transition-colors focus:outline-none focus-visible:outline-none"
+              style={{ color: "var(--hero-text-muted)" }}
             >
               Midora Online
             </Link>
           </p>
         </div>
-      </section>
+      </ShopHeroCarousel>
     </>
   );
 }

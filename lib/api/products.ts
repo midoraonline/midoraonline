@@ -125,7 +125,24 @@ export function productImageUrls(p: Product): string[] {
 
 /** First image URL for cards. */
 export function productPrimaryImage(p: Product): string | undefined {
-  return parseProductImageUrls(p)[0];
+  return parseProductImageUrls(p).find((u) => !isVideoUrl(u));
+}
+
+/** True when the URL looks like a video file we can play inline. */
+export function isVideoUrl(url: string): boolean {
+  const clean = url.split(/[?#]/, 1)[0];
+  return /\.(mp4|webm|mov|m4v)$/i.test(clean);
+}
+
+export type ProductMedia =
+  | { kind: "image"; src: string }
+  | { kind: "video"; src: string };
+
+/** Split a product's URL list into structured image / video items. */
+export function productMediaItems(p: Product): ProductMedia[] {
+  return parseProductImageUrls(p).map<ProductMedia>((src) =>
+    isVideoUrl(src) ? { kind: "video", src } : { kind: "image", src }
+  );
 }
 
 export function createProduct(
