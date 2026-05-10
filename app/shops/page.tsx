@@ -4,8 +4,8 @@ import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
 import ShopListRealtime from "@/components/shop/ShopListRealtime";
 import { listPublicShops } from "@/lib/api/server";
 
-/** Shop directory is fully dynamic so newly-activated shops show up instantly. */
-export const dynamic = "force-dynamic";
+
+export const revalidate = 60;
 
 export default async function ShopListing() {
   const shops = await listPublicShops();

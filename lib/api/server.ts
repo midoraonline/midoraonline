@@ -1,7 +1,13 @@
 /**
- * Server-only fetch helpers. Every function here is wrapped in `React.cache`
- * so that a single request (layout + page + generateMetadata) performs ONE
- * network call per resource instead of 2–5.
+ * Server-only fetch helpers.
+ *
+ * Two layers of caching:
+ *   1. `unstable_cache` (Vercel Data Cache) — persists across serverless
+ *      function invocations. Entries are tagged so the FastAPI backend can
+ *      bust them on-demand via POST /api/revalidate?tag=<TAG>, and they
+ *      also expire after the TTL defined in `lib/cache.ts`.
+ *   2. `React.cache` — deduplicates calls made within the same request
+ *      (layout + page + generateMetadata share one network round-trip).
  *
  * Only import these from server components and `generateMetadata`. Client
  * components should use the plain `apiFetch` helpers through the API
@@ -10,53 +16,97 @@
 import "server-only";
 
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import { apiProducts, apiShops } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import type { Shop } from "@/lib/api/shops";
+import { CACHE_TAGS, TTL } from "@/lib/cache";
 
-export const getShopBySlug = cache(async (slug: string): Promise<Shop | null> => {
-  try {
-    return await apiShops.bySlug(slug);
-  } catch {
-    return null;
-  }
-});
+// ---------------------------------------------------------------------------
+// Shops
+// ---------------------------------------------------------------------------
 
-export const getShopById = cache(async (shopId: string): Promise<Shop | null> => {
-  try {
-    return await apiShops.getShop(shopId);
-  } catch {
-    return null;
-  }
-});
+export const getShopBySlug = cache(
+  unstable_cache(
+    async (slug: string): Promise<Shop | null> => {
+      try {
+        return await apiShops.bySlug(slug);
+      } catch {
+        return null;
+      }
+    },
+    ["get-shop-by-slug"],
+    { revalidate: TTL.SHOP, tags: [CACHE_TAGS.SHOPS] },
+  ),
+);
 
-export const getProductById = cache(async (productId: string): Promise<Product | null> => {
-  try {
-    return await apiProducts.getProduct(productId);
-  } catch {
-    return null;
-  }
-});
-
-export const listShopProducts = cache(
-  async (shopId: string): Promise<Product[]> => {
-    try {
-      const res = await apiProducts.listShopProducts(shopId);
-      return res.items ?? [];
-    } catch {
-      return [];
-    }
-  },
+export const getShopById = cache(
+  unstable_cache(
+    async (shopId: string): Promise<Shop | null> => {
+      try {
+        return await apiShops.getShop(shopId);
+      } catch {
+        return null;
+      }
+    },
+    ["get-shop-by-id"],
+    { revalidate: TTL.SHOP, tags: [CACHE_TAGS.SHOPS] },
+  ),
 );
 
 export const listPublicShops = cache(
-  async (opts?: { search?: string; shop_type?: string; limit?: number }): Promise<Shop[]> => {
-    try {
-      const res = await apiShops.listPublic(opts);
-      return res.items ?? [];
-    } catch {
-      return [];
-    }
-  },
+  unstable_cache(
+    async (opts?: {
+      search?: string;
+      shop_type?: string;
+      limit?: number;
+    }): Promise<Shop[]> => {
+      try {
+        const res = await apiShops.listPublic(opts);
+        return res.items ?? [];
+      } catch {
+        return [];
+      }
+    },
+    ["list-public-shops"],
+    { revalidate: TTL.SHOP, tags: [CACHE_TAGS.SHOPS] },
+  ),
+);
+
+// ---------------------------------------------------------------------------
+// Products / inventory
+// ---------------------------------------------------------------------------
+
+export const getProductById = cache(
+  unstable_cache(
+    async (productId: string): Promise<Product | null> => {
+      try {
+        return await apiProducts.getProduct(productId);
+      } catch {
+        return null;
+      }
+    },
+    ["get-product-by-id"],
+    { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
+  ),
+);
+
+/**
+ * All published products for a shop, including stock_quantity (inventory).
+ * Cached so the shop layout and page components share one API call.
+ */
+export const listShopProducts = cache(
+  unstable_cache(
+    async (shopId: string): Promise<Product[]> => {
+      try {
+        const res = await apiProducts.listShopProducts(shopId);
+        return res.items ?? [];
+      } catch {
+        return [];
+      }
+    },
+    ["list-shop-products"],
+    { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
+  ),
 );

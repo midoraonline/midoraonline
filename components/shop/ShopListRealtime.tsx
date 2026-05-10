@@ -84,7 +84,7 @@ export default function ShopListRealtime({ initialShops }: { initialShops: Shop[
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3">
       {visible.map((shop) => (
         <ShopCard
           key={shop.id}

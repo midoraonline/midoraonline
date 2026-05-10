@@ -9,8 +9,8 @@ export type ProductCardData = {
   title: string;
   priceUGX: number;
   imageUrl?: string;
-  /** Shop logo shown on the product image (top-right). */
   shopLogoUrl?: string;
+  viewCount?: number;
   shop: {
     id: string;
     name: string;
@@ -40,14 +40,14 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         href={`/products/${product.slug}`}
         className="dm-focus group flex min-h-0 flex-1 flex-col outline-none"
       >
-        <div className="relative aspect-[4/3] w-full bg-foreground/[0.04]">
+        <div className="relative aspect-square w-full bg-foreground/[0.04] sm:aspect-[4/3]">
           {product.imageUrl ? (
             <Image
               src={product.imageUrl}
               alt={product.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-              sizes="(max-width: 768px) 100vw, 33vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={unopt}
             />
           ) : (
@@ -61,27 +61,19 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           />
         </div>
 
-        <div className="p-5 pb-3">
-          <p className="text-sm font-semibold tracking-tight line-clamp-2">{product.title}</p>
-          <p className="mt-2 text-sm text-foreground/90">{formatUGX(product.priceUGX)}</p>
+        <div className="p-3 pb-2 sm:p-4 sm:pb-2">
+          <p className="text-xs font-semibold tracking-tight line-clamp-2 sm:text-sm">{product.title}</p>
+          <p className="mt-1 text-xs font-medium text-foreground/90 sm:text-sm">{formatUGX(product.priceUGX)}</p>
         </div>
       </Link>
 
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-foreground/[0.06] px-5 py-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-xs text-muted">Sold by</span>
-          <Link
-            href={`/shops/${product.shop.slug}`}
-            className="dm-focus inline-flex max-w-[min(100%,12rem)] items-center gap-2 truncate rounded-full bg-foreground/[0.07] px-3 py-1 text-xs font-semibold text-foreground/85 hover:bg-foreground/[0.1]"
-          >
-            <span className="truncate">{product.shop.name}</span>
-            {product.shop.verified ? (
-              <span className="shrink-0 rounded-full bg-foreground/[0.08] px-2 py-0.5 text-[10px] font-semibold text-foreground/70">
-                Verified
-              </span>
-            ) : null}
-          </Link>
-        </div>
+      <div className="mt-auto flex items-center justify-between gap-1.5 border-t border-foreground/[0.06] px-3 py-2 sm:gap-2 sm:px-4 sm:py-3">
+        <Link
+          href={`/shops/${product.shop.slug}`}
+          className="dm-focus min-w-0 truncate rounded-full bg-foreground/[0.07] px-2 py-1 text-[10px] font-semibold text-foreground/85 hover:bg-foreground/[0.1] sm:px-3 sm:text-xs"
+        >
+          <span className="truncate">{product.shop.name}</span>
+        </Link>
         <ProductLikeButton productId={product.id} size="compact" className="shrink-0" />
       </div>
     </article>

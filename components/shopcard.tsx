@@ -26,10 +26,11 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="dm-focus block dm-card dm-card-hover p-5 sm:p-6"
+      className="dm-focus block dm-card dm-card-hover p-3 sm:p-5"
     >
-      <div className="flex gap-4">
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.06] ring-1 ring-foreground/[0.06] sm:size-[3.75rem]">
+      {/* Mobile: vertical stack · sm+: horizontal row */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+        <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-foreground/[0.06] ring-1 ring-foreground/[0.06] sm:size-14 sm:rounded-xl">
           {shop.logoUrl ? (
             <img
               src={shop.logoUrl}
@@ -39,7 +40,7 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
             />
           ) : (
             <span
-              className="grid size-full place-items-center text-sm font-semibold tracking-tight text-foreground/45"
+              className="grid size-full place-items-center text-xs font-semibold tracking-tight text-foreground/45 sm:text-sm"
               aria-hidden
             >
               {initial}
@@ -48,21 +49,23 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold tracking-tight">{shop.name}</h3>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <h3 className="text-xs font-semibold tracking-tight sm:text-base">{shop.name}</h3>
             {shop.verified ? (
-              <span className="inline-flex items-center rounded-full bg-foreground/[0.07] px-2.5 py-1 text-xs font-semibold text-foreground/80">
+              <span className="inline-flex items-center rounded-full bg-foreground/[0.07] px-2 py-0.5 text-[10px] font-semibold text-foreground/80 sm:px-2.5 sm:py-1 sm:text-xs">
                 Verified
               </span>
             ) : null}
           </div>
-          <p className="mt-1 line-clamp-2 text-sm text-muted">{shop.tagline}</p>
+          <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted sm:mt-1 sm:text-sm">
+            {shop.tagline}
+          </p>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-3 py-1 text-xs font-medium text-muted">
+          <div className="mt-2 flex flex-wrap gap-1 sm:mt-3 sm:gap-2">
+            <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-medium text-muted sm:px-3 sm:py-1 sm:text-xs">
               {shop.category}
             </span>
-            <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-3 py-1 text-xs font-medium text-muted">
+            <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-medium text-muted sm:px-3 sm:py-1 sm:text-xs">
               {shop.location}
             </span>
           </div>

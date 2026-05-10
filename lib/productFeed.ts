@@ -1,70 +1,142 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import { apiProducts, apiShops } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
 import { productPageSlug } from "@/lib/productUrl";
+import { CACHE_TAGS, TTL } from "@/lib/cache";
 
 const MAX_CARDS = 72;
 const SHOPS_TO_SCAN = 20;
 const PER_SHOP_CAP = 12;
 
-/**
- * Aggregate published listings from public shops for the global /products page.
- *
- * Uses React.cache so the feed is fetched once per request, and fans out the
- * per-shop product calls in parallel (previously the sequential loop was the
- * main cause of the `/products` page taking 9+ seconds in dev).
- */
-export const loadPublicProductFeed = cache(async (): Promise<ProductCardData[]> => {
-  let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Build a ProductCardData array from raw API data. */
+async function fetchShopProductCards(
+  shop: { id: string; name: string; slug: string; logo_url?: string | null; is_active?: boolean },
+  perShopCap: number,
+): Promise<ProductCardData[]> {
   try {
-    const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
-    shops = res.items ?? [];
+    const { items: products } = await apiProducts.listShopProducts(shop.id);
+    const cards: ProductCardData[] = [];
+    for (const p of products) {
+      if (cards.length >= perShopCap) break;
+      if (p.is_published === false) continue;
+      cards.push({
+        id: p.id,
+        slug: productPageSlug(p),
+        title: p.title,
+        priceUGX: apiProducts.productPriceUgx(p),
+        imageUrl: apiProducts.productPrimaryImage(p),
+        shopLogoUrl: shop.logo_url ?? undefined,
+        viewCount: p.view_count ?? 0,
+        shop: {
+          id: shop.id,
+          name: shop.name,
+          slug: shop.slug,
+          verified: shop.is_active ?? true,
+        },
+      });
+    }
+    return cards;
   } catch {
     return [];
   }
+}
 
-  const perShop = await Promise.all(
-    shops.map(async (shop) => {
+// ---------------------------------------------------------------------------
+// Public product feed (all shops, alphabetical)
+// ---------------------------------------------------------------------------
+
+/**
+ * Aggregate published listings from public shops for the global /products
+ * page.
+ *
+ * Two cache layers:
+ *   • unstable_cache: persists across Vercel serverless invocations (60 s
+ *     TTL, tagged for on-demand revalidation).
+ *   • React.cache: deduplicates within a single request so layout +
+ *     page share one result.
+ */
+export const loadPublicProductFeed = cache(
+  unstable_cache(
+    async (): Promise<ProductCardData[]> => {
+      let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
       try {
-        const { items: products } = await apiProducts.listShopProducts(shop.id);
-        const cards: ProductCardData[] = [];
-        for (const p of products) {
-          if (cards.length >= PER_SHOP_CAP) break;
-          if (p.is_published === false) continue;
-          cards.push({
-            id: p.id,
-            slug: productPageSlug(p),
-            title: p.title,
-            priceUGX: apiProducts.productPriceUgx(p),
-            imageUrl: apiProducts.productPrimaryImage(p),
-            shopLogoUrl: shop.logo_url ?? undefined,
-            shop: {
-              id: shop.id,
-              name: shop.name,
-              slug: shop.slug,
-              verified: shop.is_active ?? true,
-            },
-          });
-        }
-        return cards;
+        const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
+        shops = res.items ?? [];
       } catch {
-        return [] as ProductCardData[];
+        return [];
       }
-    }),
-  );
 
-  const out: ProductCardData[] = [];
-  for (const cards of perShop) {
-    for (const card of cards) {
-      if (out.length >= MAX_CARDS) break;
-      out.push(card);
-    }
-    if (out.length >= MAX_CARDS) break;
-  }
+      const perShop = await Promise.all(
+        shops.map((shop) => fetchShopProductCards(shop, PER_SHOP_CAP)),
+      );
 
-  out.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
+      const out: ProductCardData[] = [];
+      for (const cards of perShop) {
+        for (const card of cards) {
+          if (out.length >= MAX_CARDS) break;
+          out.push(card);
+        }
+        if (out.length >= MAX_CARDS) break;
+      }
 
-  return out;
-});
+      out.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
+
+      return out;
+    },
+    ["public-product-feed"],
+    { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
+  ),
+);
+
+// ---------------------------------------------------------------------------
+// Most-viewed products
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the top-N products across all shops sorted by view_count descending.
+ *
+ * Uses a longer TTL (5 min) because the ranking only needs minute-level
+ * precision — an immediate per-view revalidation would create too many
+ * cache bursts.
+ *
+ * Tagged with both PRODUCTS and MOST_VIEWED so it can be invalidated either
+ * broadly (tag=products) or precisely (tag=most-viewed).
+ */
+export const loadMostViewedProducts = cache(
+  unstable_cache(
+    async (limit: number = 12): Promise<ProductCardData[]> => {
+      let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
+      try {
+        const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
+        shops = res.items ?? [];
+      } catch {
+        return [];
+      }
+
+      const perShop = await Promise.all(
+        shops.map((shop) => fetchShopProductCards(shop, PER_SHOP_CAP)),
+      );
+
+      const all: ProductCardData[] = [];
+      for (const cards of perShop) {
+        for (const card of cards) all.push(card);
+      }
+
+      all.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
+
+      return all.slice(0, limit);
+    },
+    ["most-viewed-products"],
+    {
+      revalidate: TTL.MOST_VIEWED,
+      tags: [CACHE_TAGS.PRODUCTS, CACHE_TAGS.MOST_VIEWED],
+    },
+  ),
+);
