@@ -54,6 +54,20 @@ body {
   font-family: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
 }
 
+.home-category-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(102, 121, 143, 0.35) transparent;
+}
+
+.home-category-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.home-category-scroll::-webkit-scrollbar-thumb {
+  background: rgba(102, 121, 143, 0.35);
+  border-radius: 999px;
+}
+
 /* Google Material Symbols Outlined — loaded via layout <link> */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined", sans-serif;
@@ -103,7 +117,7 @@ body {
 
 @layer components {
   .dm-container {
-    @apply mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-7;
+    @apply mx-auto w-full max-w-none px-3 sm:px-5 lg:px-8;
   }
 
   /* Fixed shop shell: safe area + vertical inset so the bar can float */

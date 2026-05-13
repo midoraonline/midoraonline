@@ -64,6 +64,8 @@ export default async function ShopDetails({
             slug: shop.slug,
             verified: shop.is_active ?? true,
             logoUrl: shop.logo_url ?? null,
+            whatsappNumber: shop.whatsapp_number ?? null,
+            category: shop.category ?? null,
           }}
           initialProducts={items}
         />

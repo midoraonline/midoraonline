@@ -111,7 +111,7 @@ export default function ShopHeader({
   return (
     <>
       <header className="shop-header-fixed fixed left-0 right-0 top-0 z-50">
-        <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-7">
+        <div className="mx-auto w-full max-w-none px-3 sm:px-5 lg:px-8">
           <div className="shop-header-bar px-2 sm:px-3">
             <div className="flex h-14 items-center gap-2 sm:h-16 sm:gap-3">
               <Link

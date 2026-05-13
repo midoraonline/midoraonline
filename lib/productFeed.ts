@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 
 import { apiProducts, apiShops } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
+import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
 import { CACHE_TAGS, TTL } from "@/lib/cache";
 
@@ -17,29 +18,43 @@ const PER_SHOP_CAP = 12;
 
 /** Build a ProductCardData array from raw API data. */
 async function fetchShopProductCards(
-  shop: { id: string; name: string; slug: string; logo_url?: string | null; is_active?: boolean },
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+    is_active?: boolean;
+    whatsapp_number?: string | null;
+    category?: string | null;
+  },
   perShopCap: number,
 ): Promise<ProductCardData[]> {
+  const site = publicSiteOrigin();
   try {
     const { items: products } = await apiProducts.listShopProducts(shop.id);
     const cards: ProductCardData[] = [];
     for (const p of products) {
       if (cards.length >= perShopCap) break;
       if (p.is_published === false) continue;
+      const slug = productPageSlug(p);
       cards.push({
         id: p.id,
-        slug: productPageSlug(p),
+        slug,
         title: p.title,
         priceUGX: apiProducts.productPriceUgx(p),
         imageUrl: apiProducts.productPrimaryImage(p),
         shopLogoUrl: shop.logo_url ?? undefined,
         viewCount: p.view_count ?? 0,
+        shopWhatsApp: shop.whatsapp_number ?? null,
+        listingUrl: `${site}/products/${slug}`,
         shop: {
           id: shop.id,
           name: shop.name,
           slug: shop.slug,
           verified: shop.is_active ?? true,
+          category: shop.category ?? null,
         },
+        category: p.category ?? null,
       });
     }
     return cards;

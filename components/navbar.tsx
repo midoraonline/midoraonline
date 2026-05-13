@@ -20,7 +20,7 @@ function isActivePath(pathname: string, href: string) {
 }
 
 const shell =
-  "pointer-events-auto mx-auto w-full max-w-5xl dm-glass-bar px-3 sm:px-4";
+  "pointer-events-auto mx-auto w-full max-w-none dm-glass-bar px-3 sm:px-4";
 
 export default function Navbar() {
   const pathname = usePathname();

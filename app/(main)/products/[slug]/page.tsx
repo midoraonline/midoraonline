@@ -6,6 +6,8 @@ import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
 import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl";
 import { getProductById, getShopById } from "@/lib/api/server";
 
@@ -84,6 +86,15 @@ export default async function ProductDetails({
 
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
+  const productPath = `/products/${canonicalSlug}`;
+  const listingUrl = `${SITE}${productPath}`;
+  const waHref =
+    shop?.whatsapp_number?.trim() &&
+    productInquiryWhatsAppUrl(shop.whatsapp_number, {
+      itemTitle: product.title,
+      itemUrl: listingUrl,
+    });
+  const verifiedShop = shop?.is_active !== false;
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5 sm:space-y-8">
@@ -125,15 +136,43 @@ export default async function ProductDetails({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <ProductLikeButton productId={product.id} />
-            {shop ? (
-              <Link
-                href={`/shops/${shop.slug}`}
-                className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
-              >
-                View shop
-              </Link>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <ProductLikeButton productId={product.id} />
+              {shop ? (
+                <Link
+                  href={`/shops/${shop.slug}`}
+                  className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  View shop
+                </Link>
+              ) : null}
+            </div>
+
+            {waHref ? (
+              <div className="space-y-1.5">
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="dm-focus inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
+                >
+                  <WhatsAppIcon className="size-5 shrink-0 text-white" />
+                  Chat on WhatsApp
+                </a>
+                {verifiedShop ? (
+                  <p className="text-xs text-muted">
+                    <span className="font-medium text-foreground/90">✓ Verified seller</span>
+                    <span> · Replies fast</span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted">Seller on Midora · Final sale happens in WhatsApp</p>
+                )}
+              </div>
+            ) : shop ? (
+              <p className="text-xs text-muted">
+                This seller hasn&apos;t connected WhatsApp yet — open the shop page for other contact options.
+              </p>
             ) : null}
           </div>
 

@@ -71,7 +71,7 @@ export default function ProductLikeButton({
         " "
       )}
       aria-pressed={liked}
-      title={session.isAuthenticated ? (liked ? "Unlike" : "Like") : "Sign in to like"}
+      title={session.isAuthenticated ? (liked ? "Remove from watchlist" : "Save for later — stuff I'm watching") : "Sign in to save for later"}
     >
       <MaterialSymbol name="favorite" className={`${iconClass} leading-none`} filled={liked} />
       {count !== null ? (

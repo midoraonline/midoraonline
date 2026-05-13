@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import ProductCard, { type ProductCardData } from "@/components/productcard";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
+import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
@@ -13,6 +14,8 @@ type ShopContext = {
   slug: string;
   verified: boolean;
   logoUrl?: string | null;
+  whatsappNumber?: string | null;
+  category?: string | null;
 };
 
 type Props = {
@@ -20,20 +23,25 @@ type Props = {
   initialProducts: Product[];
 };
 
-function toCard(product: Product, shop: ShopContext): ProductCardData {
+function toCard(product: Product, shop: ShopContext, listingBase: string): ProductCardData {
+  const slug = productPageSlug(product);
   return {
     id: product.id,
-    slug: productPageSlug(product),
+    slug,
     title: product.title,
     priceUGX: apiProducts.productPriceUgx(product),
     imageUrl: apiProducts.productPrimaryImage(product),
     shopLogoUrl: shop.logoUrl ?? undefined,
+    shopWhatsApp: shop.whatsappNumber ?? null,
+    listingUrl: `${listingBase}/products/${slug}`,
     shop: {
       id: shop.id,
       name: shop.name,
       slug: shop.slug,
       verified: shop.verified,
+      category: shop.category ?? null,
     },
+    category: product.category ?? null,
   };
 }
 
@@ -47,6 +55,7 @@ function upsert(list: Product[], next: Product): Product[] {
 
 export default function ShopProductGridRealtime({ shop, initialProducts }: Props) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const listingBase = useMemo(() => publicSiteOrigin(), []);
 
   useEffect(() => {
     setProducts(initialProducts);
@@ -97,7 +106,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3">
       {visible.map((p) => (
-        <ProductCard key={p.id} product={toCard(p, shop)} />
+        <ProductCard key={p.id} product={toCard(p, shop, listingBase)} />
       ))}
     </div>
   );

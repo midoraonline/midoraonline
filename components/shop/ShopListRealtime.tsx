@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ShopCard from "@/components/shopcard";
 import type { Shop } from "@/lib/api/shops";
+import { browseShopGridForSidebar, catEquals } from "@/lib/browseCategories";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
 function locationDisplay(loc: unknown): string {
@@ -25,13 +26,37 @@ function removeShop(list: Shop[], id: string): Shop[] {
   return list.filter((s) => s.id !== id);
 }
 
+function matchesShopSearch(shop: Shop, q: string): boolean {
+  const qq = q.trim().toLowerCase();
+  if (!qq) return true;
+  return (
+    shop.name.toLowerCase().includes(qq) ||
+    (shop.description ?? "").toLowerCase().includes(qq) ||
+    (shop.category ?? "").toLowerCase().includes(qq) ||
+    locationDisplay(shop.location).toLowerCase().includes(qq)
+  );
+}
+
 /**
  * Client-side shop grid that seeds from a server-fetched list and keeps
  * itself in sync via Supabase Realtime on the `public.shops` table.
  *
  * Falls back to the initial list if realtime isn't configured.
  */
-export default function ShopListRealtime({ initialShops }: { initialShops: Shop[] }) {
+export default function ShopListRealtime({
+  initialShops,
+  categoryFilter = null,
+  searchQuery = "",
+  gridClassName,
+}: {
+  initialShops: Shop[];
+  /** When set, only shops in this category are shown. */
+  categoryFilter?: string | null;
+  /** Filter by name, description, category, location. */
+  searchQuery?: string;
+  /** Responsive grid classes (e.g. from `browseShopGridForSidebar`). */
+  gridClassName?: string;
+}) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
 
   // Re-seed when server provides a fresh list (eg. after router refresh).
@@ -58,12 +83,20 @@ export default function ShopListRealtime({ initialShops }: { initialShops: Shop[
     }
   );
 
-  const visible = useMemo(
-    () => shops.filter((s) => s.is_active !== false),
-    [shops]
-  );
+  const activeShops = useMemo(() => shops.filter((s) => s.is_active !== false), [shops]);
 
-  if (visible.length === 0) {
+  const visible = useMemo(() => {
+    let list = activeShops;
+    if (categoryFilter) {
+      list = list.filter((s) => catEquals(s.category, categoryFilter));
+    }
+    list = list.filter((s) => matchesShopSearch(s, searchQuery));
+    return list;
+  }, [activeShops, categoryFilter, searchQuery]);
+
+  const grid = gridClassName ?? browseShopGridForSidebar(true);
+
+  if (activeShops.length === 0) {
     return (
       <div className="dm-card p-6 sm:p-8">
         <p className="text-sm font-medium text-foreground">No active shops yet.</p>
@@ -83,8 +116,16 @@ export default function ShopListRealtime({ initialShops }: { initialShops: Shop[
     );
   }
 
+  if (visible.length === 0) {
+    return (
+      <div className="dm-card p-6 sm:p-8">
+        <p className="text-sm text-muted">No shops match your search or category. Try clearing filters.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3">
+    <div className={grid}>
       {visible.map((shop) => (
         <ShopCard
           key={shop.id}
