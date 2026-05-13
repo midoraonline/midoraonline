@@ -155,3 +155,39 @@ export const loadMostViewedProducts = cache(
     },
   ),
 );
+
+// ---------------------------------------------------------------------------
+// Shop browse: product categories per shop (for /shops filters)
+// ---------------------------------------------------------------------------
+
+/**
+ * For each shop id, the set of `category` values on published products.
+ * Cached; bust with `products` revalidation tag.
+ */
+export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Record<string, string[]>> {
+  const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort();
+  const key = uniqueSorted.join(",");
+
+  return unstable_cache(
+    async (): Promise<Record<string, string[]>> => {
+      const out: Record<string, string[]> = {};
+      for (const id of uniqueSorted) {
+        const set = new Set<string>();
+        try {
+          const { items } = await apiProducts.listShopProducts(id);
+          for (const p of items ?? []) {
+            if (p.is_published === false) continue;
+            const c = p.category?.trim();
+            if (c) set.add(c);
+          }
+        } catch {
+          /* skip shop */
+        }
+        out[id] = Array.from(set);
+      }
+      return out;
+    },
+    ["shop-product-category-map", key],
+    { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
+  )();
+}

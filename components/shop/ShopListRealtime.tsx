@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ShopCard from "@/components/shopcard";
 import type { Shop } from "@/lib/api/shops";
-import { browseShopGridForSidebar, catEquals } from "@/lib/browseCategories";
+import { browseShopGridForSidebar, shopHasProductCategory } from "@/lib/browseCategories";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
 function locationDisplay(loc: unknown): string {
@@ -26,14 +26,16 @@ function removeShop(list: Shop[], id: string): Shop[] {
   return list.filter((s) => s.id !== id);
 }
 
-function matchesShopSearch(shop: Shop, q: string): boolean {
+function matchesShopSearch(shop: Shop, q: string, productCats?: string[]): boolean {
   const qq = q.trim().toLowerCase();
   if (!qq) return true;
+  const inProductCats = productCats?.some((c) => c.toLowerCase().includes(qq)) ?? false;
   return (
     shop.name.toLowerCase().includes(qq) ||
     (shop.description ?? "").toLowerCase().includes(qq) ||
     (shop.category ?? "").toLowerCase().includes(qq) ||
-    locationDisplay(shop.location).toLowerCase().includes(qq)
+    locationDisplay(shop.location).toLowerCase().includes(qq) ||
+    inProductCats
   );
 }
 
@@ -45,14 +47,17 @@ function matchesShopSearch(shop: Shop, q: string): boolean {
  */
 export default function ShopListRealtime({
   initialShops,
-  categoryFilter = null,
+  shopProductCategories,
+  productCategoryFilter = null,
   searchQuery = "",
   gridClassName,
 }: {
   initialShops: Shop[];
-  /** When set, only shops in this category are shown. */
-  categoryFilter?: string | null;
-  /** Filter by name, description, category, location. */
+  /** Published product categories per shop id (for sidebar + filter). */
+  shopProductCategories: Record<string, string[]>;
+  /** When set, only shops with a published product in this category are shown. */
+  productCategoryFilter?: string | null;
+  /** Filter by name, description, category, location, or product categories. */
   searchQuery?: string;
   /** Responsive grid classes (e.g. from `browseShopGridForSidebar`). */
   gridClassName?: string;
@@ -87,12 +92,12 @@ export default function ShopListRealtime({
 
   const visible = useMemo(() => {
     let list = activeShops;
-    if (categoryFilter) {
-      list = list.filter((s) => catEquals(s.category, categoryFilter));
+    if (productCategoryFilter) {
+      list = list.filter((s) => shopHasProductCategory(s.id, shopProductCategories, productCategoryFilter));
     }
-    list = list.filter((s) => matchesShopSearch(s, searchQuery));
+    list = list.filter((s) => matchesShopSearch(s, searchQuery, shopProductCategories[s.id]));
     return list;
-  }, [activeShops, categoryFilter, searchQuery]);
+  }, [activeShops, productCategoryFilter, searchQuery, shopProductCategories]);
 
   const grid = gridClassName ?? browseShopGridForSidebar(true);
 
@@ -133,7 +138,7 @@ export default function ShopListRealtime({
             id: shop.id,
             slug: shop.slug,
             name: shop.name,
-            category: shop.category ?? "Shop",
+            category: shopProductCategories[shop.id]?.[0] ?? shop.category ?? "Shop",
             location: locationDisplay(shop.location),
             tagline: shop.description ?? "",
             verified: shop.is_active ?? true,

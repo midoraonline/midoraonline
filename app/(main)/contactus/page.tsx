@@ -37,7 +37,7 @@ export default function ContactUs() {
           <div className="mt-4 flex flex-1 flex-col justify-center space-y-3 text-sm text-muted">
             <p>
               <span className="font-semibold text-foreground/85">Email:</span>{" "}
-              support@digitalmall.ug
+              midoraonline@gmail.com
             </p>
             <p>
               <span className="font-semibold text-foreground/85">Location:</span>{" "}

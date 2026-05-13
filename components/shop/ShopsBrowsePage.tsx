@@ -7,15 +7,24 @@ import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
 import StickyBrowseToolbar from "@/components/browse/StickyBrowseToolbar";
 import ShopListRealtime from "@/components/shop/ShopListRealtime";
 import { useBrowseSidebarCollapse } from "@/hooks/useBrowseSidebarCollapse";
-import { browseShopGridForSidebar, collectCategoriesFromShops } from "@/lib/browseCategories";
+import { browseShopGridForSidebar, collectCategoriesFromShopProductMap } from "@/lib/browseCategories";
 import type { Shop } from "@/lib/api/shops";
 
-export default function ShopsBrowsePage({ initialShops }: { initialShops: Shop[] }) {
+export default function ShopsBrowsePage({
+  initialShops,
+  shopProductCategories,
+}: {
+  initialShops: Shop[];
+  shopProductCategories: Record<string, string[]>;
+}) {
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { collapsed, setCollapsed } = useBrowseSidebarCollapse();
 
-  const categories = useMemo(() => collectCategoriesFromShops(initialShops), [initialShops]);
+  const categories = useMemo(
+    () => collectCategoriesFromShopProductMap(shopProductCategories),
+    [shopProductCategories],
+  );
   const categoryFilterActive = selectedCategory !== null;
   const q = query.trim();
 
@@ -82,7 +91,8 @@ export default function ShopsBrowsePage({ initialShops }: { initialShops: Shop[]
 
           <ShopListRealtime
             initialShops={initialShops}
-            categoryFilter={selectedCategory}
+            shopProductCategories={shopProductCategories}
+            productCategoryFilter={selectedCategory}
             searchQuery={query}
             gridClassName={browseShopGridForSidebar(collapsed)}
           />

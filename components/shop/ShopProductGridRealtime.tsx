@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import ProductCard, { type ProductCardData } from "@/components/productcard";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
 type ShopContext = {
@@ -32,7 +35,8 @@ function toCard(product: Product, shop: ShopContext, listingBase: string): Produ
     priceUGX: apiProducts.productPriceUgx(product),
     imageUrl: apiProducts.productPrimaryImage(product),
     shopLogoUrl: shop.logoUrl ?? undefined,
-    shopWhatsApp: shop.whatsappNumber ?? null,
+    // Shop hero already surfaces WhatsApp; keep cards focused on the listing + shop link.
+    shopWhatsApp: null,
     listingUrl: `${listingBase}/products/${slug}`,
     shop: {
       id: shop.id,
@@ -42,6 +46,8 @@ function toCard(product: Product, shop: ShopContext, listingBase: string): Produ
       category: shop.category ?? null,
     },
     category: product.category ?? null,
+    description: product.description ?? null,
+    inShopContext: true,
   };
 }
 
@@ -90,14 +96,41 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
 
   const visible = useMemo(
     () => products.filter((p) => p.is_published !== false),
-    [products]
+    [products],
   );
+
+  const shopWa = useMemo(() => {
+    const n = shop.whatsappNumber?.trim();
+    if (!n) return null;
+    return shopInquiryWhatsAppUrl(n, {
+      shopName: shop.name,
+      shopUrl: `${listingBase}/shops/${shop.slug}`,
+    });
+  }, [listingBase, shop.name, shop.slug, shop.whatsappNumber]);
 
   if (visible.length === 0) {
     return (
-      <div className="dm-card p-8 text-center sm:p-10">
-        <p className="text-sm text-muted">
-          No products listed yet. Check back soon.
+      <div className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.02] px-6 py-10 text-center sm:px-10">
+        <p className="text-sm font-medium text-foreground">No listings yet</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">
+          This shop hasn&apos;t published products or services. Check back later, or message the owner if
+          you&apos;d like to enquire.
+        </p>
+        {shopWa ? (
+          <a
+            href={shopWa}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="dm-focus mx-auto mt-6 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 sm:w-auto"
+          >
+            <WhatsAppIcon className="size-5 shrink-0 text-white" />
+            Chat on WhatsApp
+          </a>
+        ) : null}
+        <p className="mt-6 text-xs text-muted">
+          <Link href="/shops" className="font-semibold text-foreground/90 underline-offset-2 hover:underline">
+            Browse more shops
+          </Link>
         </p>
       </div>
     );

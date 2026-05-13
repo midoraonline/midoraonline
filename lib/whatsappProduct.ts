@@ -25,3 +25,22 @@ export function productInquiryWhatsAppUrl(
 
   return `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
 }
+
+/** Prefilled message when a buyer opens WhatsApp from a shop storefront. */
+export function shopInquiryWhatsAppUrl(
+  phoneRaw: string,
+  opts?: { shopName?: string; shopUrl?: string },
+): string | null {
+  const digits = whatsappDigits(phoneRaw);
+  if (!digits) return null;
+
+  let msg = "Hi, I found your shop on Midora and wanted to get in touch.";
+  if (opts?.shopName?.trim()) {
+    msg += `\n\n(Shop: ${opts.shopName.trim()})`;
+  }
+  if (opts?.shopUrl?.trim()) {
+    msg += `\n${opts.shopUrl.trim()}`;
+  }
+
+  return `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+}

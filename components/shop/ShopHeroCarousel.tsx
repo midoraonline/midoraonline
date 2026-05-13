@@ -143,7 +143,7 @@ export default function ShopHeroCarousel({
   interval = 5500,
   className = "",
   children,
-  minHeightClass = "min-h-[22rem] sm:min-h-[26rem] lg:min-h-[30rem]",
+  minHeightClass = "min-h-[15rem] sm:min-h-[19rem] lg:min-h-[22rem]",
 }: Props) {
   const normalized = useMemo(() => {
     const seen = new Set<string>();

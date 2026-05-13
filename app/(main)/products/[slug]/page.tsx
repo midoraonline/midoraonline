@@ -163,7 +163,6 @@ export default async function ProductDetails({
                 {verifiedShop ? (
                   <p className="text-xs text-muted">
                     <span className="font-medium text-foreground/90">✓ Verified seller</span>
-                    <span> · Replies fast</span>
                   </p>
                 ) : (
                   <p className="text-xs text-muted">Seller on Midora · Final sale happens in WhatsApp</p>

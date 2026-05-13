@@ -18,6 +18,28 @@ export function collectCategoriesFromShops(shops: Shop[]): string[] {
   return Array.from(set);
 }
 
+/** Sidebar categories for /shops — union of published product categories per shop. */
+export function collectCategoriesFromShopProductMap(map: Record<string, string[]>): string[] {
+  const set = new Set<string>();
+  for (const cats of Object.values(map)) {
+    for (const c of cats) {
+      const t = c?.trim();
+      if (t) set.add(t);
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+/** True if the shop has at least one published product in `selected` category (case-insensitive). */
+export function shopHasProductCategory(
+  shopId: string,
+  map: Record<string, string[]>,
+  selected: string,
+): boolean {
+  const cats = map[shopId] ?? [];
+  return cats.some((c) => catEquals(c, selected));
+}
+
 export function collectCategoriesFromProducts(products: ProductCardData[]): string[] {
   const set = new Set<string>();
   for (const p of products) {
