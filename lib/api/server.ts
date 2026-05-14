@@ -18,10 +18,21 @@ import "server-only";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 
+import { ApiError } from "@/lib/api/base";
 import { apiProducts, apiShops } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import type { Shop } from "@/lib/api/shops";
 import { CACHE_TAGS, TTL } from "@/lib/cache";
+
+/** Only 404 is treated as “missing”. Other failures must not be cached as empty/null. */
+async function nullIfNotFound<T>(p: Promise<T>): Promise<T | null> {
+  try {
+    return await p;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Shops
@@ -29,13 +40,7 @@ import { CACHE_TAGS, TTL } from "@/lib/cache";
 
 export const getShopBySlug = cache(
   unstable_cache(
-    async (slug: string): Promise<Shop | null> => {
-      try {
-        return await apiShops.bySlug(slug);
-      } catch {
-        return null;
-      }
-    },
+    async (slug: string): Promise<Shop | null> => nullIfNotFound(apiShops.bySlug(slug)),
     ["get-shop-by-slug"],
     { revalidate: TTL.SHOP, tags: [CACHE_TAGS.SHOPS] },
   ),
@@ -43,13 +48,7 @@ export const getShopBySlug = cache(
 
 export const getShopById = cache(
   unstable_cache(
-    async (shopId: string): Promise<Shop | null> => {
-      try {
-        return await apiShops.getShop(shopId);
-      } catch {
-        return null;
-      }
-    },
+    async (shopId: string): Promise<Shop | null> => nullIfNotFound(apiShops.getShop(shopId)),
     ["get-shop-by-id"],
     { revalidate: TTL.SHOP, tags: [CACHE_TAGS.SHOPS] },
   ),
@@ -62,12 +61,8 @@ export const listPublicShops = cache(
       shop_type?: string;
       limit?: number;
     }): Promise<Shop[]> => {
-      try {
-        const res = await apiShops.listPublic(opts);
-        return res.items ?? [];
-      } catch {
-        return [];
-      }
+      const res = await apiShops.listPublic(opts);
+      return res.items ?? [];
     },
     ["list-public-shops"],
     { revalidate: TTL.SHOP, tags: [CACHE_TAGS.SHOPS] },
@@ -80,13 +75,8 @@ export const listPublicShops = cache(
 
 export const getProductById = cache(
   unstable_cache(
-    async (productId: string): Promise<Product | null> => {
-      try {
-        return await apiProducts.getProduct(productId);
-      } catch {
-        return null;
-      }
-    },
+    async (productId: string): Promise<Product | null> =>
+      nullIfNotFound(apiProducts.getProduct(productId)),
     ["get-product-by-id"],
     { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
   ),
@@ -99,12 +89,8 @@ export const getProductById = cache(
 export const listShopProducts = cache(
   unstable_cache(
     async (shopId: string): Promise<Product[]> => {
-      try {
-        const res = await apiProducts.listShopProducts(shopId);
-        return res.items ?? [];
-      } catch {
-        return [];
-      }
+      const res = await apiProducts.listShopProducts(shopId);
+      return res.items ?? [];
     },
     ["list-shop-products"],
     { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },

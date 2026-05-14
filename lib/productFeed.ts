@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 
+import { ApiError } from "@/lib/api/base";
 import { apiProducts, apiShops } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
 import { publicSiteOrigin } from "@/lib/publicSite";
@@ -58,8 +59,9 @@ async function fetchShopProductCards(
       });
     }
     return cards;
-  } catch {
-    return [];
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return [];
+    throw e;
   }
 }
 
@@ -80,13 +82,8 @@ async function fetchShopProductCards(
 export const loadPublicProductFeed = cache(
   unstable_cache(
     async (): Promise<ProductCardData[]> => {
-      let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
-      try {
-        const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
-        shops = res.items ?? [];
-      } catch {
-        return [];
-      }
+      const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
+      const shops = res.items ?? [];
 
       const perShop = await Promise.all(
         shops.map((shop) => fetchShopProductCards(shop, PER_SHOP_CAP)),
@@ -127,13 +124,8 @@ export const loadPublicProductFeed = cache(
 export const loadMostViewedProducts = cache(
   unstable_cache(
     async (limit: number = 12): Promise<ProductCardData[]> => {
-      let shops: Awaited<ReturnType<typeof apiShops.listPublic>>["items"] = [];
-      try {
-        const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
-        shops = res.items ?? [];
-      } catch {
-        return [];
-      }
+      const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
+      const shops = res.items ?? [];
 
       const perShop = await Promise.all(
         shops.map((shop) => fetchShopProductCards(shop, PER_SHOP_CAP)),
@@ -180,8 +172,12 @@ export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Rec
             const c = p.category?.trim();
             if (c) set.add(c);
           }
-        } catch {
-          /* skip shop */
+        } catch (e) {
+          if (e instanceof ApiError && e.status === 404) {
+            out[id] = [];
+            continue;
+          }
+          throw e;
         }
         out[id] = Array.from(set);
       }
