@@ -41,6 +41,7 @@ export default function MerchantCatalogPage() {
         shopId={shopId}
         itemType={itemType}
         heading={shop ? `${shop.name} catalog` : "Catalog"}
+        shopLogoUrl={shop?.logo_url ?? null}
       />
     </div>
   );

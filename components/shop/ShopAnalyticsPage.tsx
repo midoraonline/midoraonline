@@ -19,6 +19,7 @@ import type { Product } from "@/lib/api/products";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession } from "@/lib/state";
+import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 
 const ACCENT = ["#4a6767", "#66798f", "#757779"];
 
@@ -28,7 +29,7 @@ function formatNum(n: number) {
 
 export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   const session = useAppSession();
-  const isOwner = session.ownedShopIds.includes(shop.id);
+  const canManage = canManageShopStorefront(session, shop.id);
   const hydrated = session.hydrated;
 
   const [engagement, setEngagement] = useState<ShopEngagement | null>(null);
@@ -59,12 +60,12 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!isOwner) {
+    if (!canManage) {
       setLoading(false);
       return;
     }
     void load();
-  }, [hydrated, isOwner, load]);
+  }, [hydrated, canManage, load]);
 
   const shopBars = useMemo(() => {
     const views = Number(
@@ -109,16 +110,16 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     );
   }
 
-  if (!isOwner) {
+  if (!canManage) {
     return (
       <div className="dm-card p-8 text-center sm:p-10">
         <MaterialSymbol
           name="lock"
           className="mx-auto !text-[40px] leading-none text-muted"
         />
-        <p className="mt-4 text-base font-semibold tracking-tight">Owner only</p>
+        <p className="mt-4 text-base font-semibold tracking-tight">Restricted</p>
         <p className="mt-2 text-sm text-muted">
-          Sign in with the account that owns this shop to view analytics.
+          Sign in as this shop&apos;s owner or an administrator to view analytics.
         </p>
         <Link
           href={`/shops/${shop.slug}`}

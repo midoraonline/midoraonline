@@ -114,9 +114,12 @@ function MediaGrid({
 function MediaUploadSection({
   urls,
   onChange,
+  shopLogoUrl,
 }: {
   urls: string[];
   onChange: (next: string[]) => void;
+  /** When set, product photos are watermarked with this URL (server-side) before upload. */
+  shopLogoUrl?: string | null;
 }) {
   return (
     <div className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] p-3 space-y-3">
@@ -141,6 +144,7 @@ function MediaUploadSection({
           endpoint="productImage"
           multiple
           label="Add photos"
+          watermarkLogoUrl={shopLogoUrl}
           onUploadManyComplete={(newUrls) => onChange([...urls, ...newUrls])}
         />
       </div>
@@ -192,11 +196,13 @@ function EditPanel({
   itemType,
   onSaved,
   onCancel,
+  shopLogoUrl,
 }: {
   product: Product;
   itemType: ItemType;
   onSaved: () => void;
   onCancel: () => void;
+  shopLogoUrl?: string | null;
 }) {
   const [draft, setDraft] = useState<EditDraft>(() => productToEditDraft(product));
   const [saving, setSaving] = useState(false);
@@ -312,6 +318,7 @@ function EditPanel({
           <MediaUploadSection
             urls={draft.image_urls}
             onChange={(next) => setDraft((d) => ({ ...d, image_urls: next }))}
+            shopLogoUrl={shopLogoUrl}
           />
         </div>
 
@@ -382,10 +389,13 @@ export default function ShopCatalogEditor({
   shopId,
   itemType,
   heading,
+  shopLogoUrl,
 }: {
   shopId: string;
   itemType: ItemType;
   heading: string;
+  /** Public shop logo; when present, new product photos are watermarked before storage. */
+  shopLogoUrl?: string | null;
 }) {
   const session = useAppSession();
 
@@ -594,6 +604,7 @@ export default function ShopCatalogEditor({
             <MediaUploadSection
               urls={draft.image_urls}
               onChange={(next) => setDraft((d) => ({ ...d, image_urls: next }))}
+              shopLogoUrl={shopLogoUrl}
             />
           </div>
 
@@ -733,6 +744,7 @@ export default function ShopCatalogEditor({
                     <EditPanel
                       product={p}
                       itemType={itemType}
+                      shopLogoUrl={shopLogoUrl}
                       onSaved={async () => {
                         setExpandedId(null);
                         await load();

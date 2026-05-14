@@ -11,6 +11,7 @@ import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import { locationDisplay } from "./shopUtils";
 import { useAppSession } from "@/lib/state";
+import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 
 type EditTab = "details" | "products" | "services";
 
@@ -70,7 +71,7 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
       <div className="dm-card space-y-4 p-8 text-center">
         <AlertCircle className="mx-auto size-8 text-muted" />
         <p className="text-sm font-semibold">Access denied</p>
-        <p className="text-xs text-muted">You must be the shop owner to edit this page.</p>
+        <p className="text-xs text-muted">You must be the shop owner or an admin to edit this page.</p>
         <button
           type="button"
           onClick={onBack}
@@ -449,8 +450,8 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
     return <NotLoggedIn shopSlug={shop.slug} />;
   }
 
-  const isOwner = session.ownedShopIds.includes(shop.id);
-  if (session.hydrated && session.isAuthenticated && !isOwner) {
+  const canManage = canManageShopStorefront(session, shop.id);
+  if (session.hydrated && session.isAuthenticated && !canManage) {
     return <AccessDenied onBack={() => router.push(`/shops/${shop.slug}`)} />;
   }
 
@@ -525,11 +526,11 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
       )}
 
       {tab === "products" && (
-        <ShopCatalogEditor shopId={shop.id} itemType="product" heading="Products" />
+        <ShopCatalogEditor shopId={shop.id} itemType="product" heading="Products" shopLogoUrl={shop.logo_url ?? null} />
       )}
 
       {tab === "services" && (
-        <ShopCatalogEditor shopId={shop.id} itemType="service" heading="Services" />
+        <ShopCatalogEditor shopId={shop.id} itemType="service" heading="Services" shopLogoUrl={shop.logo_url ?? null} />
       )}
     </div>
   );

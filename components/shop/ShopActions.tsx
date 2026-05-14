@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
+import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 
 const baseIcon =
   "inline-flex size-9 items-center justify-center rounded-lg text-foreground/70 outline-none ring-0 shadow-none transition-all duration-200 focus:outline-none focus-visible:outline-none";
@@ -21,7 +22,7 @@ export default function ShopActions({
   shopId: string;
 }) {
   const session = useAppSession();
-  const isOwner = session.ownedShopIds.includes(shopId);
+  const canManage = canManageShopStorefront(session, shopId);
 
   const [liked, setLiked] = useState(false);
   const [followed, setFollowed] = useState(false);
@@ -108,7 +109,7 @@ export default function ShopActions({
 
   return (
     <div className="flex items-center gap-0.5 sm:gap-1">
-      {isOwner && (
+      {canManage && (
         <Link
           href={`/shops/${shopSlug}/edit`}
           className={`${baseIcon} ${hoverNeutral}`}

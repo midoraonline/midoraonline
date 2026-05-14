@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession } from "@/lib/state";
+import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 import type { ShopQuickNavFlags } from "./shopUtils";
 
 export type ShopHeroToolbarTone = "immersive" | "plain";
@@ -25,7 +26,7 @@ export default function ShopHeroToolbar({
   tone?: ShopHeroToolbarTone;
 }) {
   const session = useAppSession();
-  const isOwner = session.ownedShopIds.includes(shopId);
+  const canManage = canManageShopStorefront(session, shopId);
 
   const hasAnyNav =
     quickNav.products ||
@@ -33,7 +34,7 @@ export default function ShopHeroToolbar({
     quickNav.contacts ||
     quickNav.concierge;
 
-  if (!hasAnyNav && !isOwner) return null;
+  if (!hasAnyNav && !canManage) return null;
 
   const immersiveStyle: CSSProperties =
     tone === "immersive"
@@ -96,7 +97,7 @@ export default function ShopHeroToolbar({
           Help
         </button>
       ) : null}
-      {isOwner ? (
+      {canManage ? (
         <Link
           href={`/shops/${shopSlug}/analytics`}
           className={analyticsClass}

@@ -37,11 +37,11 @@ export default function BrowseCategorySidebar({
       }`}
     >
       <nav
-        className="dm-card flex max-h-[min(78vh,calc(100dvh-6.25rem))] flex-col overflow-hidden sm:max-h-[min(78vh,calc(100dvh-6.75rem))]"
+        className="dm-card flex max-h-[min(78vh,calc(100dvh-6.125rem))] flex-col overflow-hidden sm:max-h-[min(78vh,calc(100dvh-6.625rem))]"
         aria-label="Browse by category"
       >
         <div
-          className={`flex items-center border-b border-foreground/[0.06] py-2 ${
+          className={`flex items-center border-b border-foreground/[0.06] py-1.5 ${
             collapsed ? "justify-center px-0" : "justify-between px-2.5 pr-1"
           }`}
         >
@@ -64,7 +64,7 @@ export default function BrowseCategorySidebar({
 
         <ul
           id={listId}
-          className="home-category-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5 sm:p-2"
+          className="home-category-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1.5 pt-1 pb-1.5 sm:px-2 sm:pt-1 sm:pb-2"
         >
           {items.map(({ key, label }, i) => {
             const isAll = key === null;

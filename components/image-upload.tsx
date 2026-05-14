@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, Loader2, Wand2, X } from "lucide-react";
 import { useUploadThing, getUploadThingAuthHeaders } from "@/lib/uploadthing";
+import { watermarkProductFilesIfShopLogo } from "@/lib/watermark/client-apply";
 import {
   prewarmBgRemoval,
   removeBackground,
@@ -30,6 +31,11 @@ type ImageUploadProps = {
    * Defaults to true for product endpoints.
    */
   allowBackgroundRemoval?: boolean;
+  /**
+   * For `productImage` only: when set (shop `logo_url`), raster photos are
+   * watermarked on the server with Sharp before UploadThing.
+   */
+  watermarkLogoUrl?: string | null;
 };
 
 type Pending = {
@@ -68,15 +74,18 @@ export function ImageUpload({
   previewUrl,
   multiple = false,
   allowBackgroundRemoval,
+  watermarkLogoUrl,
 }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending[]>([]);
   const [uploadPct, setUploadPct] = useState(0);
   const [lastSuccessCount, setLastSuccessCount] = useState<number>(0);
+  const [isPreparing, setIsPreparing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const reviewRef = useRef<HTMLDivElement>(null);
 
   const bgEnabled = allowBackgroundRemoval ?? endpointDefaultsAllowBg(endpoint);
+  const shouldWatermark = endpoint === "productImage" && Boolean(watermarkLogoUrl?.trim());
 
   const { startUpload, isUploading } = useUploadThing(endpoint, {
     headers: getUploadThingAuthHeaders,
@@ -137,7 +146,20 @@ export function ImageUpload({
     e.target.value = "";
 
     if (!bgEnabled) {
-      startUpload(files);
+      void (async () => {
+        setError(null);
+        try {
+          setIsPreparing(shouldWatermark);
+          const toUpload = shouldWatermark
+            ? await watermarkProductFilesIfShopLogo(files, watermarkLogoUrl)
+            : files;
+          startUpload(toUpload);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Could not prepare images for upload.");
+        } finally {
+          setIsPreparing(false);
+        }
+      })();
       return;
     }
 
@@ -223,9 +245,9 @@ export function ImageUpload({
   }
 
   async function confirmUpload() {
-    if (!pending.length || isUploading) return;
+    if (!pending.length || isUploading || isPreparing) return;
     setUploadPct(0);
-    const files = pending.map((p) => {
+    let files = pending.map((p) => {
       if (p.useProcessed && p.processed) {
         const ext = fileExt(p.processed.type);
         const stem = p.original.name.replace(/\.[^.]+$/, "");
@@ -235,6 +257,18 @@ export function ImageUpload({
       }
       return p.original;
     });
+    if (shouldWatermark) {
+      setError(null);
+      try {
+        setIsPreparing(true);
+        files = await watermarkProductFilesIfShopLogo(files, watermarkLogoUrl);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not prepare images for upload.");
+        return;
+      } finally {
+        setIsPreparing(false);
+      }
+    }
     startUpload(files);
   }
 
@@ -251,15 +285,20 @@ export function ImageUpload({
           className="hidden"
           aria-hidden
           onChange={handleChange}
-          disabled={isUploading}
+          disabled={isUploading || isPreparing}
         />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={isUploading}
+          disabled={isUploading || isPreparing}
           className="dm-pill dm-focus inline-flex items-center gap-2 border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-medium disabled:opacity-60"
         >
-          {isUploading ? (
+          {isPreparing ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Applying logo…
+            </>
+          ) : isUploading ? (
             <>
               <Loader2 className="size-4 animate-spin" />
               Uploading… {uploadPct}%
@@ -268,7 +307,7 @@ export function ImageUpload({
             label
           )}
         </button>
-        {previewUrl && !reviewCount && !isUploading && (
+        {previewUrl && !reviewCount && !isUploading && !isPreparing && (
           <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-background">
             <Image
               src={previewUrl}
@@ -320,15 +359,26 @@ export function ImageUpload({
                 to get a clean cut-out, or hit{" "}
                 <span className="font-semibold text-primary">Upload {reviewCount > 1 ? "all" : ""}</span>{" "}
                 to send {reviewCount === 1 ? "it" : "them"} as-is.
+                {shouldWatermark ? (
+                  <>
+                    {" "}
+                    Your shop logo is applied in the corner before upload.
+                  </>
+                ) : null}
               </p>
             </div>
             <button
               type="button"
-              onClick={confirmUpload}
-              disabled={isUploading}
+              onClick={() => void confirmUpload()}
+              disabled={isUploading || isPreparing}
               className="dm-pill dm-focus inline-flex shrink-0 items-center gap-1.5 bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
             >
-              {isUploading ? (
+              {isPreparing ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Applying logo…
+                </>
+              ) : isUploading ? (
                 <>
                   <Loader2 className="size-3.5 animate-spin" />
                   Uploading {uploadPct}%
@@ -375,7 +425,7 @@ export function ImageUpload({
                   <button
                     type="button"
                     onClick={() => discard(p.id)}
-                    disabled={isUploading}
+                    disabled={isUploading || isPreparing}
                     className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80 dm-focus disabled:opacity-50"
                     aria-label="Discard"
                     title="Discard"
@@ -417,7 +467,7 @@ export function ImageUpload({
                         type="button"
                         onClick={() => void handleRemoveBg(p.id)}
                         onMouseEnter={prewarmBgRemoval}
-                        disabled={busy || isUploading}
+                        disabled={busy || isUploading || isPreparing}
                         className="dm-focus inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-foreground/[0.12] bg-foreground/[0.03] px-3 py-1.5 text-[11px] font-semibold text-foreground/90 transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-60"
                       >
                         {busy ? (
