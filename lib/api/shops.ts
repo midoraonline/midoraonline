@@ -210,7 +210,17 @@ export function getShop(shopId: string, opts?: { token?: string }) {
   });
 }
 
-export type UpdateShopRequest = Partial<CreateShopRequest> & {
+export type UpdateShopRequest = Partial<
+  Omit<CreateShopRequest, "description" | "about" | "logo_url" | "shop_email" | "whatsapp_number" | "location" | "availability">
+> & {
+  /** Use JSON `null` to clear a column; omitting a key leaves it unchanged. */
+  description?: string | null;
+  about?: string | null;
+  logo_url?: string | null;
+  shop_email?: string | null;
+  whatsapp_number?: string | null;
+  location?: ShopLocation | null;
+  availability?: Availability | null;
   is_active?: boolean;
 };
 

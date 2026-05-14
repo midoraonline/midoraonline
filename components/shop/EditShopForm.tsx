@@ -187,18 +187,22 @@ function DetailsTab({
     setError(null);
     setSaving(true);
     try {
+      const hasAvailability =
+        Boolean(form.availabilityDays.trim()) || Boolean(form.availabilityHours.trim());
       await apiShops.updateShop(shop.id, {
         name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        about: form.about.trim() || undefined,
-        logo_url: form.logoUrl.trim() || undefined,
-        shop_email: form.shopEmail.trim() || undefined,
-        whatsapp_number: form.whatsappNumber.trim() || undefined,
-        availability: {
-          days: form.availabilityDays.trim() || undefined,
-          hours: form.availabilityHours.trim() || undefined,
-        },
-        location: form.location.trim() ? { display: form.location.trim() } : undefined,
+        description: form.description.trim() || null,
+        about: form.about.trim() || null,
+        logo_url: form.logoUrl.trim() || null,
+        shop_email: form.shopEmail.trim() || null,
+        whatsapp_number: form.whatsappNumber.trim() || null,
+        availability: hasAvailability
+          ? {
+              days: form.availabilityDays.trim() || null,
+              hours: form.availabilityHours.trim() || null,
+            }
+          : null,
+        location: form.location.trim() ? { display: form.location.trim() } : null,
         shop_type: form.shopType,
         is_active: form.isActive,
       });
