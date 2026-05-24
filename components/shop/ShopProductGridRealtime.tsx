@@ -121,10 +121,10 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
             href={shopWa}
             target="_blank"
             rel="noopener noreferrer"
-            className="dm-focus mx-auto mt-6 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 sm:w-auto"
+            className="dm-focus mx-auto mt-6 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
           >
-            <WhatsAppIcon className="size-5 shrink-0 text-white" />
-            Chat on WhatsApp
+            <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
+            WhatsApp
           </a>
         ) : null}
         <p className="mt-6 text-xs text-muted">

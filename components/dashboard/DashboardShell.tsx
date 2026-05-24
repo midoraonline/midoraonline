@@ -174,9 +174,8 @@ export default function DashboardShell({
           >
             <MenuIcon />
           </button>
-          <Link href={returnHref} className="inline-flex items-center gap-2">
-            <Image src="/logo.png" alt="Midora" width={28} height={28} className="size-7 rounded-md" />
-            <span className="text-sm font-semibold">{roleLabel}</span>
+          <Link href={returnHref} className="inline-block">
+            <Image src="/logo.png" alt="Midora" width={100} height={34} className="h-7 w-auto rounded-md" />
           </Link>
         </div>
         <span
@@ -214,9 +213,8 @@ export default function DashboardShell({
             />
             <aside className="absolute inset-y-0 left-0 flex w-[85%] max-w-xs flex-col bg-background px-4 py-5 shadow-2xl">
               <div className="mb-4 flex items-center justify-between">
-                <Link href={returnHref} className="inline-flex items-center gap-2" onClick={() => setDrawerOpen(false)}>
-                  <Image src="/logo.png" alt="Midora" width={28} height={28} className="size-7 rounded-md" />
-                  <span className="text-sm font-semibold">Midora</span>
+                <Link href={returnHref} className="inline-block" onClick={() => setDrawerOpen(false)}>
+                  <Image src="/logo.png" alt="Midora" width={100} height={34} className="h-7 w-auto rounded-md" />
                 </Link>
                 <button
                   type="button"
@@ -287,15 +285,8 @@ function SidebarContent({
 }) {
   return (
     <>
-      <Link href={returnHref} className="mb-6 hidden items-center gap-2 px-2 lg:flex">
-        <Image src="/logo.png" alt="Midora" width={32} height={32} className="size-8 rounded-lg" />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold leading-tight">Midora</p>
-          <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
-            <span className={`inline-block size-1.5 rounded-full ${accent.dot}`} />
-            {roleLabel}
-          </p>
-        </div>
+      <Link href={returnHref} className="mb-6 hidden px-2 lg:block">
+        <Image src="/logo.png" alt="Midora" width={120} height={41} className="h-8 w-auto rounded-lg" />
       </Link>
 
       <nav aria-label="Dashboard" className="flex-1 space-y-1 overflow-y-auto">

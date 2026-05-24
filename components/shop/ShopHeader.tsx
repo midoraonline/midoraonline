@@ -4,7 +4,6 @@ import type { CSSProperties, ReactNode } from "react";
 import type { Contact, Shop } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { productMediaItems } from "@/lib/api/products";
-import ShopHeroToolbar from "./ShopHeroToolbar";
 import ShopActions from "./ShopActions";
 import ShopHeaderAuth from "./ShopHeaderAuth";
 import ShopHeroCarousel, { type HeroMedia } from "./ShopHeroCarousel";
@@ -12,7 +11,6 @@ import {
   filterDuplicateContacts,
   locationDisplay,
   platformLabel,
-  type ShopQuickNavFlags,
 } from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -63,7 +61,7 @@ function contactHref(c: Contact): { href: string; external?: boolean } {
 
 function ContactChipIcon({ c }: { c: Contact }) {
   const t = (c.type ?? "").toLowerCase();
-  if (t === "whatsapp") return <WhatsAppIcon className="size-5 shrink-0" />;
+  if (t === "whatsapp") return <WhatsAppIcon className="size-4 shrink-0" />;
   if (t === "email")
     return <MaterialSymbol name="mail" className="!text-[22px] leading-none" />;
   if (t === "phone")
@@ -110,11 +108,9 @@ const plainContactIconClass =
 
 export default function ShopHeader({
   shop,
-  quickNav,
   products = [],
 }: {
   shop: Shop;
-  quickNav: ShopQuickNavFlags;
   products?: Product[];
 }) {
   const location = locationDisplay(shop.location);
@@ -265,23 +261,16 @@ export default function ShopHeader({
         ) : null}
       </div>
 
-      <ShopHeroToolbar
-        shopId={shop.id}
-        shopSlug={shop.slug}
-        quickNav={quickNav}
-        tone={immersive ? "immersive" : "plain"}
-      />
-
       {waHref ? (
         <div className="mx-auto w-full max-w-md space-y-1.5 px-1 pt-1">
           <a
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="dm-focus inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
+            className="dm-focus inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
           >
-            <WhatsAppIcon className="size-5 shrink-0 text-white" />
-            Chat on WhatsApp
+            <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
+            WhatsApp
           </a>
           {shop.is_active ? (
             <p

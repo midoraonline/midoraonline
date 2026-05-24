@@ -119,21 +119,15 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
           </p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-muted outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none"
+            className="inline-block text-muted outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none"
           >
             <Image
               src="/logo.png"
               alt="Midora Online"
-              width={20}
-              height={20}
-              className="rounded-md"
+              width={120}
+              height={41}
+              className="h-6 w-auto"
             />
-            <span>
-              Powered by{" "}
-              <span className="font-semibold text-foreground/80">
-                Midora Online
-              </span>
-            </span>
           </Link>
         </div>
       </div>

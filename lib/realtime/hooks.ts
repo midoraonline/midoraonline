@@ -32,39 +32,41 @@ type SubscriptionOptions = {
  * exploding.
  */
 export function useRealtimeTable(
-  options: SubscriptionOptions,
-  handler: ChangeHandler
+   options: SubscriptionOptions,
+   handler: ChangeHandler
 ): void {
-  const handlerRef = useRef(handler);
-  handlerRef.current = handler;
+   const handlerRef = useRef(handler);
+   useEffect(() => {
+     handlerRef.current = handler;
+   }, [handler]);
 
-  const { table, filter, event = "*", channel: channelName, enabled = true } = options;
+   const { table, filter, event = "*", channel: channelName, enabled = true } = options;
 
-  useEffect(() => {
-    if (!enabled) return;
-    const supabase = getSupabaseBrowser();
-    if (!supabase) return;
+   useEffect(() => {
+     if (!enabled) return;
+     const supabase = getSupabaseBrowser();
+     if (!supabase) return;
 
-    const channel: RealtimeChannel = supabase.channel(channelName);
-    channel.on(
-      // supabase-js requires loose typing here; the second arg is strictly
-      // validated by the server regardless.
-      "postgres_changes" as never,
-      {
-        event,
-        schema: "public",
-        table,
-        ...(filter ? { filter } : {}),
-      },
-      (payload: RealtimePostgresChangesPayload<TableRow>) => {
-        handlerRef.current(payload);
-      }
-    );
+     const channel: RealtimeChannel = supabase.channel(channelName);
+     channel.on(
+       // supabase-js requires loose typing here; the second arg is strictly
+       // validated by the server regardless.
+       "postgres_changes" as never,
+       {
+         event,
+         schema: "public",
+         table,
+         ...(filter ? { filter } : {}),
+       },
+       (payload: RealtimePostgresChangesPayload<TableRow>) => {
+         handlerRef.current(payload);
+       }
+     );
 
-    channel.subscribe();
+     channel.subscribe();
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [channelName, table, filter, event, enabled]);
+     return () => {
+       void supabase.removeChannel(channel);
+     };
+   }, [channelName, table, filter, event, enabled]);
 }

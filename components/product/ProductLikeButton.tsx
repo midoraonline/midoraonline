@@ -6,8 +6,8 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiProducts } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 
-const btnBase =
-  "inline-flex items-center gap-1.5 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2.5 py-1.5 text-xs font-semibold text-foreground/85 transition-colors hover:bg-foreground/[0.08] dm-focus";
+  const btnBase =
+  "inline-flex items-center gap-1 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2 py-1 text-[11px] font-semibold text-foreground/85 transition-colors hover:bg-foreground/[0.08] dm-focus";
 
 export default function ProductLikeButton({
   productId,
@@ -37,7 +37,10 @@ export default function ProductLikeButton({
 
   useEffect(() => {
     if (!session.hydrated) return;
-    void sync();
+    // Defer sync to prevent cascading renders
+    Promise.resolve().then(() => {
+      sync();
+    });
   }, [session.hydrated, sync]);
 
   async function toggle() {
@@ -61,22 +64,22 @@ export default function ProductLikeButton({
     }
   }
 
-  const iconClass = size === "compact" ? "!text-[18px]" : "!text-[20px]";
+  const iconClass = size === "compact" ? "!text-[16px]" : "!text-[18px]";
 
   return (
     <button
       type="button"
       onClick={() => void toggle()}
-      className={[btnBase, liked ? "border-rose-300/40 bg-rose-500/10 text-rose-800" : "", className].join(
+      className={[btnBase, liked ? "border-rose-300/40 bg-rose-500/10 text-rose-700" : "", className].join(
         " "
       )}
       aria-pressed={liked}
       title={session.isAuthenticated ? (liked ? "Remove from watchlist" : "Save for later — stuff I'm watching") : "Sign in to save for later"}
     >
       <MaterialSymbol name="favorite" className={`${iconClass} leading-none`} filled={liked} />
-      {count !== null ? (
+      {count !== null && (
         <span className="tabular-nums text-[11px] text-muted">{count}</span>
-      ) : null}
+      )}
     </button>
   );
 }

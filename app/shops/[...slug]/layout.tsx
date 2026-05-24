@@ -4,11 +4,7 @@ import ShopHeader from "@/components/shop/ShopHeader";
 import ShopFooter from "@/components/shop/ShopFooter";
 import ShopPageEffects from "@/components/shop/ShopPageEffects";
 import ShopChatWidget from "@/components/shopChatWidget";
-import {
-  locationDisplay,
-  shopQuickNavFlags,
-  type ShopQuickNavFlags,
-} from "@/components/shop/shopUtils";
+import { locationDisplay } from "@/components/shop/shopUtils";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export async function generateMetadata({
@@ -86,10 +82,6 @@ export default async function ShopLayout({
   const isEditRoute = subPage === "edit";
   const isAnalyticsRoute = subPage === "analytics";
   const skipShopViewPing = isEditRoute || isAnalyticsRoute;
-  const quickNav: ShopQuickNavFlags =
-    isEditRoute || isAnalyticsRoute
-      ? { products: false, about: false, contacts: false, concierge: false }
-      : shopQuickNavFlags(shop);
 
   // Fetch products for the hero carousel (same React.cache call as the page —
   // no extra network round-trip is made).
@@ -99,7 +91,7 @@ export default async function ShopLayout({
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-background text-foreground">
       {!skipShopViewPing ? <ShopPageEffects shopId={shop.id} /> : null}
-      <ShopHeader shop={shop} quickNav={quickNav} products={heroProducts} />
+      <ShopHeader shop={shop} products={heroProducts} />
       <main className="flex-1">
         <div className="dm-container pt-3 pb-5 sm:pt-5 sm:pb-8 lg:pt-6 lg:pb-10">
           {children}

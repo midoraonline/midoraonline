@@ -91,17 +91,14 @@ export default function Navbar() {
             className="inline-flex min-w-0 items-center gap-2 rounded-xl py-1 dm-focus"
             onClick={() => setOpen(false)}
           >
-            <Image
-              src="/logo.png"
-              alt="Midora Online"
-              width={34}
-              height={34}
-              className="size-[34px] shrink-0 rounded-lg sm:size-9"
-              priority
-            />
-            <span className="truncate text-sm font-semibold tracking-tight text-foreground">
-              Midora Online
-            </span>
+          <Image
+            src="/logo.png"
+            alt="Midora Online"
+            width={100}
+            height={34}
+            className="h-8 w-auto shrink-0"
+            priority
+          />
           </Link>
 
           <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">

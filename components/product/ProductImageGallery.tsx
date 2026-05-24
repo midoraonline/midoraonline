@@ -44,7 +44,10 @@ function VideoThumb({ src, className }: { src: string; className?: string }) {
   const [poster, setPoster] = useState<string | null>(null);
 
   useEffect(() => {
-    setPoster(null);
+    // Defer setting poster to null to avoid cascading renders
+    Promise.resolve().then(() => {
+      setPoster(null);
+    });
     const vid = vidRef.current;
     if (!vid) return;
 
@@ -129,14 +132,17 @@ export default function ProductImageGallery({
   children?: React.ReactNode;
 }) {
   const [active, setActive] = useState(0);
-  const resumeAt = useRef<number>(0);
+  const resumeAtRef = useRef<number>(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
 
   const safeLen = images.length;
 
   useEffect(() => {
-    setActive(0);
-    setVideoPlaying(false);
+    // Defer state updates to prevent cascading renders
+    Promise.resolve().then(() => {
+      setActive(0);
+      setVideoPlaying(false);
+    });
   }, [images]);
 
   // Auto-advance: skips while a video is actively playing
@@ -145,26 +151,24 @@ export default function ProductImageGallery({
     const tick = () => {
       if (typeof window === "undefined") return;
       if (videoPlaying) return;
-      if (Date.now() < resumeAt.current) return;
+      if (Date.now() < resumeAtRef.current) return;
       setActive((i) => (i + 1) % safeLen);
     };
     const id = window.setInterval(tick, AUTO_MS);
     return () => window.clearInterval(id);
   }, [safeLen, videoPlaying]);
 
-  const onPick = (index: number) => {
-    resumeAt.current = Date.now() + PAUSE_AFTER_INTERACTION_MS;
+  const onPick = useCallback((index: number) => {
+    resumeAtRef.current = Date.now() + PAUSE_AFTER_INTERACTION_MS;
     setActive(index);
     setVideoPlaying(false);
-  };
+  }, []);
 
   const handlePlayingChange = useCallback((playing: boolean) => {
     setVideoPlaying(playing);
-    // While a video is playing, freeze auto-advance indefinitely;
-    // after it stops give the user 10 s before the carousel resumes.
-    resumeAt.current = playing
-      ? Date.now() + 999_999_000
-      : Date.now() + PAUSE_AFTER_INTERACTION_MS;
+    if (!playing) {
+      resumeAtRef.current = Date.now() + PAUSE_AFTER_INTERACTION_MS;
+    }
   }, []);
 
   if (safeLen === 0) {

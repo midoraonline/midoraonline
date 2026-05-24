@@ -25,8 +25,11 @@ export default function GoogleAuthCallbackPage() {
     const provider = hash.get("provider");
 
     if (error) {
-      setStatus("error");
-      setMessage(error);
+      // Defer state updates to prevent potential cascading renders
+      Promise.resolve().then(() => {
+        setStatus("error");
+        setMessage(error);
+      });
       return;
     }
 
@@ -34,12 +37,15 @@ export default function GoogleAuthCallbackPage() {
     // rehydrate the session from `/auth/me`.
     window.history.replaceState(null, "", window.location.pathname);
     if (provider) notifyAuthChanged();
-    setStatus("success");
-    setMessage("Sign-in successful. Redirecting to your dashboard...");
-    // Defer router navigation to prevent potential cascading renders
-    setTimeout(() => {
-      router.replace("/");
-    }, 0);
+    // Defer state updates to prevent potential cascading renders
+    Promise.resolve().then(() => {
+      setStatus("success");
+      setMessage("Sign-in successful. Redirecting to your dashboard...");
+      // Defer router navigation to prevent potential cascading renders
+      setTimeout(() => {
+        router.replace("/");
+      }, 0);
+    });
   }, [router]);
 
   return (

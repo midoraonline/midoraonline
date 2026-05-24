@@ -51,7 +51,10 @@ export default function ShopActions({
 
   useEffect(() => {
     if (!session.hydrated) return;
-    void syncEngagement();
+    // Defer syncEngagement to prevent cascading renders
+    Promise.resolve().then(() => {
+      syncEngagement();
+    });
   }, [session.hydrated, syncEngagement]);
 
   async function toggleLike() {
@@ -112,11 +115,12 @@ export default function ShopActions({
       {canManage && (
         <Link
           href={`/shops/${shopSlug}/edit`}
-          className={`${baseIcon} ${hoverNeutral}`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-foreground/[0.06] px-2.5 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.1] hover:text-foreground dm-focus"
           title="Edit shop"
           aria-label="Edit shop"
         >
-          <MaterialSymbol name="edit" className="!text-[20px] leading-none sm:!text-[22px]" />
+          <MaterialSymbol name="edit" className="!text-[16px] leading-none" />
+          <span className="hidden sm:inline">Edit</span>
         </Link>
       )}
 

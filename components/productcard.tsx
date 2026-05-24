@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
-import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 
@@ -54,87 +54,85 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         itemUrl: product.listingUrl ?? undefined,
       })
     : null;
-  const verified = product.shop.verified !== false;
   const inShop = product.inShopContext === true;
   const desc = product.description?.trim() ?? "";
   const productHref = `/products/${product.slug}`;
 
+  const viewCount =
+    typeof product.viewCount === "number" ? product.viewCount : null;
+
   return (
     <article className="dm-card dm-card-hover flex flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <Link href={productHref} className="dm-focus group block outline-none">
-          <div className="relative aspect-square w-full bg-foreground/[0.04] sm:aspect-[4/3]">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.title}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                unoptimized={unopt}
-              />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center text-sm text-muted">
-                No image
-              </div>
-            )}
-            {!inShop ? (
-              <ProductShopLogoOverlay
-                shopName={product.shop.name}
-                logoUrl={product.shopLogoUrl}
-              />
-            ) : null}
-            {inShop && desc ? (
-              <div
-                className="pointer-events-none absolute inset-0 z-[6] flex items-end bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
-                aria-hidden
-              >
-                <p className="line-clamp-5 max-h-[48%] overflow-hidden px-3 pb-3 pt-10 text-left text-xs leading-snug text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] sm:text-[13px] sm:leading-relaxed">
-                  {desc}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </Link>
-
-        <div className="flex flex-col px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
-          <Link href={productHref} className="dm-focus mt-3 block outline-none">
-            <p className="text-xs font-semibold tracking-tight line-clamp-2 sm:text-sm">{product.title}</p>
-          </Link>
-          <div className="mt-1 flex min-w-0 items-center justify-between gap-2">
-            <Link
-              href={productHref}
-              className="dm-focus min-w-0 truncate text-xs font-medium tabular-nums text-foreground/90 sm:text-sm"
+      <Link href={productHref} className="dm-focus group block outline-none">
+        <div className="relative aspect-square w-full bg-foreground/[0.04] sm:aspect-[4/3]">
+          {product.imageUrl ? (
+            <Image
+              src={product.imageUrl}
+              alt={product.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized={unopt}
+            />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center text-sm text-muted">
+              No image
+            </div>
+          )}
+          {!inShop ? (
+            <ProductShopLogoOverlay
+              shopName={product.shop.name}
+              logoUrl={product.shopLogoUrl}
+            />
+          ) : null}
+          {inShop && desc ? (
+            <div
+              className="pointer-events-none absolute inset-0 z-[6] flex items-end bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
+              aria-hidden
             >
-              {formatUGX(product.priceUGX)}
-            </Link>
-            <ProductLikeButton productId={product.id} size="compact" className="shrink-0" />
-          </div>
-
-          {waHref ? (
-            <>
-              <a
-                href={waHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="dm-focus mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 sm:py-2 sm:text-sm"
-              >
-                <WhatsAppIcon className="size-4 shrink-0 text-white" />
-                Chat on WhatsApp
-              </a>
-              {verified ? (
-                <p className="mt-1 flex items-center justify-center gap-1 px-0.5 text-[10px] font-medium leading-snug text-muted sm:text-[11px]">
-                  <VerifiedIcon size={13} label="Verified seller" />
-                  <span className="text-foreground/90">seller</span>
-                </p>
-              ) : (
-                <p className="mt-1 px-0.5 text-center text-[10px] text-muted sm:text-[11px]">
-                  Seller on Midora
-                </p>
-              )}
-            </>
+              <p className="line-clamp-5 max-h-[48%] overflow-hidden px-3 pb-3 pt-10 text-left text-xs leading-snug text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] sm:text-[13px] sm:leading-relaxed">
+                {desc}
+              </p>
+            </div>
           ) : null}
         </div>
+      </Link>
+
+      <div className="flex flex-col gap-1.5 px-2 pb-2 pt-1.5">
+        <Link href={productHref} className="dm-focus block outline-none">
+          <p className="line-clamp-1 text-xs font-semibold tracking-tight sm:text-sm">{product.title}</p>
+        </Link>
+
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href={productHref}
+            className="dm-focus min-w-0 truncate text-xs font-medium tabular-nums text-foreground/90"
+          >
+            {formatUGX(product.priceUGX)}
+          </Link>
+
+          <div className="flex shrink-0 items-center gap-2">
+            {viewCount !== null && (
+              <span className="inline-flex items-center gap-0.5 text-[11px] text-muted">
+                <MaterialSymbol name="visibility" className="!text-[14px] leading-none" />
+                {viewCount}
+              </span>
+            )}
+            <ProductLikeButton productId={product.id} size="compact" className="shrink-0" />
+          </div>
+        </div>
+
+        {waHref ? (
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="dm-focus inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[#25D366] px-2 py-1.5 text-[10px] font-semibold text-white transition-[filter] hover:brightness-95"
+          >
+            <WhatsAppIcon className="size-3 shrink-0 text-white" />
+            WhatsApp
+          </a>
+        ) : null}
       </div>
     </article>
   );

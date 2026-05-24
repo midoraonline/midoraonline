@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import EditShopForm from "@/components/shop/EditShopForm";
 import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
 import ShopProductGridRealtime from "@/components/shop/ShopProductGridRealtime";
+import ShopTabs from "@/components/shop/ShopTabs";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export default async function ShopDetails({
@@ -43,81 +44,92 @@ export default async function ShopDetails({
       return true;
     }) ?? [];
 
-  return (
-    <div className="space-y-6 sm:space-y-8">
-      <section id="shop-products" className="scroll-mt-28 sm:scroll-mt-32">
-        <div className="mb-4 sm:mb-6">
-          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
-            Products &amp; Services
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            {items.length > 0
-              ? `${items.length} item${items.length === 1 ? "" : "s"} from ${shop.name}`
-              : `${shop.name} hasn't listed any items yet.`}
-          </p>
-        </div>
-
-        <ShopProductGridRealtime
-          shop={{
-            id: shop.id,
-            name: shop.name,
-            slug: shop.slug,
-            verified: shop.is_active ?? true,
-            logoUrl: shop.logo_url ?? null,
-            whatsappNumber: shop.whatsapp_number ?? null,
-            category: shop.category ?? null,
-          }}
-          initialProducts={items}
-        />
-      </section>
-
-      {showAboutSection ? (
-        <section id="shop-about" className="dm-card scroll-mt-28 p-6 sm:scroll-mt-32 sm:p-8">
-          <h2 className="text-base font-semibold tracking-tight sm:text-lg">
-            About {shop.name}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">{about}</p>
-        </section>
-      ) : null}
-
-      {extraContacts.length > 0 ? (
-        <section id="shop-contacts" className="dm-card scroll-mt-28 p-6 sm:scroll-mt-32 sm:p-8">
-          <h2 className="text-base font-semibold tracking-tight sm:text-lg">
-            More contact details
-          </h2>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            {extraContacts.map((c, i) => (
-              <li key={i} className="text-foreground/90">
-                <span className="text-muted capitalize">
-                  {c.label ?? c.type ?? "Contact"}:{" "}
-                </span>
-                {c.value}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <section id="shop-concierge" className="dm-card scroll-mt-28 p-6 sm:scroll-mt-32 sm:p-8">
-        <h2 className="text-base font-semibold tracking-tight sm:text-lg">
-          Have a question?
+  const productsSection = (
+    <>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+          Products &amp; Services
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-          Ask the {shop.name} AI concierge about products, pricing, availability
-          or delivery — it&apos;s powered by Midora Online and ready to help.
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {items.length > 0
+            ? `${items.length} item${items.length === 1 ? "" : "s"} from ${shop.name}`
+            : `${shop.name} hasn't listed any items yet.`}
         </p>
-        <p className="mt-3 text-xs text-muted">
-          Use the chat button in the bottom-right corner to get started.
-        </p>
-        <p className="mt-6">
-          <Link
-            href="/policies"
-            className="dm-pill dm-focus inline-flex bg-foreground/[0.07] px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
-          >
-            View platform policies
-          </Link>
-        </p>
-      </section>
+      </div>
+
+      <ShopProductGridRealtime
+        shop={{
+          id: shop.id,
+          name: shop.name,
+          slug: shop.slug,
+          verified: shop.is_active ?? true,
+          logoUrl: shop.logo_url ?? null,
+          whatsappNumber: shop.whatsapp_number ?? null,
+          category: shop.category ?? null,
+        }}
+        initialProducts={items}
+      />
+    </>
+  );
+
+  const aboutSection = showAboutSection ? (
+    <div className="dm-card p-6 sm:p-8">
+      <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+        About {shop.name}
+      </h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">{about}</p>
     </div>
+  ) : null;
+
+  const contactsSection = extraContacts.length > 0 ? (
+    <div className="dm-card p-6 sm:p-8">
+      <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+        More contact details
+      </h2>
+      <ul className="mt-4 space-y-2.5 text-sm">
+        {extraContacts.map((c, i) => (
+          <li key={i} className="text-foreground/90">
+            <span className="text-muted capitalize">
+              {c.label ?? c.type ?? "Contact"}:{" "}
+            </span>
+            {c.value}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
+
+  const conciergeSection = (
+    <div className="dm-card p-6 sm:p-8">
+      <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+        Have a question?
+      </h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
+        Ask the {shop.name} AI concierge about products, pricing, availability
+        or delivery — it&apos;s powered by Midora Online and ready to help.
+      </p>
+      <p className="mt-3 text-xs text-muted">
+        Use the chat button in the bottom-right corner to get started.
+      </p>
+      <p className="mt-6">
+        <Link
+          href="/policies"
+          className="dm-pill dm-focus inline-flex bg-foreground/[0.07] px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+        >
+          View platform policies
+        </Link>
+      </p>
+    </div>
+  );
+
+  return (
+    <ShopTabs
+      products={productsSection}
+      about={aboutSection}
+      contacts={contactsSection}
+      concierge={conciergeSection}
+      shopSlug={shop.slug}
+      shopId={shop.id}
+    />
   );
 }

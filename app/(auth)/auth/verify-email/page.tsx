@@ -26,25 +26,34 @@ export default function VerifyEmailCallbackPage() {
     const error = hash.get("error");
 
     if (error || verified === "false") {
-      setStatus("error");
-      setMessage(error || "Email verification failed.");
+      // Defer state updates to prevent potential cascading renders
+      Promise.resolve().then(() => {
+        setStatus("error");
+        setMessage(error || "Email verification failed.");
+      });
       return;
     }
 
     if (verified !== "true") {
-      setStatus("error");
-      setMessage("Missing verification status. Please use the verification link again.");
+      // Defer state updates to prevent potential cascading renders
+      Promise.resolve().then(() => {
+        setStatus("error");
+        setMessage("Missing verification status. Please use the verification link again.");
+      });
       return;
     }
 
     // Auth cookies were set by the backend on the verify redirect.
     window.history.replaceState(null, "", window.location.pathname);
     notifyAuthChanged();
-    setStatus("success");
-    setMessage("Email verified successfully. Redirecting...");
-    setTimeout(() => {
-      router.replace("/");
-    }, 1200);
+    // Defer state updates to prevent potential cascading renders
+    Promise.resolve().then(() => {
+      setStatus("success");
+      setMessage("Email verified successfully. Redirecting...");
+      setTimeout(() => {
+        router.replace("/");
+      }, 1200);
+    });
   }, [router]);
 
   return (

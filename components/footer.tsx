@@ -10,15 +10,14 @@ export default function Footer() {
       <div className="dm-container py-6 sm:py-8">
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
           <div>
-            <Link href="/" className="mb-3 inline-flex items-center gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-background">
+            <Link href="/" className="mb-3 inline-block transition-colors hover:bg-background rounded-lg px-1 py-1">
               <Image
                 src="/logo.png"
                 alt="Midora Online"
-                width={40}
-                height={40}
-                className="rounded-lg"
+                width={150}
+                height={51}
+                className="h-8 w-auto"
               />
-              <p className="text-sm font-semibold tracking-tight">Midora Online</p>
             </Link>
             <p className="text-sm text-muted">
               SaaS-as-a-Mall for brand-first discovery across Africa.
