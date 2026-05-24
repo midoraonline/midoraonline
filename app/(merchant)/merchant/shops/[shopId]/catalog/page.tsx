@@ -24,7 +24,10 @@ export default function MerchantCatalogPage() {
   }, [shopId]);
 
   useEffect(() => {
-    load();
+    // Defer execution to prevent potential cascading renders
+    Promise.resolve().then(() => {
+      load();
+    });
   }, [load]);
 
   const itemType =

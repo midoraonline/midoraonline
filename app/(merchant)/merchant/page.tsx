@@ -51,7 +51,10 @@ export default function MerchantOverviewPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    // Defer execution to prevent potential cascading renders
+    Promise.resolve().then(() => {
+      load();
+    });
   }, [load]);
 
   useRealtimeTable({ table: "shops", channel: "merchant-shops-overview" }, () =>

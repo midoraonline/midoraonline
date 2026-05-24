@@ -29,7 +29,10 @@ export default function CustomerOverviewPage() {
 
   useEffect(() => {
     if (session.hydrated && session.isAuthenticated) {
-      void loadCounts();
+      // Defer execution to prevent potential cascading renders
+      Promise.resolve().then(() => {
+        loadCounts();
+      });
     }
   }, [session.hydrated, session.isAuthenticated, loadCounts]);
 

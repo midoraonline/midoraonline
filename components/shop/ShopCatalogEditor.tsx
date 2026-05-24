@@ -493,9 +493,9 @@ export default function ShopCatalogEditor({
       await apiProducts.repostProduct(p.id);
       await load();
       alert("Product reposted to the Latest Feed!");
-    } catch (e: any) {
-      setError(e instanceof Error ? e.message : (e?.message || "Repost failed. Daily limit might be reached."));
-    }
+     } catch (e: unknown) {
+       setError(e instanceof Error ? e.message : (e instanceof Object && 'message' in e && typeof e.message === 'string' ? e.message : "Repost failed. Daily limit might be reached."));
+     }
   }
 
   // ── Loading / auth states ────────────────────────────────────────────────

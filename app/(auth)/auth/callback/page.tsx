@@ -36,7 +36,10 @@ export default function GoogleAuthCallbackPage() {
     if (provider) notifyAuthChanged();
     setStatus("success");
     setMessage("Sign-in successful. Redirecting to your dashboard...");
-    router.replace("/");
+    // Defer router navigation to prevent potential cascading renders
+    setTimeout(() => {
+      router.replace("/");
+    }, 0);
   }, [router]);
 
   return (
