@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
+import CategorySelect from "@/components/CategorySelect";
 import { ImageUpload } from "@/components/image-upload";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
@@ -263,6 +264,7 @@ export default function CreateShopConcierge({
           ? { hours: confirmForm.availability.trim() }
           : undefined,
         shop_type: confirmForm.shop_type as apiShops.ShopType,
+        category: confirmForm.category.trim() || undefined,
         contacts: [],
         social_links: [],
       });
@@ -444,11 +446,10 @@ export default function CreateShopConcierge({
                   onEdit={() => dismissSuggestion("category")}
                 />
               ) : (
-                <input
-                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+                <CategorySelect
                   value={f.category}
-                  onChange={(e) => field("category", e.target.value)}
-                  placeholder="e.g. Food & Beverage, Fashion…"
+                  onChange={(v) => field("category", v)}
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
                 />
               )}
             </div>

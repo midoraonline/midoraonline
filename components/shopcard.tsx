@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 
 export type ShopCardData = {
   id: string;
@@ -52,8 +53,8 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
           <div className="flex flex-wrap items-center gap-1.5">
             <h3 className="text-xs font-semibold tracking-tight sm:text-base">{shop.name}</h3>
             {shop.verified ? (
-              <span className="inline-flex items-center rounded-full bg-foreground/[0.07] px-2 py-0.5 text-[10px] font-semibold text-foreground/80 sm:px-2.5 sm:py-1 sm:text-xs">
-                Verified
+              <span className="inline-flex items-center rounded-full bg-foreground/[0.07] p-0.5 sm:p-1">
+                <VerifiedIcon size={14} label={`${shop.name} is verified`} />
               </span>
             ) : null}
           </div>

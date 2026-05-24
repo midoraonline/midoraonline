@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import BrowseCategorySidebar from "@/components/browse/BrowseCategorySidebar";
 import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
-import StickyBrowseToolbar from "@/components/browse/StickyBrowseToolbar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { useBrowseSidebarCollapse } from "@/hooks/useBrowseSidebarCollapse";
 import { browseProductGridForSidebar, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
+import { apiProducts } from "@/lib/api";
 
 function matchesProductSearch(p: ProductCardData, q: string): boolean {
   const qq = q.trim().toLowerCase();
@@ -30,8 +30,28 @@ export default function ProductsBrowsePage({
   mostViewed: ProductCardData[];
 }) {
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { collapsed, setCollapsed } = useBrowseSidebarCollapse();
+
+  function handleSearchToggle() {
+    if (searchOpen) {
+      setSearchOpen(false);
+      setQuery("");
+    } else {
+      setSearchOpen(true);
+    }
+  }
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length >= 2) {
+      const timer = setTimeout(() => {
+        apiProducts.logSearch(q).catch(() => {});
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [query]);
 
   const categories = useMemo(
     () => collectCategoriesFromProducts([...items, ...mostViewed]),
@@ -79,19 +99,24 @@ export default function ProductsBrowsePage({
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           listId="products-browse-categories"
+          searchActive={searchOpen}
+          onSearchToggle={handleSearchToggle}
         />
 
-        <div className="min-w-0 flex-1 space-y-8 sm:space-y-12">
-          <StickyBrowseToolbar>
-            <div className="dm-card px-3 py-2 sm:px-4 sm:py-2.5">
-              <BrowseSearchBar
-                value={query}
-                onChange={setQuery}
-                placeholder="Search products…"
-                ariaLabel="Search products"
-              />
-            </div>
-          </StickyBrowseToolbar>
+        <div className="min-w-0 flex-1 space-y-4 sm:space-y-6">
+          {/* Collapsible full-width search bar */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-out ${
+              searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <BrowseSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Search products…"
+              ariaLabel="Search products"
+            />
+          </div>
 
           {(q.length > 0 || categoryFilterActive) && (
             <p className="text-sm text-muted">

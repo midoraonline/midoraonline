@@ -5,7 +5,6 @@ import ShopsBrowsePage from "@/components/shop/ShopsBrowsePage";
 import { listPublicShops } from "@/lib/api/server";
 import { loadShopProductCategoryMap } from "@/lib/productFeed";
 
-export const revalidate = 60;
 
 export default async function ShopListing() {
   const shops = await listPublicShops();

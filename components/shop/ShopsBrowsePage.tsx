@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import BrowseCategorySidebar from "@/components/browse/BrowseCategorySidebar";
 import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
-import StickyBrowseToolbar from "@/components/browse/StickyBrowseToolbar";
 import ShopListRealtime from "@/components/shop/ShopListRealtime";
 import { useBrowseSidebarCollapse } from "@/hooks/useBrowseSidebarCollapse";
 import { browseShopGridForSidebar, collectCategoriesFromShopProductMap } from "@/lib/browseCategories";
@@ -18,8 +17,18 @@ export default function ShopsBrowsePage({
   shopProductCategories: Record<string, string[]>;
 }) {
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { collapsed, setCollapsed } = useBrowseSidebarCollapse();
+
+  function handleSearchToggle() {
+    if (searchOpen) {
+      setSearchOpen(false);
+      setQuery("");
+    } else {
+      setSearchOpen(true);
+    }
+  }
 
   const categories = useMemo(
     () => collectCategoriesFromShopProductMap(shopProductCategories),
@@ -38,19 +47,24 @@ export default function ShopsBrowsePage({
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           listId="shops-browse-categories"
+          searchActive={searchOpen}
+          onSearchToggle={handleSearchToggle}
         />
 
         <div className="min-w-0 flex-1 space-y-4">
-          <StickyBrowseToolbar>
-            <div className="dm-card px-3 py-2 sm:px-4 sm:py-2.5">
-              <BrowseSearchBar
-                value={query}
-                onChange={setQuery}
-                placeholder="Search shops…"
-                ariaLabel="Search shops"
-              />
-            </div>
-          </StickyBrowseToolbar>
+          {/* Collapsible full-width search bar */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-out ${
+              searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <BrowseSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Search shops…"
+              ariaLabel="Search shops"
+            />
+          </div>
 
           {(q.length > 0 || categoryFilterActive) && (
             <p className="text-sm text-muted">

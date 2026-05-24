@@ -12,6 +12,7 @@ import {
   Pencil,
   Trash2,
   X,
+  ArrowUpCircle,
 } from "lucide-react";
 import { apiProducts } from "@/lib/api";
 import {
@@ -23,6 +24,7 @@ import {
   type ItemType,
   type Product,
 } from "@/lib/api/products";
+import CategorySelect from "@/components/CategorySelect";
 import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
 import { useAppSession } from "@/lib/state";
@@ -302,11 +304,9 @@ function EditPanel({
         )}
         <div className="space-y-1 sm:col-span-2">
           <label className="text-[11px] font-medium text-foreground/70">Category</label>
-          <input
-            className="dm-input-xs dm-focus"
+          <CategorySelect
             value={draft.category}
-            onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
-            placeholder="e.g. Drinks"
+            onChange={(category) => setDraft((d) => ({ ...d, category }))}
           />
         </div>
 
@@ -486,6 +486,18 @@ export default function ShopCatalogEditor({
     }
   }
 
+  async function handleRepost(p: Product) {
+    if (!isAuthed) return;
+    setError(null);
+    try {
+      await apiProducts.repostProduct(p.id);
+      await load();
+      alert("Product reposted to the Latest Feed!");
+    } catch (e: any) {
+      setError(e instanceof Error ? e.message : (e?.message || "Repost failed. Daily limit might be reached."));
+    }
+  }
+
   // ── Loading / auth states ────────────────────────────────────────────────
   if (!hydrated) {
     return (
@@ -591,11 +603,9 @@ export default function ShopCatalogEditor({
           {/* Category */}
           <div className="space-y-1.5 sm:col-span-2">
             <label className="text-xs font-medium text-foreground/80">Category</label>
-            <input
-              className="dm-input-xs dm-focus"
+            <CategorySelect
               value={draft.category}
-              onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
-              placeholder="e.g. Drinks"
+              onChange={(category) => setDraft((d) => ({ ...d, category }))}
             />
           </div>
 
@@ -727,6 +737,17 @@ export default function ShopCatalogEditor({
                       >
                         {p.is_published ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
+
+                      {p.is_published && (
+                        <button
+                          type="button"
+                          className="dm-focus inline-flex size-9 items-center justify-center rounded-xl text-blue-600/80 hover:bg-blue-500/10"
+                          title="Repost to Latest Feed"
+                          onClick={() => void handleRepost(p)}
+                        >
+                          <ArrowUpCircle className="size-4" />
+                        </button>
+                      )}
 
                       <button
                         type="button"

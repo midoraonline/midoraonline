@@ -172,6 +172,15 @@ function LoginPageInner() {
           Create an account
         </a>
       </p>
+
+      <p className="text-center text-xs leading-relaxed text-muted">
+        <a
+          href="/termsandconditions"
+          className="font-semibold text-foreground underline-offset-2 hover:underline"
+        >
+          Terms &amp; Conditions
+        </a>
+      </p>
     </div>
   );
 }

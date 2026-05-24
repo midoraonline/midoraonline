@@ -194,6 +194,7 @@ export type CreateShopRequest = {
   availability?: Availability;
   theme_config?: ThemeConfig;
   shop_type?: ShopType;
+  category?: string;
 };
 
 export function createShop(body: CreateShopRequest, token?: string | null) {

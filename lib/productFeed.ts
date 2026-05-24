@@ -1,189 +1,136 @@
 import "server-only";
-import { cache } from "react";
-import { unstable_cache } from "next/cache";
 
 import { ApiError } from "@/lib/api/base";
 import { apiProducts, apiShops } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
-import { CACHE_TAGS, TTL } from "@/lib/cache";
+import type { Product } from "@/lib/api/products";
+
 
 const MAX_CARDS = 72;
-const SHOPS_TO_SCAN = 20;
-const PER_SHOP_CAP = 12;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Build a ProductCardData array from raw API data. */
-async function fetchShopProductCards(
-  shop: {
-    id: string;
-    name: string;
-    slug: string;
-    logo_url?: string | null;
-    is_active?: boolean;
-    whatsapp_number?: string | null;
-    category?: string | null;
-  },
-  perShopCap: number,
-): Promise<ProductCardData[]> {
-  const site = publicSiteOrigin();
+async function getShopDetails(shopId: string) {
   try {
-    const { items: products } = await apiProducts.listShopProducts(shop.id);
-    const cards: ProductCardData[] = [];
-    for (const p of products) {
-      if (cards.length >= perShopCap) break;
-      if (p.is_published === false) continue;
-      const slug = productPageSlug(p);
-      cards.push({
-        id: p.id,
-        slug,
-        title: p.title,
-        priceUGX: apiProducts.productPriceUgx(p),
-        imageUrl: apiProducts.productPrimaryImage(p),
-        shopLogoUrl: shop.logo_url ?? undefined,
-        viewCount: p.view_count ?? 0,
-        shopWhatsApp: shop.whatsapp_number ?? null,
-        listingUrl: `${site}/products/${slug}`,
-        shop: {
-          id: shop.id,
-          name: shop.name,
-          slug: shop.slug,
-          verified: shop.is_active ?? true,
-          category: shop.category ?? null,
-        },
-        category: p.category ?? null,
-      });
-    }
-    return cards;
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return [];
-    throw e;
+    return await apiShops.getShop(shopId);
+  } catch {
+    return null;
   }
 }
 
+async function hydrateProducts(products: Product[]): Promise<ProductCardData[]> {
+  const site = publicSiteOrigin();
+  const cards: ProductCardData[] = [];
+
+  // Fetch shops in small chunks to avoid exhausting the backend threadpool
+  const shopIds = Array.from(new Set(products.map(p => p.shop_id)));
+  const shopsMap = new Map();
+
+  for (let i = 0; i < shopIds.length; i += 3) {
+    const chunk = shopIds.slice(i, i + 3);
+    await Promise.all(
+      chunk.map(async (id) => {
+        const shop = await getShopDetails(id);
+        if (shop) shopsMap.set(id, shop);
+      })
+    );
+  }
+
+  for (const p of products) {
+    if (p.is_published === false) continue;
+    const shop = shopsMap.get(p.shop_id);
+    if (!shop) continue;
+
+    const slug = productPageSlug(p);
+    cards.push({
+      id: p.id,
+      slug,
+      title: p.title,
+      priceUGX: apiProducts.productPriceUgx(p),
+      imageUrl: apiProducts.productPrimaryImage(p),
+      shopLogoUrl: shop.logo_url ?? undefined,
+      viewCount: p.view_count ?? 0,
+      shopWhatsApp: shop.whatsapp_number ?? null,
+      listingUrl: `${site}/products/${slug}`,
+      shop: {
+        id: shop.id,
+        name: shop.name,
+        slug: shop.slug,
+        verified: shop.is_active ?? true,
+        category: shop.category ?? null,
+      },
+      category: p.category ?? null,
+    });
+  }
+  return cards;
+}
+
 // ---------------------------------------------------------------------------
-// Public product feed (all shops, alphabetical)
+// Global Feeds
 // ---------------------------------------------------------------------------
 
-/**
- * Aggregate published listings from public shops for the global /products
- * page.
- *
- * Two cache layers:
- *   • unstable_cache: persists across Vercel serverless invocations (60 s
- *     TTL, tagged for on-demand revalidation).
- *   • React.cache: deduplicates within a single request so layout +
- *     page share one result.
- */
-export const loadPublicProductFeed = cache(
-  unstable_cache(
-    async (): Promise<ProductCardData[]> => {
-      const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
-      const shops = res.items ?? [];
+export async function loadAlgorithmFeed(): Promise<ProductCardData[]> {
+  try {
+    const products = await apiProducts.getAlgorithmFeed({ limit: MAX_CARDS });
+    return hydrateProducts(products);
+  } catch (e) {
+    console.error("Failed to load algorithm feed", e);
+    return [];
+  }
+}
 
-      const perShop = await Promise.all(
-        shops.map((shop) => fetchShopProductCards(shop, PER_SHOP_CAP)),
-      );
+export async function loadLatestFeed(): Promise<ProductCardData[]> {
+  try {
+    const products = await apiProducts.getLatestFeed({ limit: MAX_CARDS });
+    return hydrateProducts(products);
+  } catch (e) {
+    console.error("Failed to load latest feed", e);
+    return [];
+  }
+}
 
-      const out: ProductCardData[] = [];
-      for (const cards of perShop) {
-        for (const card of cards) {
-          if (out.length >= MAX_CARDS) break;
-          out.push(card);
-        }
-        if (out.length >= MAX_CARDS) break;
-      }
-
-      out.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
-
-      return out;
-    },
-    ["public-product-feed"],
-    { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
-  ),
-);
-
-// ---------------------------------------------------------------------------
-// Most-viewed products
-// ---------------------------------------------------------------------------
-
-/**
- * Returns the top-N products across all shops sorted by view_count descending.
- *
- * Uses a longer TTL (5 min) because the ranking only needs minute-level
- * precision — an immediate per-view revalidation would create too many
- * cache bursts.
- *
- * Tagged with both PRODUCTS and MOST_VIEWED so it can be invalidated either
- * broadly (tag=products) or precisely (tag=most-viewed).
- */
-export const loadMostViewedProducts = cache(
-  unstable_cache(
-    async (limit: number = 12): Promise<ProductCardData[]> => {
-      const res = await apiShops.listPublic({ page: 1, limit: SHOPS_TO_SCAN });
-      const shops = res.items ?? [];
-
-      const perShop = await Promise.all(
-        shops.map((shop) => fetchShopProductCards(shop, PER_SHOP_CAP)),
-      );
-
-      const all: ProductCardData[] = [];
-      for (const cards of perShop) {
-        for (const card of cards) all.push(card);
-      }
-
-      all.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
-
-      return all.slice(0, limit);
-    },
-    ["most-viewed-products"],
-    {
-      revalidate: TTL.MOST_VIEWED,
-      tags: [CACHE_TAGS.PRODUCTS, CACHE_TAGS.MOST_VIEWED],
-    },
-  ),
-);
+// We keep loadMostViewedProducts to avoid breaking other components if they still rely on it,
+// but it is essentially just hitting the algorithm feed now without user context.
+export async function loadMostViewedProducts(limit: number = 12): Promise<ProductCardData[]> {
+  try {
+    const products = await apiProducts.getAlgorithmFeed({ limit });
+    // sort strictly by view count just in case
+    products.sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0));
+    return hydrateProducts(products.slice(0, limit));
+  } catch (e) {
+    return [];
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Shop browse: product categories per shop (for /shops filters)
 // ---------------------------------------------------------------------------
 
-/**
- * For each shop id, the set of `category` values on published products.
- * Cached; bust with `products` revalidation tag.
- */
 export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Record<string, string[]>> {
   const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort();
-  const key = uniqueSorted.join(",");
 
-  return unstable_cache(
-    async (): Promise<Record<string, string[]>> => {
-      const out: Record<string, string[]> = {};
-      for (const id of uniqueSorted) {
-        const set = new Set<string>();
-        try {
-          const { items } = await apiProducts.listShopProducts(id);
-          for (const p of items ?? []) {
-            if (p.is_published === false) continue;
-            const c = p.category?.trim();
-            if (c) set.add(c);
-          }
-        } catch (e) {
-          if (e instanceof ApiError && e.status === 404) {
-            out[id] = [];
-            continue;
-          }
-          throw e;
-        }
-        out[id] = Array.from(set);
+  const out: Record<string, string[]> = {};
+  for (const id of uniqueSorted) {
+    const set = new Set<string>();
+    try {
+      const { items } = await apiProducts.listShopProducts(id);
+      for (const p of items ?? []) {
+        if (p.is_published === false) continue;
+        const c = p.category?.trim();
+        if (c) set.add(c);
       }
-      return out;
-    },
-    ["shop-product-category-map", key],
-    { revalidate: TTL.PRODUCTS, tags: [CACHE_TAGS.PRODUCTS] },
-  )();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) {
+        out[id] = [];
+        continue;
+      }
+      throw e;
+    }
+    out[id] = Array.from(set);
+  }
+  return out;
 }

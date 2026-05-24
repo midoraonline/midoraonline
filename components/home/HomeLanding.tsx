@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 
 import BrowseCategorySidebar from "@/components/browse/BrowseCategorySidebar";
 import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
-import StickyBrowseToolbar from "@/components/browse/StickyBrowseToolbar";
 import ShopCard from "@/components/shopcard";
 import ProductCard from "@/components/productcard";
 import type { Shop } from "@/lib/api/shops";
@@ -75,8 +74,18 @@ type Props = {
 
 export default function HomeLanding({ initialShops, initialProducts, mostViewed }: Props) {
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { collapsed, setCollapsed } = useBrowseSidebarCollapse();
+
+  function handleSearchToggle() {
+    if (searchOpen) {
+      setSearchOpen(false);
+      setQuery("");
+    } else {
+      setSearchOpen(true);
+    }
+  }
 
   const q = query.trim();
   const isSearching = q.length > 0;
@@ -148,19 +157,24 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           listId="home-browse-categories"
+          searchActive={searchOpen}
+          onSearchToggle={handleSearchToggle}
         />
 
         <div className="min-w-0 flex-1 space-y-8 sm:space-y-12 lg:space-y-14">
-          <StickyBrowseToolbar>
-            <div className="dm-card px-3 py-2.5 sm:px-4 sm:py-3">
-              <BrowseSearchBar
-                value={query}
-                onChange={setQuery}
-                placeholder="Search shops and products…"
-                ariaLabel="Search shops and products"
-              />
-            </div>
-          </StickyBrowseToolbar>
+          {/* Collapsible full-width search bar */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-out ${
+              searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <BrowseSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Search shops and products…"
+              ariaLabel="Search shops and products"
+            />
+          </div>
 
           {(isSearching || categoryFilterActive) && (
             <p className="text-sm text-muted">

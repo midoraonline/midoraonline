@@ -208,6 +208,17 @@ function RegisterPageInner() {
           Sign in
         </a>
       </p>
+
+      <p className="text-center text-xs leading-relaxed text-muted">
+        By creating an account, you agree to our{" "}
+        <a
+          href="/termsandconditions"
+          className="font-semibold text-foreground underline-offset-2 hover:underline"
+        >
+          Terms &amp; Conditions
+        </a>
+        .
+      </p>
     </div>
   );
 }

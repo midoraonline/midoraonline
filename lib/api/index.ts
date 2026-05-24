@@ -2,6 +2,7 @@ export * as apiBase from "./base";
 export * as apiAuth from "./auth";
 export * as apiHealth from "./health";
 export * as apiShops from "./shops";
+export * as apiCategories from "./categories";
 export * as apiProducts from "./products";
 export * as apiChat from "./chat";
 export * as apiPayments from "./payments";

@@ -137,7 +137,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
       {visible.map((p) => (
         <ProductCard key={p.id} product={toCard(p, shop, listingBase)} />
       ))}

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
+import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 
@@ -122,8 +123,9 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 Chat on WhatsApp
               </a>
               {verified ? (
-                <p className="mt-1 px-0.5 text-center text-[10px] font-medium leading-snug text-muted sm:text-[11px]">
-                  <span className="text-foreground/90">✓ Verified seller</span>
+                <p className="mt-1 flex items-center justify-center gap-1 px-0.5 text-[10px] font-medium leading-snug text-muted sm:text-[11px]">
+                  <VerifiedIcon size={13} label="Verified seller" />
+                  <span className="text-foreground/90">seller</span>
                 </p>
               ) : (
                 <p className="mt-1 px-0.5 text-center text-[10px] text-muted sm:text-[11px]">
@@ -131,15 +133,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 </p>
               )}
             </>
-          ) : null}
-
-          {!inShop ? (
-            <Link
-              href={`/shops/${product.shop.slug}`}
-              className="dm-focus mt-2 min-w-0 truncate rounded-full bg-foreground/[0.07] px-2 py-1 text-center text-[10px] font-semibold text-foreground/85 hover:bg-foreground/[0.1] sm:px-3 sm:text-xs"
-            >
-              <span className="truncate">{product.shop.name}</span>
-            </Link>
           ) : null}
         </div>
       </div>

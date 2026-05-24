@@ -227,6 +227,35 @@ export function deleteProduct(productId: string, token?: string | null) {
   });
 }
 
+export function repostProduct(productId: string, token?: string | null) {
+  return apiFetch<Product>(`${productBase(productId)}/repost`, {
+    method: "POST",
+    token,
+  });
+}
+
+export function getAlgorithmFeed(opts?: { limit?: number; token?: string }) {
+  const limit = opts?.limit ?? 20;
+  return apiFetch<Product[]>(`/api/v1/feed/algorithm?limit=${limit}`, {
+    ...(opts?.token ? { token: opts.token } : {}),
+  });
+}
+
+export function getLatestFeed(opts?: { limit?: number; token?: string }) {
+  const limit = opts?.limit ?? 20;
+  return apiFetch<Product[]>(`/api/v1/feed/latest?limit=${limit}`, {
+    ...(opts?.token ? { token: opts.token } : {}),
+  });
+}
+
+export function logSearch(query: string, token?: string | null) {
+  return apiFetch<{ status: string }>("/api/v1/feed/search-history", {
+    method: "POST",
+    token,
+    body: { query },
+  });
+}
+
 export function generateFromImage(
   body: { image_url: string },
   token?: string | null,
