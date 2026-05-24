@@ -95,6 +95,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               </p>
             </div>
           ) : null}
+
+          {viewCount !== null ? (
+            <div className="absolute bottom-1.5 right-1.5 z-[5] inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm leading-none">
+              <MaterialSymbol name="visibility" className="!text-[11px] leading-none" />
+              {viewCount}
+            </div>
+          ) : null}
         </div>
       </Link>
 
@@ -111,15 +118,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             {formatUGX(product.priceUGX)}
           </Link>
 
-          <div className="flex shrink-0 items-center gap-2">
-            {viewCount !== null && (
-              <span className="inline-flex items-center gap-0.5 text-[11px] text-muted">
-                <MaterialSymbol name="visibility" className="!text-[14px] leading-none" />
-                {viewCount}
-              </span>
-            )}
-            <ProductLikeButton productId={product.id} size="compact" className="shrink-0" />
-          </div>
+          <ProductLikeButton productId={product.id} size="compact" className="shrink-0" />
         </div>
 
         {waHref ? (
