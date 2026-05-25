@@ -47,7 +47,7 @@ export default function ShopHeroToolbar({
 
   const navPillBase =
     tone === "immersive"
-      ? "inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold backdrop-blur-sm transition-[background,border-color] duration-200 dm-focus sm:text-sm hover:brightness-110"
+      ? "inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold backdrop-blur-sm transition duration-200 dm-focus sm:text-sm hover:brightness-110"
       : "inline-flex items-center justify-center rounded-full border border-foreground/[0.1] bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold text-foreground/90 shadow-sm transition-colors hover:bg-foreground/[0.1] dm-focus sm:text-sm";
 
   const analyticsClass =

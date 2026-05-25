@@ -3,10 +3,10 @@
 :root {
   color-scheme: light;
   /* Brand — full palette + logo rules: docs/BRAND.md */
-  --primary: #4a6767;
+  --primary: #0A2540;
   --primary-foreground: #f9f9f8;
-  --accent: #66798f;
-  --secondary: #757779;
+  --accent: #E67E22;
+  --secondary: #f67720;
   /* Surfaces — cool neutral aligned with accent #66798f */
   --background: #f1f4f8;
   --surface: #ffffff;
@@ -96,6 +96,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .home-reveal,
   .home-reveal--in {
     opacity: 1 !important;
@@ -128,7 +129,7 @@ body {
 
   /* Floating pill bar — aligned with main nav glass (dm-glass-bar) */
   .shop-header-bar {
-    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,51,49,0.18)] backdrop-blur-2xl backdrop-saturate-150;
+    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.18)] backdrop-blur-2xl backdrop-saturate-150;
   }
 
   /* One continuous glass surface for shop hero (no page-bg strip between bar and body) */
@@ -138,35 +139,33 @@ body {
 
   /* Bar heights match ShopHeader row: h-14 (3.5rem) / sm:h-16 (4rem) */
   .shop-hero-section {
-    padding-top: calc(
-      var(--shop-safe-top) + var(--shop-header-float-y) + 3.5rem + var(--shop-header-float-y)
-    );
+    padding-top: calc(var(--shop-safe-top) + var(--shop-header-float-y) + 3.5rem + var(--shop-header-float-y));
   }
 
   @media (min-width: 640px) {
     .shop-hero-section {
-      padding-top: calc(
-        var(--shop-safe-top) + var(--shop-header-float-y) + 4rem + var(--shop-header-float-y)
-      );
+      padding-top: calc(var(--shop-safe-top) + var(--shop-header-float-y) + 4rem + var(--shop-header-float-y));
     }
   }
 
   /* Glass panels — pages, cards, chat shells */
   .dm-card {
-    @apply rounded-3xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,51,49,0.14)] backdrop-blur-2xl backdrop-saturate-150;
+    @apply rounded-3xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.14)] backdrop-blur-2xl backdrop-saturate-150;
   }
 
   /* Compact glass strip — floating navbars */
   .dm-glass-bar {
-    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,51,49,0.18)] backdrop-blur-2xl backdrop-saturate-150;
+    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.18)] backdrop-blur-2xl backdrop-saturate-150;
   }
 
   .dm-card-hover {
-    @apply transition-[border-color,transform,box-shadow] duration-200 ease-out;
+    transition-property: border-color, transform, box-shadow;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
   }
 
   .dm-card-hover:hover {
-    @apply border-foreground/[0.1] shadow-[0_18px_50px_-14px_rgba(42,51,49,0.2)];
+    @apply border-foreground/[0.1] shadow-[0_18px_50px_-14px_rgba(42,_51,_49,_0.2)];
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -177,19 +176,23 @@ body {
 
   /* Form controls — soft fill, no heavy borders */
   .dm-input {
-    @apply w-full min-h-11 rounded-2xl border-0 bg-foreground/[0.05] px-4 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    @apply w-full min-h-11 rounded-2xl border-0 bg-foreground/[0.05] px-4 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    transition-property: box-shadow, background-color;
   }
 
   .dm-textarea {
-    @apply w-full min-h-32 rounded-2xl border-0 bg-foreground/[0.05] px-4 py-3 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    @apply w-full min-h-32 rounded-2xl border-0 bg-foreground/[0.05] px-4 py-3 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    transition-property: box-shadow, background-color;
   }
 
   .dm-input-xs {
-    @apply w-full min-h-9 rounded-2xl border-0 bg-foreground/[0.05] px-3 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    @apply w-full min-h-9 rounded-2xl border-0 bg-foreground/[0.05] px-3 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    transition-property: box-shadow, background-color;
   }
 
   .dm-textarea-xs {
-    @apply w-full min-h-[100px] resize-none rounded-2xl border-0 bg-foreground/[0.05] px-3 py-2 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none transition-[box-shadow,background-color] placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    @apply w-full min-h-[100px] resize-none rounded-2xl border-0 bg-foreground/[0.05] px-3 py-2 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
+    transition-property: box-shadow, background-color;
   }
 
   .dm-focus {

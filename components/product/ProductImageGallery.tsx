@@ -200,7 +200,7 @@ export default function ProductImageGallery({
 
           const commonCls = [
             "absolute inset-0 object-cover",
-            "transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none",
+            "duration-500 ease-out motion-reduce:transition-none",
             visible ? "opacity-100" : "pointer-events-none opacity-0",
           ].join(" ");
 
@@ -211,6 +211,7 @@ export default function ProductImageGallery({
               alt={i === 0 ? title : `${title} — image ${i + 1}`}
               fill
               className={commonCls}
+              style={{ transitionProperty: "opacity, transform" }}
               sizes="(max-width: 1024px) 100vw, min(896px, 50vw)"
               priority={i === 0}
               unoptimized={userMediaUnoptimized(url)}
@@ -237,13 +238,14 @@ export default function ProductImageGallery({
                   onClick={() => onPick(i)}
                   className={[
                     "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border",
-                    "bg-foreground/[0.04] transition-[box-shadow,transform] duration-200",
+                    "bg-foreground/[0.04] duration-200",
                     "motion-reduce:transition-none",
                     isActive
                       ? "scale-[1.02] ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent"
                       : "border-border opacity-75 hover:opacity-100",
                     "sm:h-20 sm:w-20",
                   ].join(" ")}
+                  style={{ transitionProperty: "box-shadow, transform" }}
                   aria-label={`View ${isVideo ? "video" : "image"} ${i + 1}`}
                   aria-current={isActive ? "true" : undefined}
                 >

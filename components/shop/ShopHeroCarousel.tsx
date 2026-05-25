@@ -393,10 +393,11 @@ export default function ShopHeroCarousel({
                 aria-label={`Go to slide ${i + 1}`}
                 aria-current={active ? "true" : undefined}
                 onClick={() => advance(i)}
-                className="group relative h-1.5 rounded-full outline-none transition-[width,background-color] duration-500 ease-out focus-visible:ring-2 focus-visible:ring-white/70"
+                className="group relative h-1.5 rounded-full outline-none duration-500 ease-out focus-visible:ring-2 focus-visible:ring-white/70"
                 style={{
                   width: active ? "1.75rem" : "0.375rem",
                   background: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.45)",
+                  transitionProperty: "width, background-color",
                 }}
               />
             );
