@@ -113,7 +113,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <div className="flex items-center justify-between gap-2">
           <Link
             href={productHref}
-            className="dm-focus min-w-0 truncate text-xs font-medium tabular-nums text-foreground/90"
+            className="dm-focus min-w-0 truncate text-xs font-semibold tabular-nums text-accent"
           >
             {formatUGX(product.priceUGX)}
           </Link>

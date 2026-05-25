@@ -60,7 +60,7 @@ export default function ShopHeaderAuth() {
       .slice(0, 2)
       .toUpperCase();
 
-    const accountBg = onAccount ? "bg-primary" : "bg-primary/90";
+    const accountBg = onAccount ? "bg-accent" : "bg-accent/90";
 
     return (
       <>
@@ -99,14 +99,14 @@ export default function ShopHeaderAuth() {
     <>
       <Link
         href={nextHref}
-        className="hidden rounded-full bg-foreground/[0.07] px-4 py-2 text-sm font-medium text-foreground/90 transition-colors dm-focus hover:bg-foreground/[0.11] md:inline-flex"
+        className="hidden rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-colors dm-focus hover:bg-accent/90 md:inline-flex"
         aria-label="Sign in"
       >
         Login
       </Link>
       <Link
         href={nextHref}
-        className="inline-flex shrink-0 items-center justify-center rounded-full bg-foreground/[0.07] px-3 py-2 text-xs font-semibold text-foreground/90 transition-colors dm-focus hover:bg-foreground/[0.11] md:hidden"
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-accent px-3 py-2 text-xs font-semibold text-white transition-colors dm-focus hover:bg-accent/90 md:hidden"
         aria-label="Sign in"
       >
         <MaterialSymbol name="person" className="!text-[18px] leading-none" />

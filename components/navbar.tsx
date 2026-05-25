@@ -77,7 +77,7 @@ export default function Navbar() {
     pathname.startsWith("/merchant/") ||
     pathname === "/customer" ||
     pathname.startsWith("/customer/");
-  const accountPillBg = onAccount ? "bg-primary" : "bg-primary/90";
+  const accountPillBg = onAccount ? "bg-accent" : "bg-accent/90";
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-5">
@@ -111,7 +111,7 @@ export default function Navbar() {
                   className={[
                     "rounded-full px-3.5 py-2 text-sm font-medium transition-colors dm-focus",
                     active
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-accent text-white shadow-sm"
                       : "text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground",
                   ].join(" ")}
                 >
@@ -158,13 +158,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="hidden rounded-full bg-foreground/[0.07] px-4 py-2 text-sm font-medium text-foreground/90 transition-colors dm-focus hover:bg-foreground/[0.11] md:inline-flex"
+                  className="hidden rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-colors dm-focus hover:bg-accent/90 md:inline-flex"
                 >
                   Login
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-foreground/[0.07] px-3 py-2 text-xs font-semibold text-foreground/90 transition-colors dm-focus hover:bg-foreground/[0.11] md:hidden"
+                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-accent px-3 py-2 text-xs font-semibold text-white transition-colors dm-focus hover:bg-accent/90 md:hidden"
                   onClick={() => setOpen(false)}
                 >
                   Sign in
@@ -197,7 +197,7 @@ export default function Navbar() {
                     className={[
                       "rounded-xl px-3 py-2.5 text-sm font-medium dm-focus transition-colors",
                       active
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-accent text-white"
                         : "text-foreground/85 hover:bg-foreground/[0.06]",
                     ].join(" ")}
                   >

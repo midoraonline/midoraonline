@@ -48,7 +48,7 @@ function SectionHeader({
       {href && linkLabel && (
         <Link
           href={href}
-          className="dm-pill dm-focus inline-flex shrink-0 items-center gap-1.5 bg-foreground/[0.07] px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+          className="dm-pill dm-focus inline-flex shrink-0 items-center gap-1.5 bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
         >
           {linkLabel}
           <ArrowRight className="size-3.5" aria-hidden />
@@ -272,7 +272,7 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
                   <div className="pt-1 text-center">
                     <Link
                       href="/shops"
-                      className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-foreground/[0.07] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+                      className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
                     >
                       View all {filteredShops.length} shops
                       <ArrowRight className="size-3.5" aria-hidden />
@@ -317,7 +317,7 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
                   <div className="pt-1 text-center">
                     <Link
                       href="/products"
-                      className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-foreground/[0.07] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+                      className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
                     >
                       View all {initialProducts.length} products
                       <ArrowRight className="size-3.5" aria-hidden />
@@ -338,7 +338,7 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
               </div>
               <Link
                 href="/onboarding"
-                className="dm-pill dm-focus inline-flex shrink-0 items-center gap-2 bg-foreground/[0.07] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+                className="dm-pill dm-focus inline-flex shrink-0 items-center gap-2 bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
               >
                 How it works
                 <ArrowRight className="size-3.5" aria-hidden />

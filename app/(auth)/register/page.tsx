@@ -196,7 +196,7 @@ function RegisterPageInner() {
         <button
           type="submit"
           disabled={loading || googleLoading}
-          className="dm-pill flex min-h-12 w-full items-center justify-center bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:opacity-95 active:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/30 disabled:opacity-60"
+          className="dm-pill flex min-h-12 w-full items-center justify-center bg-accent text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/30 disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Create account"}
         </button>

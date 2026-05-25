@@ -114,7 +114,7 @@ export default async function ShopDetails({
       <p className="mt-6">
         <Link
           href="/policies"
-          className="dm-pill dm-focus inline-flex bg-foreground/[0.07] px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+          className="dm-pill dm-focus inline-flex bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
         >
           View platform policies
         </Link>

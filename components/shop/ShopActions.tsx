@@ -153,7 +153,7 @@ export default function ShopActions({
         className={[
           baseIcon,
           followed
-            ? "text-primary hover:bg-primary/15 hover:text-primary"
+            ? "text-accent hover:bg-accent/15 hover:text-accent"
             : hoverNeutral,
         ].join(" ")}
       >

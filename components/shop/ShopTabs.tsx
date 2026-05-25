@@ -53,7 +53,7 @@ export default function ShopTabs({
               >
                 {tab.label}
                 {isActive ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />
                 ) : null}
               </button>
             );
@@ -61,7 +61,7 @@ export default function ShopTabs({
           {canManage ? (
             <Link
               href={`/shops/${shopSlug}/analytics`}
-              className="ml-auto flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-sm font-medium text-primary dm-focus"
+              className="ml-auto flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-sm font-medium text-accent dm-focus"
             >
               <MaterialSymbol name="analytics" className="!text-[18px] leading-none" />
               <span className="hidden sm:inline">Analytics</span>
