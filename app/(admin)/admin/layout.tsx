@@ -8,9 +8,12 @@ const NAV: DashboardNavItem[] = [
   { href: "/admin", label: "Overview", icon: <IconChart />, exact: true },
   { href: "/admin/verifications", label: "Verifications", icon: <IconShield /> },
   { href: "/admin/shops", label: "Shops", icon: <IconStore /> },
+  { href: "/admin/reports", label: "Reports", icon: <IconFlag /> },
+  { href: "/admin/comments", label: "Comments", icon: <IconMessage /> },
 ];
 
 const SECONDARY: DashboardNavItem[] = [
+  { href: "/admin/chat", label: "Chat", icon: <IconChat /> },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: <IconReceipt /> },
 ];
 
@@ -61,6 +64,28 @@ function IconReceipt() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
       <path d="M9 8h6M9 12h6M9 16h4" />
+    </svg>
+  );
+}
+function IconFlag() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 21V3h11l1 4H20v11H8Z" />
+    </svg>
+  );
+}
+function IconMessage() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+function IconChat() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M8 9h8M8 13h6" />
     </svg>
   );
 }

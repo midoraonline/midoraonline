@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
+import { apiChat } from "@/lib/api";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -26,8 +28,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const session = useAppSession();
+  const [unread, setUnread] = useState(0);
 
-  /** No main-nav item is active on routes outside this list (e.g. /account, /login). */
   const activeHref = useMemo(() => {
     const hit = navItems.find((i) => isActivePath(pathname, i.href));
     return hit?.href ?? null;
@@ -54,12 +56,29 @@ export default function Navbar() {
 
   const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
 
-  /**
-   * Role → dashboard mapping. We point the account pill at the user's own
-   * dashboard so they land directly on the right surface (admin console,
-   * merchant workspace, or customer area) instead of the generic /account
-   * redirect stub.
-   */
+  const unreadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchUnread = useCallback(async () => {
+    if (!session.isAuthenticated) {
+      setUnread(0);
+      return;
+    }
+    try {
+      const res = await apiChat.getUnreadCount();
+      setUnread(res.unread_count);
+    } catch {
+      // ignore
+    }
+  }, [session.isAuthenticated]);
+
+  useEffect(() => {
+    fetchUnread();
+    unreadIntervalRef.current = setInterval(fetchUnread, 15000);
+    return () => {
+      if (unreadIntervalRef.current) clearInterval(unreadIntervalRef.current);
+    };
+  }, [fetchUnread]);
+
   const role = session.user?.user_role ?? null;
   const dashboardHref =
     role === "admin"
@@ -78,6 +97,8 @@ export default function Navbar() {
     pathname === "/customer" ||
     pathname.startsWith("/customer/");
   const accountPillBg = onAccount ? "bg-accent" : "bg-accent/90";
+
+  const onChatPage = pathname === "/chat";
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-5">
@@ -122,6 +143,27 @@ export default function Navbar() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2" suppressHydrationWarning>
+            {/* Chat icon */}
+            {session.isAuthenticated ? (
+              <Link
+                href="/chat"
+                className={`relative grid size-9 place-items-center rounded-full transition-colors dm-focus ${
+                  onChatPage
+                    ? "bg-accent text-white"
+                    : "text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground"
+                }`}
+                aria-label="Messages"
+                title="Messages"
+              >
+                <MaterialSymbol name="chat" className="!text-xl" />
+                {unread > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] px-1 h-[18px] place-items-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </Link>
+            ) : null}
+
             {displayName ? (
               <>
                 <Link
@@ -152,7 +194,6 @@ export default function Navbar() {
                 </Link>
               </>
             ) : authLoading ? (
-              // Reserve space without a shimmer so navigation feels seamless.
               <span className="inline-flex size-9 shrink-0 rounded-full md:hidden" aria-hidden />
             ) : (
               <>

@@ -80,6 +80,10 @@ export type AdminStatsSummary = {
   pending_verifications: number;
   verified_shops: number;
   rejected_shops: number;
+  total_reports: number;
+  total_flagged_comments: number;
+  total_conversations: number;
+  total_messages: number;
 };
 
 export type TrendPoint = { day: string; count: number };
@@ -216,4 +220,89 @@ export function queueVerification(
 
 export function statsOverview(adminKey?: string) {
   return apiFetch<AdminStatsOverview>("/api/v1/admin/stats/overview", { adminKey });
+}
+
+// ── Reports ──────────────────────────────────────────────────────────
+
+export type AdminReport = {
+  id: string;
+  product_id: string;
+  reporter_id: string;
+  reason: string;
+  description?: string | null;
+  resolved: boolean;
+  created_at: string;
+  product?: { title?: string; shop_id?: string } | null;
+  reporter?: { full_name?: string } | null;
+};
+
+export function listReports(params: { resolved?: boolean; limit?: number; page?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.resolved !== undefined) qs.set("resolved", String(params.resolved));
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.page) qs.set("page", String(params.page));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<{ items: AdminReport[]; total: number }>(`/api/v1/admin/reports${suffix}`);
+}
+
+export function resolveReport(reportId: string) {
+  return apiFetch<{ status: string }>(
+    `/api/v1/admin/reports/${encodeURIComponent(reportId)}/resolve`,
+    { method: "PATCH" }
+  );
+}
+
+// ── Comments Moderation ──────────────────────────────────────────────
+
+export type AdminComment = {
+  id: string;
+  comment: string;
+  is_flagged: boolean;
+  created_at: string;
+  user?: { full_name?: string } | null;
+  product?: { title?: string } | null;
+  shop?: { name?: string } | null;
+};
+
+export function listComments(params: { flagged?: boolean; limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.flagged !== undefined) qs.set("flagged", String(params.flagged));
+  if (params.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<{ product_comments: AdminComment[]; shop_comments: AdminComment[] }>(
+    `/api/v1/admin/comments${suffix}`
+  );
+}
+
+export function toggleCommentFlag(commentId: string, table: "product_comments" | "shop_comments") {
+  return apiFetch<{ status: string; is_flagged: boolean }>(
+    `/api/v1/admin/comments/${encodeURIComponent(commentId)}/flag?table=${table}`,
+    { method: "PATCH" }
+  );
+}
+
+// ── Chat Monitoring ──────────────────────────────────────────────────
+
+export type AdminConversation = {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  last_message?: string | null;
+  last_message_at?: string | null;
+  created_at: string;
+  buyer?: { full_name?: string; email?: string } | null;
+  seller?: { full_name?: string; email?: string } | null;
+};
+
+export function adminListConversations(params: { limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<{ items: AdminConversation[]; total: number }>(
+    `/api/v1/admin/chat/conversations${suffix}`
+  );
+}
+
+export function adminMessageCount() {
+  return apiFetch<{ count: number }>("/api/v1/admin/chat/messages/count");
 }

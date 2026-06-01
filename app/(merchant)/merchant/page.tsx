@@ -202,6 +202,31 @@ export default function MerchantOverviewPage() {
         </section>
       )}
 
+      {/* Conversations & Leads */}
+      <section className="grid gap-3 sm:grid-cols-3">
+        <Link href="/merchant/conversations" className="dm-card dm-card-hover p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Conversations
+          </p>
+          <p className="mt-2 font-display text-3xl font-semibold">—</p>
+          <p className="mt-1 text-[10px] text-muted">Click to view →</p>
+        </Link>
+        <Link href="/merchant/leads" className="dm-card dm-card-hover p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Leads
+          </p>
+          <p className="mt-2 font-display text-3xl font-semibold">—</p>
+          <p className="mt-1 text-[10px] text-muted">Click to view →</p>
+        </Link>
+        <Link href="/merchant/shops" className="dm-card dm-card-hover p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Total Shops
+          </p>
+          <p className="mt-2 font-display text-3xl font-semibold">{fmt(shops.length)}</p>
+          <p className="mt-1 text-[10px] text-muted">Manage shops →</p>
+        </Link>
+      </section>
+
       {/* Your shops list */}
       <section className="dm-card p-5 sm:p-6">
         <div className="flex items-center justify-between">

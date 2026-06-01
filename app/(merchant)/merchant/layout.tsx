@@ -7,6 +7,8 @@ import DashboardShell, {
 const NAV: DashboardNavItem[] = [
   { href: "/merchant", label: "Overview", icon: <IconHome />, exact: true },
   { href: "/merchant/shops", label: "My shops", icon: <IconStore /> },
+  { href: "/merchant/conversations", label: "Conversations", icon: <IconChat /> },
+  { href: "/merchant/leads", label: "Leads", icon: <IconTrend /> },
   { href: "/merchant/orders", label: "Orders", icon: <IconBag /> },
 ];
 
@@ -52,6 +54,22 @@ function IconBag() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M6 7h12l-1 14H7L6 7Z" />
       <path d="M9 7a3 3 0 0 1 6 0" />
+    </svg>
+  );
+}
+function IconChat() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M8 9h8M8 13h6" />
+    </svg>
+  );
+}
+function IconTrend() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M22 7 13.5 15.5 8.5 10.5 2 17" />
+      <path d="M16 7h6v6" />
     </svg>
   );
 }

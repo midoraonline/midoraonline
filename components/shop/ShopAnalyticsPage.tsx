@@ -14,9 +14,9 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { apiProducts, apiShops } from "@/lib/api";
+import { apiShops } from "@/lib/api";
+import type { Shop, ShopEngagement, ShopDashboardResponse } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
-import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -43,14 +43,10 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     setLoading(true);
     setError(null);
     try {
-      const [e, list, full] = await Promise.all([
-        apiShops.getShopEngagement(shop.id),
-        apiProducts.listShopProducts(shop.id),
-        apiShops.getShop(shop.id).catch(() => null),
-      ]);
-      setEngagement(e);
-      setProducts(list.items);
-      setShopProfile(full);
+      const dash = await apiShops.getShopDashboard(shop.id);
+      setEngagement(dash.engagement);
+      setProducts(dash.products ?? []);
+      setShopProfile(dash.shop as Shop);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load analytics");
     } finally {

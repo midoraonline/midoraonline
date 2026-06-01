@@ -190,7 +190,7 @@ export default function AdminOverviewPage() {
       />
 
       {/* KPI row */}
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <KpiCard
           label="Shops"
           value={fmt(s.total_shops)}
@@ -233,6 +233,29 @@ export default function AdminOverviewPage() {
           sub="Completed payments"
           href="/admin/subscriptions"
           accent={PALETTE[5]}
+        />
+        <KpiCard
+          label="Reports"
+          value={fmt(s.total_reports)}
+          sub="Unresolved"
+          href="/admin/reports"
+          accent={PALETTE[6]}
+          tone="warn"
+        />
+        <KpiCard
+          label="Flagged comments"
+          value={fmt(s.total_flagged_comments)}
+          sub="Needs review"
+          href="/admin/comments"
+          accent={PALETTE[7]}
+          tone="warn"
+        />
+        <KpiCard
+          label="Conversations"
+          value={fmt(s.total_conversations)}
+          sub={`${fmt(s.total_messages)} messages`}
+          href="/admin/chat"
+          accent={PALETTE[8]}
         />
       </section>
 

@@ -5,7 +5,9 @@ function productBase(productId: string) {
   return `/api/v1/products/${encodeURIComponent(productId)}`;
 }
 
-export type ItemType = "product" | "service";
+export type ItemType = "product" | "service" | "property" | "job";
+
+export type ProductStatus = "draft" | "pending_review" | "active" | "hidden" | "rejected" | "expired" | "sold";
 
 export type Product = {
   id: string;
@@ -24,10 +26,14 @@ export type Product = {
   category?: string | null;
   tags?: string[] | null;
   is_published?: boolean | null;
+  status?: ProductStatus | null;
+  listing_score?: number | null;
+  location_name?: string | null;
   view_count?: number | null;
   like_count?: number | null;
   viewer_liked?: boolean | null;
   created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type Paginated<T> = {
@@ -46,6 +52,7 @@ export type CreateProductRequest = {
   item_type?: ItemType;
   image_urls?: string[] | string;
   is_published?: boolean;
+  location_name?: string;
 };
 
 /** Ensure Postgres `text[]` / API list fields always get a real JSON array of strings. */
@@ -68,6 +75,7 @@ function buildCreatePayload(body: CreateProductRequest): Record<string, unknown>
   if (body.category !== undefined && body.category !== "") o.category = body.category;
   if (body.item_type !== undefined) o.item_type = body.item_type;
   if (body.is_published !== undefined) o.is_published = body.is_published;
+  if (body.location_name !== undefined && body.location_name !== "") o.location_name = body.location_name;
   const imgs = normalizeImageUrlsForApi(body.image_urls);
   if (imgs?.length) o.image_urls = imgs;
   return o;
@@ -82,6 +90,7 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.category !== undefined) o.category = body.category;
   if (body.item_type !== undefined) o.item_type = body.item_type;
   if (body.is_published !== undefined) o.is_published = body.is_published;
+  if (body.location_name !== undefined) o.location_name = body.location_name;
   if (body.image_urls !== undefined) {
     const imgs = normalizeImageUrlsForApi(body.image_urls);
     if (imgs?.length) o.image_urls = imgs;
@@ -246,6 +255,52 @@ export function getLatestFeed(opts?: { limit?: number; token?: string }) {
   return apiFetch<Product[]>(`/api/v1/feed/latest?limit=${limit}`, {
     ...(opts?.token ? { token: opts.token } : {}),
   });
+}
+
+// ── Composite endpoints ────────────────────────────────────────────
+
+export type HomeFeedProduct = {
+  id: string;
+  shop_id: string;
+  title: string;
+  price_ugx: number;
+  image_urls: string[];
+  primary_image?: string;
+  category?: string | null;
+  item_type?: string | null;
+  view_count: number;
+  like_count: number;
+  listing_score: number;
+  location_name?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+    owner_id?: string | null;
+    whatsapp_number?: string | null;
+    is_active: boolean;
+    category?: string | null;
+    trust_score: number;
+    available_now: boolean;
+    location?: string | null;
+  };
+  boosted: boolean;
+};
+
+export type HomeFeedResponse = {
+  algorithm: HomeFeedProduct[];
+  trending: HomeFeedProduct[];
+  premium: HomeFeedProduct[];
+  fresh: HomeFeedProduct[];
+};
+
+/** Fetch all 4 home page feeds in a single call with shop + boost data embedded. */
+export function getHomeFeed(limit?: number) {
+  const qs = limit ? `?limit=${limit}` : "";
+  return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs}`);
 }
 
 export function logSearch(query: string, token?: string | null) {

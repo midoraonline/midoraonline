@@ -1,5 +1,7 @@
 import { apiFetch } from "./base";
 
+// ── AI concierge (existing) ──────────────────────────────────────────
+
 export type ChatSession = {
   id: string;
   shop_id?: string | null;
@@ -33,7 +35,6 @@ export function listSessions(opts?: { shop_id?: string; token?: string }) {
   );
 }
 
-/** In-shop or create-shop: API expects { message } and may return suggested_shop. */
 export type SendMessageResponse = {
   message?: string;
   sender_type?: string;
@@ -54,18 +55,10 @@ export type SuggestedShop = {
   availability?: string | null;
 };
 
-export function sendMessage(
-  sessionId: string,
-  body: { message: string },
-  token?: string
-) {
+export function sendMessage(sessionId: string, body: { message: string }, token?: string) {
   return apiFetch<SendMessageResponse>(
     `/api/v1/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
-    {
-      method: "POST",
-      token,
-      body: JSON.stringify(body),
-    }
+    { method: "POST", token, body: JSON.stringify(body) }
   );
 }
 
@@ -76,3 +69,73 @@ export function listMessages(sessionId: string, token?: string) {
   );
 }
 
+// ── Native person-to-person chat ─────────────────────────────────────
+
+export type Conversation = {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  shop_id?: string | null;
+  product_id?: string | null;
+  last_message?: string | null;
+  last_message_at?: string | null;
+  buyer_unread: number;
+  seller_unread: number;
+  created_at: string;
+  updated_at: string;
+  buyer?: { full_name?: string } | null;
+  seller?: { full_name?: string } | null;
+};
+
+export type NativeMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  read_at?: string | null;
+  created_at: string;
+  sender?: { full_name?: string } | null;
+};
+
+export function listConversations() {
+  return apiFetch<Conversation[]>("/api/v1/chat/conversations");
+}
+
+export function createConversation(params: {
+  seller_id: string;
+  shop_id?: string;
+  product_id?: string;
+}) {
+  return apiFetch<Conversation>("/api/v1/chat/conversations", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export function listNativeMessages(conversationId: string, before?: string) {
+  const params = new URLSearchParams();
+  if (before) params.set("before", before);
+  const qs = params.toString();
+  return apiFetch<NativeMessage[]>(
+    `/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages${qs ? `?${qs}` : ""}`
+  );
+}
+
+export function sendNativeMessage(conversationId: string, content: string) {
+  const qs = new URLSearchParams({ content });
+  return apiFetch<NativeMessage>(
+    `/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages?${qs}`,
+    { method: "POST" }
+  );
+}
+
+export function markConversationRead(conversationId: string) {
+  return apiFetch<{ status: string }>(
+    `/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/read`,
+    { method: "PUT" }
+  );
+}
+
+export function getUnreadCount() {
+  return apiFetch<{ unread_count: number }>("/api/v1/chat/unread");
+}

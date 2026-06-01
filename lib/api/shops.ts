@@ -1,4 +1,5 @@
 import { apiFetch } from "./base";
+import type { Product } from "./products";
 
 export type ShopType = "product" | "service" | "both";
 
@@ -48,6 +49,9 @@ export type Shop = {
   logo_url?: string | null;
   subscription_end_date?: string | null;
   view_count?: number | null;
+  trust_score?: number | null;
+  available_now?: boolean | null;
+  last_seen_at?: string | null;
   follower_count?: number | null;
   like_count?: number | null;
   viewer_following?: boolean | null;
@@ -250,6 +254,12 @@ export type VerificationStatus =
   | "verified"
   | "rejected";
 
+export type DocumentUpload = {
+  url: string;
+  type: "national_id_front" | "national_id_back" | "selfie" | "business_cert";
+  label: string;
+};
+
 export type Verification = {
   id: string;
   shop_id: string;
@@ -259,6 +269,11 @@ export type Verification = {
   reviewed_by?: string | null;
   notes?: string | null;
   metadata?: Record<string, unknown> | null;
+  submitted_docs?: DocumentUpload[] | null;
+  submitted_phone?: string | null;
+  submitted_whatsapp?: string | null;
+  submitted_location?: string | null;
+  shop_duration_days?: number;
 };
 
 export function getVerification(shopId: string, token?: string | null) {
@@ -270,12 +285,35 @@ export function getVerification(shopId: string, token?: string | null) {
 
 export function submitForVerification(
   shopId: string,
-  body: { notes?: string; metadata?: Record<string, unknown> } = {},
+  body: {
+    notes?: string;
+    metadata?: Record<string, unknown>;
+    documents?: DocumentUpload[];
+    submitted_phone?: string;
+    submitted_whatsapp?: string;
+    submitted_location?: string;
+  } = {},
   token?: string | null
 ) {
   return apiFetch<Verification>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/verification/submit`,
     { method: "POST", token, body }
+  );
+}
+
+// ── Composite dashboard endpoint ───────────────────────────────────
+
+export type ShopDashboardResponse = {
+  shop: Shop;
+  engagement: ShopEngagement;
+  products: Product[];
+  lead_stats: Record<string, unknown>;
+};
+
+/** Fetch everything a merchant dashboard needs in one call. */
+export function getShopDashboard(shopId: string) {
+  return apiFetch<ShopDashboardResponse>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/dashboard`
   );
 }
 

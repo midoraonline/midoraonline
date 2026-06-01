@@ -1,82 +1,58 @@
 import "server-only";
 
-import { ApiError } from "@/lib/api/base";
 import { apiProducts, apiShops } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
 import type { Product } from "@/lib/api/products";
-
+import type { HomeFeedProduct } from "@/lib/api/products";
 
 const MAX_CARDS = 72;
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Shared helper — convert composite feed product to ProductCardData
 // ---------------------------------------------------------------------------
 
-async function getShopDetails(shopId: string) {
-  try {
-    return await apiShops.getShop(shopId);
-  } catch {
-    return null;
-  }
-}
-
-async function hydrateProducts(products: Product[]): Promise<ProductCardData[]> {
-  const site = publicSiteOrigin();
-  const cards: ProductCardData[] = [];
-
-  // Fetch shops in small chunks to avoid exhausting the backend threadpool
-  const shopIds = Array.from(new Set(products.map(p => p.shop_id)));
-  const shopsMap = new Map();
-
-  for (let i = 0; i < shopIds.length; i += 3) {
-    const chunk = shopIds.slice(i, i + 3);
-    await Promise.all(
-      chunk.map(async (id) => {
-        const shop = await getShopDetails(id);
-        if (shop) shopsMap.set(id, shop);
-      })
-    );
-  }
-
-  for (const p of products) {
-    if (p.is_published === false) continue;
-    const shop = shopsMap.get(p.shop_id);
-    if (!shop) continue;
-
-    const slug = productPageSlug(p);
-    cards.push({
-      id: p.id,
-      slug,
-      title: p.title,
-      priceUGX: apiProducts.productPriceUgx(p),
-      imageUrl: apiProducts.productPrimaryImage(p),
-      shopLogoUrl: shop.logo_url ?? undefined,
-      viewCount: p.view_count ?? 0,
-      shopWhatsApp: shop.whatsapp_number ?? null,
-      listingUrl: `${site}/products/${slug}`,
-      shop: {
-        id: shop.id,
-        name: shop.name,
-        slug: shop.slug,
-        verified: shop.is_active ?? true,
-        category: shop.category ?? null,
-      },
-      category: p.category ?? null,
-    });
-  }
-  return cards;
+function toCard(p: HomeFeedProduct, site: string): ProductCardData {
+  const slug = productPageSlug(p);
+  return {
+    id: p.id,
+    slug,
+    title: p.title,
+    priceUGX: p.price_ugx,
+    imageUrl: p.primary_image,
+    shopLogoUrl: p.shop.logo_url ?? undefined,
+    viewCount: p.view_count,
+    shopWhatsApp: p.shop.whatsapp_number ?? null,
+    listingUrl: `${site}/products/${slug}`,
+    sellerId: p.shop.owner_id ?? null,
+    shop: {
+      id: p.shop.id,
+      name: p.shop.name,
+      slug: p.shop.slug,
+      verified: p.shop.is_active,
+      category: p.shop.category ?? null,
+      trust_score: p.shop.trust_score ?? null,
+      available_now: p.shop.available_now ?? null,
+      location: p.shop.location ?? null,
+    },
+    category: p.category ?? null,
+    boosted: p.boosted,
+    updated_at: p.updated_at ?? p.created_at ?? null,
+    location_name: p.location_name ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Global Feeds
+// Feed loaders — all use the composite /feed/home endpoint (1 call instead of
+// N+1, no separate shop or boost fetches)
 // ---------------------------------------------------------------------------
 
 export async function loadAlgorithmFeed(): Promise<ProductCardData[]> {
   try {
-    const products = await apiProducts.getAlgorithmFeed({ limit: MAX_CARDS });
-    return hydrateProducts(products);
+    const data = await apiProducts.getHomeFeed(MAX_CARDS);
+    const site = publicSiteOrigin();
+    return (data.algorithm ?? []).map((p) => toCard(p, site));
   } catch (e) {
     console.error("Failed to load algorithm feed", e);
     return [];
@@ -85,22 +61,89 @@ export async function loadAlgorithmFeed(): Promise<ProductCardData[]> {
 
 export async function loadLatestFeed(): Promise<ProductCardData[]> {
   try {
-    const products = await apiProducts.getLatestFeed({ limit: MAX_CARDS });
-    return hydrateProducts(products);
+    const data = await apiProducts.getHomeFeed(MAX_CARDS);
+    const site = publicSiteOrigin();
+    const all = [
+      ...(data.algorithm ?? []),
+      ...(data.fresh ?? []),
+    ];
+    return [...new Map(all.map((p) => [p.id, p])).values()]
+      .map((p) => toCard(p, site));
   } catch (e) {
     console.error("Failed to load latest feed", e);
     return [];
   }
 }
 
-// We keep loadMostViewedProducts to avoid breaking other components if they still rely on it,
-// but it is essentially just hitting the algorithm feed now without user context.
 export async function loadMostViewedProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
-    const products = await apiProducts.getAlgorithmFeed({ limit });
-    // sort strictly by view count just in case
-    products.sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0));
-    return hydrateProducts(products.slice(0, limit));
+    const data = await apiProducts.getHomeFeed(limit);
+    const site = publicSiteOrigin();
+    const sorted = [...(data.algorithm ?? [])]
+      .sort((a, b) => b.view_count - a.view_count)
+      .slice(0, limit);
+    return sorted.map((p) => toCard(p, site));
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function loadPremiumFeed(limit: number = 12): Promise<ProductCardData[]> {
+  try {
+    const data = await apiProducts.getHomeFeed(limit);
+    const site = publicSiteOrigin();
+    const sorted = [...(data.premium ?? [])]
+      .sort((a, b) => b.listing_score - a.listing_score)
+      .slice(0, limit);
+    return sorted.map((p) => toCard(p, site));
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function loadBoostedFeed(limit: number = 12): Promise<ProductCardData[]> {
+  try {
+    const data = await apiProducts.getHomeFeed(MAX_CARDS);
+    const site = publicSiteOrigin();
+    const all = [
+      ...(data.algorithm ?? []),
+      ...(data.trending ?? []),
+      ...(data.premium ?? []),
+    ];
+    return [...new Map(all.map((p) => [p.id, p])).values()]
+      .filter((p) => p.boosted)
+      .slice(0, limit)
+      .map((p) => toCard(p, site));
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function loadTrendingFeed(limit: number = 12): Promise<ProductCardData[]> {
+  try {
+    const data = await apiProducts.getHomeFeed(limit);
+    const site = publicSiteOrigin();
+    const sorted = [...(data.trending ?? [])]
+      .sort((a, b) => b.listing_score - a.listing_score)
+      .slice(0, limit);
+    return sorted.map((p) => toCard(p, site));
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function loadFreshFeed(limit: number = 12): Promise<ProductCardData[]> {
+  try {
+    const data = await apiProducts.getHomeFeed(limit);
+    const site = publicSiteOrigin();
+    const sorted = [...(data.fresh ?? [])]
+      .sort((a, b) => {
+        const aT = a.updated_at ?? a.created_at ?? "";
+        const bT = b.updated_at ?? b.created_at ?? "";
+        return bT.localeCompare(aT);
+      })
+      .slice(0, limit);
+    return sorted.map((p) => toCard(p, site));
   } catch (e) {
     return [];
   }
@@ -112,7 +155,6 @@ export async function loadMostViewedProducts(limit: number = 12): Promise<Produc
 
 export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Record<string, string[]>> {
   const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort();
-
   const out: Record<string, string[]> = {};
   for (const id of uniqueSorted) {
     const set = new Set<string>();
@@ -123,12 +165,9 @@ export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Rec
         const c = p.category?.trim();
         if (c) set.add(c);
       }
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 404) {
-        out[id] = [];
-        continue;
-      }
-      throw e;
+    } catch {
+      out[id] = [];
+      continue;
     }
     out[id] = Array.from(set);
   }

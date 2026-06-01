@@ -26,12 +26,15 @@ export type CacheTag = (typeof CACHE_TAGS)[keyof typeof CACHE_TAGS];
 /**
  * Revalidation TTLs in seconds.
  *
- * - SHOP / PRODUCTS: 60 s — fresh enough for a marketplace listing.
- * - MOST_VIEWED: 300 s — view-count rankings only need minute-level
- *   precision; keeping this longer reduces unnecessary fan-out fetches.
+ * - HOME_FEED: 900 s (15 min) — public homepage, stale data is acceptable
+ * - SHOP / PRODUCTS: 300 s — reduced from 60s to cut redundant fan-out
+ * - MOST_VIEWED: 600 s (10 min) — rankings don't need sub-minute precision
+ * - DASHBOARD: 120 s — dashboards get fresh data but not on every keystroke
  */
 export const TTL = {
-  SHOP: 60,
-  PRODUCTS: 60,
-  MOST_VIEWED: 300,
+  HOME_FEED: 900,
+  SHOP: 300,
+  PRODUCTS: 300,
+  MOST_VIEWED: 600,
+  DASHBOARD: 120,
 } as const;

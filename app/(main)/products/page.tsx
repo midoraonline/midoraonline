@@ -1,13 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import ProductsBrowsePage from "@/components/product/ProductsBrowsePage";
-import { loadLatestFeed, loadMostViewedProducts } from "@/lib/productFeed";
-
-
+import { loadLatestFeed } from "@/lib/productFeed";
 
 export default async function ProductListing() {
-  const [items, mostViewed] = await Promise.all([
-    loadLatestFeed(),
-    loadMostViewedProducts(8),
-  ]);
+  const items = await loadLatestFeed();
 
-  return <ProductsBrowsePage items={items} mostViewed={mostViewed} />;
+  return <ProductsBrowsePage items={items} />;
 }

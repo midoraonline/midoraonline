@@ -1,24 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import BrowseCategorySidebar from "@/components/browse/BrowseCategorySidebar";
 import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
-import ShopCard from "@/components/shopcard";
 import ProductCard from "@/components/productcard";
-import type { Shop } from "@/lib/api/shops";
 import type { ProductCardData } from "@/components/productcard";
 import { useBrowseSidebarCollapse } from "@/hooks/useBrowseSidebarCollapse";
-import { browseProductGridForSidebar, browseShopGridForSidebar, catEquals, collectCategoriesFromShopsAndProducts } from "@/lib/browseCategories";
-
-function locationDisplay(loc: unknown): string {
-  if (typeof loc === "string") return loc;
-  if (loc && typeof loc === "object" && "display" in loc)
-    return String((loc as { display?: string }).display ?? "Online");
-  return "Online";
-}
+import { browseProductGridForSidebar, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 function matchesQuery(text: string, q: string): boolean {
   return text.toLowerCase().includes(q.toLowerCase());
@@ -29,16 +21,19 @@ function SectionHeader({
   subtitle,
   href,
   linkLabel,
+  icon,
 }: {
   title: string;
   subtitle?: string;
   href?: string;
   linkLabel?: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+        <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
+          {icon}
           {title}
         </h2>
         {subtitle && (
@@ -67,12 +62,18 @@ function EmptyState({ message }: { message: string }) {
 }
 
 type Props = {
-  initialShops: Shop[];
   initialProducts: ProductCardData[];
-  mostViewed: ProductCardData[];
+  trendingProducts: ProductCardData[];
+  premiumProducts: ProductCardData[];
+  freshProducts: ProductCardData[];
 };
 
-export default function HomeLanding({ initialShops, initialProducts, mostViewed }: Props) {
+export default function HomeLanding({
+  initialProducts,
+  trendingProducts,
+  premiumProducts,
+  freshProducts,
+}: Props) {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -91,30 +92,12 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
   const isSearching = q.length > 0;
 
   const categories = useMemo(
-    () => collectCategoriesFromShopsAndProducts(initialShops, initialProducts),
-    [initialShops, initialProducts],
+    () => collectCategoriesFromProducts(initialProducts),
+    [initialProducts],
   );
-
-  const filteredShops = useMemo(() => {
-    let list = initialShops.filter((s) => s.is_active !== false);
-
-    if (selectedCategory) {
-      list = list.filter((s) => catEquals(s.category, selectedCategory));
-    }
-
-    if (!isSearching) return list;
-    return list.filter(
-      (s) =>
-        matchesQuery(s.name, q) ||
-        matchesQuery(s.description ?? "", q) ||
-        matchesQuery(s.category ?? "", q) ||
-        matchesQuery(locationDisplay(s.location), q),
-    );
-  }, [initialShops, q, isSearching, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
     let list = initialProducts;
-
     if (selectedCategory) {
       list = list.filter(
         (p) =>
@@ -122,27 +105,35 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
           catEquals(p.shop.category, selectedCategory),
       );
     }
-
-    if (!isSearching) return list.slice(0, 12);
+    if (!isSearching) return list;
     return list.filter(
       (p) =>
         matchesQuery(p.title, q) ||
         matchesQuery(p.shop.name, q) ||
         matchesQuery(p.category ?? "", q) ||
-        matchesQuery(p.shop.category ?? "", q),
+        matchesQuery(p.shop.category ?? "", q) ||
+        matchesQuery(p.location_name ?? "", q) ||
+        matchesQuery(p.shop.location ?? "", q),
     );
   }, [initialProducts, q, isSearching, selectedCategory]);
 
-  const filteredMostViewed = useMemo(() => {
-    if (!selectedCategory) return mostViewed;
-    return mostViewed.filter(
+  const filteredTrending = useMemo(() => {
+    if (!selectedCategory) return trendingProducts;
+    return trendingProducts.filter(
       (p) =>
         catEquals(p.category, selectedCategory) ||
         catEquals(p.shop.category, selectedCategory),
     );
-  }, [mostViewed, selectedCategory]);
+  }, [trendingProducts, selectedCategory]);
 
-  const shopsToShow = isSearching ? filteredShops : filteredShops.slice(0, 9);
+  const filteredPremium = useMemo(() => {
+    if (!selectedCategory) return premiumProducts;
+    return premiumProducts.filter(
+      (p) =>
+        catEquals(p.category, selectedCategory) ||
+        catEquals(p.shop.category, selectedCategory),
+    );
+  }, [premiumProducts, selectedCategory]);
 
   const categoryFilterActive = selectedCategory !== null;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
@@ -162,7 +153,6 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
         />
 
         <div className="min-w-0 flex-1 space-y-8 sm:space-y-12 lg:space-y-14">
-          {/* Collapsible full-width search bar */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-out ${
               searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
@@ -171,8 +161,8 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
             <BrowseSearchBar
               value={query}
               onChange={setQuery}
-              placeholder="Search shops and products…"
-              ariaLabel="Search shops and products"
+              placeholder="Search products…"
+              ariaLabel="Search products"
             />
           </div>
 
@@ -214,86 +204,68 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
             </p>
           )}
 
-          {!isSearching && filteredMostViewed.length > 0 && (
+          {/* Premium Products */}
+          {!isSearching && filteredPremium.length > 0 && (
             <section className="space-y-5">
               <SectionHeader
-                title={`Trending Products${filterHint}`}
-                subtitle="The products getting the most attention right now."
+                title={`Premium Products${filterHint}`}
+                subtitle="Top-performing and boosted listings on Midora."
                 href="/products"
                 linkLabel="See all products"
+                icon={<Sparkles className="size-5 text-amber-500" aria-hidden />}
               />
               <div className={browseProductGridForSidebar(collapsed)}>
-                {filteredMostViewed.map((p) => (
+                {filteredPremium.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
               </div>
             </section>
           )}
 
-          <section className="space-y-5">
-            <SectionHeader
-              title={
-                isSearching
-                  ? `Shops matching "${q}"${filterHint}`
-                  : `Featured Shops${filterHint}`
-              }
-              subtitle={isSearching ? undefined : "Verified storefronts from across Uganda."}
-              href={isSearching ? undefined : "/shops"}
-              linkLabel={isSearching ? undefined : "See all shops"}
-            />
-            {shopsToShow.length === 0 ? (
-              <EmptyState
-                message={
-                  isSearching || categoryFilterActive
-                    ? "No shops match your filters. Try another category or keyword."
-                    : "No active shops yet — check back soon."
-                }
+          {/* Trending Products */}
+          {!isSearching && filteredTrending.length > 0 && (
+            <section className="space-y-5">
+              <SectionHeader
+                title={`Trending${filterHint}`}
+                subtitle="The products getting the most attention right now."
+                icon={<MaterialSymbol name="trending_up" className="!text-2xl text-rose-500" />}
               />
-            ) : (
-              <>
-                <div className={browseShopGridForSidebar(collapsed)}>
-                  {shopsToShow.map((shop) => (
-                    <ShopCard
-                      key={shop.id}
-                      shop={{
-                        id: shop.id,
-                        slug: shop.slug,
-                        name: shop.name,
-                        category: shop.category ?? "Shop",
-                        location: locationDisplay(shop.location),
-                        tagline: shop.description ?? "",
-                        verified: shop.is_active ?? true,
-                        logoUrl: shop.logo_url ?? null,
-                      }}
-                    />
-                  ))}
-                </div>
-                {!isSearching && filteredShops.length > 9 && (
-                  <div className="pt-1 text-center">
-                    <Link
-                      href="/shops"
-                      className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
-                    >
-                      View all {filteredShops.length} shops
-                      <ArrowRight className="size-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                )}
-              </>
-            )}
-          </section>
+              <div className={browseProductGridForSidebar(collapsed)}>
+                {filteredTrending.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </section>
+          )}
 
+          {/* Fresh Listings */}
+          {!isSearching && freshProducts.length > 0 && (
+            <section className="space-y-5">
+              <SectionHeader
+                title={`Fresh Listings${filterHint}`}
+                subtitle="Newly added and recently updated products."
+                icon={<MaterialSymbol name="new_releases" className="!text-2xl text-emerald-500" />}
+              />
+              <div className={browseProductGridForSidebar(collapsed)}>
+                {freshProducts.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* All Products */}
           <section className="space-y-5">
             <SectionHeader
               title={
                 isSearching
                   ? `Products matching "${q}"${filterHint}`
-                  : `Latest Products${filterHint}`
+                  : `All Products${filterHint}`
               }
               subtitle={
                 isSearching
                   ? undefined
-                  : "Browse listings from shops on Midora. Shop logos appear on each card."
+                  : "Browse all listings from shops on Midora."
               }
               href={isSearching ? undefined : "/products"}
               linkLabel={isSearching ? undefined : "See all products"}
@@ -309,11 +281,11 @@ export default function HomeLanding({ initialShops, initialProducts, mostViewed 
             ) : (
               <>
                 <div className={browseProductGridForSidebar(collapsed)}>
-                  {filteredProducts.slice(0, isSearching ? undefined : 12).map((p) => (
+                  {filteredProducts.slice(0, isSearching ? undefined : 24).map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
-                {!isSearching && initialProducts.length > 12 && (
+                {!isSearching && initialProducts.length > 24 && (
                   <div className="pt-1 text-center">
                     <Link
                       href="/products"

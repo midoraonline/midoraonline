@@ -24,10 +24,8 @@ function matchesProductSearch(p: ProductCardData, q: string): boolean {
 
 export default function ProductsBrowsePage({
   items,
-  mostViewed,
 }: {
   items: ProductCardData[];
-  mostViewed: ProductCardData[];
 }) {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -54,25 +52,12 @@ export default function ProductsBrowsePage({
   }, [query]);
 
   const categories = useMemo(
-    () => collectCategoriesFromProducts([...items, ...mostViewed]),
-    [items, mostViewed],
+    () => collectCategoriesFromProducts(items),
+    [items],
   );
 
   const q = query.trim();
   const categoryFilterActive = selectedCategory !== null;
-
-  const filteredMostViewed = useMemo(() => {
-    let list = mostViewed;
-    if (selectedCategory) {
-      list = list.filter(
-        (p) =>
-          catEquals(p.category, selectedCategory) ||
-          catEquals(p.shop.category, selectedCategory),
-      );
-    }
-    list = list.filter((p) => matchesProductSearch(p, query));
-    return list;
-  }, [mostViewed, selectedCategory, query]);
 
   const filteredItems = useMemo(() => {
     let list = items;
@@ -104,7 +89,6 @@ export default function ProductsBrowsePage({
         />
 
         <div className="min-w-0 flex-1 space-y-4 sm:space-y-6">
-          {/* Collapsible full-width search bar */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-out ${
               searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
@@ -155,38 +139,14 @@ export default function ProductsBrowsePage({
             </p>
           )}
 
-          {mostViewed.length > 0 && (
-            <section>
-              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="font-display text-lg font-semibold tracking-tight sm:text-xl">
-                    Most viewed{filterHint}
-                  </h2>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">
-                    The listings getting the most attention right now.
-                  </p>
-                </div>
-              </div>
-              {filteredMostViewed.length === 0 ? (
-                <div className="dm-card p-6 text-sm text-muted">No results in this section for your filters.</div>
-              ) : (
-                <div className={browseProductGridForSidebar(collapsed)}>
-                  {filteredMostViewed.map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
           <section>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="min-w-0">
                 <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-                  Products{filterHint}
+                  Latest Listings{filterHint}
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Browse listings from shops on Midora Online.
+                  Newest products from shops on Midora Online.
                 </p>
               </div>
               <Link

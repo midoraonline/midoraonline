@@ -19,6 +19,7 @@ type ShopContext = {
   logoUrl?: string | null;
   whatsappNumber?: string | null;
   category?: string | null;
+  ownerId?: string | null;
 };
 
 type Props = {
@@ -48,6 +49,7 @@ function toCard(product: Product, shop: ShopContext, listingBase: string): Produ
     category: product.category ?? null,
     description: product.description ?? null,
     inShopContext: true,
+    sellerId: shop.ownerId ?? null,
   };
 }
 
