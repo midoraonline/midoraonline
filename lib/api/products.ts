@@ -313,6 +313,9 @@ export type SimilarProduct = {
   location_name?: string | null;
   created_at?: string | null;
   view_count: number;
+  shop_name?: string | null;
+  shop_slug?: string | null;
+  owner_id?: string | null;
 };
 
 export function getSimilarProducts(productId: string, limit = 8) {

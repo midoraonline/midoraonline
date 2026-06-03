@@ -1,15 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { apiProducts } from "@/lib/api";
 import type { SimilarProduct } from "@/lib/api/products";
-import { productPageSlug } from "@/lib/productUrl";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import type { ProductCardData } from "@/components/productcard";
+import ProductCard from "@/components/productcard";
 
 type Props = {
   productId: string;
 };
+
+function toCard(p: SimilarProduct): ProductCardData {
+  return {
+    id: p.id,
+    slug: `${p.id}-${p.title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`,
+    title: p.title,
+    priceUGX: p.price_ugx,
+    imageUrl: p.image_urls?.[0] ?? undefined,
+    viewCount: p.view_count,
+    category: p.category ?? null,
+    location_name: p.location_name ?? null,
+    shop: {
+      id: p.shop_id,
+      name: p.shop_name ?? "Shop",
+      slug: p.shop_slug ?? p.shop_id,
+      verified: false,
+      category: null,
+      trust_score: null,
+      available_now: null,
+      location: null,
+    },
+    boosted: false,
+    updated_at: p.created_at ?? null,
+  };
+}
 
 export default function SimilarProducts({ productId }: Props) {
   const [items, setItems] = useState<SimilarProduct[]>([]);
@@ -35,36 +59,11 @@ export default function SimilarProducts({ productId }: Props) {
     <div className="dm-card p-4 sm:p-6">
       <h2 className="text-sm font-semibold tracking-tight">Similar products</h2>
       <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-        {items.map((p) => {
-          const slug = productPageSlug(p);
-          const img = p.image_urls?.[0];
-          return (
-            <Link
-              key={p.id}
-              href={`/products/${slug}`}
-              className="group w-36 shrink-0 rounded-xl border border-foreground/[0.08] bg-card p-2 transition-shadow hover:shadow-sm"
-            >
-              <div className="aspect-square overflow-hidden rounded-lg bg-foreground/[0.04]">
-                {img ? (
-                  <img
-                    src={img}
-                    alt={p.title}
-                    className="size-full object-cover transition-transform group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center text-muted">
-                    <MaterialSymbol name="image" className="!text-2xl" />
-                  </div>
-                )}
-              </div>
-              <p className="mt-1.5 truncate text-[11px] font-medium">{p.title}</p>
-              <p className="text-[11px] font-semibold tabular-nums">
-                UGX {p.price_ugx.toLocaleString()}
-              </p>
-            </Link>
-          );
-        })}
+        {items.map((p) => (
+          <div key={p.id} className="w-64 shrink-0">
+            <ProductCard product={toCard(p)} />
+          </div>
+        ))}
       </div>
     </div>
   );
