@@ -20,22 +20,13 @@ export type DashboardNavItem = {
 export type DashboardRole = "admin" | "merchant" | "customer";
 
 type Props = {
-  /** Accent color used for active nav states + role pill. */
   role: DashboardRole;
-  /** Short label shown next to the logo (e.g. "Admin", "Merchant"). */
   roleLabel: string;
-  /** Required role(s) to access — redirects if user doesn't match. */
   requiredRoles: DashboardRole[];
-  /** Primary nav items (top of sidebar). */
   navItems: DashboardNavItem[];
-  /** Optional secondary nav (below a divider). */
   secondaryNavItems?: DashboardNavItem[];
-  /** Back-to-site link (where the nav goes when the user wants to exit). */
   returnHref?: string;
   returnLabel?: string;
-  /** Content width preset. `"wide"` removes the default max-w-6xl cap so
-   * analytics grids and charts can use the full viewport.
-   */
   contentWidth?: "default" | "wide";
   children: React.ReactNode;
 };
@@ -163,7 +154,6 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-background/85 px-3 py-2 backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-2">
           <button
@@ -186,7 +176,6 @@ export default function DashboardShell({
       </header>
 
       <div className="flex min-h-[calc(100dvh-3.25rem)] lg:min-h-[100dvh]">
-        {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-[100dvh] w-64 shrink-0 flex-col border-r border-border bg-background/60 px-4 py-5 backdrop-blur-xl lg:flex">
           <SidebarContent
             accent={accent}
@@ -203,7 +192,6 @@ export default function DashboardShell({
           />
         </aside>
 
-        {/* Mobile drawer */}
         {drawerOpen ? (
           <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
             <button
@@ -242,7 +230,6 @@ export default function DashboardShell({
           </div>
         ) : null}
 
-        {/* Content */}
         <main className="flex-1 overflow-x-hidden">
           <div
             className={[

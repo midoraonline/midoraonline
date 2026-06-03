@@ -16,7 +16,7 @@ export default function MarqueeCarousel({ items, speed = 35 }: Props) {
   const pausedRef = useRef(false);
   const lastTimeRef = useRef(0);
 
-  const cardWidth = 256 + 12; // w-64 + gap-3
+  const cardWidth = 256 + 12;
 
   const tick = (time: number) => {
     if (!scrollRef.current) return;

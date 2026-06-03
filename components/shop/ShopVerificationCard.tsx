@@ -184,7 +184,6 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
 
       {canSubmit ? (
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Progress Steps */}
           <div className="flex items-center gap-2 text-xs">
             {steps.map((step, i) => (
               <div key={step.label} className="flex items-center gap-2">
@@ -209,7 +208,6 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             ))}
           </div>
 
-          {/* Step 0: Contact Info */}
           <div className="space-y-3">
             <label className="block space-y-1">
               <span className="text-xs font-medium text-foreground/80">Valid Phone Number *</span>
@@ -243,7 +241,6 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             </label>
           </div>
 
-          {/* Step 1: Documents */}
           <div className="space-y-2">
             <span className="text-xs font-medium text-foreground/80">
               Upload Documents * (minimum: National ID front + back)
@@ -278,7 +275,6 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             })}
           </div>
 
-          {/* Step 2: Notes */}
           <label className="block space-y-1.5">
             <span className="text-xs font-medium text-foreground/80">
               Notes for the reviewer (optional)

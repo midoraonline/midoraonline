@@ -39,12 +39,6 @@ function matchesShopSearch(shop: Shop, q: string, productCats?: string[]): boole
   );
 }
 
-/**
- * Client-side shop grid that seeds from a server-fetched list and keeps
- * itself in sync via Supabase Realtime on the `public.shops` table.
- *
- * Falls back to the initial list if realtime isn't configured.
- */
 export default function ShopListRealtime({
   initialShops,
   shopProductCategories,
@@ -53,18 +47,13 @@ export default function ShopListRealtime({
   gridClassName,
 }: {
   initialShops: Shop[];
-  /** Published product categories per shop id (for sidebar + filter). */
   shopProductCategories: Record<string, string[]>;
-  /** When set, only shops with a published product in this category are shown. */
   productCategoryFilter?: string | null;
-  /** Filter by name, description, category, location, or product categories. */
   searchQuery?: string;
-  /** Responsive grid classes (e.g. from `browseShopGridForSidebar`). */
   gridClassName?: string;
 }) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
 
-  // Re-seed when server provides a fresh list (eg. after router refresh).
   useEffect(() => {
     setShops(initialShops);
   }, [initialShops]);
@@ -79,7 +68,6 @@ export default function ShopListRealtime({
       }
       const row = payload.new as Shop | undefined;
       if (!row || !row.id) return;
-      // Only expose active shops in the public list.
       if (row.is_active === false) {
         setShops((prev) => removeShop(prev, String(row.id)));
         return;

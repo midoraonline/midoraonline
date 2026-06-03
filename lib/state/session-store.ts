@@ -3,12 +3,9 @@ import type { MeResponse } from "@/lib/api/auth";
 
 export type AppSession = {
   hydrated: boolean;
-  /** True once we've confirmed an auth cookie by successfully calling `/auth/me`. */
   isAuthenticated: boolean;
-  /** `undefined` = loading profile while auth state is still settling. */
   user: MeResponse | null | undefined;
   ownedShopIds: string[];
-  /** Set when `me()` fails despite an apparent session. */
   profileError: string | null;
 };
 

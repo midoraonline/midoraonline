@@ -5,11 +5,6 @@ import { useEffect } from "react";
 
 import { useAppSession } from "@/lib/state";
 
-/**
- * Legacy `/account` route — now a role-aware redirect into the dedicated
- * dashboards. Admins go to /admin, merchants to /merchant, everyone else to
- * /customer. Unauthenticated users get sent to login.
- */
 export default function LegacyAccountRedirect() {
   const router = useRouter();
   const session = useAppSession();

@@ -99,14 +99,12 @@ export default function ShopActions({
         return;
       }
     } catch {
-      // fall through
     }
     try {
       await navigator.clipboard.writeText(url);
       setShareState("copied");
       setTimeout(() => setShareState("idle"), 2200);
     } catch {
-      // no-op
     }
   }
 

@@ -55,7 +55,6 @@ export default function ProductComments({ productId }: Props) {
       setText("");
       load();
     } catch {
-      // silently fail
     } finally {
       setSubmitting(false);
     }

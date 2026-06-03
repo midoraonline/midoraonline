@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 
 type MaterialSymbolProps = {
-  /** Material Symbols ligature name, e.g. `mail`, `favorite` */
   name: string;
   className?: string;
   filled?: boolean;

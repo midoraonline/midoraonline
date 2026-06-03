@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-/** Collapsed on small screens by default; expanded from `lg` up (same as home browse). */
 export function useBrowseSidebarCollapse() {
   const [collapsed, setCollapsed] = useState(true);
 

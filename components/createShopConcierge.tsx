@@ -8,8 +8,6 @@ import { ImageUpload } from "@/components/image-upload";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
-/* ─── helpers ─── */
-
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };
 
 function slugFromName(name: string): string {
@@ -52,8 +50,6 @@ function fromSuggestion(s: SuggestedShop): ConfirmForm {
   };
 }
 
-/* ─── field-level suggestion banner ─── */
-
 function AISuggestion({
   label,
   value,
@@ -93,8 +89,6 @@ function AISuggestion({
   );
 }
 
-/* ─── preview card ─── */
-
 function ShopPreview({ form }: { form: ConfirmForm }) {
   return (
     <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
@@ -131,8 +125,6 @@ function ShopPreview({ form }: { form: ConfirmForm }) {
   );
 }
 
-/* ─── main component ─── */
-
 export default function CreateShopConcierge({
   onShopCreated,
 }: {
@@ -146,10 +138,8 @@ export default function CreateShopConcierge({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // When AI returns a suggestion we show the review/edit form.
   const [suggestedShop, setSuggestedShop] = useState<SuggestedShop | null>(null);
   const [confirmForm, setConfirmForm] = useState<ConfirmForm | null>(null);
-  // Track which AI-suggested fields haven't been accepted/dismissed yet
   const [pendingSuggestions, setPendingSuggestions] = useState<
     Set<keyof ConfirmForm>
   >(new Set());
@@ -213,8 +203,6 @@ export default function CreateShopConcierge({
         setSuggestedShop(s);
         const form = fromSuggestion(s);
         setConfirmForm(form);
-        // Mark all non-empty AI-supplied fields as pending-suggestion so the
-        // user gets a banner to accept or dismiss each one.
         const suggested: Set<keyof ConfirmForm> = new Set();
         (
           [
@@ -286,7 +274,6 @@ export default function CreateShopConcierge({
   }
 
   function dismissSuggestion(field: keyof ConfirmForm) {
-    // User wants to edit — just clear the value so they type their own
     setConfirmForm((f) => (f ? { ...f, [field]: "" } : f));
     setPendingSuggestions((prev) => {
       const next = new Set(prev);
@@ -297,7 +284,6 @@ export default function CreateShopConcierge({
 
   function field(key: keyof ConfirmForm, value: string) {
     setConfirmForm((f) => (f ? { ...f, [key]: value } : f));
-    // Once the user types, the suggestion is resolved
     setPendingSuggestions((prev) => {
       const next = new Set(prev);
       next.delete(key);
@@ -305,7 +291,6 @@ export default function CreateShopConcierge({
     });
   }
 
-  /* ── startup ── */
   if (!sessionId && !error) {
     return (
       <p className="text-sm text-muted">Starting AI shop assistant…</p>
@@ -319,7 +304,6 @@ export default function CreateShopConcierge({
     );
   }
 
-  /* ── review & create form ── */
   if (suggestedShop && confirmForm) {
     const f = confirmForm;
     return (
@@ -335,7 +319,6 @@ export default function CreateShopConcierge({
         <ShopPreview form={f} />
 
         <form onSubmit={handleCreate} className="space-y-5">
-          {/* Name + slug */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -373,7 +356,6 @@ export default function CreateShopConcierge({
               </div>
             </div>
 
-            {/* Description with AI suggestion */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Short tagline
@@ -396,7 +378,6 @@ export default function CreateShopConcierge({
               )}
             </div>
 
-            {/* About with AI suggestion */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 About
@@ -418,7 +399,6 @@ export default function CreateShopConcierge({
               )}
             </div>
 
-            {/* Type + Category */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Type
@@ -454,7 +434,6 @@ export default function CreateShopConcierge({
               )}
             </div>
 
-            {/* Logo */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Logo
@@ -467,7 +446,6 @@ export default function CreateShopConcierge({
               />
             </div>
 
-            {/* Contact */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Shop email
@@ -492,7 +470,6 @@ export default function CreateShopConcierge({
               />
             </div>
 
-            {/* Location + hours */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Location
@@ -554,7 +531,6 @@ export default function CreateShopConcierge({
     );
   }
 
-  /* ── chat ── */
   return (
     <div className="space-y-3">
       <div className="max-h-[320px] min-h-[200px] space-y-2 overflow-y-auto rounded-2xl border border-border bg-background/60 px-3 py-2">

@@ -15,8 +15,6 @@ export type Paginated<T> = {
   page_size?: number;
 };
 
-// NOTE: Orders are currently mounted at `/api/v1/`.
-
 export function createOrder(body: Record<string, unknown>, token?: string | null) {
   return apiFetch<Order>("/api/v1/", {
     method: "POST",

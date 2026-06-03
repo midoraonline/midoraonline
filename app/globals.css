@@ -2,15 +2,12 @@
 
 :root {
   color-scheme: light;
-  /* Brand — full palette + logo rules: docs/BRAND.md */
   --primary: #0A2540;
   --primary-foreground: #f9f9f8;
   --accent: #E67E22;
   --secondary: #f67720;
-  /* Surfaces — cool neutral aligned with accent #66798f */
   --background: #f1f4f8;
   --surface: #ffffff;
-  /* Text */
   --foreground: #2a3331;
   --muted: #757779;
   --border: rgba(102, 121, 143, 0.14);
@@ -42,8 +39,6 @@
   --radius-xl: var(--radius);
 }
 
-/* Midora Online — soft borders, accent-tinted neutrals */
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -68,7 +63,6 @@ body {
   border-radius: 999px;
 }
 
-/* Google Material Symbols Outlined — loaded via layout <link> */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined", sans-serif;
   font-weight: normal;
@@ -81,7 +75,6 @@ body {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
-/* Home & marketing: scroll reveal (respects reduced motion) */
 .home-reveal {
   opacity: 0;
   transform: translateY(1.15rem);
@@ -127,7 +120,6 @@ body {
     padding-bottom: var(--shop-header-float-y);
   }
 
-  /* Floating pill bar — aligned with main nav glass (dm-glass-bar) */
   .shop-header-bar {
     @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.18)] backdrop-blur-2xl backdrop-saturate-150;
   }
@@ -148,12 +140,10 @@ body {
     }
   }
 
-  /* Glass panels — pages, cards, chat shells */
   .dm-card {
     @apply rounded-3xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.14)] backdrop-blur-2xl backdrop-saturate-150;
   }
 
-  /* Compact glass strip — floating navbars */
   .dm-glass-bar {
     @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.18)] backdrop-blur-2xl backdrop-saturate-150;
   }
@@ -174,7 +164,6 @@ body {
     }
   }
 
-  /* Form controls — soft fill, no heavy borders */
   .dm-input {
     @apply w-full min-h-11 rounded-2xl border-0 bg-foreground/[0.05] px-4 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
     transition-property: box-shadow, background-color;
@@ -208,7 +197,6 @@ body {
     @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium;
   }
 
-  /* Subtle text link using accent */
   .dm-link {
     color: var(--accent);
     text-underline-offset: 2px;

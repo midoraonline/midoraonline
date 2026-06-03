@@ -10,7 +10,6 @@ type InfoMessage = {
 };
 
 function cleanMessage(raw: string): string {
-  // Remove common markdown markers like **bold**, *italic*, and stray bullets.
   return raw
     .replace(/\*\*/g, "")
     .replace(/\*/g, "")

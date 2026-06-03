@@ -52,7 +52,6 @@ export default function ShopsBrowsePage({
         />
 
         <div className="min-w-0 flex-1 space-y-4">
-          {/* Collapsible full-width search bar */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-out ${
               searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"

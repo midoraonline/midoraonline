@@ -19,7 +19,6 @@ export type Availability = {
   hours?: string | null;
 };
 
-/** Location as expected by API (object, e.g. for display/city). */
 export type ShopLocation = {
   display?: string;
   city?: string;
@@ -36,7 +35,6 @@ export type Shop = {
   shop_type?: ShopType | null;
   is_active?: boolean;
   category?: string | null;
-  /** API may return a string or structured object */
   location?: string | ShopLocation | null;
   description?: string | null;
   about?: string | null;
@@ -92,6 +90,8 @@ export type ShopEngagement = {
   view_count?: number;
   viewer_following?: boolean;
   viewer_liked_shop?: boolean;
+  whatsapp_clicks?: number;
+  messages?: number;
 };
 
 export function getShopEngagement(shopId: string, opts?: { token?: string }) {
@@ -107,12 +107,6 @@ export function recordShopView(shopId: string) {
     { method: "POST", body: "{}" }
   );
 }
-
-/**
- * All mutating / authed endpoints below take an optional `token`. The browser
- * carries the auth cookie automatically, so callers can omit it. Server-side
- * (RSC) callers that need to impersonate a user can still pass one.
- */
 
 export function followShop(shopId: string, token?: string | null) {
   return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/follow`, {
@@ -170,6 +164,8 @@ export type MerchantStats = {
   total_products: number;
   total_product_views: number;
   total_product_likes: number;
+  total_whatsapp_clicks: number;
+  total_messages: number;
 };
 
 export function myFollowedShops() {
@@ -218,7 +214,6 @@ export function getShop(shopId: string, opts?: { token?: string }) {
 export type UpdateShopRequest = Partial<
   Omit<CreateShopRequest, "description" | "about" | "logo_url" | "shop_email" | "whatsapp_number" | "location" | "availability">
 > & {
-  /** Use JSON `null` to clear a column; omitting a key leaves it unchanged. */
   description?: string | null;
   about?: string | null;
   logo_url?: string | null;
@@ -301,8 +296,6 @@ export function submitForVerification(
   );
 }
 
-// ── Composite dashboard endpoint ───────────────────────────────────
-
 export type ShopDashboardResponse = {
   shop: Shop;
   engagement: ShopEngagement;
@@ -310,10 +303,8 @@ export type ShopDashboardResponse = {
   lead_stats: Record<string, unknown>;
 };
 
-/** Fetch everything a merchant dashboard needs in one call. */
 export function getShopDashboard(shopId: string) {
   return apiFetch<ShopDashboardResponse>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/dashboard`
   );
 }
-

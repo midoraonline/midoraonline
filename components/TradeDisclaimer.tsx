@@ -5,7 +5,6 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 type Props = {
   onConfirm: () => void;
-  /** "whatsapp" or "message" */
   type: "whatsapp" | "message";
   children: (open: () => void) => React.ReactNode;
 };

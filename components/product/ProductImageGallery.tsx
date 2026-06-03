@@ -15,8 +15,6 @@ function isVideoSrc(src: string) {
 const AUTO_MS = 5500;
 const PAUSE_AFTER_INTERACTION_MS = 10_000;
 
-// ── Video poster (canvas frame capture) ──────────────────────────────────────
-
 function capturePoster(video: HTMLVideoElement): string | null {
   try {
     const w = Math.max(video.videoWidth, 1);
@@ -33,12 +31,6 @@ function capturePoster(video: HTMLVideoElement): string | null {
   }
 }
 
-/**
- * Renders a static thumbnail for a video.  The component seeks to 0.1 s using
- * the `seeked` event then paints the frame onto a canvas.  Until the frame is
- * ready it shows the native video element (most browsers show the first frame
- * on metadata load anyway) so there is no blank flash.
- */
 function VideoThumb({ src, className }: { src: string; className?: string }) {
   const vidRef = useRef<HTMLVideoElement>(null);
   const [poster, setPoster] = useState<string | null>(null);
@@ -78,8 +70,6 @@ function VideoThumb({ src, className }: { src: string; className?: string }) {
   );
 }
 
-// ── Full-size video player ────────────────────────────────────────────────────
-
 type MainVideoProps = {
   src: string;
   visible: boolean;
@@ -90,7 +80,6 @@ type MainVideoProps = {
 function MainVideo({ src, visible, onPlayingChange, className = "" }: MainVideoProps) {
   const ref = useRef<HTMLVideoElement>(null);
 
-  // Pause and reset when the slide is hidden
   useEffect(() => {
     const vid = ref.current;
     if (!vid || visible) return;
@@ -119,8 +108,6 @@ function MainVideo({ src, visible, onPlayingChange, className = "" }: MainVideoP
     />
   );
 }
-
-// ── Gallery ──────────────────────────────────────────────────────────────────
 
 export default function ProductImageGallery({
   images,
@@ -182,7 +169,6 @@ export default function ProductImageGallery({
 
   return (
     <div className="space-y-3">
-      {/* ── Main viewer ── */}
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-foreground/[0.08] bg-foreground/[0.04] shadow-sm">
         {images.map((url, i) => {
           const visible = i === active;
@@ -222,7 +208,6 @@ export default function ProductImageGallery({
         {children}
       </div>
 
-      {/* ── Thumbnail strip ── */}
       {safeLen > 1 ? (
         <ul
           className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 pt-1"
@@ -252,7 +237,6 @@ export default function ProductImageGallery({
                   {isVideo ? (
                     <>
                       <VideoThumb src={url} className="h-full w-full object-cover" />
-                      {/* Play badge */}
                       <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/20">
                         <span className="flex size-6 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm">
                           <svg

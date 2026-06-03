@@ -1,7 +1,3 @@
-/**
- * Restrict logo URLs the watermark route may fetch (SSRF mitigation).
- * Expand as you add storage/CDN hosts.
- */
 export function isAllowedLogoDownloadUrl(urlString: string): boolean {
   try {
     const u = new URL(urlString.trim());

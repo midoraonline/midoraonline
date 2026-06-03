@@ -6,10 +6,6 @@ import { useMemo } from "react";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
-/**
- * Same visual language as the main navbar account control: primary pill + initials.
- * On /account, matches the active main-nav treatment (solid primary).
- */
 export default function ShopHeaderAuth() {
   const pathname = usePathname();
   const session = useAppSession();

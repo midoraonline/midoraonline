@@ -11,26 +11,13 @@ type TableRow = Record<string, unknown>;
 type ChangeHandler = (payload: RealtimePostgresChangesPayload<TableRow>) => void;
 
 type SubscriptionOptions = {
-  /** Postgres table name in the `public` schema. */
   table: string;
-  /** Optional `column=value` filter (Supabase Realtime syntax). */
   filter?: string;
-  /** Which change events to subscribe to. Defaults to all. */
   event?: "*" | "INSERT" | "UPDATE" | "DELETE";
-  /** Unique channel name so independent subscribers don't collide. */
   channel: string;
-  /** Whether the subscription should be active. Handy for guarding on auth. */
   enabled?: boolean;
 };
 
-/**
- * Subscribe to Postgres change events over Supabase Realtime. The handler is
- * kept in a ref so consumers don't need to memoise it for stable references.
- *
- * Silently no-ops if the Supabase browser client isn't configured (missing
- * env vars). This lets pages render without realtime in dev without
- * exploding.
- */
 export function useRealtimeTable(
    options: SubscriptionOptions,
    handler: ChangeHandler
@@ -49,8 +36,6 @@ export function useRealtimeTable(
 
      const channel: RealtimeChannel = supabase.channel(channelName);
      channel.on(
-       // supabase-js requires loose typing here; the second arg is strictly
-       // validated by the server regardless.
        "postgres_changes" as never,
        {
          event,

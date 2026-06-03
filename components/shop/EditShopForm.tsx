@@ -45,8 +45,6 @@ function shopToFormState(shop: Shop): FormState {
   };
 }
 
-// ─── Guard screens ────────────────────────────────────────────────────────────
-
 function NotLoggedIn({ shopSlug }: { shopSlug: string }) {
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -85,8 +83,6 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ─── Logo uploader with staged preview ───────────────────────────────────────
-
 function LogoField({
   currentUrl,
   stagedUrl,
@@ -103,7 +99,6 @@ function LogoField({
 
   return (
     <div className="space-y-3">
-      {/* Current / staged preview */}
       {displayUrl && (
         <div className="flex items-center gap-3">
           <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-foreground/[0.04] ring-1 ring-foreground/[0.06]">
@@ -136,7 +131,6 @@ function LogoField({
         </div>
       )}
 
-      {/* Upload control — immediate upload, no bg-removal gate */}
       <ImageUpload
         endpoint="shopLogo"
         label={displayUrl ? "Replace logo" : "Upload logo"}
@@ -151,8 +145,6 @@ function LogoField({
     </div>
   );
 }
-
-// ─── Details tab ─────────────────────────────────────────────────────────────
 
 function DetailsTab({
   shop,
@@ -237,7 +229,6 @@ function DetailsTab({
         </div>
       )}
 
-      {/* ── Basic info ── */}
       <section className="dm-card space-y-4 p-5 sm:p-6">
         <h2 className="text-sm font-semibold tracking-tight">Basic information</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -295,7 +286,6 @@ function DetailsTab({
         </div>
       </section>
 
-      {/* ── Logo ── */}
       <section className="dm-card space-y-4 p-5 sm:p-6">
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Shop logo</h2>
@@ -317,7 +307,6 @@ function DetailsTab({
         />
       </section>
 
-      {/* ── Contact ── */}
       <section className="dm-card space-y-4 p-5 sm:p-6">
         <h2 className="text-sm font-semibold tracking-tight">Contact details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -343,7 +332,6 @@ function DetailsTab({
         </div>
       </section>
 
-      {/* ── Availability ── */}
       <section className="dm-card space-y-4 p-5 sm:p-6">
         <h2 className="text-sm font-semibold tracking-tight">Availability</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -368,7 +356,6 @@ function DetailsTab({
         </div>
       </section>
 
-      {/* ── Status ── */}
       <section className="dm-card p-5 sm:p-6">
         <h2 className="mb-4 text-sm font-semibold tracking-tight">Shop status</h2>
         <label className="flex cursor-pointer items-start gap-3 group">
@@ -391,7 +378,6 @@ function DetailsTab({
         </label>
       </section>
 
-      {/* ── Footer actions ── */}
       <div className="flex items-center justify-between gap-4 pb-4">
         <button
           type="button"
@@ -419,8 +405,6 @@ function DetailsTab({
   );
 }
 
-// ─── Root component ───────────────────────────────────────────────────────────
-
 export default function EditShopForm({ shop }: { shop: Shop }) {
   const router = useRouter();
   const session = useAppSession();
@@ -435,7 +419,6 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  // ── Auth guards ──────────────────────────────────────────────────────────
   if (!session.hydrated) {
     return (
       <div className="mx-auto w-full max-w-2xl">
@@ -463,7 +446,6 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-7">
-      {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>
@@ -489,7 +471,6 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
       <div
         role="tablist"
         className="flex flex-wrap gap-1 rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] p-1"
@@ -513,7 +494,6 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
         ))}
       </div>
 
-      {/* ── Tab content ── */}
       {tab === "details" && (
         <DetailsTab
           shop={shop}

@@ -205,7 +205,6 @@ export default function HomeLanding({
             </p>
           )}
 
-          {/* Premium Products */}
           {!isSearching && filteredPremium.length > 0 && (
             <section className="space-y-4">
               <SectionHeader
@@ -219,7 +218,6 @@ export default function HomeLanding({
             </section>
           )}
 
-          {/* Trending Products */}
           {!isSearching && filteredTrending.length > 0 && (
             <section className="space-y-4">
               <SectionHeader
@@ -231,7 +229,6 @@ export default function HomeLanding({
             </section>
           )}
 
-          {/* Fresh Listings */}
           {!isSearching && freshProducts.length > 0 && (
             <section className="space-y-5">
               <SectionHeader
@@ -247,7 +244,6 @@ export default function HomeLanding({
             </section>
           )}
 
-          {/* All Products */}
           <section className="space-y-5">
             <SectionHeader
               title={

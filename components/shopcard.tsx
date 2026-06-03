@@ -29,7 +29,6 @@ export default function ShopCard({ shop }: { shop: ShopCardData }) {
       href={`/shops/${shop.slug}`}
       className="dm-focus block dm-card dm-card-hover p-3 sm:p-5"
     >
-      {/* Mobile: vertical stack · sm+: horizontal row */}
       <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
         <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-foreground/[0.06] ring-1 ring-foreground/[0.06] sm:size-14 sm:rounded-xl">
           {shop.logoUrl ? (

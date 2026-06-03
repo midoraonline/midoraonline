@@ -16,65 +16,10 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-// ---------------------------------------------------------------------------
-// Reveal animation (scroll-triggered fade-in)
-// ---------------------------------------------------------------------------
-
-function Reveal({
-  children,
-  className = "",
-  delayMs = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delayMs?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setShown(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -6% 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={`home-reveal ${shown ? "home-reveal--in" : ""} ${className}`}
-      style={{ transitionDelay: shown ? `${delayMs}ms` : "0ms" }}
-    >
-      {children}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Shared style
-// ---------------------------------------------------------------------------
-
-const softCard =
-  "rounded-3xl bg-foreground/[0.025] transition-colors duration-300 hover:bg-foreground/[0.04] motion-reduce:transition-none";
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export default function OnboardingPage() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-10 sm:space-y-14">
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <Reveal>
         <section className="relative overflow-hidden rounded-3xl">
           <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10 lg:p-8">
@@ -151,7 +96,6 @@ export default function OnboardingPage() {
         </section>
       </Reveal>
 
-      {/* ── Why Midora ────────────────────────────────────────────────────── */}
       <section className="space-y-6" aria-labelledby="why-midora-heading">
         <Reveal>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -201,7 +145,6 @@ export default function OnboardingPage() {
         </div>
       </section>
 
-      {/* ── How to use Midora ─────────────────────────────────────────────── */}
       <section className="space-y-6" aria-labelledby="how-heading">
         <Reveal>
           <div>
@@ -268,7 +211,6 @@ export default function OnboardingPage() {
         </div>
       </section>
 
-      {/* ── Viewing stats & analytics ─────────────────────────────────────── */}
       <section className="space-y-6" aria-labelledby="stats-heading">
         <Reveal>
           <div>
@@ -327,7 +269,6 @@ export default function OnboardingPage() {
         </Reveal>
       </section>
 
-      {/* ── Value we add ──────────────────────────────────────────────────── */}
       <section className="space-y-6" aria-labelledby="value-heading">
         <Reveal>
           <div>
@@ -389,7 +330,6 @@ export default function OnboardingPage() {
         </div>
       </section>
 
-      {/* ── CTA footer ────────────────────────────────────────────────────── */}
       <Reveal>
         <section className={`flex flex-col gap-4 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-7 ${softCard}`}>
           <div className="flex items-start gap-3">

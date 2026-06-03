@@ -36,7 +36,6 @@ function toCard(product: Product, shop: ShopContext, listingBase: string): Produ
     priceUGX: apiProducts.productPriceUgx(product),
     imageUrl: apiProducts.productPrimaryImage(product),
     shopLogoUrl: shop.logoUrl ?? undefined,
-    // Shop hero already surfaces WhatsApp; keep cards focused on the listing + shop link.
     shopWhatsApp: null,
     listingUrl: `${listingBase}/products/${slug}`,
     shop: {
@@ -86,8 +85,6 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
       }
       const row = payload.new as Product | undefined;
       if (!row || !row.id) return;
-      // Respect the server-side RLS: only `is_published = true` rows should
-      // reach us, but double-check anyway in case of late invalidation.
       if (row.is_published === false) {
         setProducts((prev) => prev.filter((p) => p.id !== row.id));
         return;

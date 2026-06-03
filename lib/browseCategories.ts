@@ -18,7 +18,6 @@ export function collectCategoriesFromShops(shops: Shop[]): string[] {
   return Array.from(set);
 }
 
-/** Sidebar categories for /shops — union of published product categories per shop. */
 export function collectCategoriesFromShopProductMap(map: Record<string, string[]>): string[] {
   const set = new Set<string>();
   for (const cats of Object.values(map)) {
@@ -30,7 +29,6 @@ export function collectCategoriesFromShopProductMap(map: Record<string, string[]
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
 
-/** True if the shop has at least one published product in `selected` category (case-insensitive). */
 export function shopHasProductCategory(
   shopId: string,
   map: Record<string, string[]>,
@@ -61,7 +59,6 @@ export function collectCategoriesFromShopsAndProducts(
   return Array.from(set);
 }
 
-/** Two columns on narrow phones when category rail is collapsed; one column when expanded (more room per card). md+ ignores rail width. */
 export function browseShopGridForSidebar(sidebarCollapsed: boolean): string {
   return sidebarCollapsed
     ? "grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-3 lg:gap-4"
@@ -74,10 +71,8 @@ export function browseProductGridForSidebar(sidebarCollapsed: boolean): string {
     : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 lg:gap-4";
 }
 
-/** @deprecated Use browseShopGridForSidebar(true) for static layouts. */
 export const browseShopGridClass =
   "grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 md:gap-3 lg:grid-cols-3 lg:gap-4";
 
-/** @deprecated Use browseProductGridForSidebar(true). */
 export const browseProductGridClass =
   "grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 md:gap-3 lg:grid-cols-4 lg:gap-4";

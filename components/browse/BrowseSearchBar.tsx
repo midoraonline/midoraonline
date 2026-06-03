@@ -13,7 +13,6 @@ export default function BrowseSearchBar({
   onChange: (value: string) => void;
   placeholder?: string;
   ariaLabel?: string;
-  /** Extra classes on outer wrapper */
   className?: string;
 }) {
   return (

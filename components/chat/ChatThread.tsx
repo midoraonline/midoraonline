@@ -50,17 +50,14 @@ export default function ChatThread({ conversation, onBack }: Props) {
 
   useEffect(() => {
     fetchMessages();
-    // Mark as read
     apiChat.markConversationRead(conversation.id).catch(() => {});
   }, [fetchMessages, conversation.id]);
 
-  // Poll for new messages every 3s
   useEffect(() => {
     const id = setInterval(fetchMessages, 3000);
     return () => clearInterval(id);
   }, [fetchMessages]);
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -91,7 +88,6 @@ export default function ChatThread({ conversation, onBack }: Props) {
     );
   }
 
-  // Group messages by date
   const grouped: { date: string; msgs: NativeMessage[] }[] = [];
   let currentDate = "";
   for (const msg of messages) {
@@ -106,7 +102,6 @@ export default function ChatThread({ conversation, onBack }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
       <div className="flex items-center gap-3 border-b border-foreground/[0.06] px-4 py-3">
         {onBack && (
           <button type="button" onClick={onBack} className="dm-focus -ml-1 rounded-lg p-1 hover:bg-foreground/[0.06]">
@@ -124,7 +119,6 @@ export default function ChatThread({ conversation, onBack }: Props) {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {grouped.map((group) => (
           <div key={group.date}>
@@ -158,7 +152,6 @@ export default function ChatThread({ conversation, onBack }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <form onSubmit={handleSend} className="flex items-end gap-2 border-t border-foreground/[0.06] px-4 py-3">
         <textarea
           value={input}

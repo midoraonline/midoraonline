@@ -12,12 +12,10 @@ function getAuth(req: Request): { userId: string } | null {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (!token?.trim()) return null;
-  // Optional: decode JWT or call auth/me to get userId; for now use a stable id from token
   return { userId: token.slice(-12) || "user" };
 }
 
 export const ourFileRouter = {
-  /** Shop logo: single image, 4MB. Use for shop logo_url. */
   shopLogo: f({
     image: { maxFileSize: "4MB", maxFileCount: 1 },
   })
@@ -30,7 +28,6 @@ export const ourFileRouter = {
       return { url: file.ufsUrl };
     }),
 
-  /** Product images: up to 8 per batch for `image_urls`. */
   productImage: f({
     image: { maxFileSize: "4MB", maxFileCount: 8 },
   })
@@ -43,7 +40,6 @@ export const ourFileRouter = {
       return { url: file.ufsUrl };
     }),
 
-  /** General image upload: single image, 4MB. Use for any other image (e.g. AI, profile). */
   imageUploader: f({
     image: { maxFileSize: "4MB", maxFileCount: 1 },
   })

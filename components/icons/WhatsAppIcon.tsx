@@ -1,4 +1,3 @@
-/** Recognizable WhatsApp mark; uses currentColor for flexibility */
 export function WhatsAppIcon({ className = "size-3" }: { className?: string }) {
   return (
     <svg

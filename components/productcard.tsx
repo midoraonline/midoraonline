@@ -14,9 +14,7 @@ export type ProductCardData = {
   imageUrl?: string;
   shopLogoUrl?: string;
   viewCount?: number;
-  /** Shop WhatsApp (any format); inquiry opens wa.me with prefilled text. */
   shopWhatsApp?: string | null;
-  /** Absolute product URL for the WhatsApp prefill (set by server feed). */
   listingUrl?: string | null;
   sellerId?: string | null;
   shop: {
@@ -24,29 +22,19 @@ export type ProductCardData = {
     name: string;
     slug: string;
     verified?: boolean;
-    /** Shop storefront category (for browse filters). */
     category?: string | null;
     trust_score?: number | null;
     available_now?: boolean | null;
     location?: string | null;
   };
-  /** Product listing category */
   category?: string | null;
-  /** Shown on image hover (e.g. shop storefront cards). */
   description?: string | null;
-  /** When true, hide shop branding on the card — used on `/shops/...` where context is implicit. */
   inShopContext?: boolean;
-  /** Whether the listing has an active boost */
   boosted?: boolean;
-  /** ISO timestamp for freshness calculation */
   updated_at?: string | null;
-  /** Human-readable location on the listing */
   location_name?: string | null;
-  /** Rating average if available */
   rating?: number | null;
-  /** Like count (skips separate engagement API call if provided). */
   likeCount?: number;
-  /** Whether the current viewer has liked this (skips engagement API if provided). */
   isLiked?: boolean;
 };
 
@@ -116,7 +104,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               No image
             </div>
           )}
-          {/* Boosted badge */}
           {isBoosted ? (
             <div className="absolute left-1.5 top-1.5 z-[6] inline-flex items-center gap-0.5 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm leading-none">
               <MaterialSymbol name="bolt" className="!text-[11px] leading-none" />
@@ -124,14 +111,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             </div>
           ) : null}
 
-          {/* Freshness badge */}
           {freshness ? (
             <div className="absolute right-1.5 top-1.5 z-[6] inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm leading-none">
               {freshness}
             </div>
           ) : null}
 
-          {/* View count */}
           {viewCount !== null ? (
             <div className="absolute bottom-1.5 right-1.5 z-[6] inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm leading-none">
               <MaterialSymbol name="visibility" className="!text-[11px] leading-none" />
@@ -139,7 +124,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             </div>
           ) : null}
 
-          {/* Hover overlay with shop details */}
           {!inShop ? (
             <div
               className="pointer-events-none absolute inset-0 z-[5] flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
@@ -180,7 +164,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             </div>
           ) : null}
 
-          {/* In-shop description hover */}
           {inShop && desc ? (
             <div
               className="pointer-events-none absolute inset-0 z-[6] flex items-end bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"

@@ -3,10 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-/**
- * Legacy `/open-shop/settings/[shopId]` — redirect to the merchant dashboard
- * settings tab for the same shop.
- */
 export default function LegacyShopSettingsRedirect() {
   const params = useParams();
   const router = useRouter();

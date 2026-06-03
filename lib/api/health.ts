@@ -10,4 +10,3 @@ export type HealthResponse = {
 export function health() {
   return apiFetch<HealthResponse>("/api/v1/health");
 }
-

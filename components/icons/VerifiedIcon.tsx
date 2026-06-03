@@ -5,7 +5,6 @@ import MuiVerifiedIcon from "@mui/icons-material/Verified";
 type VerifiedIconProps = {
   className?: string;
   size?: number;
-  /** Accessible name when the icon stands alone (no visible label). */
   label?: string;
 };
 

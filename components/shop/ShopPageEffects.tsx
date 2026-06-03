@@ -5,7 +5,6 @@ import { apiShops } from "@/lib/api";
 
 const storageKey = (shopId: string) => `shop_view:${shopId}`;
 
-/** Records one shop page view per browser session (sessionStorage). */
 export default function ShopPageEffects({ shopId }: { shopId: string }) {
   useEffect(() => {
     if (typeof window === "undefined") return;

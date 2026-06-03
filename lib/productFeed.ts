@@ -1,17 +1,12 @@
 import "server-only";
 
-import { apiProducts, apiShops } from "@/lib/api";
+import { apiProducts } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
-import type { Product } from "@/lib/api/products";
 import type { HomeFeedProduct } from "@/lib/api/products";
 
 const MAX_CARDS = 72;
-
-// ---------------------------------------------------------------------------
-// Shared helper — convert composite feed product to ProductCardData
-// ---------------------------------------------------------------------------
 
 function toCard(p: HomeFeedProduct, site: string): ProductCardData {
   const slug = productPageSlug(p);
@@ -44,11 +39,6 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
     location_name: p.location_name ?? null,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Feed loaders — all use the composite /feed/home endpoint (1 call instead of
-// N+1, no separate shop or boost fetches)
-// ---------------------------------------------------------------------------
 
 export async function loadAlgorithmFeed(): Promise<ProductCardData[]> {
   try {
@@ -155,10 +145,6 @@ export async function loadFreshFeed(limit: number = 12): Promise<ProductCardData
     return [];
   }
 }
-
-// ---------------------------------------------------------------------------
-// Shop browse: product categories per shop (for /shops filters)
-// ---------------------------------------------------------------------------
 
 export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Record<string, string[]>> {
   const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort();

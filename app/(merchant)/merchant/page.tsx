@@ -79,6 +79,8 @@ export default function MerchantOverviewPage() {
         { label: "Products", value: stats.total_products, color: PALETTE[2] },
         { label: "Product views", value: stats.total_product_views, color: PALETTE[3] },
         { label: "Product likes", value: stats.total_product_likes, color: PALETTE[4] },
+        { label: "WhatsApp clicks", value: stats.total_whatsapp_clicks, color: "#25D366" },
+        { label: "Messages", value: stats.total_messages, color: PALETTE[0] },
       ]
     : [];
 
@@ -130,7 +132,7 @@ export default function MerchantOverviewPage() {
 
       {/* Engagement KPIs */}
       {stats && (
-        <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <section className="grid gap-3 sm:grid-cols-4 lg:grid-cols-8">
           {kpiStats.map(({ label, value, color }) => (
             <div key={label} className="dm-card p-4">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">

@@ -1,9 +1,5 @@
 import { getUploadThingAuthHeaders } from "@/lib/uploadthing";
 
-/**
- * Sends each raster image through `/api/watermark-image` before UploadThing.
- * Non-image files pass through unchanged. Requires session (Bearer via upload-token).
- */
 export async function watermarkProductFilesIfShopLogo(
   files: File[],
   shopLogoUrl: string | null | undefined,

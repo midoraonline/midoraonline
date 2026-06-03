@@ -5,10 +5,6 @@ function logoUnopt(src: string) {
   return /ufs\.sh|utfs\.io/i.test(src) || /\.svg(\?|$)/i.test(src);
 }
 
-/**
- * Shop branding on the product image — top-right. Use `shopHref` on detail pages (link to shop);
- * omit on cards so the card’s product link stays the only click target.
- */
 export default function ProductShopLogoOverlay({
   shopName,
   logoUrl,
@@ -17,7 +13,6 @@ export default function ProductShopLogoOverlay({
 }: {
   shopName: string;
   logoUrl?: string | null;
-  /** When set, logo is a link to the shop (e.g. product detail hero). */
   shopHref?: string;
   className?: string;
 }) {

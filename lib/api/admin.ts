@@ -62,10 +62,6 @@ export type AdminVerification = {
   } | null;
 };
 
-// ---------------------------------------------------------------------------
-// Analytics
-// ---------------------------------------------------------------------------
-
 export type AdminStatsSummary = {
   total_shops: number;
   active_shops: number;
@@ -139,14 +135,6 @@ export type AdminStatsOverview = {
     order_status: DistributionSlice[];
   };
 };
-
-/**
- * All admin endpoints now accept either:
- *   - a role=admin JWT via the auth cookie (browser), or
- *   - the legacy `X-Admin-Key` header (scripts / CI).
- *
- * The `adminKey` parameter is optional so the browser path just uses cookies.
- */
 
 export function listShops(adminKey?: string) {
   return apiFetch<Paginated<AdminShop>>("/api/v1/admin/shops/", { adminKey });
@@ -222,8 +210,6 @@ export function statsOverview(adminKey?: string) {
   return apiFetch<AdminStatsOverview>("/api/v1/admin/stats/overview", { adminKey });
 }
 
-// ── Reports ──────────────────────────────────────────────────────────
-
 export type AdminReport = {
   id: string;
   product_id: string;
@@ -252,8 +238,6 @@ export function resolveReport(reportId: string) {
   );
 }
 
-// ── Comments Moderation ──────────────────────────────────────────────
-
 export type AdminComment = {
   id: string;
   comment: string;
@@ -281,8 +265,6 @@ export function toggleCommentFlag(commentId: string, table: "product_comments" |
   );
 }
 
-// ── Chat Monitoring ──────────────────────────────────────────────────
-
 export type AdminConversation = {
   id: string;
   buyer_id: string;
@@ -306,8 +288,6 @@ export function adminListConversations(params: { limit?: number } = {}) {
 export function adminMessageCount() {
   return apiFetch<{ count: number }>("/api/v1/admin/chat/messages/count");
 }
-
-// ── Listings Review ──────────────────────────────────────────────────
 
 export type AdminListingProduct = {
   id: string;

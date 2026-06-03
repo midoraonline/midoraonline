@@ -1,38 +1,18 @@
-/**
- * Image tone analysis.
- *
- * Samples a low-res copy of an image, averages its pixels (with a weight
- * skewed toward the bottom of the frame — where hero text sits) and returns
- * a `luminance` value in the 0-1 range using the Rec.709 relative-luminance
- * formula.  Results are cached per URL so the same image is never analysed
- * twice across the app lifetime.
- *
- * Used by `ShopHeroCarousel` to decide whether the overlay + text should
- * trend light-on-dark or dark-on-light.
- */
-
 export type ImageTone = {
-  /** 0 (pure black) .. 1 (pure white) */
   luminance: number;
-  /** Convenience flag: luminance < 0.5 */
   isDark: boolean;
-  /** Rounded 0-255 RGB average (useful for branded tints) */
   averageRgb: [number, number, number];
 };
 
 const DEFAULT_TONE: ImageTone = {
-  // Assume "moderately dark" by default so SSR renders with a safe dark-overlay
-  // white-text combo that works for most photography.
   luminance: 0.32,
   isDark: true,
   averageRgb: [80, 80, 80],
 };
 
-// Module-level cache — shared across all carousels on the same page.
 const toneCache = new Map<string, ImageTone>();
 const pending = new Map<string, Promise<ImageTone>>();
 
-/** sRGB → linear (used for Rec.709 luminance). */
 function srgbToLinear(v: number): number {
   const s = v / 255;
   return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
@@ -42,22 +22,11 @@ export function defaultTone(): ImageTone {
   return DEFAULT_TONE;
 }
 
-/**
- * Synchronously read the cached tone for a URL (no network / decoding).
- * Returns `undefined` when the image has not yet been analysed.
- */
 export function getCachedTone(url: string | null | undefined): ImageTone | undefined {
   if (!url) return undefined;
   return toneCache.get(url);
 }
 
-/**
- * Analyse an image and return its dominant tone.  CORS-safe URLs from our
- * trusted upload hosts (utfs.io / *.ufs.sh / unsplash) all serve permissive
- * `Access-Control-Allow-Origin` headers, so `crossOrigin = "anonymous"` is
- * enough to avoid a tainted canvas.  On any failure we fall back to
- * `DEFAULT_TONE` so the UI never blocks waiting for analysis.
- */
 export function analyzeImageTone(url: string): Promise<ImageTone> {
   if (typeof window === "undefined" || !url) {
     return Promise.resolve(DEFAULT_TONE);
@@ -94,8 +63,6 @@ export function analyzeImageTone(url: string): Promise<ImageTone> {
         ctx.drawImage(img, 0, 0, size, size);
         const { data } = ctx.getImageData(0, 0, size, size);
 
-        // Weighted pixel sum.  Bottom half is weighted higher because the
-        // hero headline + chips sit in the lower portion of the panel.
         let rSum = 0;
         let gSum = 0;
         let bSum = 0;
@@ -143,7 +110,6 @@ export function analyzeImageTone(url: string): Promise<ImageTone> {
           averageRgb: avgRgb,
         });
       } catch {
-        // Canvas may be tainted if CORS fails on a hotlinked image.
         finish(DEFAULT_TONE);
       }
     };

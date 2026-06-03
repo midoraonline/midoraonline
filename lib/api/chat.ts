@@ -1,7 +1,5 @@
 import { apiFetch } from "./base";
 
-// ── AI concierge (existing) ──────────────────────────────────────────
-
 export type ChatSession = {
   id: string;
   shop_id?: string | null;
@@ -68,8 +66,6 @@ export function listMessages(sessionId: string, token?: string) {
     token ? { token } : {}
   );
 }
-
-// ── Native person-to-person chat ─────────────────────────────────────
 
 export type Conversation = {
   id: string;

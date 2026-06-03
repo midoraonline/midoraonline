@@ -23,9 +23,7 @@ export default function BrowseCategorySidebar({
   collapsed: boolean;
   onToggleCollapsed: () => void;
   listId: string;
-  /** Whether the full-width search bar above the grid is currently open. */
   searchActive?: boolean;
-  /** Toggle the full-width search bar open/closed. */
   onSearchToggle?: () => void;
 }) {
   const items = useMemo(() => {
@@ -46,13 +44,11 @@ export default function BrowseCategorySidebar({
         className="dm-card flex max-h-[min(82vh,calc(100dvh-6.125rem))] flex-col overflow-hidden sm:max-h-[min(82vh,calc(100dvh-6.625rem))]"
         aria-label="Browse by category"
       >
-        {/* ── Header row ── */}
         <div
           className={`flex shrink-0 items-center border-b border-foreground/[0.06] py-1 ${
             collapsed ? "flex-col gap-0.5 px-0 py-1.5" : "justify-between px-2 pr-1"
           }`}
         >
-          {/* Search toggle icon */}
           <button
             type="button"
             onClick={onSearchToggle}
@@ -68,7 +64,6 @@ export default function BrowseCategorySidebar({
             <SearchIcon sx={{ fontSize: 18 }} aria-hidden />
           </button>
 
-          {/* Collapse toggle */}
           <button
             type="button"
             onClick={onToggleCollapsed}
@@ -85,7 +80,6 @@ export default function BrowseCategorySidebar({
           </button>
         </div>
 
-        {/* ── Category list ── */}
         <ul
           id={listId}
           className="home-category-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-1.5 pt-1 pb-1.5 sm:px-2 sm:pb-2"

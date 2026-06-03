@@ -15,7 +15,7 @@ import {
   Cell,
 } from "recharts";
 import { apiShops } from "@/lib/api";
-import type { Shop, ShopEngagement, ShopDashboardResponse } from "@/lib/api/shops";
+import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession } from "@/lib/state";
@@ -71,6 +71,8 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       { name: "Page views", value: views },
       { name: "Likes", value: Number(engagement?.like_count ?? 0) },
       { name: "Followers", value: Number(engagement?.follower_count ?? 0) },
+      { name: "WhatsApp", value: Number(engagement?.whatsapp_clicks ?? 0) },
+      { name: "Messages", value: Number(engagement?.messages ?? 0) },
     ];
   }, [engagement, shopProfile]);
 
@@ -81,6 +83,8 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
         fullTitle: p.title,
         views: Number(p.view_count ?? 0),
         likes: Number(p.like_count ?? 0),
+        whatsapp: Number(p.whatsapp_clicks ?? 0),
+        messages: Number(p.messages ?? 0),
       }))
       .sort((a, b) => b.views - a.views)
       .slice(0, 16);
@@ -327,6 +331,86 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
               </div>
             </section>
           ) : null}
+
+          {productViewRows.some((r) => r.whatsapp > 0) && (
+            <section className="dm-card p-5 sm:p-8">
+              <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+                WhatsApp clicks
+              </h2>
+              <p className="mt-1 text-xs text-muted sm:text-sm">
+                How often customers clicked WhatsApp on each listing.
+              </p>
+              <div
+                className="mt-6 w-full"
+                style={{ height: Math.max(240, productViewRows.filter(r => r.whatsapp > 0).length * 36) }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={productViewRows.filter(r => r.whatsapp > 0).slice(0, 12)}
+                    margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(102, 121, 143, 0.2)" />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={118}
+                      tick={{ fontSize: 10 }}
+                      stroke="rgba(42,51,49,0.45)"
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [formatNum(value), "WhatsApp clicks"]}
+                      labelFormatter={(_, payload) =>
+                        payload?.[0]?.payload?.fullTitle ?? ""
+                      }
+                    />
+                    <Bar dataKey="whatsapp" fill="#25D366" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          )}
+
+          {productViewRows.some((r) => r.messages > 0) && (
+            <section className="dm-card p-5 sm:p-8">
+              <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+                Messages
+              </h2>
+              <p className="mt-1 text-xs text-muted sm:text-sm">
+                Conversations initiated for each listing.
+              </p>
+              <div
+                className="mt-6 w-full"
+                style={{ height: Math.max(240, productViewRows.filter(r => r.messages > 0).length * 36) }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={productViewRows.filter(r => r.messages > 0).slice(0, 12)}
+                    margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(102, 121, 143, 0.2)" />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={118}
+                      tick={{ fontSize: 10 }}
+                      stroke="rgba(42,51,49,0.45)"
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [formatNum(value), "Messages"]}
+                      labelFormatter={(_, payload) =>
+                        payload?.[0]?.payload?.fullTitle ?? ""
+                      }
+                    />
+                    <Bar dataKey="messages" fill="#4a6767" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          )}
 
           <p className="text-center text-xs text-muted">
             Time-based trends will appear here when the API exposes historical series.

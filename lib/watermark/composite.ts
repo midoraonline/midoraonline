@@ -3,11 +3,8 @@ import "server-only";
 import sharp from "sharp";
 
 export type WatermarkOptions = {
-  /** Final logo opacity multiplier (0–1). */
   opacity?: number;
-  /** Inset from bottom-right, as a fraction of min(width,height). Clamped 8–32 px in practice via width. */
   marginRatio?: number;
-  /** Watermark width as a fraction of main image width (then clamped). */
   widthRatio?: number;
 };
 
@@ -25,10 +22,6 @@ async function applyUniformOpacity(pngBuffer: Buffer, opacity: number): Promise<
     .toBuffer();
 }
 
-/**
- * Composites a rasterized shop logo onto the bottom-right of an image,
- * then encodes as JPEG (white background under transparent product PNGs).
- */
 export async function compositeShopLogoWatermark(
   imageBuffer: Buffer,
   logoBuffer: Buffer,

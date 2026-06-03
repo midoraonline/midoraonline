@@ -66,9 +66,7 @@ export default function Navbar() {
     try {
       const res = await apiChat.getUnreadCount();
       setUnread(res.unread_count);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [session.isAuthenticated]);
 
   useEffect(() => {
@@ -143,7 +141,6 @@ export default function Navbar() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2" suppressHydrationWarning>
-            {/* Chat icon */}
             {session.isAuthenticated ? (
               <Link
                 href="/chat"

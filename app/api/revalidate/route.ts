@@ -1,20 +1,3 @@
-/**
- * On-demand cache revalidation endpoint.
- *
- * Usage (from FastAPI or any trusted server):
- *   POST /api/revalidate?secret=<REVALIDATE_SECRET>&tag=<TAG>
- *
- * Valid tags: "shops" | "products" | "most-viewed"
- *
- * Set REVALIDATE_SECRET in Vercel environment variables and in the FastAPI
- * backend's environment so it can call this endpoint after mutations.
- *
- * Example FastAPI usage (httpx):
- *   await httpx.post(
- *     f"{NEXT_PUBLIC_URL}/api/revalidate",
- *     params={"secret": REVALIDATE_SECRET, "tag": "products"},
- *   )
- */
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 

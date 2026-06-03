@@ -1,20 +1,5 @@
 "use client";
 
-/**
- * VideoUpload
- *
- * Pick-one-or-more video files, compress them in-browser with ffmpeg.wasm,
- * then upload the smaller MP4(s) through UploadThing.  The compressor is
- * lazy-loaded — the ~30MB wasm core only downloads the first time a user
- * actually kicks off a transcode.
- *
- * UX: at every stage the user sees progress.  Picking files immediately
- * renders a review panel that scrolls into view, each tile shows its own
- * compression progress bar, and during the actual upload a global progress
- * bar is shown.  A green "Uploaded …" banner confirms success before the
- * queue clears.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Loader2, Video as VideoIcon, X } from "lucide-react";
 import { getUploadThingAuthHeaders, useUploadThing } from "@/lib/uploadthing";
@@ -34,7 +19,6 @@ type Props = {
   label?: string;
   className?: string;
   multiple?: boolean;
-  /** Reject videos longer than this many seconds (default 180 = 3 minutes). */
   maxDurationSeconds?: number;
 };
 
@@ -93,14 +77,12 @@ export function VideoUpload({
     },
   });
 
-  // Auto-dismiss the success banner
   useEffect(() => {
     if (!lastSuccessCount) return;
     const t = setTimeout(() => setLastSuccessCount(0), 4500);
     return () => clearTimeout(t);
   }, [lastSuccessCount]);
 
-  // Scroll review into view when it first appears so users see the controls
   useEffect(() => {
     if (queue.length > 0 && reviewRef.current) {
       reviewRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -131,8 +113,6 @@ export function VideoUpload({
   }
 
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    // Snapshot into a real Array before clearing — FileList is a live DOM
-    // object that becomes empty once input.value is reset.
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
     setTopError(null);
@@ -235,7 +215,6 @@ export function VideoUpload({
         </p>
       </div>
 
-      {/* Global upload bar */}
       {isUploading && (
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
           <div

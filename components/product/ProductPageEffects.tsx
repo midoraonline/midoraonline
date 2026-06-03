@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { apiProducts } from "@/lib/api";
 
-/** One product detail view per session (sessionStorage). */
 export default function ProductPageEffects({ productId }: { productId: string }) {
   useEffect(() => {
     if (typeof window === "undefined" || !productId) return;

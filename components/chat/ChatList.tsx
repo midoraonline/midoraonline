@@ -45,7 +45,6 @@ export default function ChatList({ activeId, onSelect }: Props) {
     fetchList();
   }, [fetchList]);
 
-  // Poll for new conversations / unread updates every 10s
   useEffect(() => {
     const id = setInterval(fetchList, 10000);
     return () => clearInterval(id);

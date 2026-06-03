@@ -66,9 +66,7 @@ function ChatPageInner() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-10rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-foreground/[0.06] bg-background sm:h-[calc(100vh-8rem)]">
-      {/* Mobile: toggle between list and thread */}
       <div className="flex h-full flex-col sm:flex-row">
-        {/* Sidebar */}
         <div className={`w-full border-r border-foreground/[0.06] sm:w-80 sm:block ${showList ? "block" : "hidden sm:block"}`}>
           <div className="border-b border-foreground/[0.06] px-4 py-3">
             <h2 className="text-sm font-semibold">Messages</h2>
@@ -78,7 +76,6 @@ function ChatPageInner() {
           </div>
         </div>
 
-        {/* Thread */}
         <div className={`flex-1 ${showList ? "hidden sm:flex" : "flex"} flex-col`}>
           {activeConv ? (
             <ChatThread conversation={activeConv} onBack={handleBack} />

@@ -6,7 +6,7 @@ import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
 import type { ProductCardData } from "@/components/productcard";
 
-const CACHE_TTL = 900; // 15 minutes
+const CACHE_TTL = 900;
 
 function toCard(p: HomeFeedProduct, site: string): ProductCardData {
   const slug = productPageSlug(p);

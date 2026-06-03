@@ -22,7 +22,6 @@ export default function ShopHeroToolbar({
   shopId: string;
   shopSlug: string;
   quickNav: ShopQuickNavFlags;
-  /** `immersive`: styled for photo hero (CSS vars). `plain`: surface / primary pills. */
   tone?: ShopHeroToolbarTone;
 }) {
   const session = useAppSession();

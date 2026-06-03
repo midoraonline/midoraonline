@@ -15,26 +15,14 @@ type Endpoint = "shopLogo" | "productImage" | "imageUploader";
 
 type ImageUploadProps = {
   endpoint: Endpoint;
-  /** Single-file success (first file when multiple). */
   onUploadComplete?: (url: string) => void;
-  /** Multi-file batch (all URLs from one picker batch). Prefer for product galleries. */
   onUploadManyComplete?: (urls: string[]) => void;
   label?: string;
   accept?: string;
   className?: string;
   previewUrl?: string;
-  /** Allow selecting several files at once (endpoint must allow maxFileCount > 1). */
   multiple?: boolean;
-  /**
-   * Offer a "Remove background" review step before upload.  Great for
-   * product photography where users often shoot on cluttered tables/shelves.
-   * Defaults to true for product endpoints.
-   */
   allowBackgroundRemoval?: boolean;
-  /**
-   * For `productImage` only: when set (shop `logo_url`), raster photos are
-   * watermarked on the server with Sharp before UploadThing.
-   */
   watermarkLogoUrl?: string | null;
 };
 
@@ -121,15 +109,12 @@ export function ImageUpload({
     },
   });
 
-  // Auto-dismiss the success banner after a few seconds
   useEffect(() => {
     if (!lastSuccessCount) return;
     const t = setTimeout(() => setLastSuccessCount(0), 4500);
     return () => clearTimeout(t);
   }, [lastSuccessCount]);
 
-  // Scroll the review panel into view when it first appears so users never
-  // miss the "Remove background" / "Upload all" controls.
   useEffect(() => {
     if (pending.length > 0 && reviewRef.current) {
       reviewRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -137,8 +122,6 @@ export function ImageUpload({
   }, [pending.length]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Snapshot the FileList into a real Array BEFORE clearing the input —
-    // FileList is a live DOM object and becomes empty once input.value is reset.
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
     setError(null);
@@ -321,7 +304,6 @@ export function ImageUpload({
         )}
       </div>
 
-      {/* Global upload progress bar — visible while bytes are in flight */}
       {isUploading && (
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
           <div
@@ -333,7 +315,6 @@ export function ImageUpload({
 
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
-      {/* Success toast — auto-dismisses */}
       {lastSuccessCount > 0 && !isUploading && (
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-green-500/20 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 dark:bg-green-950/40 dark:text-green-200">
           <CheckCircle2 className="size-4" />

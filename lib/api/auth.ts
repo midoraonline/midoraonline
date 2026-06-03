@@ -18,7 +18,6 @@ export type LoginRequest = {
   password: string;
 };
 
-/** Matches `/auth/me` (profile-style; some fields optional depending on backend). */
 export type MeResponse = {
   id: string;
   email?: string | null;
@@ -44,10 +43,6 @@ export type GoogleExchangeRequest = {
   state: string;
 };
 
-/**
- * Register. The server sets httpOnly auth cookies on success; the returned
- * token pair is kept for non-browser clients (mobile apps, scripts).
- */
 export function register(body: RegisterRequest) {
   return apiFetch<TokenPair>("/api/v1/auth/register", {
     method: "POST",
@@ -62,10 +57,6 @@ export function login(body: LoginRequest) {
   });
 }
 
-/**
- * Rotate the refresh cookie. The request body is empty in the browser flow —
- * the refresh token lives in the `midora_refresh` cookie.
- */
 export function refresh() {
   return apiFetch<TokenPair>("/api/v1/auth/refresh", {
     method: "POST",
@@ -75,7 +66,6 @@ export function refresh() {
 }
 
 export function me(token?: string) {
-  // Explicit `token` supports server-components; the browser carries the cookie.
   return apiFetch<MeResponse>("/api/v1/auth/me", token ? { token } : undefined);
 }
 

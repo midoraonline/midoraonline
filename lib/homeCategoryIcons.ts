@@ -1,4 +1,3 @@
-/** Canonical category label → public PNG image path (your downloaded icons). */
 export const CATEGORY_ICON_MAP: Record<string, string> = {
   "Food & Beverage":   "/icons/groceries.png",
   "Fashion":           "/icons/fashion.png",
@@ -37,7 +36,6 @@ export function resolveCategoryIconPath(label: string): string {
   return CATEGORY_ICON_MAP["Other"]!;
 }
 
-/** Subtle icon badge styles (cycles by index for variety). */
 export const CATEGORY_TONES = [
   "bg-primary/12 text-primary ring-1 ring-primary/20",
   "bg-accent/12 text-accent ring-1 ring-accent/20",

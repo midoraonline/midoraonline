@@ -93,9 +93,6 @@ function MetaChip({ immersive, children }: { immersive: boolean; children: React
   );
 }
 
-/**
- * Icon row on photo hero — colours from `ShopHeroCarousel` CSS vars.
- */
 const contactIconClass =
   "inline-flex items-center justify-center rounded-lg p-1.5 outline-none ring-0 shadow-none transition-colors focus:outline-none focus-visible:outline-none drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]";
 
@@ -136,7 +133,6 @@ export default function ShopHeader({
       })
     : null;
 
-  // Harvest product media for the carousel; logo only when there are listings.
   const productMedia: HeroMedia[] = products.flatMap((p) =>
     productMediaItems(p).map<HeroMedia>((m) =>
       m.kind === "video" ? { kind: "video", src: m.src } : { kind: "image", src: m.src }

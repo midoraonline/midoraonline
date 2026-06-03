@@ -1,4 +1,3 @@
-/** Canonical browse categories (mirrors midoraapi/core/categories.py). */
 export const CANONICAL_CATEGORY_LABELS = [
   "Food & Beverage",
   "Fashion",

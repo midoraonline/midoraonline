@@ -1,20 +1,11 @@
 import { AUTH_CHANGED_EVENT } from "@/lib/auth/token-storage";
 
 export type ApiFetchOptions = Omit<RequestInit, "body"> & {
-  /**
-   * Explicit bearer token. Primarily used by server components (RSCs) since
-   * browsers carry the auth cookie automatically.
-   */
   token?: string | null;
-  /** Legacy admin header. Phase 3 introduces role-based admin; scripts keep this. */
   adminKey?: string;
-  /** Opt out of sending credentials (for public endpoints where that matters). */
   anonymous?: boolean;
-  /** Body (JSON-serialized automatically unless already a string / FormData). */
   body?: RequestInit["body"] | Record<string, unknown> | unknown[] | null;
-  /** Request timeout in ms (default 20s). Set to 0 to disable. */
   timeoutMs?: number;
-  /** Skip the one-shot refresh-and-retry on 401. */
   skipAuthRefresh?: boolean;
 };
 
@@ -90,10 +81,6 @@ async function parseErrorBody(res: Response): Promise<ApiErrorPayload> {
   }
 }
 
-/**
- * Shared refresh promise. Multiple racing 401 retries piggyback on the same
- * refresh request so we never fire two at once.
- */
 let inflightRefresh: Promise<boolean> | null = null;
 
 async function tryRefreshCookie(): Promise<boolean> {

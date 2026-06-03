@@ -1,13 +1,7 @@
-/** WhatsApp deep links for Midora listings (chat completes in WhatsApp, not in-app). */
-
 export function whatsappDigits(input: string): string {
   return input.replace(/\D/g, "");
 }
 
-/**
- * Opens WhatsApp with the standard buyer intent message.
- * Optional `itemUrl` lets sellers see exactly which listing was tapped.
- */
 export function productInquiryWhatsAppUrl(
   phoneRaw: string,
   opts?: { itemTitle?: string; itemUrl?: string },
@@ -26,7 +20,6 @@ export function productInquiryWhatsAppUrl(
   return `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
 }
 
-/** Prefilled message when a buyer opens WhatsApp from a shop storefront. */
 export function shopInquiryWhatsAppUrl(
   phoneRaw: string,
   opts?: { shopName?: string; shopUrl?: string },

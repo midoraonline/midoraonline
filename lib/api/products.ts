@@ -1,6 +1,5 @@
 import { apiFetch } from "./base";
 
-/** Global product CRUD / engagement (not under /shops/.../products). */
 function productBase(productId: string) {
   return `/api/v1/products/${encodeURIComponent(productId)}`;
 }
@@ -15,12 +14,9 @@ export type Product = {
   item_type?: ItemType | null;
   title: string;
   description?: string | null;
-  /** Primary price field from API */
   price_ugx?: number | null;
-  /** Legacy / alternate field name */
   price?: number | null;
   stock_quantity?: number | null;
-  /** API may return a list or a single string depending on backend serialization */
   image_urls?: string[] | string | null;
   image_url?: string | null;
   category?: string | null;
@@ -32,6 +28,8 @@ export type Product = {
   view_count?: number | null;
   like_count?: number | null;
   viewer_liked?: boolean | null;
+  whatsapp_clicks?: number | null;
+  messages?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -55,7 +53,6 @@ export type CreateProductRequest = {
   location_name?: string;
 };
 
-/** Ensure Postgres `text[]` / API list fields always get a real JSON array of strings. */
 function normalizeImageUrlsForApi(value: CreateProductRequest["image_urls"]): string[] | undefined {
   if (value === undefined || value === null) return undefined;
   const arr = Array.isArray(value) ? value : [value];
@@ -98,7 +95,6 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   return o;
 }
 
-/** Resolved price for display (UGX). */
 export function productPriceUgx(p: Product): number {
   const n = p.price_ugx ?? p.price;
   return typeof n === "number" && !Number.isNaN(n) ? n : 0;
@@ -127,17 +123,14 @@ function parseProductImageUrls(p: Product): string[] {
   return fallback;
 }
 
-/** All image URLs for galleries and cards. */
 export function productImageUrls(p: Product): string[] {
   return parseProductImageUrls(p);
 }
 
-/** First image URL for cards. */
 export function productPrimaryImage(p: Product): string | undefined {
   return parseProductImageUrls(p).find((u) => !isVideoUrl(u));
 }
 
-/** True when the URL looks like a video file we can play inline. */
 export function isVideoUrl(url: string): boolean {
   const clean = url.split(/[?#]/, 1)[0];
   return /\.(mp4|webm|mov|m4v)$/i.test(clean);
@@ -147,7 +140,6 @@ export type ProductMedia =
   | { kind: "image"; src: string }
   | { kind: "video"; src: string };
 
-/** Split a product's URL list into structured image / video items. */
 export function productMediaItems(p: Product): ProductMedia[] {
   return parseProductImageUrls(p).map<ProductMedia>((src) =>
     isVideoUrl(src) ? { kind: "video", src } : { kind: "image", src }
@@ -257,8 +249,6 @@ export function getLatestFeed(opts?: { limit?: number; token?: string }) {
   });
 }
 
-// ── Composite endpoints ────────────────────────────────────────────
-
 export type HomeFeedProduct = {
   id: string;
   shop_id: string;
@@ -324,7 +314,6 @@ export function getSimilarProducts(productId: string, limit = 8) {
   );
 }
 
-/** Fetch all 4 home page feeds in a single call with shop + boost data embedded. */
 export function getHomeFeed(limit?: number, page?: number) {
   const params = new URLSearchParams();
   if (limit) params.set("limit", String(limit));

@@ -17,7 +17,6 @@ export function listAiContext(shopId: string, token?: string | null) {
   );
 }
 
-/** API expects context_type (e.g. "policy") and content. */
 export function createAiContext(
   shopId: string,
   body: { context_type?: string; content: string },
