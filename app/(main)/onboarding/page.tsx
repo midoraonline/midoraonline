@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -15,6 +16,21 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+
+const softCard = "rounded-2xl border border-border/50 bg-card text-card-foreground shadow-sm";
+
+function Reveal({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay: delayMs / 1000, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function OnboardingPage() {
   return (
