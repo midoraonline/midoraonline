@@ -9,6 +9,7 @@ const NAV: DashboardNavItem[] = [
   { href: "/admin/verifications", label: "Verifications", icon: <IconShield /> },
   { href: "/admin/shops", label: "Shops", icon: <IconStore /> },
   { href: "/admin/reports", label: "Reports", icon: <IconFlag /> },
+  { href: "/admin/listings", label: "Listings", icon: <IconPackage /> },
   { href: "/admin/comments", label: "Comments", icon: <IconMessage /> },
 ];
 
@@ -78,6 +79,16 @@ function IconMessage() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+function IconPackage() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M16.5 9.4 7.55 4.24" />
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <path d="M3.29 7 12 12l8.71-5" />
+      <path d="M12 22V12" />
     </svg>
   );
 }

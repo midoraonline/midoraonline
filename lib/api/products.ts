@@ -270,6 +270,7 @@ export type HomeFeedProduct = {
   item_type?: string | null;
   view_count: number;
   like_count: number;
+  viewer_liked?: boolean | null;
   listing_score: number;
   location_name?: string | null;
   created_at?: string | null;
@@ -295,12 +296,38 @@ export type HomeFeedResponse = {
   trending: HomeFeedProduct[];
   premium: HomeFeedProduct[];
   fresh: HomeFeedProduct[];
+  page: number;
+  limit: number;
+  total: number;
 };
 
+export type SimilarProduct = {
+  id: string;
+  shop_id: string;
+  title: string;
+  price_ugx: number;
+  image_urls?: string[] | null;
+  category?: string | null;
+  item_type?: string | null;
+  listing_score: number;
+  location_name?: string | null;
+  created_at?: string | null;
+  view_count: number;
+};
+
+export function getSimilarProducts(productId: string, limit = 8) {
+  return apiFetch<SimilarProduct[]>(
+    `/api/v1/products/${encodeURIComponent(productId)}/similar?limit=${limit}`
+  );
+}
+
 /** Fetch all 4 home page feeds in a single call with shop + boost data embedded. */
-export function getHomeFeed(limit?: number) {
-  const qs = limit ? `?limit=${limit}` : "";
-  return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs}`);
+export function getHomeFeed(limit?: number, page?: number) {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", String(limit));
+  if (page) params.set("page", String(page));
+  const qs = params.toString();
+  return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`);
 }
 
 export function logSearch(query: string, token?: string | null) {

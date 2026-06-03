@@ -8,6 +8,7 @@ import BrowseCategorySidebar from "@/components/browse/BrowseCategorySidebar";
 import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
+import MarqueeCarousel from "@/components/product/MarqueeCarousel";
 import { useBrowseSidebarCollapse } from "@/hooks/useBrowseSidebarCollapse";
 import { browseProductGridForSidebar, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -206,7 +207,7 @@ export default function HomeLanding({
 
           {/* Premium Products */}
           {!isSearching && filteredPremium.length > 0 && (
-            <section className="space-y-5">
+            <section className="space-y-4">
               <SectionHeader
                 title={`Premium Products${filterHint}`}
                 subtitle="Top-performing and boosted listings on Midora."
@@ -214,27 +215,19 @@ export default function HomeLanding({
                 linkLabel="See all products"
                 icon={<Sparkles className="size-5 text-amber-500" aria-hidden />}
               />
-              <div className={browseProductGridForSidebar(collapsed)}>
-                {filteredPremium.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
+              <MarqueeCarousel items={filteredPremium} speed={40} />
             </section>
           )}
 
           {/* Trending Products */}
           {!isSearching && filteredTrending.length > 0 && (
-            <section className="space-y-5">
+            <section className="space-y-4">
               <SectionHeader
                 title={`Trending${filterHint}`}
                 subtitle="The products getting the most attention right now."
                 icon={<MaterialSymbol name="trending_up" className="!text-2xl text-rose-500" />}
               />
-              <div className={browseProductGridForSidebar(collapsed)}>
-                {filteredTrending.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
+              <MarqueeCarousel items={filteredTrending} speed={35} />
             </section>
           )}
 
@@ -285,13 +278,13 @@ export default function HomeLanding({
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
-                {!isSearching && initialProducts.length > 24 && (
+                {!isSearching && initialProducts.length > 0 && (
                   <div className="pt-1 text-center">
                     <Link
                       href="/products"
                       className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
                     >
-                      View all {initialProducts.length} products
+                      View all products
                       <ArrowRight className="size-3.5" aria-hidden />
                     </Link>
                   </div>

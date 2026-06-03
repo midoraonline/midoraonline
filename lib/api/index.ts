@@ -16,4 +16,5 @@ export * as apiLeads from "./leads";
 export * as apiReviews from "./reviews";
 export * as apiNotifications from "./notificationsClient";
 export * as apiBoostPlans from "./boostPlans";
+export * as apiContactus from "./contactus";
 

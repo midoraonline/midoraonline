@@ -23,6 +23,8 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
     imageUrl: p.primary_image,
     shopLogoUrl: p.shop.logo_url ?? undefined,
     viewCount: p.view_count,
+    likeCount: p.like_count,
+    isLiked: p.viewer_liked ?? undefined,
     shopWhatsApp: p.shop.whatsapp_number ?? null,
     listingUrl: `${site}/products/${slug}`,
     sellerId: p.shop.owner_id ?? null,
@@ -63,12 +65,17 @@ export async function loadLatestFeed(): Promise<ProductCardData[]> {
   try {
     const data = await apiProducts.getHomeFeed(MAX_CARDS);
     const site = publicSiteOrigin();
-    const all = [
-      ...(data.algorithm ?? []),
+    const merged = [
       ...(data.fresh ?? []),
+      ...(data.algorithm ?? []),
     ];
-    return [...new Map(all.map((p) => [p.id, p])).values()]
-      .map((p) => toCard(p, site));
+    const deduped = [...new Map(merged.map((p) => [p.id, p])).values()]
+      .sort((a, b) => {
+        const aT = a.created_at ?? "";
+        const bT = b.created_at ?? "";
+        return bT.localeCompare(aT);
+      });
+    return deduped.map((p) => toCard(p, site));
   } catch (e) {
     console.error("Failed to load latest feed", e);
     return [];

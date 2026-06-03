@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import BrowseCategorySidebar from "@/components/browse/BrowseCategorySidebar";
 import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
@@ -10,6 +10,8 @@ import type { ProductCardData } from "@/components/productcard";
 import { useBrowseSidebarCollapse } from "@/hooks/useBrowseSidebarCollapse";
 import { browseProductGridForSidebar, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { apiProducts } from "@/lib/api";
+import { productPageSlug } from "@/lib/productUrl";
+import type { HomeFeedProduct } from "@/lib/api/products";
 
 function matchesProductSearch(p: ProductCardData, q: string): boolean {
   const qq = q.trim().toLowerCase();
@@ -30,7 +32,35 @@ export default function ProductsBrowsePage({
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [allItems, setAllItems] = useState(items);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(items.length >= 72);
   const { collapsed, setCollapsed } = useBrowseSidebarCollapse();
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const data = await apiProducts.getHomeFeed(72, next);
+      const existing = new Set(allItems.map((p) => p.id));
+      const site = window.location.origin;
+      const nextItems = (data.algorithm ?? [])
+        .filter((fp) => !existing.has(fp.id))
+        .map(toCardLocal);
+      if (nextItems.length === 0) {
+        setHasMore(false);
+      } else {
+        setAllItems((prev) => [...prev, ...nextItems]);
+        setPage(next);
+        setHasMore(data.total > next * 72);
+      }
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, allItems]);
 
   function handleSearchToggle() {
     if (searchOpen) {
@@ -56,11 +86,43 @@ export default function ProductsBrowsePage({
     [items],
   );
 
+  function toCardLocal(fp: HomeFeedProduct): ProductCardData {
+    const slug = productPageSlug(fp);
+    return {
+      id: fp.id,
+      slug,
+      title: fp.title,
+      priceUGX: fp.price_ugx,
+      imageUrl: fp.primary_image,
+      shopLogoUrl: fp.shop.logo_url ?? undefined,
+      viewCount: fp.view_count,
+      likeCount: fp.like_count,
+      isLiked: fp.viewer_liked ?? undefined,
+      shopWhatsApp: fp.shop.whatsapp_number ?? null,
+      listingUrl: `/${slug}`,
+      sellerId: fp.shop.owner_id ?? null,
+      shop: {
+        id: fp.shop.id,
+        name: fp.shop.name,
+        slug: fp.shop.slug,
+        verified: fp.shop.is_active,
+        category: fp.shop.category ?? null,
+        trust_score: fp.shop.trust_score ?? null,
+        available_now: fp.shop.available_now ?? null,
+        location: fp.shop.location ?? null,
+      },
+      category: fp.category ?? null,
+      boosted: fp.boosted,
+      updated_at: fp.updated_at ?? fp.created_at ?? null,
+      location_name: fp.location_name ?? null,
+    };
+  }
+
   const q = query.trim();
   const categoryFilterActive = selectedCategory !== null;
 
   const filteredItems = useMemo(() => {
-    let list = items;
+    let list = allItems;
     if (selectedCategory) {
       list = list.filter(
         (p) =>
@@ -182,6 +244,18 @@ export default function ProductsBrowsePage({
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
+                {!q.length && !categoryFilterActive && hasMore && (
+                  <div className="mt-6 text-center">
+                    <button
+                      type="button"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                    >
+                      {loadingMore ? "Loading..." : "Load more products"}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </section>

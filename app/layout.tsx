@@ -4,6 +4,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import AppStateProvider from "@/components/providers/AppStateProvider";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -59,7 +60,9 @@ export default function RootLayout({
         className={`${plusJakarta.variable} ${fraunces.variable} ${ibmPlexMono.variable} font-sans antialiased bg-background text-foreground`}
       >
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-        <AppStateProvider>{children}</AppStateProvider>
+        <AppRouterCacheProvider>
+          <AppStateProvider>{children}</AppStateProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

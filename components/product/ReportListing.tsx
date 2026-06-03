@@ -27,7 +27,7 @@ export default function ReportListing({ productId }: Props) {
   async function handleSubmit() {
     if (!reason) return;
     try {
-      await apiListingEvents.recordListingEvent(productId, "reported");
+      await apiListingEvents.reportProduct(productId, reason);
       setSubmitted(true);
       setError(null);
       setTimeout(() => {

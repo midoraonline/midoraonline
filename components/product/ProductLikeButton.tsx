@@ -6,24 +6,27 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiProducts } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 
-  const btnBase =
+const btnBase =
   "inline-flex items-center gap-1 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2 py-1 text-[11px] font-semibold text-foreground/85 transition-colors hover:bg-foreground/[0.08] dm-focus";
 
 export default function ProductLikeButton({
   productId,
   className = "",
   size = "default",
+  initialLiked,
+  initialLikeCount,
 }: {
   productId: string;
   className?: string;
-  /** `compact` for tight card rows */
   size?: "default" | "compact";
+  initialLiked?: boolean;
+  initialLikeCount?: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const session = useAppSession();
-  const [liked, setLiked] = useState(false);
-  const [count, setCount] = useState<number | null>(null);
+  const [liked, setLiked] = useState(initialLiked ?? false);
+  const [count, setCount] = useState<number | null>(initialLikeCount ?? null);
 
   const sync = useCallback(async () => {
     try {
@@ -37,11 +40,12 @@ export default function ProductLikeButton({
 
   useEffect(() => {
     if (!session.hydrated) return;
-    // Defer sync to prevent cascading renders
+    if (!session.isAuthenticated) return;
+    if (initialLiked !== undefined && (initialLikeCount ?? 0) > 0) return;
     Promise.resolve().then(() => {
       sync();
     });
-  }, [session.hydrated, sync]);
+  }, [session.hydrated, session.isAuthenticated, sync, initialLiked, initialLikeCount]);
 
   async function toggle() {
     if (!session.isAuthenticated) {
@@ -70,11 +74,9 @@ export default function ProductLikeButton({
     <button
       type="button"
       onClick={() => void toggle()}
-      className={[btnBase, liked ? "border-rose-300/40 bg-rose-500/10 text-rose-700" : "", className].join(
-        " "
-      )}
+      className={[btnBase, liked ? "border-rose-300/40 bg-rose-500/10 text-rose-700" : "", className].join(" ")}
       aria-pressed={liked}
-      title={session.isAuthenticated ? (liked ? "Remove from watchlist" : "Save for later — stuff I'm watching") : "Sign in to save for later"}
+      title={session.isAuthenticated ? (liked ? "Remove from watchlist" : "Save for later") : "Sign in to save for later"}
     >
       <MaterialSymbol name="favorite" className={`${iconClass} leading-none`} filled={liked} />
       {count !== null && (

@@ -306,3 +306,52 @@ export function adminListConversations(params: { limit?: number } = {}) {
 export function adminMessageCount() {
   return apiFetch<{ count: number }>("/api/v1/admin/chat/messages/count");
 }
+
+// ── Listings Review ──────────────────────────────────────────────────
+
+export type AdminListingProduct = {
+  id: string;
+  shop_id: string;
+  title: string;
+  description?: string | null;
+  price_ugx: number;
+  image_urls?: string[] | null;
+  category?: string | null;
+  item_type: string;
+  status: string;
+  listing_score?: number | null;
+  location_name?: string | null;
+  is_published: boolean;
+  view_count: number;
+  created_at: string;
+  shop_name?: string | null;
+  shop_slug?: string | null;
+  owner_id?: string | null;
+  reports_count: number;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  review_notes?: string | null;
+};
+
+export function listAdminListings(params: { status?: string; limit?: number; page?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set("status", params.status);
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.page) qs.set("page", String(params.page));
+  return apiFetch<{
+    items: AdminListingProduct[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  }>(`/api/v1/admin/listings?${qs.toString()}`);
+}
+
+export function reviewListing(listingId: string, action: "approve" | "reject", notes?: string) {
+  const qs = new URLSearchParams({ action, notes: notes ?? "" });
+  if (!notes) qs.delete("notes");
+  return apiFetch<AdminListingProduct>(
+    `/api/v1/admin/listings/${encodeURIComponent(listingId)}/review?${qs.toString()}`,
+    { method: "POST" }
+  );
+}

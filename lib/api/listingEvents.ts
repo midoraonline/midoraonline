@@ -7,7 +7,8 @@ export type ListingEventType =
   | "saved"
   | "shared"
   | "reported"
-  | "updated";
+  | "updated"
+  | "messaged";
 
 export type ListingEventStats = {
   views: number;
@@ -16,7 +17,21 @@ export type ListingEventStats = {
   saves: number;
   shares: number;
   reports: number;
+  messages: number;
 };
+
+export function reportProduct(
+  productId: string,
+  reason: string,
+  description?: string,
+) {
+  const qs = new URLSearchParams({ reason });
+  if (description) qs.set("description", description);
+  return apiFetch<Record<string, unknown>>(
+    `/api/v1/products/${encodeURIComponent(productId)}/reports?${qs.toString()}`,
+    { method: "POST" }
+  );
+}
 
 export function recordListingEvent(
   productId: string,

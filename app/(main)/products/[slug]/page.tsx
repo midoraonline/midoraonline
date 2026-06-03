@@ -14,7 +14,9 @@ import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl"
 import { getProductById, getShopById } from "@/lib/api/server";
 import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
+import ProductOwnerActions from "@/components/product/ProductOwnerActions";
 import ProductComments from "@/components/product/ProductComments";
+import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
@@ -291,6 +293,14 @@ export default async function ProductDetails({
             <ReportListing productId={product.id} />
           </div>
 
+          {shop && (
+            <ProductOwnerActions
+              shopOwnerId={shop.owner_id}
+              shopSlug={shop.slug}
+              shopId={shop.id}
+            />
+          )}
+
           {/* Description */}
           {product.description ? (
             <div className="dm-card p-4 sm:p-6">
@@ -321,6 +331,9 @@ export default async function ProductDetails({
           <ProductComments productId={product.id} />
         </div>
       </div>
+
+      {/* Similar products — full width below */}
+      <SimilarProducts productId={product.id} />
     </div>
   );
 }

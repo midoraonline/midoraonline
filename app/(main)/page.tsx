@@ -18,6 +18,8 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
     imageUrl: p.primary_image,
     shopLogoUrl: p.shop.logo_url ?? undefined,
     viewCount: p.view_count,
+    likeCount: p.like_count,
+    isLiked: p.viewer_liked ?? undefined,
     shopWhatsApp: p.shop.whatsapp_number ?? null,
     listingUrl: `${site}/products/${slug}`,
     sellerId: p.shop.owner_id ?? null,

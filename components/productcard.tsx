@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import ProductWhatsAppButton from "@/components/product/ProductWhatsAppButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
 
@@ -44,6 +44,10 @@ export type ProductCardData = {
   location_name?: string | null;
   /** Rating average if available */
   rating?: number | null;
+  /** Like count (skips separate engagement API call if provided). */
+  likeCount?: number;
+  /** Whether the current viewer has liked this (skips engagement API if provided). */
+  isLiked?: boolean;
 };
 
 function formatUGX(value: number) {
@@ -203,7 +207,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             {formatUGX(product.priceUGX)}
           </Link>
 
-          <ProductLikeButton productId={product.id} size="compact" className="shrink-0" />
+          <ProductLikeButton
+            productId={product.id}
+            size="compact"
+            className="shrink-0"
+            initialLiked={product.isLiked}
+            initialLikeCount={product.likeCount}
+          />
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -216,17 +226,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             />
           )}
           {waHref ? (
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`dm-focus inline-flex items-center justify-center gap-1 rounded-lg bg-[#25D366] px-2 py-1.5 text-[10px] font-semibold text-white transition-[filter] hover:brightness-95 ${
-                product.sellerId ? "shrink-0" : "w-full"
-              }`}
-            >
-              <WhatsAppIcon className="size-3 shrink-0 text-white" />
-              {!product.sellerId && "WhatsApp"}
-            </a>
+            <ProductWhatsAppButton
+              waHref={waHref}
+              productId={product.id}
+              standalone={!product.sellerId}
+              className={product.sellerId ? "shrink-0" : "w-full"}
+            />
           ) : null}
         </div>
       </div>
