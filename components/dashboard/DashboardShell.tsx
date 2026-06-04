@@ -36,18 +36,18 @@ const ROLE_ACCENT: Record<
   { active: string; pill: string; dot: string }
 > = {
   admin: {
-    active: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
-    pill: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    active: "bg-rose-500/10 text-rose-600",
+    pill: "bg-rose-500/10 text-rose-600",
     dot: "bg-rose-500",
   },
   merchant: {
-    active: "bg-primary/15 text-primary",
-    pill: "bg-primary/15 text-primary",
-    dot: "bg-primary",
+    active: "bg-accent/10 text-accent",
+    pill: "bg-accent/10 text-accent",
+    dot: "bg-accent",
   },
   customer: {
-    active: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-    pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    active: "bg-emerald-500/10 text-emerald-600",
+    pill: "bg-emerald-500/10 text-emerald-600",
     dot: "bg-emerald-500",
   },
 };
@@ -122,7 +122,10 @@ export default function DashboardShell({
   if (stillResolving) {
     return (
       <div className="grid min-h-[100dvh] place-items-center bg-background p-6">
-        <p className="text-sm text-muted">Loading your dashboard…</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="dm-skeleton h-4 w-40" />
+          <p className="text-sm text-muted">Loading your dashboard…</p>
+        </div>
       </div>
     );
   }
@@ -134,7 +137,14 @@ export default function DashboardShell({
   if (!allowed) {
     return (
       <div className="grid min-h-[100dvh] place-items-center bg-background p-6">
-        <div className="dm-card max-w-md space-y-3 p-6 text-center">
+        <div className="dm-card max-w-md space-y-4 p-8 text-center">
+          <div className="mx-auto grid size-12 place-items-center rounded-full bg-surface-subtle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-muted">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
           <h1 className="font-display text-xl font-semibold tracking-tight">
             Access restricted
           </h1>
@@ -143,7 +153,7 @@ export default function DashboardShell({
           </p>
           <Link
             href="/"
-            className="dm-pill dm-focus inline-flex bg-foreground/[0.07] px-4 py-2 text-xs font-semibold hover:bg-foreground/[0.1]"
+            className="dm-btn dm-btn-secondary inline-flex text-xs"
           >
             Go home
           </Link>
@@ -154,13 +164,14 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-background/85 px-3 py-2 backdrop-blur-xl lg:hidden">
+      {/* Mobile header */}
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-surface/95 px-4 py-2.5 backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-2">
           <button
             type="button"
             aria-label="Open menu"
             onClick={() => setDrawerOpen(true)}
-            className="grid size-10 place-items-center rounded-full bg-foreground/[0.07] text-foreground/80 hover:bg-foreground/[0.11]"
+            className="grid size-10 place-items-center rounded-xl bg-surface-subtle text-foreground/70 hover:bg-border"
           >
             <MenuIcon />
           </button>
@@ -176,7 +187,8 @@ export default function DashboardShell({
       </header>
 
       <div className="flex min-h-[calc(100dvh-3.25rem)] lg:min-h-[100dvh]">
-        <aside className="sticky top-0 hidden h-[100dvh] w-64 shrink-0 flex-col border-r border-border bg-background/60 px-4 py-5 backdrop-blur-xl lg:flex">
+        {/* Desktop sidebar */}
+        <aside className="sticky top-0 hidden h-[100dvh] w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6 lg:flex">
           <SidebarContent
             accent={accent}
             navItems={navItems}
@@ -192,14 +204,15 @@ export default function DashboardShell({
           />
         </aside>
 
+        {/* Mobile drawer */}
         {drawerOpen ? (
           <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
             <button
               aria-label="Close menu overlay"
               onClick={() => setDrawerOpen(false)}
-              className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
             />
-            <aside className="absolute inset-y-0 left-0 flex w-[85%] max-w-xs flex-col bg-background px-4 py-5 shadow-2xl">
+            <aside className="absolute inset-y-0 left-0 flex w-[85%] max-w-xs flex-col bg-surface px-4 py-5 shadow-2xl">
               <div className="mb-4 flex items-center justify-between">
                 <Link href={returnHref} className="inline-block" onClick={() => setDrawerOpen(false)}>
                   <Image src="/logo.png" alt="Midora" width={100} height={34} className="h-7 w-auto rounded-md" />
@@ -208,7 +221,7 @@ export default function DashboardShell({
                   type="button"
                   aria-label="Close menu"
                   onClick={() => setDrawerOpen(false)}
-                  className="grid size-9 place-items-center rounded-full bg-foreground/[0.07] text-foreground/80 hover:bg-foreground/[0.11]"
+                  className="grid size-9 place-items-center rounded-xl bg-surface-subtle text-foreground/70 hover:bg-border"
                 >
                   <CloseIcon />
                 </button>
@@ -230,6 +243,7 @@ export default function DashboardShell({
           </div>
         ) : null}
 
+        {/* Main content */}
         <main className="flex-1 overflow-x-hidden">
           <div
             className={[
@@ -276,14 +290,14 @@ function SidebarContent({
         <Image src="/logo.png" alt="Midora" width={120} height={41} className="h-8 w-auto rounded-lg" />
       </Link>
 
-      <nav aria-label="Dashboard" className="flex-1 space-y-1 overflow-y-auto">
+      <nav aria-label="Dashboard" className="flex-1 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} accent={accent} />
         ))}
 
         {secondaryNavItems && secondaryNavItems.length > 0 ? (
           <>
-            <div className="my-4 h-px bg-border" />
+            <div className="my-3 h-px bg-border" />
             {secondaryNavItems.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} accent={accent} />
             ))}
@@ -293,7 +307,7 @@ function SidebarContent({
 
       <div className="mt-4 space-y-3 border-t border-border pt-4">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-xs font-bold text-foreground/70">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-subtle text-xs font-bold text-foreground/60">
             {initials || "?"}
           </span>
           <div className="min-w-0">
@@ -304,14 +318,14 @@ function SidebarContent({
         <div className="flex gap-2">
           <Link
             href={returnHref}
-            className="flex-1 rounded-xl border border-border px-3 py-2 text-center text-xs font-semibold hover:bg-foreground/[0.04]"
+            className="dm-btn dm-btn-secondary flex-1 text-xs"
           >
             {returnLabel}
           </Link>
           <button
             type="button"
             onClick={onLogout}
-            className="flex-1 rounded-xl bg-foreground/[0.07] px-3 py-2 text-xs font-semibold text-foreground hover:bg-foreground/[0.1]"
+            className="dm-btn dm-btn-ghost flex-1 text-xs"
           >
             Logout
           </button>
@@ -335,10 +349,10 @@ function NavLink({
     <Link
       href={item.href}
       className={[
-        "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors dm-focus",
+        "group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors dm-focus",
         active
-          ? `${accent.active} shadow-sm`
-          : "text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground",
+          ? `${accent.active}`
+          : "text-foreground/65 hover:bg-surface-subtle hover:text-foreground",
       ].join(" ")}
     >
       {item.icon ? (
@@ -346,7 +360,7 @@ function NavLink({
       ) : null}
       <span className="flex-1 truncate">{item.label}</span>
       {item.badge != null && item.badge !== "" ? (
-        <span className="rounded-full bg-foreground/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-foreground/70">
+        <span className="rounded-full bg-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold text-foreground/60">
           {item.badge}
         </span>
       ) : null}

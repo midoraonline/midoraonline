@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import { productImageUrls, productPriceUgx } from "@/lib/api/products";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
-import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
@@ -65,7 +65,7 @@ export async function generateMetadata({
   const price = productPriceUgx(product);
   const desc =
     (product.description && product.description.trim().slice(0, 160)) ||
-    `${product.title} — ${formatUGX(price)} on Midora Online.`;
+    `${product.title} \u2014 ${formatUGX(price)} on Midora Online.`;
   const ogImages = images[0]
     ? [{ url: images[0], alt: product.title }]
     : [{ url: `${SITE}/logo.png`, alt: "Midora Online" }];
@@ -123,98 +123,119 @@ export default async function ProductDetails({
   const freshness = timeAgo(product.updated_at || product.created_at);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-5 sm:space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-6 sm:space-y-8">
       <ProductPageEffects productId={product.id} />
 
-      <nav className="flex flex-wrap items-center gap-2 text-sm" aria-label="Breadcrumb">
-        <Link href="/products" className="font-medium text-muted transition-colors hover:text-foreground">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
+        <Link
+          href="/products"
+          className="font-medium text-muted transition-colors hover:text-foreground"
+        >
           Products
         </Link>
-        <span className="text-muted" aria-hidden>/</span>
-        <span className="min-w-0 truncate text-foreground/90">{product.title}</span>
+        <ChevronRight className="size-3.5 shrink-0 text-muted/50" aria-hidden />
+        <span className="min-w-0 truncate text-foreground/80">{product.title}</span>
       </nav>
 
-      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-10">
-        <div className="min-w-0 space-y-3">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10">
+        {/* Gallery */}
+        <div className="min-w-0">
           <ProductImageGallery images={images} title={product.title}>
             {shop ? (
-              <ProductShopLogoOverlay
-                shopName={shop.name}
-                logoUrl={shop.logo_url}
-                shopHref={`/shops/${shop.slug}`}
-              />
+              <Link
+                href={`/shops/${shop.slug}`}
+                className="absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+              >
+                <div className="size-6 overflow-hidden rounded-lg bg-foreground/[0.06]">
+                  {shop.logo_url ? (
+                    <img src={shop.logo_url} alt="" className="size-full object-cover" />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-[9px] font-bold text-muted">
+                      {shop.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                {shop.name}
+              </Link>
             ) : null}
           </ProductImageGallery>
         </div>
 
-        <div className="min-w-0 space-y-4 sm:space-y-5">
+        {/* Details */}
+        <div className="min-w-0 space-y-5">
+          {/* Header */}
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <span className="rounded-full bg-foreground/[0.05] px-2.5 py-0.5 text-[10px] font-medium text-muted">
                 {product.item_type === "service" ? "Service" : "Product"}
-              </p>
+              </span>
               {product.status === "active" && (
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600">
                   Active
                 </span>
               )}
               {freshness && (
-                <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-medium text-muted">
+                <span className="rounded-full bg-foreground/[0.05] px-2.5 py-0.5 text-[10px] font-medium text-muted">
                   {freshness}
                 </span>
               )}
             </div>
-            <h1 className="font-display mt-2 text-xl font-semibold tracking-tight text-pretty sm:text-2xl md:text-3xl">
+            <h1 className="font-display mt-2 text-xl font-semibold tracking-tight text-pretty sm:text-2xl">
               {product.title}
             </h1>
-            <p className="mt-3 text-xl font-semibold tabular-nums tracking-tight text-foreground sm:mt-4 sm:text-2xl">
+            <p className="mt-3 text-xl font-semibold tabular-nums tracking-tight text-foreground sm:text-2xl">
               {formatUGX(price)}
             </p>
           </div>
 
           {/* Shop Info */}
           {shop && (
-            <div className="rounded-2xl bg-foreground/[0.03] p-3">
+            <div className="rounded-xl border border-border bg-surface p-3">
               <Link
                 href={`/shops/${shop.slug}`}
-                className="flex items-center gap-2 group"
+                className="flex items-center gap-3 group"
               >
-                <div className="size-8 rounded-full bg-foreground/[0.06] flex items-center justify-center text-[10px] font-bold text-muted overflow-hidden">
+                <div className="size-10 overflow-hidden rounded-xl bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
                   {shop.logo_url ? (
                     <img src={shop.logo_url} alt="" className="size-full object-cover" />
                   ) : (
-                    shop.name.charAt(0).toUpperCase()
+                    <div className="flex size-full items-center justify-center text-xs font-bold text-muted">
+                      {shop.name.charAt(0).toUpperCase()}
+                    </div>
                   )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold group-hover:text-accent transition-colors">
                     {shop.name}
-                    {verifiedShop && <VerifiedIcon className="!text-sm ml-1 inline" />}
+                    {verifiedShop && <VerifiedIcon className="ml-1 inline !text-sm" />}
                   </p>
-                  <p className="text-[11px] text-muted">
+                  <p className="text-xs text-muted">
                     {shop.available_now ? (
-                      <span className="text-emerald-600 font-medium">Available now</span>
+                      <span className="font-medium text-emerald-600">Available now</span>
                     ) : (
                       "Shop on Midora"
                     )}
-                    {shop.view_count != null && ` · ${shop.view_count} views`}
+                    {shop.view_count != null && ` \u00B7 ${shop.view_count} views`}
                   </p>
                 </div>
+                <MaterialSymbol name="chevron_right" className="!text-lg shrink-0 text-muted" />
               </Link>
             </div>
           )}
 
+          {/* Actions */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <ProductLikeButton productId={product.id} />
-              {shop ? (
+              {shop && (
                 <Link
                   href={`/shops/${shop.slug}`}
-                  className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                  className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
                 >
                   View shop
                 </Link>
-              ) : null}
+              )}
             </div>
 
             {waHref && shop ? (
@@ -225,23 +246,23 @@ export default async function ProductDetails({
                 listingUrl={listingUrl}
                 title={product.title}
               >
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 cursor-pointer">
+                <div className="space-y-1">
+                  <div className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98]">
                     <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
-                    WhatsApp
+                    Message seller on WhatsApp
                   </div>
                   {verifiedShop ? (
                     <p className="text-xs text-muted">
-                      <span className="font-medium text-foreground/90">✓ Verified seller</span>
+                      <span className="font-medium text-foreground/90">\u2713 Verified seller</span>
                     </p>
                   ) : (
-                    <p className="text-xs text-muted">Seller on Midora · Final sale happens in WhatsApp</p>
+                    <p className="text-xs text-muted">Seller on Midora \u00B7 Final sale happens in WhatsApp</p>
                   )}
                 </div>
               </SellerContactConsent>
             ) : shop ? (
               <p className="text-xs text-muted">
-                This seller hasn&apos;t connected WhatsApp yet — open the shop page for other contact options.
+                This seller hasn&apos;t connected WhatsApp yet \u2014 open the shop page for other contact options.
               </p>
             ) : null}
 
@@ -256,36 +277,36 @@ export default async function ProductDetails({
 
           {/* Location */}
           {product.location_name && (
-            <p className="flex items-center gap-1 text-sm text-muted">
-              <MaterialSymbol name="location_on" className="!text-sm" />
+            <p className="flex items-center gap-1.5 text-sm text-muted">
+              <MaterialSymbol name="location_on" className="!text-base" />
               {product.location_name}
             </p>
           )}
 
           {/* Category */}
-          {product.category ? (
+          {product.category && (
             <p className="text-sm">
               <span className="font-medium text-foreground/85">Category</span>
-              <span className="text-muted"> · {product.category}</span>
+              <span className="text-muted"> \u00B7 {product.category}</span>
             </p>
-          ) : null}
+          )}
 
-          {/* Stats row */}
-          <div className="flex flex-wrap gap-3 text-xs text-muted">
+          {/* Stats */}
+          <div className="flex flex-wrap gap-2">
             {product.view_count != null && (
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-foreground/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted">
                 <MaterialSymbol name="visibility" className="!text-xs" />
                 {product.view_count} views
               </span>
             )}
             {product.like_count != null && (
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-foreground/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted">
                 <MaterialSymbol name="favorite" className="!text-xs" />
                 {product.like_count} likes
               </span>
             )}
             {product.listing_score != null && product.listing_score > 0 && (
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-600">
                 <MaterialSymbol name="trending_up" className="!text-xs" />
                 Score {product.listing_score}
               </span>
@@ -293,6 +314,7 @@ export default async function ProductDetails({
             <ReportListing productId={product.id} />
           </div>
 
+          {/* Owner actions */}
           {shop && (
             <ProductOwnerActions
               shopOwnerId={shop.owner_id}
@@ -302,37 +324,37 @@ export default async function ProductDetails({
           )}
 
           {/* Description */}
-          {product.description ? (
-            <div className="dm-card p-4 sm:p-6">
+          {product.description && (
+            <section className="rounded-xl border border-border bg-surface p-4 sm:p-5">
               <h2 className="text-sm font-semibold tracking-tight">Description</h2>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted sm:text-base">
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted">
                 {product.description}
               </p>
-            </div>
-          ) : null}
+            </section>
+          )}
 
           {/* Details */}
-          <dl className="grid gap-2 text-sm">
-            {product.item_type === "product" && product.stock_quantity != null ? (
-              <div className="flex flex-wrap gap-2">
+          <dl className="grid gap-1.5 text-sm">
+            {product.item_type === "product" && product.stock_quantity != null && (
+              <div className="flex items-center justify-between rounded-lg bg-foreground/[0.02] px-3 py-2">
                 <dt className="font-medium text-foreground/85">Stock</dt>
                 <dd className="text-muted">{product.stock_quantity}</dd>
               </div>
-            ) : null}
-            {product.updated_at ? (
-              <div className="flex flex-wrap gap-2">
+            )}
+            {product.updated_at && (
+              <div className="flex items-center justify-between rounded-lg bg-foreground/[0.02] px-3 py-2">
                 <dt className="font-medium text-foreground/85">Last updated</dt>
                 <dd className="text-muted">{new Date(product.updated_at).toLocaleDateString()}</dd>
               </div>
-            ) : null}
+            )}
           </dl>
 
-          {/* Comments section */}
+          {/* Comments */}
           <ProductComments productId={product.id} />
         </div>
       </div>
 
-      {/* Similar products — full width below */}
+      {/* Similar products */}
       <SimilarProducts productId={product.id} />
     </div>
   );

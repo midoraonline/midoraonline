@@ -40,21 +40,33 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
   };
 }
 
+const EMPTY_FEED = {
+  products: [] as ProductCardData[],
+  trending: [] as ProductCardData[],
+  premium: [] as ProductCardData[],
+  fresh: [] as ProductCardData[],
+};
+
 async function loadFeed(): Promise<{
   products: ProductCardData[];
   trending: ProductCardData[];
   premium: ProductCardData[];
   fresh: ProductCardData[];
 }> {
-  const site = publicSiteOrigin();
-  const data = await apiProducts.getHomeFeed(72);
+  try {
+    const site = publicSiteOrigin();
+    const data = await apiProducts.getHomeFeed(72);
 
-  return {
-    products: (data.algorithm ?? []).map((p) => toCard(p, site)),
-    trending: (data.trending ?? []).map((p) => toCard(p, site)),
-    premium: (data.premium ?? []).map((p) => toCard(p, site)),
-    fresh: (data.fresh ?? []).map((p) => toCard(p, site)),
-  };
+    return {
+      products: (data.algorithm ?? []).map((p) => toCard(p, site)),
+      trending: (data.trending ?? []).map((p) => toCard(p, site)),
+      premium: (data.premium ?? []).map((p) => toCard(p, site)),
+      fresh: (data.fresh ?? []).map((p) => toCard(p, site)),
+    };
+  } catch (e) {
+    console.error("Failed to load home feed", e);
+    return EMPTY_FEED;
+  }
 }
 
 const getCachedFeed = unstable_cache(
