@@ -81,8 +81,27 @@ function LoginPageInner() {
     setGoogleLoading(true);
     setError(null);
     try {
-      const { url } = await apiAuth.getGoogleAuthUrl();
-      window.location.href = url;
+      // On localhost the production backend blocks cross-origin requests via CORS.
+      // Fall back to a Next.js server-side proxy route that forwards the call
+      // server-to-server (no CORS restriction).
+      const isLocal =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1");
+
+      let googleUrl: string;
+
+      if (isLocal) {
+        const res = await fetch("/api/auth/google-url");
+        if (!res.ok) throw new Error(await res.text());
+        const data = (await res.json()) as { url: string };
+        googleUrl = data.url;
+      } else {
+        const data = await apiAuth.getGoogleAuthUrl();
+        googleUrl = data.url;
+      }
+
+      window.location.href = googleUrl;
     } catch {
       setError("Unable to start Google sign-in.");
       setGoogleLoading(false);

@@ -135,6 +135,8 @@ export default function ShopListRealtime({
             viewCount: shop.view_count ?? null,
             whatsappNumber: shop.whatsapp_number ?? null,
             email: shop.shop_email ?? null,
+            rating: shop.trust_score != null ? Math.min(5, shop.trust_score / 20) : null,
+            reviewCount: null,
           }}
         />
       ))}

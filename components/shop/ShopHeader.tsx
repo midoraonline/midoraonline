@@ -15,6 +15,8 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
+import { getShopReviewStats } from "@/lib/api/reviews";
+import StarRating from "@/components/StarRating";
 
 function ShopLogo({ logoUrl, name }: { logoUrl?: string | null; name: string }) {
   if (logoUrl) {
@@ -74,13 +76,14 @@ function MetaChip({ immersive, children }: { immersive: boolean; children: React
   );
 }
 
-export default function ShopHeader({
+export default async function ShopHeader({
   shop,
   products = [],
 }: {
   shop: Shop;
   products?: Product[];
 }) {
+  const reviewStats = await getShopReviewStats(shop.id).catch(() => null);
   const location = locationDisplay(shop.location);
   const heroContacts = filterDuplicateContacts(shop);
   const secondaryContacts = heroContacts.filter(
@@ -218,6 +221,26 @@ export default function ShopHeader({
           </span>
         )}
       </div>
+
+      {/* Rating */}
+      {reviewStats && reviewStats.total_reviews > 0 ? (
+        <div className="flex justify-center">
+          <span
+            className={immersive ? "drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]" : ""}
+            style={immersive ? { filter: "brightness(1.2)" } : undefined}
+          >
+            <StarRating
+              rating={reviewStats.average_rating}
+              count={reviewStats.total_reviews}
+              size="sm"
+            />
+          </span>
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <StarRating rating={0} size="sm" placeholder />
+        </div>
+      )}
 
       {/* Description */}
       {shop.description ? (

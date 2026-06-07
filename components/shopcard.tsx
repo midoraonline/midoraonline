@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import StarRating from "@/components/StarRating";
 
 export type ShopCardData = {
   id: string;
@@ -15,6 +16,8 @@ export type ShopCardData = {
   viewCount?: number | null;
   whatsappNumber?: string | null;
   email?: string | null;
+  rating?: number | null;
+  reviewCount?: number | null;
 };
 
 function initials(name: string) {
@@ -79,6 +82,14 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
             <p className="mt-0.5 text-[11px] font-medium text-muted sm:text-xs">
               {shop.category}
             </p>
+
+            <div className="mt-1">
+              {shop.rating != null && shop.rating > 0 ? (
+                <StarRating rating={shop.rating} count={shop.reviewCount} size="xs" />
+              ) : (
+                <StarRating size="xs" placeholder rating={0} />
+              )}
+            </div>
 
             <p className="mt-1 flex items-center gap-1 text-[11px] text-muted sm:text-xs">
               <MaterialSymbol name="location_on" className="!text-sm shrink-0" />

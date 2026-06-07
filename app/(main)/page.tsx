@@ -88,6 +88,8 @@ async function loadFeed(): Promise<{
         viewCount: s.view_count ?? null,
         whatsappNumber: s.whatsapp_number ?? null,
         email: s.shop_email ?? null,
+        rating: s.trust_score != null ? Math.min(5, s.trust_score / 20) : null,
+        reviewCount: null,
       }));
 
     return {

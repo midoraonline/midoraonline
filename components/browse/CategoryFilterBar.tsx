@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import { Filter, Search, X } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { categoryToneClass, resolveCategoryIconPath, ALL_CATEGORIES_ICON_PATH } from "@/lib/homeCategoryIcons";
-import Image from "next/image";
+import { CATEGORY_ICON_CLASS, resolveCategoryIcon, ALL_CATEGORIES_ICON } from "@/lib/homeCategoryIcons";
 
 type Props = {
   categories: string[];
@@ -53,9 +52,9 @@ export default function CategoryFilterBar({
 
         <div className="h-5 w-px shrink-0 bg-border" />
 
-        {items.map(({ key, label }, i) => {
+        {items.map(({ key, label }) => {
           const active = key === null ? selected === null : selected === key;
-          const tone = categoryToneClass(Math.max(0, i - 1));
+          const icon = key === null ? ALL_CATEGORIES_ICON : resolveCategoryIcon(label);
           return (
             <button
               key={key ?? "all"}
@@ -67,18 +66,9 @@ export default function CategoryFilterBar({
                   : "bg-surface text-muted hover:text-foreground ring-1 ring-border hover:ring-border-strong"
               }`}
             >
-              {key !== null && (
-                <span className={`grid size-5 shrink-0 place-items-center rounded-md ${tone}`}>
-                  <Image
-                    src={resolveCategoryIconPath(label)}
-                    alt=""
-                    width={14}
-                    height={14}
-                    className="size-3.5 object-contain"
-                    unoptimized
-                  />
-                </span>
-              )}
+              <span className={`grid size-5 shrink-0 place-items-center rounded-md ${active ? "bg-white/20" : CATEGORY_ICON_CLASS}`}>
+                <MaterialSymbol name={icon} className="!text-[13px]" />
+              </span>
               {label}
             </button>
           );
@@ -153,9 +143,9 @@ export default function CategoryFilterBar({
               </button>
             </div>
             <div className="flex flex-col gap-0.5">
-              {items.map(({ key, label }, i) => {
+              {items.map(({ key, label }) => {
                 const active = key === null ? selected === null : selected === key;
-                const tone = categoryToneClass(Math.max(0, i - 1));
+                const icon = key === null ? ALL_CATEGORIES_ICON : resolveCategoryIcon(label);
                 return (
                   <button
                     key={key ?? "all"}
@@ -170,15 +160,8 @@ export default function CategoryFilterBar({
                         : "text-foreground/80 hover:bg-surface-subtle"
                     }`}
                   >
-                    <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${tone}`}>
-                      <Image
-                        src={key === null ? ALL_CATEGORIES_ICON_PATH : resolveCategoryIconPath(label)}
-                        alt=""
-                        width={18}
-                        height={18}
-                        className="size-4.5 object-contain"
-                        unoptimized
-                      />
+                    <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${active ? "bg-accent/15 text-accent" : CATEGORY_ICON_CLASS}`}>
+                      <MaterialSymbol name={icon} className="!text-base" />
                     </span>
                     <span className="flex-1 text-left">{label}</span>
                     {active && <span className="size-1.5 rounded-full bg-accent" />}

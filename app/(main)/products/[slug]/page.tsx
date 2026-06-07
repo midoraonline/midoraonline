@@ -19,6 +19,7 @@ import ProductComments from "@/components/product/ProductComments";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import StarRating from "@/components/StarRating";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -187,6 +188,9 @@ export default async function ProductDetails({
             <p className="mt-3 text-xl font-semibold tabular-nums tracking-tight text-foreground sm:text-2xl">
               {formatUGX(price)}
             </p>
+            <div className="mt-2">
+              <StarRating rating={0} size="sm" placeholder />
+            </div>
           </div>
 
           {/* Shop Info */}
