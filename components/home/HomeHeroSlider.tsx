@@ -97,7 +97,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
   );
 }
 
-export default function HomeHeroSlider() {
+export default function HomeHeroSlider({ bgImages = [] }: { bgImages?: string[] }) {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -136,6 +136,26 @@ export default function HomeHeroSlider() {
       <div
         className={`relative h-[340px] sm:h-[400px] lg:h-[480px] bg-gradient-to-br transition-all duration-1000 ease-out ${slides[current].gradient}`}
       >
+        {/* Per-slide background images */}
+        {slides.map((slide, i) => {
+          const img = bgImages[i];
+          return img ? (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ${i === current ? "opacity-100" : "opacity-0"}`}
+            >
+              <img
+                src={img}
+                alt=""
+                aria-hidden
+                className="h-full w-full object-cover"
+              />
+              {/* Dark gradient overlay so text stays readable */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
+            </div>
+          ) : null;
+        })}
+
         {/* Decorative elements */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div

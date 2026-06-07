@@ -31,6 +31,20 @@ export async function listPublicShops(opts?: {
   return res.items ?? [];
 }
 
+// The listing endpoint omits contact fields (whatsapp_number, shop_email).
+// This fetches each shop's full record in parallel to hydrate those fields.
+export async function listPublicShopsWithContacts(opts?: {
+  search?: string;
+  shop_type?: string;
+  limit?: number;
+}): Promise<Shop[]> {
+  const partial = await listPublicShops(opts);
+  const full = await Promise.all(
+    partial.map((s) => nullIfNotFound(apiShops.getShop(s.id)))
+  );
+  return full.map((f, i) => (f ? { ...partial[i], ...f } : partial[i]));
+}
+
 export async function getProductById(productId: string): Promise<Product | null> {
   return nullIfNotFound(apiProducts.getProduct(productId));
 }

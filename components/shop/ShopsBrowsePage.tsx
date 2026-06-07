@@ -35,8 +35,23 @@ export default function ShopsBrowsePage({
   const categoryFilterActive = selectedCategory !== null;
   const q = query.trim();
 
+  const totalShops = initialShops.filter((s) => (s as { is_active?: boolean }).is_active !== false).length;
+
   return (
     <div className="w-full">
+      {/* Page header */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Browse Shops</h1>
+          {totalShops > 0 && (
+            <span className="text-sm text-muted">{totalShops} verified {totalShops === 1 ? "shop" : "shops"}</span>
+          )}
+        </div>
+        <p className="mt-1.5 text-sm text-muted">
+          Discover verified sellers across Uganda — browse by category or search by name.
+        </p>
+      </div>
+
       {/* Category filter bar */}
       <CategoryFilterBar
         categories={categories}

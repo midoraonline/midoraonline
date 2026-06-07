@@ -161,12 +161,12 @@ export default function Navbar() {
           </nav>
 
           {/* Search */}
-          <div className="hidden flex-1 md:block md:max-w-xs lg:max-w-sm">
+          <div className="ml-auto hidden w-full md:block md:max-w-sm lg:max-w-md">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <input
                 type="search"
-                placeholder="Search products, shops\u2026"
+                placeholder="Search products, shops…"
                 className="min-h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none ring-0 transition-[border-color,box-shadow] focus-visible:border-accent/40 focus-visible:ring-2 focus-visible:ring-accent/10"
                 aria-label="Search"
                 value={searchQuery}
@@ -176,7 +176,7 @@ export default function Navbar() {
           </div>
 
           {/* Right actions */}
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2" suppressHydrationWarning>
+          <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0 md:gap-2" suppressHydrationWarning>
             {/* Mobile search toggle */}
             <button
               type="button"
@@ -243,26 +243,17 @@ export default function Navbar() {
             ) : authLoading ? (
               <span className="inline-flex size-9 shrink-0 rounded-full md:hidden" aria-hidden />
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover md:hidden"
-                  onClick={() => setOpen(false)}
-                >
-                  Sign in
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="hidden rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+              >
+                Login
+              </Link>
             )}
 
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-lg bg-foreground/[0.05] px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.1] md:hidden dm-focus"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
@@ -282,7 +273,7 @@ export default function Navbar() {
             <BrowseSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search products, shops\u2026"
+              placeholder="Search products, shops…"
               ariaLabel="Search"
             />
           </div>
@@ -290,7 +281,7 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {open ? (
-          <div className="border-t border-border pb-3 pt-2 md:hidden">
+          <div className="border-t border-border pb-4 pt-2 md:hidden">
             <div className="flex flex-col gap-0.5 px-2">
               {navItems.map((item) => {
                 const active = activeHref !== null && item.href === activeHref;
@@ -312,6 +303,19 @@ export default function Navbar() {
                 );
               })}
             </div>
+
+            {/* Sign in CTA — shown only when not logged in */}
+            {!session.isAuthenticated && !authLoading && (
+              <div className="mt-3 border-t border-border px-4 pt-3">
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex w-full items-center justify-center rounded-xl bg-accent py-2.5 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover"
+                >
+                  Sign in to Midora
+                </Link>
+              </div>
+            )}
           </div>
         ) : null}
       </div>

@@ -1,22 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import ProductCard from "@/components/productcard";
-import type { ProductCardData } from "@/components/productcard";
+import ShopCard from "@/components/shopcard";
+import type { ShopCardData } from "@/components/shopcard";
 
 type Props = {
-  items: ProductCardData[];
+  items: ShopCardData[];
   speed?: number;
 };
 
-export default function MarqueeCarousel({ items, speed = 50 }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number | null>(null);
-  const pausedRef = useRef(false);
-  const lastTimeRef = useRef(0);
+const CARD_WIDTH = 288 + 12; // w-72 + gap-3
 
-  const cardWidth = 256 + 12;
+export default function ShopMarqueeCarousel({ items, speed = 50 }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef(0);
 
   const tick = (time: number) => {
     if (!scrollRef.current) return;
@@ -28,11 +27,10 @@ export default function MarqueeCarousel({ items, speed = 50 }: Props) {
       const step = (speed * delta) / 1000;
       const el = scrollRef.current;
       el.scrollLeft += step;
-      const half = items.length * cardWidth;
-      if (el.scrollLeft >= half) {
-        el.scrollLeft = 0;
-      }
+      const half = items.length * CARD_WIDTH;
+      if (el.scrollLeft >= half) el.scrollLeft = 0;
     }
+
     rafRef.current = requestAnimationFrame(tick);
   };
 
@@ -51,31 +49,19 @@ export default function MarqueeCarousel({ items, speed = 50 }: Props) {
   return (
     <div
       ref={scrollRef}
-      className="relative overflow-x-auto scrollbar-none"
+      className="overflow-x-auto scrollbar-none"
       onMouseEnter={() => { pausedRef.current = true; }}
       onMouseLeave={() => { pausedRef.current = false; }}
+      onTouchStart={() => { pausedRef.current = true; }}
+      onTouchEnd={() => { pausedRef.current = false; }}
     >
-      <motion.div
-        className="flex gap-3"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          visible: { transition: { staggerChildren: 0.03 } },
-        }}
-      >
-        {doubled.map((p, i) => (
-          <motion.div
-            key={`${p.id}-${i}`}
-            className="w-64 shrink-0"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-          >
-            <ProductCard product={p} />
-          </motion.div>
+      <div className="flex gap-3">
+        {doubled.map((shop, i) => (
+          <div key={`${shop.id}-${i}`} className="w-72 shrink-0 self-stretch">
+            <ShopCard shop={shop} className="h-full" />
+          </div>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }

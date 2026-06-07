@@ -9,6 +9,8 @@ import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import MarqueeCarousel from "@/components/product/MarqueeCarousel";
+import type { ShopCardData } from "@/components/shopcard";
+import ShopMarqueeCarousel from "@/components/shop/ShopMarqueeCarousel";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HomeHeroSlider from "@/components/home/HomeHeroSlider";
@@ -68,6 +70,7 @@ type Props = {
   trendingProducts: ProductCardData[];
   premiumProducts: ProductCardData[];
   freshProducts: ProductCardData[];
+  trendingShops: ShopCardData[];
 };
 
 export default function HomeLanding({
@@ -75,6 +78,7 @@ export default function HomeLanding({
   trendingProducts,
   premiumProducts,
   freshProducts,
+  trendingShops,
 }: Props) {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -96,6 +100,19 @@ export default function HomeLanding({
     () => collectCategoriesFromProducts(initialProducts),
     [initialProducts],
   );
+
+  const heroImages = useMemo(() => {
+    const seen = new Set<string>();
+    const imgs: string[] = [];
+    for (const p of [...premiumProducts, ...initialProducts]) {
+      if (p.imageUrl && !seen.has(p.imageUrl)) {
+        seen.add(p.imageUrl);
+        imgs.push(p.imageUrl);
+        if (imgs.length >= 4) break;
+      }
+    }
+    return imgs;
+  }, [premiumProducts, initialProducts]);
 
   const filteredProducts = useMemo(() => {
     let list = initialProducts;
@@ -143,8 +160,8 @@ export default function HomeLanding({
     <div className="w-full">
       {/* ── Hero Slider ────────────────────────────────────── */}
       {!isSearching && !categoryFilterActive && (
-        <div className="mb-0">
-          <HomeHeroSlider />
+        <div className="mb-5 sm:mb-6 lg:mb-8">
+          <HomeHeroSlider bgImages={heroImages} />
         </div>
       )}
 
@@ -225,28 +242,46 @@ export default function HomeLanding({
                 linkLabel="See all"
                 icon={<Sparkles className="size-5 text-amber-500" aria-hidden />}
               />
-              <MarqueeCarousel items={filteredPremium} speed={40} />
+              <MarqueeCarousel items={filteredPremium} speed={50} />
             </section>
           )}
 
-          {/* Trending */}
+          {/* Trending Products */}
           {!isSearching && filteredTrending.length > 0 && (
             <section className="space-y-4">
               <SectionHeader
                 title={`Trending${filterHint}`}
                 subtitle="The products getting the most attention right now."
+                href="/products"
+                linkLabel="See all"
                 icon={<MaterialSymbol name="trending_up" className="!text-2xl text-rose-500" />}
               />
-              <MarqueeCarousel items={filteredTrending} speed={35} />
+              <MarqueeCarousel items={filteredTrending} speed={50} />
             </section>
           )}
 
-          {/* Fresh */}
+          {/* Trending Shops */}
+          {!isSearching && !categoryFilterActive && trendingShops.length > 0 && (
+            <section className="space-y-4">
+              <SectionHeader
+                title="Trending Shops"
+                subtitle="The most-visited shops on Midora right now."
+                href="/shops"
+                linkLabel="See all"
+                icon={<MaterialSymbol name="storefront" className="!text-2xl text-violet-500" />}
+              />
+              <ShopMarqueeCarousel items={trendingShops} speed={50} />
+            </section>
+          )}
+
+          {/* Fresh Listings */}
           {!isSearching && freshProducts.length > 0 && (
             <section className="space-y-4">
               <SectionHeader
                 title={`Fresh Listings${filterHint}`}
                 subtitle="Newly added and recently updated products."
+                href="/products"
+                linkLabel="See all"
                 icon={<MaterialSymbol name="new_releases" className="!text-2xl text-emerald-500" />}
               />
               <div className={browseProductGridClass}>

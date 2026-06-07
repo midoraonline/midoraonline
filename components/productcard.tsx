@@ -212,7 +212,29 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 pt-0.5">
+        {/* Mobile: both buttons as equal-size square icons */}
+        <div className="flex items-center gap-2 pt-0.5 sm:hidden">
+          {product.sellerId && (
+            <MessageSellerButton
+              sellerId={product.sellerId}
+              shopId={product.shop.id}
+              productId={product.id}
+              compact
+              className={`size-10 shrink-0 rounded-xl p-0 ${!waHref ? "flex-1 size-auto py-2 px-3" : ""}`}
+            />
+          )}
+          {waHref && (
+            <ProductWhatsAppButton
+              waHref={waHref}
+              productId={product.id}
+              standalone={!product.sellerId}
+              className={product.sellerId ? "size-10 shrink-0 rounded-xl p-0" : "w-full rounded-xl py-2"}
+            />
+          )}
+        </div>
+
+        {/* sm+: labeled message button + compact WhatsApp */}
+        <div className="hidden items-center gap-1.5 pt-0.5 sm:flex">
           {product.sellerId && (
             <MessageSellerButton
               sellerId={product.sellerId}
@@ -221,14 +243,14 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               className="min-w-0 flex-1 rounded-lg bg-surface-subtle px-2.5 py-1.5 text-[11px] font-medium text-foreground/80 shadow-sm ring-1 ring-inset ring-border hover:bg-border/40"
             />
           )}
-          {waHref ? (
+          {waHref && (
             <ProductWhatsAppButton
               waHref={waHref}
               productId={product.id}
               standalone={!product.sellerId}
               className={product.sellerId ? "shrink-0" : "w-full"}
             />
-          ) : null}
+          )}
         </div>
       </div>
     </article>

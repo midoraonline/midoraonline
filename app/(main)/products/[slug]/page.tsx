@@ -65,7 +65,7 @@ export async function generateMetadata({
   const price = productPriceUgx(product);
   const desc =
     (product.description && product.description.trim().slice(0, 160)) ||
-    `${product.title} \u2014 ${formatUGX(price)} on Midora Online.`;
+    `${product.title} — ${formatUGX(price)} on Midora Online.`;
   const ogImages = images[0]
     ? [{ url: images[0], alt: product.title }]
     : [{ url: `${SITE}/logo.png`, alt: "Midora Online" }];
@@ -123,7 +123,7 @@ export default async function ProductDetails({
   const freshness = timeAgo(product.updated_at || product.created_at);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       <ProductPageEffects productId={product.id} />
 
       {/* Breadcrumb */}
@@ -216,7 +216,7 @@ export default async function ProductDetails({
                     ) : (
                       "Shop on Midora"
                     )}
-                    {shop.view_count != null && ` \u00B7 ${shop.view_count} views`}
+                    {shop.view_count != null && ` · ${shop.view_count} views`}
                   </p>
                 </div>
                 <MaterialSymbol name="chevron_right" className="!text-lg shrink-0 text-muted" />
@@ -224,20 +224,8 @@ export default async function ProductDetails({
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <ProductLikeButton productId={product.id} />
-              {shop && (
-                <Link
-                  href={`/shops/${shop.slug}`}
-                  className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
-                >
-                  View shop
-                </Link>
-              )}
-            </div>
-
+          {/* Contact seller */}
+          <div className="flex flex-col gap-2">
             {waHref && shop ? (
               <SellerContactConsent
                 shopId={shop.id}
@@ -246,23 +234,14 @@ export default async function ProductDetails({
                 listingUrl={listingUrl}
                 title={product.title}
               >
-                <div className="space-y-1">
-                  <div className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98]">
-                    <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
-                    Message seller on WhatsApp
-                  </div>
-                  {verifiedShop ? (
-                    <p className="text-xs text-muted">
-                      <span className="font-medium text-foreground/90">\u2713 Verified seller</span>
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted">Seller on Midora \u00B7 Final sale happens in WhatsApp</p>
-                  )}
+                <div className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98]">
+                  <WhatsAppIcon className="size-4 shrink-0 text-white" />
+                  Message seller on WhatsApp
                 </div>
               </SellerContactConsent>
             ) : shop ? (
-              <p className="text-xs text-muted">
-                This seller hasn&apos;t connected WhatsApp yet \u2014 open the shop page for other contact options.
+              <p className="rounded-xl border border-border bg-surface px-4 py-3 text-center text-xs text-muted">
+                WhatsApp not connected — visit the shop page for other contact options.
               </p>
             ) : null}
 
@@ -271,43 +250,100 @@ export default async function ProductDetails({
                 sellerId={shop.owner_id}
                 shopId={shop.id}
                 productId={product.id}
+                className="w-full rounded-xl py-3 text-sm"
               />
             )}
+
+            {/* Trust + secondary actions */}
+            <div className="flex items-center justify-between pt-1">
+              {verifiedShop ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                  <MaterialSymbol name="verified" className="!text-sm" />
+                  Verified seller
+                </span>
+              ) : (
+                <span className="text-xs text-muted">Seller on Midora</span>
+              )}
+              <div className="flex items-center gap-2">
+                <ProductLikeButton productId={product.id} />
+                {shop && (
+                  <Link
+                    href={`/shops/${shop.slug}`}
+                    className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
+                  >
+                    View shop
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Location */}
-          {product.location_name && (
-            <p className="flex items-center gap-1.5 text-sm text-muted">
-              <MaterialSymbol name="location_on" className="!text-base" />
-              {product.location_name}
-            </p>
+          {/* Listing details */}
+          {(product.category || product.location_name || (product.item_type === "product" && product.stock_quantity != null) || product.updated_at) && (
+            <section className="overflow-hidden rounded-xl border border-border bg-surface">
+              <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
+                Listing details
+              </h2>
+              <dl className="divide-y divide-border text-sm">
+                {product.category && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol name="category" className="!text-sm" />
+                      Category
+                    </dt>
+                    <dd className="font-medium text-foreground">{product.category}</dd>
+                  </div>
+                )}
+                {product.location_name && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol name="location_on" className="!text-sm" />
+                      Location
+                    </dt>
+                    <dd className="font-medium text-foreground">{product.location_name}</dd>
+                  </div>
+                )}
+                {product.item_type === "product" && product.stock_quantity != null && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol name="inventory_2" className="!text-sm" />
+                      In stock
+                    </dt>
+                    <dd className="font-medium text-foreground">{product.stock_quantity} units</dd>
+                  </div>
+                )}
+                {product.updated_at && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol name="schedule" className="!text-sm" />
+                      Updated
+                    </dt>
+                    <dd className="font-medium text-foreground">
+                      {new Date(product.updated_at).toLocaleDateString()}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </section>
           )}
 
-          {/* Category */}
-          {product.category && (
-            <p className="text-sm">
-              <span className="font-medium text-foreground/85">Category</span>
-              <span className="text-muted"> \u00B7 {product.category}</span>
-            </p>
-          )}
-
-          {/* Stats */}
-          <div className="flex flex-wrap gap-2">
+          {/* Activity & report */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
             {product.view_count != null && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-foreground/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted">
-                <MaterialSymbol name="visibility" className="!text-xs" />
+              <span className="flex items-center gap-1">
+                <MaterialSymbol name="visibility" className="!text-sm" />
                 {product.view_count} views
               </span>
             )}
             {product.like_count != null && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-foreground/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted">
-                <MaterialSymbol name="favorite" className="!text-xs" />
+              <span className="flex items-center gap-1">
+                <MaterialSymbol name="favorite" className="!text-sm" />
                 {product.like_count} likes
               </span>
             )}
             {product.listing_score != null && product.listing_score > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-600">
-                <MaterialSymbol name="trending_up" className="!text-xs" />
+              <span className="flex items-center gap-1 text-amber-600">
+                <MaterialSymbol name="trending_up" className="!text-sm" />
                 Score {product.listing_score}
               </span>
             )}
@@ -325,29 +361,15 @@ export default async function ProductDetails({
 
           {/* Description */}
           {product.description && (
-            <section className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-              <h2 className="text-sm font-semibold tracking-tight">Description</h2>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted">
+            <section className="overflow-hidden rounded-xl border border-border bg-surface">
+              <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
+                Description
+              </h2>
+              <p className="px-4 py-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
                 {product.description}
               </p>
             </section>
           )}
-
-          {/* Details */}
-          <dl className="grid gap-1.5 text-sm">
-            {product.item_type === "product" && product.stock_quantity != null && (
-              <div className="flex items-center justify-between rounded-lg bg-foreground/[0.02] px-3 py-2">
-                <dt className="font-medium text-foreground/85">Stock</dt>
-                <dd className="text-muted">{product.stock_quantity}</dd>
-              </div>
-            )}
-            {product.updated_at && (
-              <div className="flex items-center justify-between rounded-lg bg-foreground/[0.02] px-3 py-2">
-                <dt className="font-medium text-foreground/85">Last updated</dt>
-                <dd className="text-muted">{new Date(product.updated_at).toLocaleDateString()}</dd>
-              </div>
-            )}
-          </dl>
 
           {/* Comments */}
           <ProductComments productId={product.id} />

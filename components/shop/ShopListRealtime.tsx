@@ -131,6 +131,10 @@ export default function ShopListRealtime({
             tagline: shop.description ?? "",
             verified: shop.is_active ?? true,
             logoUrl: shop.logo_url ?? null,
+            shopType: shop.shop_type ?? null,
+            viewCount: shop.view_count ?? null,
+            whatsappNumber: shop.whatsapp_number ?? null,
+            email: shop.shop_email ?? null,
           }}
         />
       ))}

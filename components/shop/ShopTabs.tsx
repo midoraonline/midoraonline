@@ -37,7 +37,7 @@ export default function ShopTabs({
 
   return (
     <>
-      <div className="sticky top-14 z-30 -mx-3 border-b border-border bg-background px-3 sm:top-16 sm:-mx-5 sm:px-5 lg:-mx-7 lg:px-7">
+      <div className="-mx-3 border-b border-border bg-background px-3 sm:-mx-5 sm:px-5 lg:-mx-7 lg:px-7">
         <div className="flex items-center gap-2 overflow-x-auto py-2">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;

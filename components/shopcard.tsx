@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 export type ShopCardData = {
   id: string;
@@ -10,66 +11,126 @@ export type ShopCardData = {
   tagline: string;
   verified?: boolean;
   logoUrl?: string | null;
+  shopType?: string | null;
+  viewCount?: number | null;
+  whatsappNumber?: string | null;
+  email?: string | null;
 };
 
 function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "?";
+  return (
+    name
+      .split(/\s+/)
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
 }
 
-export default function ShopCard({ shop }: { shop: ShopCardData }) {
+export default function ShopCard({ shop, className = "" }: { shop: ShopCardData; className?: string }) {
   const initial = initials(shop.name);
+  const shopTypeLabel =
+    shop.shopType === "both" ? "Products & Services"
+    : shop.shopType === "service" ? "Services"
+    : shop.shopType === "product" ? "Products"
+    : null;
 
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="dm-focus block dm-card dm-card-hover p-4 sm:p-5"
+      className={`dm-focus group flex flex-col rounded-2xl border border-border bg-background shadow-sm transition-all hover:border-border-strong hover:shadow-md ${className}`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-        <div className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border sm:size-16">
-          {shop.logoUrl ? (
-            <img
-              src={shop.logoUrl}
-              alt={`${shop.name} logo`}
-              className="size-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <span
-              className="grid size-full place-items-center text-sm font-semibold tracking-tight text-foreground/35"
-              aria-hidden
-            >
-              {initial}
+      {/* Card body */}
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        {/* Top row: logo + identity */}
+        <div className="flex items-start gap-3">
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-surface ring-1 ring-border sm:size-16">
+            {shop.logoUrl ? (
+              <img
+                src={shop.logoUrl}
+                alt={`${shop.name} logo`}
+                className="size-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <span
+                className="grid size-full place-items-center text-base font-bold tracking-tight text-foreground/30"
+                aria-hidden
+              >
+                {initial}
+              </span>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-accent sm:text-base">
+                {shop.name}
+              </h3>
+              {shop.verified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                  <MaterialSymbol name="verified" className="!text-xs" filled />
+                  Verified
+                </span>
+              )}
+            </div>
+
+            <p className="mt-0.5 text-[11px] font-medium text-muted sm:text-xs">
+              {shop.category}
+            </p>
+
+            <p className="mt-1 flex items-center gap-1 text-[11px] text-muted sm:text-xs">
+              <MaterialSymbol name="location_on" className="!text-sm shrink-0" />
+              <span className="truncate">{shop.location}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Tagline */}
+        <p className={`mt-3 line-clamp-2 text-xs leading-relaxed sm:text-sm ${shop.tagline ? "text-muted" : "italic text-muted/40"}`}>
+          {shop.tagline || "No description yet"}
+        </p>
+
+        {/* Contact badges — pinned to bottom of body to fill whitespace */}
+        {(shop.whatsappNumber || shop.email) && (
+          <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
+            {shop.whatsappNumber && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366]/10 px-2.5 py-1 text-[10px] font-semibold text-[#1a9e4e]">
+                <WhatsAppIcon className="size-3 shrink-0" />
+                WhatsApp
+              </span>
+            )}
+            {shop.email && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-semibold text-accent">
+                <MaterialSymbol name="mail" className="!text-xs" />
+                Email
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Card footer: meta + visit CTA */}
+      <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-2">
+          {shopTypeLabel && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted">
+              <MaterialSymbol name="storefront" className="!text-xs" />
+              {shopTypeLabel}
+            </span>
+          )}
+          {shop.viewCount != null && shop.viewCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted">
+              <MaterialSymbol name="visibility" className="!text-xs" />
+              {shop.viewCount}
             </span>
           )}
         </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <h3 className="text-sm font-semibold tracking-tight sm:text-base">{shop.name}</h3>
-            {shop.verified ? (
-              <span className="inline-flex items-center rounded-full bg-emerald-500/10 p-0.5 sm:p-1">
-                <VerifiedIcon size={14} label={`${shop.name} is verified`} />
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted sm:text-sm">
-            {shop.tagline}
-          </p>
-
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center rounded-full bg-surface-subtle px-2.5 py-1 text-[10px] font-medium text-foreground/70 ring-1 ring-border sm:px-3 sm:text-xs">
-              {shop.category}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-surface-subtle px-2.5 py-1 text-[10px] font-medium text-foreground/70 ring-1 ring-border sm:px-3 sm:text-xs">
-              {shop.location}
-            </span>
-          </div>
-        </div>
+        <span className="flex items-center gap-1 text-[11px] font-medium text-muted transition-colors group-hover:text-accent">
+          Visit shop
+          <MaterialSymbol name="arrow_forward" className="!text-sm transition-transform group-hover:translate-x-0.5" />
+        </span>
       </div>
     </Link>
   );

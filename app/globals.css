@@ -94,6 +94,18 @@ body {
   border-radius: 999px;
 }
 
+/* Hide scrollbars completely — including on hover (macOS overlay scrollbars) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* ── Material Symbols ─────────────────────────────────────── */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined", sans-serif;

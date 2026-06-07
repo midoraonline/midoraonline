@@ -5,6 +5,8 @@ import type { HomeFeedProduct } from "@/lib/api/products";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { productPageSlug } from "@/lib/productUrl";
 import type { ProductCardData } from "@/components/productcard";
+import type { ShopCardData } from "@/components/shopcard";
+import { listPublicShopsWithContacts } from "@/lib/api/server";
 
 const CACHE_TTL = 900;
 
@@ -40,11 +42,19 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
   };
 }
 
+function locationStr(loc: unknown): string {
+  if (typeof loc === "string") return loc;
+  if (loc && typeof loc === "object" && "display" in loc)
+    return String((loc as { display?: string }).display ?? "Online");
+  return "Online";
+}
+
 const EMPTY_FEED = {
   products: [] as ProductCardData[],
   trending: [] as ProductCardData[],
   premium: [] as ProductCardData[],
   fresh: [] as ProductCardData[],
+  shops: [] as ShopCardData[],
 };
 
 async function loadFeed(): Promise<{
@@ -52,16 +62,40 @@ async function loadFeed(): Promise<{
   trending: ProductCardData[];
   premium: ProductCardData[];
   fresh: ProductCardData[];
+  shops: ShopCardData[];
 }> {
   try {
     const site = publicSiteOrigin();
-    const data = await apiProducts.getHomeFeed(72);
+    const [data, rawShops] = await Promise.all([
+      apiProducts.getHomeFeed(72),
+      listPublicShopsWithContacts({ limit: 20 }),
+    ]);
+
+    const shops: ShopCardData[] = rawShops
+      .filter((s) => s.is_active !== false)
+      .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
+      .slice(0, 8)
+      .map((s) => ({
+        id: s.id,
+        slug: s.slug,
+        name: s.name,
+        category: s.category ?? "Shop",
+        location: locationStr(s.location),
+        tagline: s.description ?? "",
+        verified: s.is_active ?? true,
+        logoUrl: s.logo_url ?? null,
+        shopType: s.shop_type ?? null,
+        viewCount: s.view_count ?? null,
+        whatsappNumber: s.whatsapp_number ?? null,
+        email: s.shop_email ?? null,
+      }));
 
     return {
       products: (data.algorithm ?? []).map((p) => toCard(p, site)),
       trending: (data.trending ?? []).map((p) => toCard(p, site)),
       premium: (data.premium ?? []).map((p) => toCard(p, site)),
       fresh: (data.fresh ?? []).map((p) => toCard(p, site)),
+      shops,
     };
   } catch (e) {
     console.error("Failed to load home feed", e);
@@ -84,6 +118,7 @@ export default async function Home() {
       trendingProducts={feed.trending}
       premiumProducts={feed.premium}
       freshProducts={feed.fresh}
+      trendingShops={feed.shops}
     />
   );
 }
