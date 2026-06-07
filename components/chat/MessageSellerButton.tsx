@@ -12,9 +12,10 @@ type Props = {
   shopId?: string;
   productId?: string;
   className?: string;
+  compact?: boolean;
 };
 
-export default function MessageSellerButton({ sellerId, shopId, productId, className = "" }: Props) {
+export default function MessageSellerButton({ sellerId, shopId, productId, className = "", compact = false }: Props) {
   const router = useRouter();
   const session = useAppSession();
   const [loading, setLoading] = useState(false);
@@ -68,8 +69,8 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
             disabled={loading}
             className={`dm-focus inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 disabled:opacity-50 ${className}`}
           >
-            <MaterialSymbol name="chat" className="!text-sm" />
-            {loading ? "Starting..." : "Message seller"}
+            <MaterialSymbol name="chat" className="!text-sm shrink-0" />
+            <span className={compact ? "sr-only" : ""}>{loading ? "Starting…" : "Message seller"}</span>
           </button>
         )}
       </TradeDisclaimer>

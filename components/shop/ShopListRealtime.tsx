@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ShopCard from "@/components/shopcard";
 import type { Shop } from "@/lib/api/shops";
-import { browseShopGridForSidebar, shopHasProductCategory } from "@/lib/browseCategories";
+import { browseShopGridClass, shopHasProductCategory } from "@/lib/browseCategories";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
 function locationDisplay(loc: unknown): string {
@@ -87,7 +87,7 @@ export default function ShopListRealtime({
     return list;
   }, [activeShops, productCategoryFilter, searchQuery, shopProductCategories]);
 
-  const grid = gridClassName ?? browseShopGridForSidebar(true);
+  const grid = gridClassName ?? browseShopGridClass;
 
   if (activeShops.length === 0) {
     return (
@@ -131,6 +131,12 @@ export default function ShopListRealtime({
             tagline: shop.description ?? "",
             verified: shop.is_active ?? true,
             logoUrl: shop.logo_url ?? null,
+            shopType: shop.shop_type ?? null,
+            viewCount: shop.view_count ?? null,
+            whatsappNumber: shop.whatsapp_number ?? null,
+            email: shop.shop_email ?? null,
+            rating: shop.trust_score != null ? Math.min(5, shop.trust_score / 20) : null,
+            reviewCount: null,
           }}
         />
       ))}

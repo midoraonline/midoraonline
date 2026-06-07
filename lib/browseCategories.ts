@@ -59,20 +59,8 @@ export function collectCategoriesFromShopsAndProducts(
   return Array.from(set);
 }
 
-export function browseShopGridForSidebar(sidebarCollapsed: boolean): string {
-  return sidebarCollapsed
-    ? "grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-3 lg:gap-4"
-    : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-3 lg:gap-4";
-}
-
-export function browseProductGridForSidebar(sidebarCollapsed: boolean): string {
-  return sidebarCollapsed
-    ? "grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 lg:gap-4"
-    : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 lg:gap-4";
-}
+export const browseProductGridClass =
+  "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5";
 
 export const browseShopGridClass =
-  "grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 md:gap-3 lg:grid-cols-3 lg:gap-4";
-
-export const browseProductGridClass =
-  "grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 md:gap-3 lg:grid-cols-4 lg:gap-4";
+  "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-5";

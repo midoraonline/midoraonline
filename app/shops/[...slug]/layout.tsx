@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import { Mail, MapPin } from "lucide-react";
 import ShopHeader from "@/components/shop/ShopHeader";
-import ShopFooter from "@/components/shop/ShopFooter";
 import ShopPageEffects from "@/components/shop/ShopPageEffects";
 import ShopChatWidget from "@/components/shopChatWidget";
 import { locationDisplay } from "@/components/shop/shopUtils";
@@ -89,15 +91,37 @@ export default async function ShopLayout({
     !isEditRoute && !isAnalyticsRoute ? await listShopProducts(shop.id) : [];
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       {!skipShopViewPing ? <ShopPageEffects shopId={shop.id} /> : null}
+      <div className="border-b border-border bg-surface/80">
+        <div className="dm-container flex h-9 items-center justify-center sm:justify-between">
+          <div className="hidden items-center gap-4 text-xs text-muted sm:flex">
+            <a
+              href="mailto:midoraonline@gmail.com"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
+              <Mail className="size-3.5 text-accent" />
+              midoraonline@gmail.com
+            </a>
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="size-3.5 text-accent" />
+              Kampala, Uganda
+            </span>
+          </div>
+          <div className="text-xs text-muted">
+            Rent a shop for{" "}
+            <span className="font-semibold text-foreground">5,000 UGX/month</span>
+          </div>
+        </div>
+      </div>
+      <Navbar />
       <ShopHeader shop={shop} products={heroProducts} />
       <main className="flex-1">
-        <div className="dm-container pt-3 pb-5 sm:pt-5 sm:pb-8 lg:pt-6 lg:pb-10">
+        <div className="dm-container pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12">
           {children}
         </div>
       </main>
-      <ShopFooter shop={shop} />
+      <Footer />
       <ShopChatWidget shopId={shop.id} shopName={shop.name} />
     </div>
   );

@@ -5,6 +5,7 @@ import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductWhatsAppButton from "@/components/product/ProductWhatsAppButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
+import StarRating from "@/components/StarRating";
 
 export type ProductCardData = {
   id: string;
@@ -88,77 +89,87 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
   return (
     <article className="dm-card dm-card-hover flex flex-col overflow-hidden">
+      {/* Image area */}
       <Link href={productHref} className="dm-focus group block outline-none">
-        <div className="relative aspect-square w-full bg-foreground/[0.04] sm:aspect-[4/3]">
+        <div className="relative aspect-square w-full bg-surface-subtle sm:aspect-[4/3]">
           {product.imageUrl ? (
             <Image
               src={product.imageUrl}
               alt={product.title}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={unopt}
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center text-sm text-muted">
-              No image
+              <div className="flex flex-col items-center gap-2">
+                <MaterialSymbol name="image" className="!text-2xl text-muted/40" />
+                <span className="text-xs">No image</span>
+              </div>
             </div>
           )}
-          {isBoosted ? (
-            <div className="absolute left-1.5 top-1.5 z-[6] inline-flex items-center gap-0.5 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm leading-none">
-              <MaterialSymbol name="bolt" className="!text-[11px] leading-none" />
-              Boosted
-            </div>
-          ) : null}
 
-          {freshness ? (
-            <div className="absolute right-1.5 top-1.5 z-[6] inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm leading-none">
-              {freshness}
+          {/* Badges */}
+          <div className="absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {isBoosted && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                  <MaterialSymbol name="bolt" className="!text-[11px]" />
+                  Boosted
+                </span>
+              )}
+              {freshness && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-black/65 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+                  {freshness}
+                </span>
+              )}
             </div>
-          ) : null}
+          </div>
 
-          {viewCount !== null ? (
-            <div className="absolute bottom-1.5 right-1.5 z-[6] inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm leading-none">
-              <MaterialSymbol name="visibility" className="!text-[11px] leading-none" />
-              {viewCount}
+          {viewCount !== null && (
+            <div className="absolute bottom-2 right-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+              <MaterialSymbol name="visibility" className="!text-[11px]" />
+              {viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}
             </div>
-          ) : null}
+          )}
 
+          {/* Hover overlay */}
           {!inShop ? (
             <div
-              className="pointer-events-none absolute inset-0 z-[5] flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
+              className="pointer-events-none absolute inset-0 z-[5] flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/35 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
               aria-hidden
             >
-              <div className="space-y-1 px-3 pb-3">
-                <p className="text-xs font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              <div className="space-y-1.5 px-4 pb-4">
+                <p className="text-sm font-semibold text-white drop-shadow-md">
                   {product.title}
                 </p>
-                <p className="text-[11px] text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                <p className="text-xs text-white/85">
                   {product.shop.name}
-                  {product.shop.verified ? " ✓" : ""}
+                  {product.shop.verified ? " · Verified" : ""}
                 </p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {isAvailable ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/70 px-1.5 py-0.5 text-[9px] font-medium text-white leading-none">
-                      <span className="size-1.5 rounded-full bg-white" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/85 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      <span className="size-1.5 rounded-full bg-white animate-pulse" />
                       Available
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-foreground/40 px-1.5 py-0.5 text-[9px] font-medium text-white/80 leading-none">
+                    <span className="inline-flex items-center rounded-full bg-foreground/50 px-2 py-0.5 text-[10px] font-medium text-white/80">
                       Unavailable
                     </span>
                   )}
-                  {product.location_name ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-medium text-white leading-none">
-                      <MaterialSymbol name="location_on" className="!text-[9px] leading-none" />
+                  {product.location_name && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                      <MaterialSymbol name="location_on" className="!text-[9px]" />
                       {product.location_name}
                     </span>
-                  ) : null}
-                  {trustScore !== null && trustScore > 0 ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-accent/60 px-1.5 py-0.5 text-[9px] font-medium text-white leading-none">
+                  )}
+                  {trustScore !== null && trustScore > 0 && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-accent/80 px-2 py-0.5 text-[10px] font-semibold text-white">
                       ★ {trustScore.toFixed(1)}
                     </span>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
@@ -166,10 +177,10 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
           {inShop && desc ? (
             <div
-              className="pointer-events-none absolute inset-0 z-[6] flex items-end bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
+              className="pointer-events-none absolute inset-0 z-[6] flex items-end bg-gradient-to-t from-black/80 via-black/45 to-transparent opacity-0 transition-opacity duration-300 ease-out [@media(hover:hover)]:group-hover:opacity-100"
               aria-hidden
             >
-              <p className="line-clamp-5 max-h-[48%] overflow-hidden px-3 pb-3 pt-10 text-left text-xs leading-snug text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] sm:text-[13px] sm:leading-relaxed">
+              <p className="line-clamp-4 max-h-[50%] overflow-hidden px-4 pb-4 pt-10 text-left text-xs leading-relaxed text-white drop-shadow-md sm:text-sm">
                 {desc}
               </p>
             </div>
@@ -177,15 +188,18 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         </div>
       </Link>
 
-      <div className="flex flex-col gap-1.5 px-2 pb-2 pt-1.5">
+      {/* Card body */}
+      <div className="flex flex-col gap-2 px-3 pb-3 pt-2.5">
         <Link href={productHref} className="dm-focus block outline-none">
-          <p className="line-clamp-1 text-xs font-semibold tracking-tight sm:text-sm">{product.title}</p>
+          <p className="line-clamp-1 text-sm font-semibold tracking-tight text-foreground">
+            {product.title}
+          </p>
         </Link>
 
         <div className="flex items-center justify-between gap-2">
           <Link
             href={productHref}
-            className="dm-focus min-w-0 truncate text-xs font-semibold tabular-nums text-accent"
+            className="dm-focus min-w-0 truncate text-sm font-bold tabular-nums text-accent"
           >
             {formatUGX(product.priceUGX)}
           </Link>
@@ -199,23 +213,54 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           />
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Rating */}
+        <div>
+          {product.rating != null && product.rating > 0 ? (
+            <StarRating rating={product.rating} size="xs" />
+          ) : (
+            <StarRating rating={0} size="xs" placeholder />
+          )}
+        </div>
+
+        {/* Mobile: both buttons as equal-size square icons */}
+        <div className="flex items-center gap-2 pt-0.5 sm:hidden">
           {product.sellerId && (
             <MessageSellerButton
               sellerId={product.sellerId}
               shopId={product.shop.id}
               productId={product.id}
-              className="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-[10px]"
+              compact
+              className={`size-10 shrink-0 rounded-xl p-0 ${!waHref ? "flex-1 size-auto py-2 px-3" : ""}`}
             />
           )}
-          {waHref ? (
+          {waHref && (
+            <ProductWhatsAppButton
+              waHref={waHref}
+              productId={product.id}
+              standalone={!product.sellerId}
+              className={product.sellerId ? "size-10 shrink-0 rounded-xl p-0" : "w-full rounded-xl py-2"}
+            />
+          )}
+        </div>
+
+        {/* sm+: labeled message button + compact WhatsApp */}
+        <div className="hidden items-center gap-1.5 pt-0.5 sm:flex">
+          {product.sellerId && (
+            <MessageSellerButton
+              sellerId={product.sellerId}
+              shopId={product.shop.id}
+              productId={product.id}
+              className="min-w-0 flex-1 rounded-lg bg-surface-subtle px-2.5 py-1.5 text-[11px] font-medium text-foreground/80 shadow-sm ring-1 ring-inset ring-border hover:bg-border/40"
+            />
+          )}
+          {waHref && (
             <ProductWhatsAppButton
               waHref={waHref}
               productId={product.id}
               standalone={!product.sellerId}
               className={product.sellerId ? "shrink-0" : "w-full"}
             />
-          ) : null}
+          )}
         </div>
       </div>
     </article>

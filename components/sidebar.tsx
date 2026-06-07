@@ -19,10 +19,10 @@ export default function Sidebar({
 
   return (
     <aside className="dm-card p-3">
-      <p className="px-3 py-2 text-sm font-semibold text-foreground/90">
+      <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/50">
         {title}
       </p>
-      <nav className="mt-1 flex flex-col gap-1" aria-label={title}>
+      <nav className="mt-1 flex flex-col gap-0.5" aria-label={title}>
         {items.map((item) => {
           const active =
             item.href === "/"
@@ -33,10 +33,10 @@ export default function Sidebar({
               key={item.href}
               href={item.href}
               className={[
-                "rounded-2xl px-3 py-2 text-sm font-medium dm-focus transition-colors",
+                "rounded-lg px-3 py-2 text-sm font-medium dm-focus transition-colors",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground/80 hover:bg-primary/5",
+                  ? "bg-accent/10 text-accent font-semibold"
+                  : "text-foreground/70 hover:bg-surface-subtle hover:text-foreground",
               ].join(" ")}
             >
               {item.label}

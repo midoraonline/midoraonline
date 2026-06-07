@@ -2,23 +2,51 @@
 
 :root {
   color-scheme: light;
-  --primary: #0A2540;
-  --primary-foreground: #f9f9f8;
-  --accent: #E67E22;
-  --secondary: #f67720;
-  --background: #f1f4f8;
-  --surface: #ffffff;
-  --foreground: #2a3331;
-  --muted: #757779;
-  --border: rgba(102, 121, 143, 0.14);
-  --ring: rgba(102, 121, 143, 0.22);
-  --shadow: 0 4px 20px rgba(102, 121, 143, 0.06);
-  --shadow-sm: 0 1px 2px rgba(102, 121, 143, 0.05);
-  --radius: 0.875rem;
-  --radius-inner: 0.625rem;
-  /* Shop detail: same safe-area value for fixed bar + hero offset */
+
+  /* ── Core palette ─────────────────────────────────────────── */
+  --primary: #0F172A;
+  --primary-foreground: #FFFFFF;
+  --accent: #D4653C;
+  --accent-hover: #B85530;
+  --secondary: #1E293B;
+  --secondary-foreground: #F8FAFC;
+
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --surface-subtle: #F1F5F9;
+
+  --foreground: #1E293B;
+  --foreground-muted: #475569;
+  --muted: #64748B;
+
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --ring: #D4653C;
+
+  /* ── Semantic colors ────────────────────────────────────── */
+  --success: #059669;
+  --success-subtle: #ECFDF5;
+  --warning: #D97706;
+  --warning-subtle: #FFFBEB;
+  --error: #DC2626;
+  --error-subtle: #FEF2F2;
+  --info: #2563EB;
+  --info-subtle: #EFF6FF;
+
+  /* ── Shadows (intentional elevation hierarchy) ──────────── */
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 1px 0 rgb(15 23 42 / 0.02);
+  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.06), 0 2px 4px -2px rgb(15 23 42 / 0.04);
+  --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.07), 0 4px 6px -4px rgb(15 23 42 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.04);
+  --shadow-glass: 0 12px 40px -12px rgb(15 23 42 / 0.15);
+
+  --radius: 0.75rem;
+  --radius-inner: 0.5rem;
+  --radius-sm: 0.5rem;
+
+  /* ── Shop detail safe-area ──────────────────────────────── */
   --shop-safe-top: env(safe-area-inset-top, 0px);
-  /* Breathing room so the rounded bar floats inside the hero */
   --shop-header-float-y: 0.5rem;
 }
 
@@ -43,26 +71,42 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-display {
   font-family: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
 }
 
+/* ── Scrollbar styling ────────────────────────────────────── */
 .home-category-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(102, 121, 143, 0.35) transparent;
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
 }
 
 .home-category-scroll::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .home-category-scroll::-webkit-scrollbar-thumb {
-  background: rgba(102, 121, 143, 0.35);
+  background: rgba(100, 116, 139, 0.3);
   border-radius: 999px;
 }
 
+/* Hide scrollbars completely — including on hover (macOS overlay scrollbars) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* ── Material Symbols ─────────────────────────────────────── */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined", sans-serif;
   font-weight: normal;
@@ -75,12 +119,13 @@ body {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
+/* ── Reveal animations ────────────────────────────────────── */
 .home-reveal {
   opacity: 0;
-  transform: translateY(1.15rem);
+  transform: translateY(1rem);
   transition:
-    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .home-reveal--in {
@@ -89,7 +134,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .home-reveal,
   .home-reveal--in {
     opacity: 1 !important;
@@ -98,38 +142,66 @@ body {
   }
 }
 
+/* ── Base layer ───────────────────────────────────────────── */
 @layer base {
   * {
     border-color: var(--border);
   }
 
   ::selection {
-    background: rgba(102, 121, 143, 0.2);
-    color: var(--foreground);
+    background: rgba(212, 101, 60, 0.15);
+    color: var(--primary);
+  }
+
+  ::-moz-selection {
+    background: rgba(212, 101, 60, 0.15);
+    color: var(--primary);
   }
 }
 
+/* ── Component utilities ──────────────────────────────────── */
 @layer components {
+
+  /* Container */
   .dm-container {
-    @apply mx-auto w-full max-w-none px-3 sm:px-5 lg:px-8;
+    @apply mx-auto w-full max-w-none px-4 sm:px-6 lg:px-8 xl:px-12;
   }
 
-  /* Fixed shop shell: safe area + vertical inset so the bar can float */
-  .shop-header-fixed {
-    padding-top: calc(var(--shop-safe-top) + var(--shop-header-float-y));
-    padding-bottom: var(--shop-header-float-y);
+  /* ── Cards (solid, elevated surfaces) ──────────────────── */
+  .dm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
   }
 
+  /* Glass bar — reserved for navbars and floating headers */
+  .dm-glass-bar {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: calc(var(--radius) - 2px);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* Shop-specific glass bars */
   .shop-header-bar {
-    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.18)] backdrop-blur-2xl backdrop-saturate-150;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    border-radius: calc(var(--radius) - 2px);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    box-shadow: var(--shadow-glass);
   }
 
-  /* One continuous glass surface for shop hero (no page-bg strip between bar and body) */
   .shop-hero-panel {
-    @apply border-b border-foreground/[0.06] bg-surface/55 backdrop-blur-2xl backdrop-saturate-150;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
   }
 
-  /* Bar heights match ShopHeader row: h-14 (3.5rem) / sm:h-16 (4rem) */
   .shop-hero-section {
     padding-top: calc(var(--shop-safe-top) + var(--shop-header-float-y) + 3.5rem + var(--shop-header-float-y));
   }
@@ -140,70 +212,203 @@ body {
     }
   }
 
-  .dm-card {
-    @apply rounded-3xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.14)] backdrop-blur-2xl backdrop-saturate-150;
+  .shop-header-fixed {
+    padding-top: calc(var(--shop-safe-top) + var(--shop-header-float-y));
+    padding-bottom: var(--shop-header-float-y);
   }
 
-  .dm-glass-bar {
-    @apply rounded-2xl border border-foreground/[0.06] bg-surface/55 shadow-[0_12px_40px_-12px_rgba(42,_51,_49,_0.18)] backdrop-blur-2xl backdrop-saturate-150;
-  }
-
+  /* ── Card hover ────────────────────────────────────────── */
   .dm-card-hover {
-    transition-property: border-color, transform, box-shadow;
-    transition-duration: 200ms;
-    transition-timing-function: ease-out;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
 
-  .dm-card-hover:hover {
-    @apply border-foreground/[0.1] shadow-[0_18px_50px_-14px_rgba(42,_51,_49,_0.2)];
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) {
     .dm-card-hover:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border-strong);
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .dm-card-hover {
+      transition: none;
+    }
+    .dm-card-hover:hover {
+      transform: none;
+    }
+  }
+
+  /* ── Inputs ──────────────────────────────────────────────── */
   .dm-input {
-    @apply w-full min-h-11 rounded-2xl border-0 bg-foreground/[0.05] px-4 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
-    transition-property: box-shadow, background-color;
+    @apply w-full min-h-[2.75rem] rounded-xl border-0 px-4 text-sm text-foreground outline-none;
+    background: var(--surface-subtle);
+    box-shadow: inset 0 0 0 1px var(--border);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .dm-input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .dm-input:focus-visible {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
   }
 
   .dm-textarea {
-    @apply w-full min-h-32 rounded-2xl border-0 bg-foreground/[0.05] px-4 py-3 text-sm text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
-    transition-property: box-shadow, background-color;
+    @apply w-full min-h-[8rem] rounded-xl border-0 px-4 py-3 text-sm text-foreground outline-none resize-none;
+    background: var(--surface-subtle);
+    box-shadow: inset 0 0 0 1px var(--border);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .dm-textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .dm-textarea:focus-visible {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
   }
 
   .dm-input-xs {
-    @apply w-full min-h-9 rounded-2xl border-0 bg-foreground/[0.05] px-3 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
-    transition-property: box-shadow, background-color;
+    @apply w-full min-h-[2.25rem] rounded-xl border-0 px-3 text-xs text-foreground outline-none;
+    background: var(--surface-subtle);
+    box-shadow: inset 0 0 0 1px var(--border);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .dm-input-xs::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .dm-input-xs:focus-visible {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
   }
 
   .dm-textarea-xs {
-    @apply w-full min-h-[100px] resize-none rounded-2xl border-0 bg-foreground/[0.05] px-3 py-2 text-xs text-foreground ring-1 ring-inset ring-foreground/[0.08] outline-none placeholder:text-muted/70 focus-visible:bg-surface/80 focus-visible:ring-2 focus-visible:ring-primary/30;
-    transition-property: box-shadow, background-color;
+    @apply w-full min-h-[100px] resize-none rounded-xl border-0 px-3 py-2 text-xs text-foreground outline-none;
+    background: var(--surface-subtle);
+    box-shadow: inset 0 0 0 1px var(--border);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
+  .dm-textarea-xs::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .dm-textarea-xs:focus-visible {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+  }
+
+  /* ── Focus ring utility ────────────────────────────────── */
   .dm-focus {
-    @apply focus:outline-none;
+    outline: none;
   }
 
   .dm-focus:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
+    border-radius: calc(var(--radius-inner));
   }
 
+  /* ── Pills & badges ──────────────────────────────────────── */
   .dm-pill {
     @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium;
   }
 
+  /* ── Links ───────────────────────────────────────────────── */
   .dm-link {
     color: var(--accent);
-    text-underline-offset: 2px;
+    text-underline-offset: 3px;
+    transition: color 0.15s ease;
   }
 
   .dm-link:hover {
-    color: var(--primary);
+    color: var(--accent-hover);
     text-decoration: underline;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .dm-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all;
+  }
+
+  .dm-btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 1px 2px 0 rgb(212 101 60 / 0.25), 0 0 0 1px rgb(212 101 60 / 0.15);
+  }
+
+  .dm-btn-primary:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 4px 12px -2px rgb(212 101 60 / 0.3), 0 0 0 1px rgb(212 101 60 / 0.2);
+    transform: translateY(-1px);
+  }
+
+  .dm-btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgb(212 101 60 / 0.2);
+  }
+
+  .dm-btn-secondary {
+    background: var(--surface);
+    color: var(--foreground);
+    box-shadow: inset 0 0 0 1px var(--border), var(--shadow-sm);
+  }
+
+  .dm-btn-secondary:hover {
+    background: var(--surface-subtle);
+    box-shadow: inset 0 0 0 1px var(--border-strong), var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .dm-btn-ghost {
+    background: transparent;
+    color: var(--foreground-muted);
+  }
+
+  .dm-btn-ghost:hover {
+    background: var(--surface-subtle);
+    color: var(--foreground);
+  }
+
+  .dm-btn-sm {
+    @apply px-4 py-2 text-xs;
+  }
+
+  /* ── Section styles ──────────────────────────────────────── */
+  .dm-section {
+    @apply py-12 sm:py-16 lg:py-20;
+  }
+
+  .dm-section-header {
+    @apply mb-8 sm:mb-10 lg:mb-12;
+  }
+
+  /* ── Divider ─────────────────────────────────────────────── */
+  .dm-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* ── Skeleton loading ────────────────────────────────────── */
+  .dm-skeleton {
+    background: linear-gradient(90deg, var(--surface-subtle) 25%, var(--border) 50%, var(--surface-subtle) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-inner);
+  }
+
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 }
