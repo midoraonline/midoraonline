@@ -38,22 +38,15 @@ export default function MerchantShopsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            Merchant
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            My shops
-          </h1>
-        </div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted">All your shops in one place.</p>
         <Link
           href="/merchant/new"
-          className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-95"
+          className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90"
         >
           + New shop
         </Link>
-      </header>
+      </div>
 
       {error ? (
         <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">

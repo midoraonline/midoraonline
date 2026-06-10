@@ -45,6 +45,18 @@ function getBaseUrl(): string {
 function resolveUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
   const prefix = path.startsWith("/") ? "" : "/";
+
+  // In the browser during local dev, route through the Next.js proxy so:
+  //  1. No CORS error (browser talks to localhost, not the production domain)
+  //  2. Set-Cookie headers are rewritten to work on localhost
+  if (
+    typeof window !== "undefined" &&
+    process.env.NODE_ENV === "development" &&
+    path.startsWith("/api/v1/")
+  ) {
+    return `/api/dev-proxy${path}`;
+  }
+
   return `${getBaseUrl()}${prefix}${path}`;
 }
 

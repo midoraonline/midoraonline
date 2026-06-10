@@ -52,8 +52,8 @@ export default function MerchantLeadsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Customer Leads</h1>
-        <p className="mt-1 text-sm text-muted">Track inquiries from customers across your shops.</p>
+        
+        <p className="text-sm text-muted">Track inquiries from customers across your shops.</p>
       </div>
 
       {/* Shop selector */}
