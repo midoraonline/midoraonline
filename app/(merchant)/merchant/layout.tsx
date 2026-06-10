@@ -13,7 +13,6 @@ const NAV: DashboardNavItem[] = [
 ];
 
 const SECONDARY: DashboardNavItem[] = [
-  { href: "/merchant/new", label: "Open a new shop", icon: <IconPlus /> },
   { href: "/merchant/settings", label: "Settings", icon: <IconSettings /> },
 ];
 

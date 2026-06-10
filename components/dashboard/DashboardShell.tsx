@@ -44,14 +44,20 @@ const SCREEN_NAMES: Record<string, string> = {
   "/merchant/orders":        "Orders",
   "/merchant/new":           "Open a Shop",
   "/merchant/settings":      "Settings",
+  // customer
+  "/customer":               "Overview",
+  "/customer/profile":       "My Profile",
+  "/customer/orders":        "My Orders",
+  "/customer/saved":         "Saved Shops",
+  "/customer/settings":      "Settings",
 };
 
 function resolveScreenName(pathname: string): string {
   if (SCREEN_NAMES[pathname]) return SCREEN_NAMES[pathname];
-  // shop sub-pages
+  // merchant shop sub-pages
   if (pathname.includes("/analytics"))    return "Analytics";
   if (pathname.includes("/catalog"))      return "Catalog";
-  if (pathname.includes("/settings"))     return "Shop Settings";
+  if (pathname.startsWith("/merchant/shops/") && pathname.includes("/settings")) return "Shop Settings";
   if (pathname.includes("/verification")) return "Verification";
   if (pathname.startsWith("/merchant/shops/")) return "Shop Dashboard";
   return "Dashboard";

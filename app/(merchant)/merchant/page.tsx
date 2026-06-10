@@ -11,6 +11,7 @@ import {
 import { apiShops } from "@/lib/api";
 import type { MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import { useAppSession } from "@/lib/state";
 
 const PALETTE = ["#4a6767", "#66798f", "#d49b63", "#6a9379", "#8b6f9f", "#25D366"];
 const CARTESIAN_STROKE = "rgba(102, 121, 143, 0.18)";
@@ -44,6 +45,8 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
 }
 
 export default function MerchantOverviewPage() {
+  const session = useAppSession();
+  const displayName = session.user?.full_name?.trim().split(" ")[0] || session.user?.email?.trim() || "there";
   const [shops, setShops] = useState<Shop[]>([]);
   const [stats, setStats] = useState<MerchantStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,7 +120,7 @@ export default function MerchantOverviewPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
-            Welcome back 👋
+            Welcome back, {displayName}
           </h2>
           <p className="mt-1 text-sm text-muted">Here's how your shops are performing.</p>
         </div>
@@ -281,7 +284,7 @@ export default function MerchantOverviewPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">{s.name}</p>
-                        <p className="truncate text-xs text-muted">/{s.slug}</p>
+                        <p className="truncate text-xs text-muted">{s.slug}</p>
                       </div>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                         s.is_active ? "bg-emerald-500/15 text-emerald-700" : "bg-amber-500/15 text-amber-700"

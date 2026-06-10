@@ -63,7 +63,7 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
             {loading ? "Loading…" : shop?.name || "Unknown shop"}
           </h1>
           {shop?.slug ? (
-            <p className="mt-0.5 text-xs text-muted">/{shop.slug}</p>
+            <p className="mt-0.5 text-xs text-muted">{shop.slug}</p>
           ) : null}
         </div>
         {shop ? (
