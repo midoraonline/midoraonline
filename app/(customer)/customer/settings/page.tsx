@@ -216,7 +216,7 @@ function AccountInfoSection() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function CustomerSettingsPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="space-y-5">
       <PasswordSection />
       <AccountInfoSection />
     </div>

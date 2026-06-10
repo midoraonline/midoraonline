@@ -345,7 +345,7 @@ function AccountInfoSection() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MerchantSettingsPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="space-y-5">
       <ProfileSection />
       <PasswordSection />
       <AccountInfoSection />

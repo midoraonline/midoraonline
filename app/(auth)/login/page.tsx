@@ -109,15 +109,15 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <div className="space-y-1.5">
+    <div className="w-full space-y-4">
+      <div className="space-y-1.5 text-center">
         <h1 className="font-display text-2xl font-bold tracking-tight">Welcome back</h1>
         <p className="text-sm leading-relaxed text-muted">
           Sign in to your Midora Online account
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <button
           type="button"
           disabled={googleLoading || loading}
@@ -140,7 +140,7 @@ function LoginPageInner() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1.5">
           <label htmlFor="login-email" className="text-sm font-medium text-foreground/80">
             Email

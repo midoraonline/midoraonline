@@ -56,7 +56,7 @@ export default function CustomerProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="space-y-5">
       {/* Avatar + identity */}
       <section className="dm-card p-5 sm:p-6">
         <div className="flex items-center gap-4">
