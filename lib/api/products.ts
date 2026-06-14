@@ -32,6 +32,22 @@ export type Product = {
   messages?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
+  boosted?: boolean;
+  ai_seo_tags?: string | null;
+  ai_generated_desc?: boolean | null;
+  shop?: {
+    id: string;
+    name: string;
+    slug: string | null;
+    logo_url?: string | null;
+    owner_id?: string | null;
+    whatsapp_number?: string | null;
+    is_active: boolean;
+    category?: string | null;
+    trust_score: number;
+    available_now: boolean;
+    location?: string | null;
+  } | null;
 };
 
 export type Paginated<T> = {
@@ -235,9 +251,10 @@ export function repostProduct(productId: string, token?: string | null) {
   });
 }
 
-export function getAlgorithmFeed(opts?: { limit?: number; token?: string }) {
+export function getAlgorithmFeed(opts?: { page?: number; limit?: number; token?: string }) {
   const limit = opts?.limit ?? 20;
-  return apiFetch<Product[]>(`/api/v1/feed/algorithm?limit=${limit}`, {
+  const page = opts?.page ?? 1;
+  return apiFetch<Product[]>(`/api/v1/feed/algorithm?page=${page}&limit=${limit}`, {
     ...(opts?.token ? { token: opts.token } : {}),
   });
 }
@@ -314,19 +331,13 @@ export function getSimilarProducts(productId: string, limit = 8) {
   );
 }
 
-export function getHomeFeed(limit?: number, page?: number) {
+export function getHomeFeed(limit?: number, page?: number, token?: string) {
   const params = new URLSearchParams();
   if (limit) params.set("limit", String(limit));
   if (page) params.set("page", String(page));
   const qs = params.toString();
-  return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`);
-}
-
-export function logSearch(query: string, token?: string | null) {
-  return apiFetch<{ status: string }>("/api/v1/feed/search-history", {
-    method: "POST",
-    token,
-    body: { query },
+  return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
+    ...(token ? { token } : {}),
   });
 }
 

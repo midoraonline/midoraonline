@@ -5,19 +5,13 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
-import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
+import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
-import MarqueeCarousel from "@/components/product/MarqueeCarousel";
-import type { ShopCardData } from "@/components/shopcard";
-import ShopMarqueeCarousel from "@/components/shop/ShopMarqueeCarousel";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HomeHeroSlider from "@/components/home/HomeHeroSlider";
-
-function matchesQuery(text: string, q: string): boolean {
-  return text.toLowerCase().includes(q.toLowerCase());
-}
+import { useProductSearch } from "@/lib/hooks/useProductSearch";
 
 function SectionHeader({
   title,
@@ -67,18 +61,10 @@ function EmptyState({ message }: { message: string }) {
 
 type Props = {
   initialProducts: ProductCardData[];
-  trendingProducts: ProductCardData[];
-  premiumProducts: ProductCardData[];
-  freshProducts: ProductCardData[];
-  trendingShops: ShopCardData[];
 };
 
 export default function HomeLanding({
   initialProducts,
-  trendingProducts,
-  premiumProducts,
-  freshProducts,
-  trendingShops,
 }: Props) {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -96,6 +82,13 @@ export default function HomeLanding({
   const q = query.trim();
   const isSearching = q.length > 0;
 
+  const search = useProductSearch({
+    query,
+    category: selectedCategory,
+    enabled: isSearching,
+    limit: 24,
+  });
+
   const categories = useMemo(
     () => collectCategoriesFromProducts(initialProducts),
     [initialProducts],
@@ -104,7 +97,7 @@ export default function HomeLanding({
   const heroImages = useMemo(() => {
     const seen = new Set<string>();
     const imgs: string[] = [];
-    for (const p of [...premiumProducts, ...initialProducts]) {
+    for (const p of initialProducts) {
       if (p.imageUrl && !seen.has(p.imageUrl)) {
         seen.add(p.imageUrl);
         imgs.push(p.imageUrl);
@@ -112,9 +105,10 @@ export default function HomeLanding({
       }
     }
     return imgs;
-  }, [premiumProducts, initialProducts]);
+  }, [initialProducts]);
 
-  const filteredProducts = useMemo(() => {
+  const browseProducts = useMemo(() => {
+    if (isSearching) return [];
     let list = initialProducts;
     if (selectedCategory) {
       list = list.filter(
@@ -123,51 +117,24 @@ export default function HomeLanding({
           catEquals(p.shop.category, selectedCategory),
       );
     }
-    if (!isSearching) return list;
-    return list.filter(
-      (p) =>
-        matchesQuery(p.title, q) ||
-        matchesQuery(p.shop.name, q) ||
-        matchesQuery(p.category ?? "", q) ||
-        matchesQuery(p.shop.category ?? "", q) ||
-        matchesQuery(p.location_name ?? "", q) ||
-        matchesQuery(p.shop.location ?? "", q),
-    );
-  }, [initialProducts, q, isSearching, selectedCategory]);
+    return list;
+  }, [initialProducts, isSearching, selectedCategory]);
 
-  const filteredTrending = useMemo(() => {
-    if (!selectedCategory) return trendingProducts;
-    return trendingProducts.filter(
-      (p) =>
-        catEquals(p.category, selectedCategory) ||
-        catEquals(p.shop.category, selectedCategory),
-    );
-  }, [trendingProducts, selectedCategory]);
 
-  const filteredPremium = useMemo(() => {
-    if (!selectedCategory) return premiumProducts;
-    return premiumProducts.filter(
-      (p) =>
-        catEquals(p.category, selectedCategory) ||
-        catEquals(p.shop.category, selectedCategory),
-    );
-  }, [premiumProducts, selectedCategory]);
 
+  const displayProducts = isSearching ? search.items : browseProducts;
   const categoryFilterActive = selectedCategory !== null;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
 
   return (
     <div className="w-full">
-      {/* ── Hero Slider ────────────────────────────────────── */}
       {!isSearching && !categoryFilterActive && (
         <div className="mb-5 sm:mb-6 lg:mb-8">
           <HomeHeroSlider bgImages={heroImages} />
         </div>
       )}
 
-      {/* ── Browse Content ─────────────────────────────────── */}
       <div className="w-full">
-        {/* Mobile filter bar + Desktop category pills */}
         <CategoryFilterBar
           categories={categories}
           selected={selectedCategory}
@@ -177,13 +144,12 @@ export default function HomeLanding({
         />
 
         <div className="space-y-8 sm:space-y-10 lg:space-y-12">
-          {/* Search bar */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-out ${
               searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <BrowseSearchBar
+            <ProductSearchBar
               value={query}
               onChange={setQuery}
               placeholder="Search products…"
@@ -191,7 +157,6 @@ export default function HomeLanding({
             />
           </div>
 
-          {/* Filter hint */}
           {(isSearching || categoryFilterActive) && (
             <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 text-sm">
               {isSearching ? (
@@ -204,6 +169,9 @@ export default function HomeLanding({
                         {" "}
                         in <span className="font-semibold text-foreground">{selectedCategory}</span>
                       </span>
+                    ) : null}
+                    {search.mode ? (
+                      <span className="text-muted/80"> · {search.mode} search</span>
                     ) : null}
                   </span>
                   <button
@@ -232,67 +200,7 @@ export default function HomeLanding({
             </div>
           )}
 
-          {/* Premium */}
-          {!isSearching && filteredPremium.length > 0 && (
-            <section className="space-y-4">
-              <SectionHeader
-                title={`Premium Products${filterHint}`}
-                subtitle="Top-performing and boosted listings on Midora."
-                href="/products"
-                linkLabel="See all"
-                icon={<Sparkles className="size-5 text-amber-500" aria-hidden />}
-              />
-              <MarqueeCarousel items={filteredPremium} speed={50} />
-            </section>
-          )}
 
-          {/* Trending Products */}
-          {!isSearching && filteredTrending.length > 0 && (
-            <section className="space-y-4">
-              <SectionHeader
-                title={`Trending${filterHint}`}
-                subtitle="The products getting the most attention right now."
-                href="/products"
-                linkLabel="See all"
-                icon={<MaterialSymbol name="trending_up" className="!text-2xl text-rose-500" />}
-              />
-              <MarqueeCarousel items={filteredTrending} speed={50} />
-            </section>
-          )}
-
-          {/* Trending Shops */}
-          {!isSearching && !categoryFilterActive && trendingShops.length > 0 && (
-            <section className="space-y-4">
-              <SectionHeader
-                title="Trending Shops"
-                subtitle="The most-visited shops on Midora right now."
-                href="/shops"
-                linkLabel="See all"
-                icon={<MaterialSymbol name="storefront" className="!text-2xl text-violet-500" />}
-              />
-              <ShopMarqueeCarousel items={trendingShops} speed={50} />
-            </section>
-          )}
-
-          {/* Fresh Listings */}
-          {!isSearching && freshProducts.length > 0 && (
-            <section className="space-y-4">
-              <SectionHeader
-                title={`Fresh Listings${filterHint}`}
-                subtitle="Newly added and recently updated products."
-                href="/products"
-                linkLabel="See all"
-                icon={<MaterialSymbol name="new_releases" className="!text-2xl text-emerald-500" />}
-              />
-              <div className={browseProductGridClass}>
-                {freshProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* All Products */}
           <section className="space-y-4">
             <SectionHeader
               title={
@@ -308,7 +216,11 @@ export default function HomeLanding({
               href={isSearching ? undefined : "/products"}
               linkLabel={isSearching ? undefined : "See all"}
             />
-            {filteredProducts.length === 0 ? (
+            {search.loading && isSearching ? (
+              <EmptyState message="Searching…" />
+            ) : search.error && isSearching ? (
+              <EmptyState message={search.error} />
+            ) : displayProducts.length === 0 ? (
               <EmptyState
                 message={
                   isSearching || categoryFilterActive
@@ -319,11 +231,21 @@ export default function HomeLanding({
             ) : (
               <>
                 <div className={browseProductGridClass}>
-                  {filteredProducts.slice(0, isSearching ? undefined : 24).map((p) => (
+                  {(isSearching ? displayProducts : displayProducts.slice(0, 24)).map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
-                {!isSearching && initialProducts.length > 0 && (
+                {isSearching && search.hasMore ? (
+                  <div className="pt-2 text-center">
+                    <Link
+                      href={`/products?q=${encodeURIComponent(q)}`}
+                      className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
+                    >
+                      View all {search.total} results
+                      <ArrowRight className="size-3.5" aria-hidden />
+                    </Link>
+                  </div>
+                ) : !isSearching && initialProducts.length > 0 ? (
                   <div className="pt-2 text-center">
                     <Link
                       href="/products"
@@ -333,12 +255,11 @@ export default function HomeLanding({
                       <ArrowRight className="size-3.5" aria-hidden />
                     </Link>
                   </div>
-                )}
+                ) : null}
               </>
             )}
           </section>
 
-          {/* CTA */}
           {!isSearching && (
             <section className="dm-card relative overflow-hidden p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
               <div className="pointer-events-none absolute inset-0 opacity-[0.03]">

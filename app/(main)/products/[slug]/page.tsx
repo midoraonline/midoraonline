@@ -108,7 +108,7 @@ export default async function ProductDetails({
     redirect(`/products/${canonicalSlug}`);
   }
 
-  const shop = await getShopById(product.shop_id);
+  const shop = product.shop;
 
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
@@ -171,6 +171,11 @@ export default async function ProductDetails({
               <span className="rounded-full bg-foreground/[0.05] px-2.5 py-0.5 text-[10px] font-medium text-muted">
                 {product.item_type === "service" ? "Service" : "Product"}
               </span>
+              {product.boosted && (
+                <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-accent">
+                  Promoted
+                </span>
+              )}
               {product.status === "active" && (
                 <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600">
                   Active
@@ -220,7 +225,6 @@ export default async function ProductDetails({
                     ) : (
                       "Shop on Midora"
                     )}
-                    {shop.view_count != null && ` · ${shop.view_count} views`}
                   </p>
                 </div>
                 <MaterialSymbol name="chevron_right" className="!text-lg shrink-0 text-muted" />
@@ -269,7 +273,11 @@ export default async function ProductDetails({
                 <span className="text-xs text-muted">Seller on Midora</span>
               )}
               <div className="flex items-center gap-2">
-                <ProductLikeButton productId={product.id} />
+                <ProductLikeButton
+                  productId={product.id}
+                  initialLikeCount={product.like_count ?? 0}
+                  initialLiked={product.viewer_liked ?? undefined}
+                />
                 {shop && (
                   <Link
                     href={`/shops/${shop.slug}`}
@@ -357,8 +365,8 @@ export default async function ProductDetails({
           {/* Owner actions */}
           {shop && (
             <ProductOwnerActions
-              shopOwnerId={shop.owner_id}
-              shopSlug={shop.slug}
+              shopOwnerId={shop.owner_id ?? undefined}
+              shopSlug={shop.slug ?? undefined}
               shopId={shop.id}
             />
           )}
