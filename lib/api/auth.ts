@@ -81,6 +81,30 @@ export function verifyEmail(token: string) {
   return apiFetch<VerifyEmailResponse>(`/api/v1/auth/verify-email?${qs}`);
 }
 
+export type UpdateProfileRequest = {
+  full_name?: string;
+  phone_number?: string;
+};
+
+export type ChangePasswordRequest = {
+  current_password: string;
+  new_password: string;
+};
+
+export function updateProfile(body: UpdateProfileRequest) {
+  return apiFetch<MeResponse>("/api/v1/auth/me", {
+    method: "PATCH",
+    body,
+  });
+}
+
+export function changePassword(body: ChangePasswordRequest) {
+  return apiFetch<{ message: string }>("/api/v1/auth/change-password", {
+    method: "POST",
+    body,
+  });
+}
+
 export function getGoogleAuthUrl() {
   return apiFetch<GoogleAuthUrlResponse>("/api/v1/auth/google/url");
 }

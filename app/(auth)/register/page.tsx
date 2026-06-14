@@ -97,15 +97,15 @@ function RegisterPageInner() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <div className="space-y-1.5">
+    <div className="w-full space-y-4">
+      <div className="space-y-1.5 text-center">
         <h1 className="font-display text-2xl font-bold tracking-tight">Create your account</h1>
         <p className="text-sm leading-relaxed text-muted">
           Join Midora Online as a merchant or customer
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <button
           type="button"
           disabled={googleLoading || loading}
@@ -128,7 +128,7 @@ function RegisterPageInner() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1.5">
           <label htmlFor="register-name" className="text-sm font-medium text-foreground/80">
             Full name

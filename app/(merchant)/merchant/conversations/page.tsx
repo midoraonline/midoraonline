@@ -35,8 +35,7 @@ export default function MerchantConversationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Customer Conversations</h1>
-        <p className="mt-1 text-sm text-muted">Messages from buyers interested in your products.</p>
+        <p className="text-sm text-muted">Messages from buyers interested in your products.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">

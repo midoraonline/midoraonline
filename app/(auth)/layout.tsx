@@ -6,10 +6,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-[100dvh] min-h-screen">
       {/* Left Column — Form */}
-      <div className="flex w-full flex-col items-center justify-center px-4 py-8 sm:px-8 lg:w-1/2 lg:px-12 xl:px-16">
+      <div className="flex w-full flex-col items-center justify-center px-4 py-5 sm:px-6 lg:w-1/2 lg:px-8 xl:px-10">
         <Link
           href="/"
-          className="mb-8 self-start sm:mb-10"
+          className="mb-5 self-center sm:mb-6"
         >
           <Image
             src="/logo.png"

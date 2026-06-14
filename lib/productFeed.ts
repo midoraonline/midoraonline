@@ -148,21 +148,21 @@ export async function loadFreshFeed(limit: number = 12): Promise<ProductCardData
 
 export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Record<string, string[]>> {
   const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort();
-  const out: Record<string, string[]> = {};
-  for (const id of uniqueSorted) {
-    const set = new Set<string>();
-    try {
-      const { items } = await apiProducts.listShopProducts(id);
-      for (const p of items ?? []) {
-        if (p.is_published === false) continue;
-        const c = p.category?.trim();
-        if (c) set.add(c);
+  const entries = await Promise.all(
+    uniqueSorted.map(async (id) => {
+      const set = new Set<string>();
+      try {
+        const { items } = await apiProducts.listShopProducts(id);
+        for (const p of items ?? []) {
+          if (p.is_published === false) continue;
+          const c = p.category?.trim();
+          if (c) set.add(c);
+        }
+      } catch {
+        return [id, [] as string[]] as const;
       }
-    } catch {
-      out[id] = [];
-      continue;
-    }
-    out[id] = Array.from(set);
-  }
-  return out;
+      return [id, Array.from(set)] as const;
+    }),
+  );
+  return Object.fromEntries(entries);
 }

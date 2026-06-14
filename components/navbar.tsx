@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { Menu, X, Search } from "lucide-react";
-import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
+import { Menu, X } from "lucide-react";
+import ProductSearchBar from "@/components/browse/ProductSearchBar";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -25,13 +25,13 @@ function isActivePath(pathname: string, href: string) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const session = useAppSession();
   const [unread, setUnread] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const activeHref = useMemo(() => {
     const hit = navItems.find((i) => isActivePath(pathname, i.href));
@@ -92,13 +92,6 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  /* Focus search input when opened */
-  useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchOpen]);
-
   const role = session.user?.user_role ?? null;
   const dashboardHref =
     role === "admin"
@@ -118,6 +111,13 @@ export default function Navbar() {
     pathname.startsWith("/customer/");
 
   const onChatPage = pathname === "/chat";
+
+  function submitNavbarSearch(q?: string) {
+    const term = (q ?? searchQuery).trim();
+    if (!term) return;
+    setSearchOpen(false);
+    router.push(`/products?q=${encodeURIComponent(term)}`);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background">
@@ -162,17 +162,13 @@ export default function Navbar() {
 
           {/* Search */}
           <div className="ml-auto hidden w-full md:block md:max-w-sm lg:max-w-md">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                placeholder="Search products, shops…"
-                className="min-h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none ring-0 transition-[border-color,box-shadow] focus-visible:border-accent/40 focus-visible:ring-2 focus-visible:ring-accent/10"
-                aria-label="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            <ProductSearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onSubmit={submitNavbarSearch}
+              placeholder="Search products…"
+              ariaLabel="Search products"
+            />
           </div>
 
           {/* Right actions */}
@@ -184,7 +180,7 @@ export default function Navbar() {
               className="inline-flex size-9 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
               aria-label="Toggle search"
             >
-              <Search className="size-4" />
+              <MaterialSymbol name="search" className="!text-lg" />
             </button>
 
             {session.isAuthenticated ? (
@@ -270,11 +266,12 @@ export default function Navbar() {
           }`}
         >
           <div className="px-4 py-2">
-            <BrowseSearchBar
+            <ProductSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search products, shops…"
-              ariaLabel="Search"
+              onSubmit={submitNavbarSearch}
+              placeholder="Search products…"
+              ariaLabel="Search products"
             />
           </div>
         </div>

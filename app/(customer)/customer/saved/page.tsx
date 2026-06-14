@@ -35,7 +35,7 @@ function ShopCard({ shop }: { shop: EngagementShop }) {
         )}
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{shop.name}</p>
-          <p className="truncate text-xs text-muted">/{shop.slug}</p>
+          <p className="truncate text-xs text-muted">{shop.slug}</p>
         </div>
         <span
           className={[
@@ -102,18 +102,6 @@ export default function CustomerSavedPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-          Customer
-        </p>
-        <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-          Saved shops
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Shops you follow or liked appear here so you can come back quickly.
-        </p>
-      </header>
-
       {error ? (
         <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
           {error}

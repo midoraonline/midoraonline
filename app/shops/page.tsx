@@ -2,13 +2,20 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
 import ShopsBrowsePage from "@/components/shop/ShopsBrowsePage";
-import { listPublicShopsWithContacts } from "@/lib/api/server";
+import { listPublicShops } from "@/lib/api/server";
 import { loadShopProductCategoryMap } from "@/lib/productFeed";
 import { Mail, MapPin } from "lucide-react";
 
 export default async function ShopListing() {
-  const shops = await listPublicShopsWithContacts();
-  const shopProductCategories = await loadShopProductCategoryMap(shops.map((s) => s.id));
+  let shops: Awaited<ReturnType<typeof listPublicShops>> = [];
+  let shopProductCategories: Record<string, string[]> = {};
+
+  try {
+    shops = await listPublicShops();
+    shopProductCategories = await loadShopProductCategoryMap(shops.map((s) => s.id));
+  } catch (e) {
+    console.error("Failed to load shops browse page", e);
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

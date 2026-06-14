@@ -2,39 +2,72 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
-import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
+import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { apiProducts } from "@/lib/api";
+import { useProductSearch } from "@/lib/hooks/useProductSearch";
 import { productPageSlug } from "@/lib/productUrl";
 import type { HomeFeedProduct } from "@/lib/api/products";
 
-function matchesProductSearch(p: ProductCardData, q: string): boolean {
-  const qq = q.trim().toLowerCase();
-  if (!qq) return true;
-  return (
-    p.title.toLowerCase().includes(qq) ||
-    p.shop.name.toLowerCase().includes(qq) ||
-    (p.category ?? "").toLowerCase().includes(qq) ||
-    (p.shop.category ?? "").toLowerCase().includes(qq)
-  );
-}
-
 export default function ProductsBrowsePage({
   items,
+  initialQuery = "",
 }: {
   items: ProductCardData[];
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(initialQuery);
+  const [searchOpen, setSearchOpen] = useState(initialQuery.length > 0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [allItems, setAllItems] = useState(items);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(items.length >= 72);
+
+  const q = query.trim();
+  const categoryFilterActive = selectedCategory !== null;
+  const isSearching = q.length > 0;
+
+  const search = useProductSearch({
+    query,
+    category: selectedCategory,
+    enabled: isSearching,
+    limit: 20,
+  });
+
+  useEffect(() => {
+    const urlQ = searchParams.get("q")?.trim() ?? "";
+    setQuery((prev) => (urlQ !== prev ? urlQ : prev));
+    if (urlQ) setSearchOpen(true);
+  }, [searchParams]);
+
+  function syncQueryToUrl(nextQuery: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    const trimmed = nextQuery.trim();
+    if (trimmed) {
+      params.set("q", trimmed);
+    } else {
+      params.delete("q");
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
+  }
+
+  function handleQueryChange(next: string) {
+    setQuery(next);
+    syncQueryToUrl(next);
+  }
+
+  function handleSearchSubmit(next: string) {
+    handleQueryChange(next);
+  }
 
   const loadMore = useCallback(async () => {
     setLoadingMore(true);
@@ -42,7 +75,6 @@ export default function ProductsBrowsePage({
       const next = page + 1;
       const data = await apiProducts.getHomeFeed(72, next);
       const existing = new Set(allItems.map((p) => p.id));
-      const site = window.location.origin;
       const nextItems = (data.algorithm ?? [])
         .filter((fp) => !existing.has(fp.id))
         .map(toCardLocal);
@@ -63,21 +95,11 @@ export default function ProductsBrowsePage({
   function handleSearchToggle() {
     if (searchOpen) {
       setSearchOpen(false);
-      setQuery("");
+      handleQueryChange("");
     } else {
       setSearchOpen(true);
     }
   }
-
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length >= 2) {
-      const timer = setTimeout(() => {
-        apiProducts.logSearch(q).catch(() => {});
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [query]);
 
   const categories = useMemo(
     () => collectCategoriesFromProducts(items),
@@ -116,10 +138,8 @@ export default function ProductsBrowsePage({
     };
   }
 
-  const q = query.trim();
-  const categoryFilterActive = selectedCategory !== null;
-
-  const filteredItems = useMemo(() => {
+  const browseItems = useMemo(() => {
+    if (isSearching) return [];
     let list = allItems;
     if (selectedCategory) {
       list = list.filter(
@@ -128,15 +148,14 @@ export default function ProductsBrowsePage({
           catEquals(p.shop.category, selectedCategory),
       );
     }
-    list = list.filter((p) => matchesProductSearch(p, query));
     return list;
-  }, [items, selectedCategory, query]);
+  }, [allItems, selectedCategory, isSearching]);
 
+  const displayItems = isSearching ? search.items : browseItems;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
 
   return (
     <div className="w-full">
-      {/* Category filter bar */}
       <CategoryFilterBar
         categories={categories}
         selected={selectedCategory}
@@ -146,23 +165,23 @@ export default function ProductsBrowsePage({
       />
 
       <div className="space-y-4 sm:space-y-6">
-        {/* Search bar */}
         <div
           className={`overflow-hidden transition-all duration-300 ease-out ${
             searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          <BrowseSearchBar
+          <ProductSearchBar
             value={query}
-            onChange={setQuery}
+            onChange={handleQueryChange}
+            onSubmit={handleSearchSubmit}
             placeholder="Search products…"
             ariaLabel="Search products"
           />
         </div>
 
-        {(q.length > 0 || categoryFilterActive) && (
+        {(isSearching || categoryFilterActive) && (
           <p className="text-sm text-muted">
-            {q.length > 0 ? (
+            {isSearching ? (
               <>
                 Results for <span className="font-semibold text-foreground">&ldquo;{q}&rdquo;</span>
                 {categoryFilterActive ? (
@@ -170,11 +189,14 @@ export default function ProductsBrowsePage({
                     {" "}
                     in <span className="font-semibold text-foreground">{selectedCategory}</span>
                   </span>
-                ) : null}{" "}
-                —{" "}
+                ) : null}
+                {search.mode ? (
+                  <span className="text-muted/80"> · {search.mode} search</span>
+                ) : null}
+                {" · "}
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
+                  onClick={() => handleQueryChange("")}
                   className="font-semibold text-foreground underline-offset-2 hover:underline"
                 >
                   clear search
@@ -201,10 +223,12 @@ export default function ProductsBrowsePage({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-                Latest Listings{filterHint}
+                {isSearching ? "Search results" : `Latest Listings${filterHint}`}
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-muted">
-                Newest products from shops on Midora Online.
+                {isSearching
+                  ? "Semantic matches from shops on Midora Online."
+                  : "Newest products from shops on Midora Online."}
               </p>
             </div>
             <Link
@@ -215,7 +239,7 @@ export default function ProductsBrowsePage({
             </Link>
           </div>
 
-          {items.length === 0 ? (
+          {items.length === 0 && !isSearching ? (
             <div className="dm-card mt-6 p-8 sm:p-10">
               <p className="text-sm leading-relaxed text-muted">
                 No products are available yet. Open a{" "}
@@ -225,22 +249,38 @@ export default function ProductsBrowsePage({
                 to explore storefronts, or check back soon.
               </p>
             </div>
-          ) : filteredItems.length === 0 ? (
+          ) : search.loading && isSearching ? (
+            <div className="dm-card mt-6 p-8 text-sm text-muted">Searching…</div>
+          ) : search.error && isSearching ? (
+            <div className="dm-card mt-6 p-8 text-sm text-muted">{search.error}</div>
+          ) : displayItems.length === 0 ? (
             <div className="dm-card mt-6 p-8 text-sm text-muted">
               No listings match your filters. Try clearing search or category.
             </div>
           ) : (
             <>
               <p className="mb-4 mt-6 text-sm text-muted">
-                {filteredItems.length} listing{filteredItems.length === 1 ? "" : "s"}
-                {q.length > 0 || categoryFilterActive ? " (filtered)" : ""}
+                {isSearching ? search.total : displayItems.length} listing
+                {(isSearching ? search.total : displayItems.length) === 1 ? "" : "s"}
+                {!isSearching && categoryFilterActive ? " (filtered)" : ""}
               </p>
               <div className={browseProductGridClass}>
-                {filteredItems.map((p) => (
+                {displayItems.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
               </div>
-              {!q.length && !categoryFilterActive && hasMore && (
+              {isSearching && search.hasMore ? (
+                <div className="mt-6 text-center">
+                  <button
+                    type="button"
+                    onClick={() => void search.loadMore()}
+                    disabled={search.loadingMore}
+                    className="dm-btn dm-btn-primary inline-flex text-xs"
+                  >
+                    {search.loadingMore ? "Loading..." : "Load more results"}
+                  </button>
+                </div>
+              ) : !isSearching && !categoryFilterActive && hasMore ? (
                 <div className="mt-6 text-center">
                   <button
                     type="button"
@@ -251,7 +291,7 @@ export default function ProductsBrowsePage({
                     {loadingMore ? "Loading..." : "Load more products"}
                   </button>
                 </div>
-              )}
+              ) : null}
             </>
           )}
         </section>
