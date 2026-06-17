@@ -4,7 +4,6 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductWhatsAppButton from "@/components/product/ProductWhatsAppButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
-import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import StarRating from "@/components/StarRating";
 
 export type ProductCardData = {
@@ -222,46 +221,16 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           )}
         </div>
 
-        {/* Mobile: both buttons as equal-size square icons */}
-        <div className="flex items-center gap-2 pt-0.5 sm:hidden">
-          {product.sellerId && (
-            <MessageSellerButton
-              sellerId={product.sellerId}
-              shopId={product.shop.id}
-              productId={product.id}
-              compact
-              className={`size-10 shrink-0 rounded-xl p-0 ${!waHref ? "flex-1 size-auto py-2 px-3" : ""}`}
-            />
-          )}
-          {waHref && (
+        {/* WhatsApp button */}
+        {waHref && (
+          <div className="flex items-center pt-0.5">
             <ProductWhatsAppButton
               waHref={waHref}
               productId={product.id}
-              standalone={!product.sellerId}
-              className={product.sellerId ? "size-10 shrink-0 rounded-xl p-0" : "w-full rounded-xl py-2"}
+              className="w-full rounded-xl py-2"
             />
-          )}
-        </div>
-
-        {/* sm+: labeled message button + compact WhatsApp */}
-        <div className="hidden items-center gap-1.5 pt-0.5 sm:flex">
-          {product.sellerId && (
-            <MessageSellerButton
-              sellerId={product.sellerId}
-              shopId={product.shop.id}
-              productId={product.id}
-              className="min-w-0 flex-1 rounded-lg bg-surface-subtle px-2.5 py-1.5 text-[11px] font-medium text-foreground/80 shadow-sm ring-1 ring-inset ring-border hover:bg-border/40"
-            />
-          )}
-          {waHref && (
-            <ProductWhatsAppButton
-              waHref={waHref}
-              productId={product.id}
-              standalone={!product.sellerId}
-              className={product.sellerId ? "shrink-0" : "w-full"}
-            />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </article>
   );

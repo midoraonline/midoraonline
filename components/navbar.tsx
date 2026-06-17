@@ -10,6 +10,96 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
 
+function ProfileDropdown({ onNavigate }: { onNavigate?: () => void }) {
+  const [ddOpen, setDdOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ddOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setDdOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [ddOpen]);
+
+  const close = () => {
+    setDdOpen(false);
+    onNavigate?.();
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Desktop trigger */}
+      <button
+        type="button"
+        onClick={() => setDdOpen((v) => !v)}
+        aria-expanded={ddOpen}
+        className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04] md:inline-flex dm-focus"
+      >
+        <MaterialSymbol name="person" className="!text-lg" />
+        Profile
+        <MaterialSymbol
+          name="expand_more"
+          className={`!text-base text-muted transition-transform duration-200 ${ddOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* Mobile trigger */}
+      <button
+        type="button"
+        onClick={() => setDdOpen((v) => !v)}
+        aria-expanded={ddOpen}
+        aria-label="Profile"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
+      >
+        <MaterialSymbol name="person" className="!text-lg" />
+      </button>
+
+      {ddOpen && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+          <div className="p-1.5">
+            <Link
+              href="/login"
+              onClick={close}
+              className="flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            >
+              Sign in
+            </Link>
+            <div className="my-1 h-px bg-border" />
+            <Link
+              href="/account"
+              onClick={close}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
+            >
+              <MaterialSymbol name="account_circle" className="!text-base text-muted" />
+              My account
+            </Link>
+            <Link
+              href="/customer/saved"
+              onClick={close}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
+            >
+              <MaterialSymbol name="favorite" className="!text-base text-muted" />
+              Wishlist
+            </Link>
+            <Link
+              href="/customer/orders"
+              onClick={close}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
+            >
+              <MaterialSymbol name="receipt_long" className="!text-base text-muted" />
+              Orders
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/shops", label: "Shops" },
@@ -239,12 +329,7 @@ export default function Navbar() {
             ) : authLoading ? (
               <span className="inline-flex size-9 shrink-0 rounded-full md:hidden" aria-hidden />
             ) : (
-              <Link
-                href="/login"
-                className="hidden rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
-              >
-                Login
-              </Link>
+              <ProfileDropdown onNavigate={() => setOpen(false)} />
             )}
 
             <button
