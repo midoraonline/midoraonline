@@ -67,6 +67,7 @@ export type CreateProductRequest = {
   image_urls?: string[] | string;
   is_published?: boolean;
   location_name?: string;
+  status?: ProductStatus;
 };
 
 function normalizeImageUrlsForApi(value: CreateProductRequest["image_urls"]): string[] | undefined {
@@ -174,10 +175,11 @@ export function createProduct(
   });
 }
 
-export function listShopProducts(shopId: string, opts?: { category?: string; search?: string; token?: string }) {
+export function listShopProducts(shopId: string, opts?: { category?: string; search?: string; status?: string; token?: string }) {
   const params = new URLSearchParams();
   if (opts?.category) params.set("category", opts.category);
   if (opts?.search) params.set("search", opts.search);
+  if (opts?.status) params.set("status", opts.status);
   const qs = params.toString();
   return apiFetch<Paginated<Product>>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/products${qs ? `?${qs}` : ""}`,
