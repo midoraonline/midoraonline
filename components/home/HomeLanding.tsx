@@ -5,6 +5,11 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
+import ProductFilters, {
+  applyFilters,
+  DEFAULT_FILTERS,
+  type FilterState,
+} from "@/components/browse/ProductFilters";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
@@ -69,6 +74,7 @@ export default function HomeLanding({
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
   function handleSearchToggle() {
     if (searchOpen) {
@@ -117,14 +123,24 @@ export default function HomeLanding({
           catEquals(p.shop.category, selectedCategory),
       );
     }
+    list = applyFilters(list, filters);
     return list;
-  }, [initialProducts, isSearching, selectedCategory]);
+  }, [initialProducts, isSearching, selectedCategory, filters]);
 
 
 
-  const displayProducts = isSearching ? search.items : browseProducts;
+            const displayProducts = isSearching ? search.items : browseProducts;
   const categoryFilterActive = selectedCategory !== null;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
+  const anyFiltersActive =
+    categoryFilterActive ||
+    filters.sort !== DEFAULT_FILTERS.sort ||
+    filters.minPrice !== null ||
+    filters.maxPrice !== null ||
+    filters.availableNow ||
+    filters.verifiedOnly ||
+    filters.minRating !== null ||
+    filters.location !== null;
 
   return (
     <div className="w-full">
@@ -143,6 +159,12 @@ export default function HomeLanding({
           onSearchToggle={handleSearchToggle}
         />
 
+        <ProductFilters
+          products={initialProducts}
+          filters={filters}
+          onChange={setFilters}
+        />
+
         <div className="space-y-8 sm:space-y-10 lg:space-y-12">
           <div
             className={`overflow-hidden transition-all duration-300 ease-out ${
@@ -157,7 +179,7 @@ export default function HomeLanding({
             />
           </div>
 
-          {(isSearching || categoryFilterActive) && (
+          {(isSearching || anyFiltersActive) && (
             <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 text-sm">
               {isSearching ? (
                 <>
@@ -185,15 +207,30 @@ export default function HomeLanding({
               ) : (
                 <>
                   <span className="text-muted">
-                    Filtered by{" "}
-                    <span className="font-semibold text-foreground">{selectedCategory}</span>
+                    {categoryFilterActive ? (
+                      <>
+                        Filtered by{" "}
+                        <span className="font-semibold text-foreground">{selectedCategory}</span>
+                        {browseProducts.length > 0 && (
+                          <span className="text-muted/80"> · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-semibold text-foreground">{browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
+                        <span className="text-muted/80"> with filters applied</span>
+                      </>
+                    )}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setFilters(DEFAULT_FILTERS);
+                    }}
                     className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
                   >
-                    Clear
+                    Clear all
                   </button>
                 </>
               )}
@@ -223,8 +260,8 @@ export default function HomeLanding({
             ) : displayProducts.length === 0 ? (
               <EmptyState
                 message={
-                  isSearching || categoryFilterActive
-                    ? "No products match your filters. Try another category or keyword."
+                  anyFiltersActive || isSearching
+                    ? "No products match your filters. Try adjusting your filters or keyword."
                     : "No products yet — check back soon."
                 }
               />
