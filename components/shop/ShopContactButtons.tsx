@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useAppSession } from "@/lib/state";
+import { apiChat, apiShops } from "@/lib/api";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import MessageSellerButton from "@/components/chat/MessageSellerButton";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
-import { apiShops } from "@/lib/api";
 
 type Props = {
   shopId: string;
@@ -13,12 +15,30 @@ type Props = {
 };
 
 export default function ShopContactButtons({ shopId, ownerId, whatsappNumber, waHref }: Props) {
+  const router = useRouter();
+  const session = useAppSession();
+
   const recordWhatsAppClick = () => {
     apiShops.recordShopEvent(shopId, "whatsapp_clicked").catch(() => {});
   };
 
-  const recordMessageClick = () => {
+  const doCreateConversation = async () => {
     apiShops.recordShopEvent(shopId, "messaged").catch(() => {});
+    if (!session.isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    if (!ownerId) return;
+    try {
+      const conv = await apiChat.createConversation({
+        seller_id: ownerId,
+        shop_id: shopId,
+      });
+      if (!conv || "error" in conv) {
+        return;
+      }
+      router.push(`/chat?conversation=${conv.id}`);
+    } catch {}
   };
 
   return (
@@ -47,18 +67,17 @@ export default function ShopContactButtons({ shopId, ownerId, whatsappNumber, wa
         {ownerId && (
           <TradeDisclaimer
             type="message"
-            onConfirm={() => {
-              recordMessageClick();
-            }}
+            onConfirm={doCreateConversation}
           >
             {(open) => (
-              <div className="flex-1" onClick={open}>
-                <MessageSellerButton
-                  sellerId={ownerId}
-                  shopId={shopId}
-                  className="w-full"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={open}
+                className="dm-focus inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
+              >
+                <MaterialSymbol name="chat" className="!text-sm shrink-0" />
+                Message seller
+              </button>
             )}
           </TradeDisclaimer>
         )}
