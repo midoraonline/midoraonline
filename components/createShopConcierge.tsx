@@ -5,6 +5,7 @@ import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
 import CategorySelect from "@/components/CategorySelect";
 import { ImageUpload } from "@/components/image-upload";
+import LocationInput from "@/components/LocationInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
@@ -465,7 +466,13 @@ export default function CreateShopConcierge({
               <input
                 className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
                 value={f.whatsappNumber}
-                onChange={(e) => field("whatsappNumber", e.target.value)}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val.startsWith("0")) {
+                    val = "+256" + val.slice(1);
+                  }
+                  field("whatsappNumber", val);
+                }}
                 placeholder="+256700000000"
               />
             </div>
@@ -474,11 +481,11 @@ export default function CreateShopConcierge({
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Location
               </label>
-              <input
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+              <LocationInput
                 value={f.locationDisplay}
-                onChange={(e) => field("locationDisplay", e.target.value)}
-                placeholder="e.g. Kampala, Uganda"
+                onChange={(v) => field("locationDisplay", v)}
+                placeholder="e.g. Kisasi, Kampala"
+                className="pt-1"
               />
             </div>
             <div className="space-y-1.5">

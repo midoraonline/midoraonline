@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
 import { ImageUpload } from "@/components/image-upload";
+import LocationInput from "@/components/LocationInput";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 
@@ -238,16 +238,21 @@ export default function MerchantShopSettingsPage() {
               <input
                 className="dm-input dm-focus"
                 value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val.startsWith("0")) {
+                    val = "+256" + val.slice(1);
+                  }
+                  setWhatsappNumber(val);
+                }}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">Location</label>
-              <input
-                className="dm-input dm-focus"
+              <LocationInput
                 value={locationDisplay}
-                onChange={(e) => setLocationDisplay(e.target.value)}
-                placeholder="e.g. Kampala, Uganda"
+                onChange={setLocationDisplay}
+                placeholder="e.g. Kisasi, Kampala"
               />
             </div>
           </div>
