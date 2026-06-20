@@ -21,7 +21,7 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
     <DashboardShell
       role="merchant"
       roleLabel="Merchant"
-      requiredRoles={["merchant", "admin"]}
+      requiredRoles={["merchant", "admin", "customer"]}
       navItems={NAV}
       secondaryNavItems={SECONDARY}
       returnHref="/"

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
@@ -23,6 +24,7 @@ export default function ShopActions({
   shopId: string;
 }) {
   const session = useAppSession();
+  const router = useRouter();
   const canManage = canManageShopStorefront(session, shopId);
 
   const [liked, setLiked] = useState(false);
@@ -66,7 +68,7 @@ export default function ShopActions({
         else await apiShops.unlikeShop(shopId);
         setLiked(next);
         await syncEngagement();
-        recordShopEvent(shopId, "messaged").catch(() => {});
+        router.refresh();
       } catch {
         /* keep prior */
       }
@@ -84,7 +86,7 @@ export default function ShopActions({
         else await apiShops.unfollowShop(shopId);
         setFollowed(next);
         await syncEngagement();
-        recordShopEvent(shopId, "messaged").catch(() => {});
+        router.refresh();
       } catch {
         /* keep prior */
       }
@@ -109,7 +111,6 @@ export default function ShopActions({
       setTimeout(() => setShareState("idle"), 2200);
     } catch {
     }
-    recordShopEvent(shopId, "messaged").catch(() => {});
   }
 
   return (
