@@ -4,7 +4,7 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductWhatsAppButton from "@/components/product/ProductWhatsAppButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
-import MessageSellerButton from "@/components/chat/MessageSellerButton";
+import StarRating from "@/components/StarRating";
 
 export type ProductCardData = {
   id: string;
@@ -240,44 +240,16 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <div>
         </div>
 
-        {/* Mobile: WhatsApp first, then message icon */}
-        <div className="flex items-center gap-2 pt-0.5 sm:hidden">
-          {waHref && (
+        {/* WhatsApp button */}
+        {waHref && (
+          <div className="flex items-center pt-0.5">
             <ProductWhatsAppButton
               waHref={waHref}
               productId={product.id}
-              className="flex-1 rounded-xl py-2 text-[11px] font-bold shadow-sm"
+              className="w-full rounded-xl py-2"
             />
-          )}
-          {product.sellerId && (
-            <MessageSellerButton
-              sellerId={product.sellerId}
-              shopId={product.shop.id}
-              productId={product.id}
-              compact
-              className="size-10 shrink-0 rounded-xl p-0"
-            />
-          )}
-        </div>
-
-        {/* sm+: WhatsApp labeled + accent message button */}
-        <div className="hidden items-center gap-1.5 pt-0.5 sm:flex">
-          {waHref && (
-            <ProductWhatsAppButton
-              waHref={waHref}
-              productId={product.id}
-              className="min-w-0 flex-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold shadow-sm"
-            />
-          )}
-          {product.sellerId && (
-            <MessageSellerButton
-              sellerId={product.sellerId}
-              shopId={product.shop.id}
-              productId={product.id}
-              className="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px]"
-            />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </article>
   );

@@ -5,6 +5,12 @@ import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
+import ProductFilters, {
+  applyFilters,
+  DEFAULT_FILTERS,
+  type FilterState,
+} from "@/components/browse/ProductFilters";
+import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
@@ -65,6 +71,7 @@ export default function HomeLanding({
   initialProducts,
 }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
   const categories = useMemo(
     () => collectCategoriesFromProducts(initialProducts),
@@ -93,12 +100,24 @@ export default function HomeLanding({
           catEquals(p.shop.category, selectedCategory),
       );
     }
+    list = applyFilters(list, filters);
     return list;
-  }, [initialProducts, selectedCategory]);
+  }, [initialProducts, isSearching, selectedCategory, filters]);
 
-  const displayProducts = browseProducts;
+
+
+            const displayProducts = isSearching ? search.items : browseProducts;
   const categoryFilterActive = selectedCategory !== null;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
+  const anyFiltersActive =
+    categoryFilterActive ||
+    filters.sort !== DEFAULT_FILTERS.sort ||
+    filters.minPrice !== null ||
+    filters.maxPrice !== null ||
+    filters.availableNow ||
+    filters.verifiedOnly ||
+    filters.minRating !== null ||
+    filters.location !== null;
 
   return (
     <div className="w-full">
@@ -115,20 +134,81 @@ export default function HomeLanding({
           onSelect={setSelectedCategory}
         />
 
+        <ProductFilters
+          products={initialProducts}
+          filters={filters}
+          onChange={setFilters}
+        />
+
         <div className="space-y-8 sm:space-y-10 lg:space-y-12">
-          {categoryFilterActive && (
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-out ${
+              searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <ProductSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Search products…"
+              ariaLabel="Search products"
+            />
+          </div>
+
+          {(isSearching || anyFiltersActive) && (
             <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 text-sm">
-              <span className="text-muted">
-                Filtered by{" "}
-                <span className="font-semibold text-foreground">{selectedCategory}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedCategory(null)}
-                className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
-              >
-                Clear
-              </button>
+              {isSearching ? (
+                <>
+                  <span className="text-muted">
+                    Showing results for{" "}
+                    <span className="font-semibold text-foreground">&ldquo;{q}&rdquo;</span>
+                    {categoryFilterActive ? (
+                      <span>
+                        {" "}
+                        in <span className="font-semibold text-foreground">{selectedCategory}</span>
+                      </span>
+                    ) : null}
+                    {search.mode ? (
+                      <span className="text-muted/80"> · {search.mode} search</span>
+                    ) : null}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
+                  >
+                    Clear
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-muted">
+                    {categoryFilterActive ? (
+                      <>
+                        Filtered by{" "}
+                        <span className="font-semibold text-foreground">{selectedCategory}</span>
+                        {browseProducts.length > 0 && (
+                          <span className="text-muted/80"> · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-semibold text-foreground">{browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
+                        <span className="text-muted/80"> with filters applied</span>
+                      </>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setFilters(DEFAULT_FILTERS);
+                    }}
+                    className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
+                  >
+                    Clear all
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -143,8 +223,8 @@ export default function HomeLanding({
             {displayProducts.length === 0 ? (
               <EmptyState
                 message={
-                  categoryFilterActive
-                    ? "No products match your filters. Try another category or keyword."
+                  anyFiltersActive || isSearching
+                    ? "No products match your filters. Try adjusting your filters or keyword."
                     : "No products yet — check back soon."
                 }
               />
