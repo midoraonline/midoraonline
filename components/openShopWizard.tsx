@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiShops, apiAiContext } from "@/lib/api";
 import { ImageUpload } from "@/components/image-upload";
+import LocationInput from "@/components/LocationInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
@@ -197,16 +198,21 @@ export default function OpenShopWizard() {
                 className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
                 placeholder="+256700000000"
                 value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val.startsWith("0")) {
+                    val = "+256" + val.slice(1);
+                  }
+                  setWhatsappNumber(val);
+                }}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-foreground/80">Location (optional)</label>
-              <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
-                placeholder="e.g. Kampala, Uganda"
+              <LocationInput
                 value={locationDisplay}
-                onChange={(e) => setLocationDisplay(e.target.value)}
+                onChange={setLocationDisplay}
+                placeholder="e.g. Kisasi, Kampala"
               />
             </div>
           </div>

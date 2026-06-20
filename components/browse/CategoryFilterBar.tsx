@@ -66,7 +66,7 @@ export default function CategoryFilterBar({
           </button>
 
           <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none">
-            {items.slice(0, 4).map(({ key, label }) => {
+            {items.map(({ key, label }) => {
               const active = key === null ? selected === null : selected === key;
               return (
                 <button
