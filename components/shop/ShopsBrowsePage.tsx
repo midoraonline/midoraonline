@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Search, X } from "lucide-react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
-import BrowseSearchBar from "@/components/browse/BrowseSearchBar";
 import ShopListRealtime from "@/components/shop/ShopListRealtime";
 import { browseShopGridClass, collectCategoriesFromShopProductMap } from "@/lib/browseCategories";
 import type { Shop } from "@/lib/api/shops";
@@ -16,17 +16,7 @@ export default function ShopsBrowsePage({
   shopProductCategories: Record<string, string[]>;
 }) {
   const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  function handleSearchToggle() {
-    if (searchOpen) {
-      setSearchOpen(false);
-      setQuery("");
-    } else {
-      setSearchOpen(true);
-    }
-  }
 
   const categories = useMemo(
     () => collectCategoriesFromShopProductMap(shopProductCategories),
@@ -52,30 +42,37 @@ export default function ShopsBrowsePage({
         </p>
       </div>
 
+      {/* Search bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search shops by name…"
+            className="dm-input dm-focus w-full rounded-xl border-border bg-surface py-2.5 pl-10 pr-10 text-sm placeholder:text-muted/60"
+          />
+          {q.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Category filter bar */}
       <CategoryFilterBar
         categories={categories}
         selected={selectedCategory}
         onSelect={setSelectedCategory}
-        searchActive={searchOpen}
-        onSearchToggle={handleSearchToggle}
       />
 
       <div className="space-y-4">
-        {/* Search bar */}
-        <div
-          className={`overflow-hidden transition-all duration-300 ease-out ${
-            searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <BrowseSearchBar
-            value={query}
-            onChange={setQuery}
-            placeholder="Search shops…"
-            ariaLabel="Search shops"
-          />
-        </div>
-
         {(q.length > 0 || categoryFilterActive) && (
           <p className="text-sm text-muted">
             {q.length > 0 ? (
@@ -86,8 +83,8 @@ export default function ShopsBrowsePage({
                     {" "}
                     in <span className="font-semibold text-foreground">{selectedCategory}</span>
                   </span>
-                ) : null}{" "}
-                —{" "}
+                ) : null}
+                {" · "}
                 <button
                   type="button"
                   onClick={() => setQuery("")}

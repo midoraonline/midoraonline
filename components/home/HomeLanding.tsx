@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
-import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HomeHeroSlider from "@/components/home/HomeHeroSlider";
-import { useProductSearch } from "@/lib/hooks/useProductSearch";
 
 function SectionHeader({
   title,
@@ -66,28 +64,7 @@ type Props = {
 export default function HomeLanding({
   initialProducts,
 }: Props) {
-  const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  function handleSearchToggle() {
-    if (searchOpen) {
-      setSearchOpen(false);
-      setQuery("");
-    } else {
-      setSearchOpen(true);
-    }
-  }
-
-  const q = query.trim();
-  const isSearching = q.length > 0;
-
-  const search = useProductSearch({
-    query,
-    category: selectedCategory,
-    enabled: isSearching,
-    limit: 24,
-  });
 
   const categories = useMemo(
     () => collectCategoriesFromProducts(initialProducts),
@@ -108,7 +85,6 @@ export default function HomeLanding({
   }, [initialProducts]);
 
   const browseProducts = useMemo(() => {
-    if (isSearching) return [];
     let list = initialProducts;
     if (selectedCategory) {
       list = list.filter(
@@ -118,17 +94,15 @@ export default function HomeLanding({
       );
     }
     return list;
-  }, [initialProducts, isSearching, selectedCategory]);
+  }, [initialProducts, selectedCategory]);
 
-
-
-  const displayProducts = isSearching ? search.items : browseProducts;
+  const displayProducts = browseProducts;
   const categoryFilterActive = selectedCategory !== null;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
 
   return (
     <div className="w-full">
-      {!isSearching && !categoryFilterActive && (
+      {!categoryFilterActive && (
         <div className="mb-5 sm:mb-6 lg:mb-8">
           <HomeHeroSlider bgImages={heroImages} />
         </div>
@@ -139,91 +113,37 @@ export default function HomeLanding({
           categories={categories}
           selected={selectedCategory}
           onSelect={setSelectedCategory}
-          searchActive={searchOpen}
-          onSearchToggle={handleSearchToggle}
         />
 
         <div className="space-y-8 sm:space-y-10 lg:space-y-12">
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
-            }`}
-          >
-            <ProductSearchBar
-              value={query}
-              onChange={setQuery}
-              placeholder="Search products…"
-              ariaLabel="Search products"
-            />
-          </div>
-
-          {(isSearching || categoryFilterActive) && (
+          {categoryFilterActive && (
             <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 text-sm">
-              {isSearching ? (
-                <>
-                  <span className="text-muted">
-                    Showing results for{" "}
-                    <span className="font-semibold text-foreground">&ldquo;{q}&rdquo;</span>
-                    {categoryFilterActive ? (
-                      <span>
-                        {" "}
-                        in <span className="font-semibold text-foreground">{selectedCategory}</span>
-                      </span>
-                    ) : null}
-                    {search.mode ? (
-                      <span className="text-muted/80"> · {search.mode} search</span>
-                    ) : null}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
-                  >
-                    Clear
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="text-muted">
-                    Filtered by{" "}
-                    <span className="font-semibold text-foreground">{selectedCategory}</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory(null)}
-                    className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
-                  >
-                    Clear
-                  </button>
-                </>
-              )}
+              <span className="text-muted">
+                Filtered by{" "}
+                <span className="font-semibold text-foreground">{selectedCategory}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
+              >
+                Clear
+              </button>
             </div>
           )}
 
 
           <section className="space-y-4">
             <SectionHeader
-              title={
-                isSearching
-                  ? `Products matching "${q}"${filterHint}`
-                  : `All Products${filterHint}`
-              }
-              subtitle={
-                isSearching
-                  ? undefined
-                  : "Browse all listings from shops on Midora."
-              }
-              href={isSearching ? undefined : "/products"}
-              linkLabel={isSearching ? undefined : "See all"}
+              title={`All Products${filterHint}`}
+              subtitle="Browse all listings from shops on Midora."
+              href="/products"
+              linkLabel="See all"
             />
-            {search.loading && isSearching ? (
-              <EmptyState message="Searching…" />
-            ) : search.error && isSearching ? (
-              <EmptyState message={search.error} />
-            ) : displayProducts.length === 0 ? (
+            {displayProducts.length === 0 ? (
               <EmptyState
                 message={
-                  isSearching || categoryFilterActive
+                  categoryFilterActive
                     ? "No products match your filters. Try another category or keyword."
                     : "No products yet — check back soon."
                 }
@@ -231,21 +151,11 @@ export default function HomeLanding({
             ) : (
               <>
                 <div className={browseProductGridClass}>
-                  {(isSearching ? displayProducts : displayProducts.slice(0, 24)).map((p) => (
+                  {displayProducts.slice(0, 24).map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
-                {isSearching && search.hasMore ? (
-                  <div className="pt-2 text-center">
-                    <Link
-                      href={`/products?q=${encodeURIComponent(q)}`}
-                      className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
-                    >
-                      View all {search.total} results
-                      <ArrowRight className="size-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                ) : !isSearching && initialProducts.length > 0 ? (
+                {initialProducts.length > 0 && (
                   <div className="pt-2 text-center">
                     <Link
                       href="/products"
@@ -255,12 +165,11 @@ export default function HomeLanding({
                       <ArrowRight className="size-3.5" aria-hidden />
                     </Link>
                   </div>
-                ) : null}
+                )}
               </>
             )}
-          </section>
+            </section>
 
-          {!isSearching && (
             <section className="dm-card relative overflow-hidden p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
               <div className="pointer-events-none absolute inset-0 opacity-[0.03]">
                 <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent blur-2xl" />
@@ -279,7 +188,6 @@ export default function HomeLanding({
                 <ArrowRight className="size-3.5" aria-hidden />
               </Link>
             </section>
-          )}
         </div>
       </div>
     </div>

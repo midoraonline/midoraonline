@@ -49,6 +49,7 @@ const SCREEN_NAMES: Record<string, string> = {
   "/customer/profile":       "My Profile",
   "/customer/orders":        "My Orders",
   "/customer/saved":         "Saved Shops",
+  "/customer/wishlist":      "Wishlist",
   "/customer/settings":      "Settings",
 };
 

@@ -16,10 +16,12 @@ import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
 import ProductComments from "@/components/product/ProductComments";
+import ProductReviews from "@/components/product/ProductReviews";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import StarRating from "@/components/StarRating";
+import { getProductReviewStats } from "@/lib/api/reviews";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -110,6 +112,8 @@ export default async function ProductDetails({
 
   const shop = product.shop;
 
+  const reviewStats = await getProductReviewStats(id);
+
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
   const productPath = `/products/${canonicalSlug}`;
@@ -194,7 +198,15 @@ export default async function ProductDetails({
               {formatUGX(price)}
             </p>
             <div className="mt-2">
-              <StarRating rating={0} size="sm" placeholder />
+              {reviewStats.total_reviews > 0 ? (
+                <StarRating
+                  rating={reviewStats.average_rating}
+                  count={reviewStats.total_reviews}
+                  size="sm"
+                />
+              ) : (
+                <StarRating rating={0} size="sm" placeholder />
+              )}
             </div>
           </div>
 
@@ -353,12 +365,6 @@ export default async function ProductDetails({
                 {product.like_count} likes
               </span>
             )}
-            {product.listing_score != null && product.listing_score > 0 && (
-              <span className="flex items-center gap-1 text-amber-600">
-                <MaterialSymbol name="trending_up" className="!text-sm" />
-                Score {product.listing_score}
-              </span>
-            )}
             <ReportListing productId={product.id} />
           </div>
 
@@ -382,6 +388,9 @@ export default async function ProductDetails({
               </p>
             </section>
           )}
+
+          {/* Reviews */}
+          <ProductReviews productId={product.id} />
 
           {/* Comments */}
           <ProductComments productId={product.id} />

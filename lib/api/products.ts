@@ -33,6 +33,7 @@ export type Product = {
   created_at?: string | null;
   updated_at?: string | null;
   boosted?: boolean;
+  average_rating?: number | null;
   ai_seo_tags?: string | null;
   ai_generated_desc?: boolean | null;
   shop?: {
@@ -281,6 +282,7 @@ export type HomeFeedProduct = {
   like_count: number;
   viewer_liked?: boolean | null;
   listing_score: number;
+  average_rating?: number | null;
   location_name?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -352,4 +354,38 @@ export function generateFromImage(
     token,
     body,
   });
+}
+
+export type LikedProduct = {
+  id: string;
+  shop_id: string;
+  title: string;
+  description?: string | null;
+  price_ugx: number;
+  image_urls?: string[] | null;
+  category?: string | null;
+  item_type?: string | null;
+  status?: string | null;
+  listing_score: number;
+  location_name?: string | null;
+  is_published: boolean;
+  view_count: number;
+  created_at?: string | null;
+};
+
+export type LikedProductsResponse = {
+  items: LikedProduct[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export function myLikedProducts(opts?: { page?: number; limit?: number }) {
+  const params = new URLSearchParams();
+  if (opts?.page) params.set("page", String(opts.page));
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return apiFetch<LikedProductsResponse>(
+    `/api/v1/products/me/liked${qs ? `?${qs}` : ""}`,
+  );
 }

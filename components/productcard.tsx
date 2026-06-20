@@ -5,7 +5,6 @@ import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductWhatsAppButton from "@/components/product/ProductWhatsAppButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
-import StarRating from "@/components/StarRating";
 
 export type ProductCardData = {
   id: string;
@@ -34,7 +33,6 @@ export type ProductCardData = {
   boosted?: boolean;
   updated_at?: string | null;
   location_name?: string | null;
-  rating?: number | null;
   likeCount?: number;
   isLiked?: boolean;
 };
@@ -215,11 +213,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
         {/* Rating */}
         <div>
-          {product.rating != null && product.rating > 0 ? (
-            <StarRating rating={product.rating} size="xs" />
-          ) : (
-            <StarRating rating={0} size="xs" placeholder />
-          )}
         </div>
 
         {/* Mobile: both buttons as equal-size square icons */}

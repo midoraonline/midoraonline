@@ -53,7 +53,7 @@ function StatusBadge({ status, is_published }: { status?: ProductStatus | null; 
   );
 }
 
-// Shared between the add-new form and the inline edit panel.
+
 export default function ShopCatalogEditor({
   shopId,
   itemType,
@@ -63,7 +63,6 @@ export default function ShopCatalogEditor({
   shopId: string;
   itemType: ItemType;
   heading: string;
-  /** Public shop logo; when present, new product photos are watermarked before storage. */
   shopLogoUrl?: string | null;
 }) {
   const session = useAppSession();
@@ -72,7 +71,6 @@ export default function ShopCatalogEditor({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ mode: "add" } | { mode: "edit"; product: Product } | null>(null);
-  const [createSuccess, setCreateSuccess] = useState(false);
 
   const isAuthed = session.isAuthenticated;
   const hydrated = session.hydrated;
