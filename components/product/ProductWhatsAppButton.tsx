@@ -20,13 +20,17 @@ export default function ProductWhatsAppButton({
   };
 
   return (
-    <button
-      type="button"
-      onClick={doOpen}
-      className={`dm-focus inline-flex items-center justify-center gap-1 rounded-lg bg-[#25D366] px-2 py-1.5 text-[10px] font-semibold text-white transition-[filter] hover:brightness-95 ${className}`}
-    >
-      <WhatsAppIcon className="size-3 shrink-0 text-white" />
-      {"WhatsApp"}
-    </button>
+    <TradeDisclaimer type="whatsapp" onConfirm={doOpen}>
+      {(open) => (
+        <button
+          type="button"
+          onClick={open}
+          className={`dm-focus inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-[11px] font-semibold text-white transition-[filter] hover:brightness-95 ${className}`}
+        >
+          <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
+          WhatsApp
+        </button>
+      )}
+    </TradeDisclaimer>
   );
 }
