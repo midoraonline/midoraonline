@@ -39,6 +39,7 @@ export type ProductCardData = {
   location_name?: string | null;
   likeCount?: number;
   isLiked?: boolean;
+  rating?: number;
 };
 
 function formatUGX(value: number) {

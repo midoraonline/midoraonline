@@ -2,6 +2,7 @@
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { apiListingEvents } from "@/lib/api";
+import TradeDisclaimer from "@/components/TradeDisclaimer";
 
 type Props = {
   waHref: string;

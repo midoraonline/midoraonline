@@ -10,7 +10,6 @@ import ProductFilters, {
   DEFAULT_FILTERS,
   type FilterState,
 } from "@/components/browse/ProductFilters";
-import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
@@ -102,11 +101,9 @@ export default function HomeLanding({
     }
     list = applyFilters(list, filters);
     return list;
-  }, [initialProducts, isSearching, selectedCategory, filters]);
+  }, [initialProducts, selectedCategory, filters]);
 
-
-
-            const displayProducts = isSearching ? search.items : browseProducts;
+  const displayProducts = browseProducts;
   const categoryFilterActive = selectedCategory !== null;
   const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
   const anyFiltersActive =
@@ -141,74 +138,34 @@ export default function HomeLanding({
         />
 
         <div className="space-y-8 sm:space-y-10 lg:space-y-12">
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
-            }`}
-          >
-            <ProductSearchBar
-              value={query}
-              onChange={setQuery}
-              placeholder="Search products…"
-              ariaLabel="Search products"
-            />
-          </div>
-
-          {(isSearching || anyFiltersActive) && (
+          {anyFiltersActive && (
             <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 text-sm">
-              {isSearching ? (
-                <>
-                  <span className="text-muted">
-                    Showing results for{" "}
-                    <span className="font-semibold text-foreground">&ldquo;{q}&rdquo;</span>
-                    {categoryFilterActive ? (
-                      <span>
-                        {" "}
-                        in <span className="font-semibold text-foreground">{selectedCategory}</span>
-                      </span>
-                    ) : null}
-                    {search.mode ? (
-                      <span className="text-muted/80"> · {search.mode} search</span>
-                    ) : null}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
-                  >
-                    Clear
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="text-muted">
-                    {categoryFilterActive ? (
-                      <>
-                        Filtered by{" "}
-                        <span className="font-semibold text-foreground">{selectedCategory}</span>
-                        {browseProducts.length > 0 && (
-                          <span className="text-muted/80"> · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-semibold text-foreground">{browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
-                        <span className="text-muted/80"> with filters applied</span>
-                      </>
+              <span className="text-muted">
+                {categoryFilterActive ? (
+                  <>
+                    Filtered by{" "}
+                    <span className="font-semibold text-foreground">{selectedCategory}</span>
+                    {browseProducts.length > 0 && (
+                      <span className="text-muted/80"> · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
                     )}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setFilters(DEFAULT_FILTERS);
-                    }}
-                    className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
-                  >
-                    Clear all
-                  </button>
-                </>
-              )}
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold text-foreground">{browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}</span>
+                    <span className="text-muted/80"> with filters applied</span>
+                  </>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setFilters(DEFAULT_FILTERS);
+                }}
+                className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10"
+              >
+                Clear all
+              </button>
             </div>
           )}
 
@@ -223,8 +180,8 @@ export default function HomeLanding({
             {displayProducts.length === 0 ? (
               <EmptyState
                 message={
-                  anyFiltersActive || isSearching
-                    ? "No products match your filters. Try adjusting your filters or keyword."
+                  anyFiltersActive
+                    ? "No products match your filters. Try adjusting your filters."
                     : "No products yet — check back soon."
                 }
               />
