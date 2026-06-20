@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Shop } from "@/lib/api/shops";
+import { recordShopEvent } from "@/lib/api/shops";
 import { locationDisplay, platformLabel } from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -60,6 +61,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   className={footerIcon}
                   title={shop.shop_email}
                   aria-label={`Email ${shop.shop_email}`}
+                  onClick={() => { recordShopEvent(shop.id, "messaged").catch(() => {}); }}
                 >
                   <MaterialSymbol name="mail" className="!text-[22px] leading-none" />
                 </a>
@@ -72,6 +74,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   className={footerIcon}
                   title={`WhatsApp ${shop.whatsapp_number}`}
                   aria-label={`WhatsApp ${shop.whatsapp_number}`}
+                  onClick={() => { recordShopEvent(shop.id, "whatsapp_clicked").catch(() => {}); }}
                 >
                   <WhatsAppIcon className="size-5" />
                 </a>
