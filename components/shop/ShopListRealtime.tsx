@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ShopCard from "@/components/shopcard";
 import type { Shop } from "@/lib/api/shops";
 import { browseShopGridClass, shopHasProductCategory } from "@/lib/browseCategories";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import { apiShops } from "@/lib/api";
 
 function locationDisplay(loc: unknown): string {
   if (typeof loc === "string") return loc;
@@ -53,10 +54,48 @@ export default function ShopListRealtime({
   gridClassName?: string;
 }) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setShops(initialShops);
   }, [initialShops]);
+
+  // Periodic refresh to catch newly-verified shops that may not surface via
+  // realtime due to Supabase RLS row-visibility rules (a row that was hidden
+  // from anon becomes visible only after is_active flips to true, so the
+  // INSERT / UPDATE may be suppressed in some RLS configurations).
+  const refreshFromApi = useCallback(async () => {
+    try {
+      const res = await apiShops.listPublic({ limit: 100 });
+      const freshShops: Shop[] = res.items ?? [];
+      if (freshShops.length > 0) {
+        setShops((prev) => {
+          let merged = prev.slice();
+          for (const shop of freshShops) {
+            if (shop.is_active !== false) {
+              merged = mergeShop(merged, shop);
+            }
+          }
+          return merged;
+        });
+      }
+    } catch {
+      // Silently ignore — realtime is the primary path.
+    }
+  }, []);
+
+  // Re-fetch when the tab regains visibility. This guarantees newly verified
+  // shops appear without a manual page reload even if the realtime event was
+  // missed (e.g. the tab was in the background during verification).
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void refreshFromApi();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [refreshFromApi]);
 
   useRealtimeTable(
     { channel: "shops:public", table: "shops", event: "*" },
@@ -72,7 +111,16 @@ export default function ShopListRealtime({
         setShops((prev) => removeShop(prev, String(row.id)));
         return;
       }
+      // For INSERT events and UPDATE events where is_active becomes true,
+      // merge the shop directly. If the payload has limited fields due to
+      // RLS, schedule a background refresh to hydrate the full record.
       setShops((prev) => mergeShop(prev, row));
+
+      // Debounced refresh to hydrate any missing fields from the API.
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = setTimeout(() => {
+        void refreshFromApi();
+      }, 1500);
     }
   );
 

@@ -3,13 +3,13 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Eye,
-  EyeOff,
   ImagePlus,
   Loader2,
   Pencil,
   Trash2,
   ArrowUpCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { apiProducts } from "@/lib/api";
 import type { ProductStatus } from "@/lib/api/products";
@@ -56,6 +56,47 @@ function StatusBadge({ status, is_published }: { status?: ProductStatus | null; 
   );
 }
 
+// ── Inline toggle switch — used for publish/availability states ─────────────
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+  label,
+  id,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+  label?: string;
+  id?: string;
+}) {
+  return (
+    <button
+      type="button"
+      id={id}
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={[
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent",
+        "transition-colors duration-200 ease-in-out dm-focus",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-primary" : "bg-foreground/20",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "pointer-events-none inline-block size-4 rounded-full bg-white shadow ring-0",
+          "transition-transform duration-200 ease-in-out",
+          checked ? "translate-x-4" : "translate-x-0",
+        ].join(" ")}
+      />
+    </button>
+  );
+}
 
 export default function ShopCatalogEditor({
   shopId,
@@ -74,6 +115,8 @@ export default function ShopCatalogEditor({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ mode: "add" } | { mode: "edit"; product: Product } | null>(null);
+  // Track per-item loading states for optimistic toggle feedback
+  const [toggling, setToggling] = useState<Record<string, boolean>>({});
 
   const isAuthed = session.isAuthenticated;
   const hydrated = session.hydrated;
@@ -112,11 +155,26 @@ export default function ShopCatalogEditor({
   async function togglePublish(p: Product) {
     if (!isAuthed) return;
     setError(null);
+    // Optimistic UI update
+    setToggling((prev) => ({ ...prev, [p.id]: true }));
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === p.id ? { ...item, is_published: !item.is_published } : item
+      )
+    );
     try {
       await apiProducts.toggleAvailability(p.id);
       await load();
     } catch (e) {
+      // Revert optimistic update on error
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === p.id ? { ...item, is_published: p.is_published } : item
+        )
+      );
       setError(e instanceof Error ? e.message : "Update failed.");
+    } finally {
+      setToggling((prev) => ({ ...prev, [p.id]: false }));
     }
   }
 
@@ -198,10 +256,12 @@ export default function ShopCatalogEditor({
             {items.map((p) => {
               const img = productPrimaryImage(p);
               const mediaCount = productImageUrls(p).length;
+              const isToggling = toggling[p.id] ?? false;
               return (
                 <li key={p.id} className="dm-card overflow-hidden">
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:size-16">
+                  <div className="flex items-start gap-3 p-4">
+                    {/* Thumbnail */}
+                    <div className="relative mt-0.5 size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:size-16">
                       {img ? (
                         <Image
                           src={img}
@@ -218,6 +278,7 @@ export default function ShopCatalogEditor({
                       )}
                     </div>
 
+                    {/* Info */}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground/95">
                         {p.title}
@@ -247,56 +308,67 @@ export default function ShopCatalogEditor({
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setModal({ mode: "edit", product: p })}
-                        className="dm-focus inline-flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-medium text-foreground/65 hover:bg-foreground/[0.06] hover:text-foreground transition-colors"
-                        title="Edit listing"
-                      >
-                        <Pencil className="size-3.5" />
-                        <span className="hidden sm:inline">Edit</span>
-                      </button>
+                    {/* Actions */}
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      {/* Row 1: Edit + Delete */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setModal({ mode: "edit", product: p })}
+                          className="dm-focus inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-medium text-foreground/65 hover:bg-foreground/[0.06] hover:text-foreground transition-colors"
+                          title="Edit listing"
+                        >
+                          <Pencil className="size-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="dm-focus inline-flex size-8 items-center justify-center rounded-xl text-red-600/80 hover:bg-red-500/10 transition-colors"
+                          title="Delete listing"
+                          onClick={() => void removeProduct(p.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
 
-                      <button
-                        type="button"
-                        className="dm-focus inline-flex size-9 items-center justify-center rounded-xl text-foreground/65 hover:bg-foreground/[0.06]"
-                        title={p.is_published ? "Unpublish" : "Publish"}
-                        onClick={() => void togglePublish(p)}
-                      >
-                        {p.is_published ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
+                      {/* Row 2: Publish toggle with label */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-muted select-none">
+                          {p.is_published ? "Published" : "Unpublished"}
+                        </span>
+                        <ToggleSwitch
+                          id={`publish-${p.id}`}
+                          checked={p.is_published ?? false}
+                          onChange={() => void togglePublish(p)}
+                          disabled={isToggling}
+                          label={p.is_published ? "Unpublish" : "Publish"}
+                        />
+                      </div>
 
+                      {/* Row 3: Repost (only when published) */}
                       {p.is_published && (
                         <button
                           type="button"
-                          className="dm-focus inline-flex size-9 items-center justify-center rounded-xl text-blue-600/80 hover:bg-blue-500/10"
-                          title="Repost to Latest Feed"
+                          className="dm-focus inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 transition-colors dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300"
+                          title="Repost to the Latest Feed to boost visibility"
                           onClick={() => void handleRepost(p)}
                         >
-                          <ArrowUpCircle className="size-4" />
+                          <ArrowUpCircle className="size-3.5" />
+                          Repost
                         </button>
                       )}
 
+                      {/* Row 4: Resubmit for review (only when rejected) */}
                       {p.status === "rejected" && (
                         <button
                           type="button"
-                          className="dm-focus inline-flex items-center gap-1 rounded-xl bg-amber-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-amber-700"
+                          className="dm-focus inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-700 transition-colors"
                           title="Submit for admin review"
                           onClick={() => void submitForReview(p)}
                         >
-                          Resubmit
+                          Resubmit for review
                         </button>
                       )}
-
-                      <button
-                        type="button"
-                        className="dm-focus inline-flex size-9 items-center justify-center rounded-xl text-red-600/80 hover:bg-red-500/10"
-                        title="Delete"
-                        onClick={() => void removeProduct(p.id)}
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
                     </div>
                   </div>
                 </li>

@@ -4,11 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Plus, BarChart2 } from "lucide-react";
 import { apiShops } from "@/lib/api";
 import type { Shop } from "@/lib/api/shops";
 import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
+import LocationInput from "@/components/LocationInput";
 import { locationDisplay } from "./shopUtils";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -146,6 +147,43 @@ function LogoField({
   );
 }
 
+// ── Reusable toggle switch ──────────────────────────────────────────────────
+function ToggleSwitch({
+  checked,
+  onChange,
+  id,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  id?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      id={id}
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      className={[
+        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-primary" : "bg-foreground/20",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "pointer-events-none inline-block size-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
+          checked ? "translate-x-5" : "translate-x-0",
+        ].join(" ")}
+      />
+    </button>
+  );
+}
+
 function DetailsTab({
   shop,
   form,
@@ -276,11 +314,11 @@ function DetailsTab({
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground/80">Location</label>
-            <input
-              className="dm-input-xs dm-focus"
-              placeholder="e.g. Kampala, Uganda"
+            {/* Use the same LocationInput (OpenStreetMap) as the Open Shop wizard */}
+            <LocationInput
               value={form.location}
-              onChange={(e) => onChange("location", e.target.value)}
+              onChange={(val) => onChange("location", val)}
+              placeholder="e.g. Kisasi, Kampala"
             />
           </div>
         </div>
@@ -326,7 +364,11 @@ function DetailsTab({
               className="dm-input-xs dm-focus"
               placeholder="+256700000000"
               value={form.whatsappNumber}
-              onChange={(e) => onChange("whatsappNumber", e.target.value)}
+              onChange={(e) => {
+                let val = e.target.value;
+                if (val.startsWith("0")) val = "+256" + val.slice(1);
+                onChange("whatsappNumber", val);
+              }}
             />
           </div>
         </div>
@@ -356,26 +398,22 @@ function DetailsTab({
         </div>
       </section>
 
+      {/* ── Shop Status (proper toggle switch) ─────────────────────────────── */}
       <section className="dm-card p-5 sm:p-6">
         <h2 className="mb-4 text-sm font-semibold tracking-tight">Shop status</h2>
-        <label className="flex cursor-pointer items-start gap-3 group">
-          <div className="relative mt-0.5 shrink-0">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={form.isActive}
-              onChange={(e) => onChange("isActive", e.target.checked)}
-            />
-            <div className="h-5 w-9 rounded-full border border-border bg-surface transition-colors peer-checked:border-primary peer-checked:bg-primary" />
-            <div className="absolute left-0.5 top-0.5 size-4 rounded-full bg-muted shadow transition-transform peer-checked:translate-x-4 peer-checked:bg-white" />
-          </div>
-          <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-0.5">
             <p className="text-xs font-medium text-foreground/90">Shop is active</p>
-            <p className="mt-0.5 text-xs text-muted">
+            <p className="text-xs text-muted">
               When off, your shop shows as temporarily closed to customers.
             </p>
           </div>
-        </label>
+          <ToggleSwitch
+            id="shop-is-active"
+            checked={form.isActive}
+            onChange={(v) => onChange("isActive", v)}
+          />
+        </div>
       </section>
 
       <div className="flex items-center justify-between gap-4 pb-4">
@@ -446,6 +484,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-7">
+      {/* ── Header: title + action buttons ────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>
@@ -454,10 +493,20 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Add product — prominent CTA near analytics */}
+          <button
+            type="button"
+            onClick={() => setTab("products")}
+            className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
+          >
+            <Plus className="size-3.5" />
+            Add product
+          </button>
           <Link
             href={`/shops/${shop.slug}/analytics`}
             className="dm-pill dm-focus inline-flex items-center gap-1.5 border border-foreground/[0.1] bg-foreground/[0.05] px-3 py-2 text-xs font-semibold text-foreground/90 hover:bg-foreground/[0.08]"
           >
+            <BarChart2 className="size-3.5" />
             Analytics
           </Link>
           <button
@@ -471,6 +520,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
         </div>
       </div>
 
+      {/* ── Tab bar ─────────────────────────────────────────────────────── */}
       <div
         role="tablist"
         className="flex flex-wrap gap-1 rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] p-1"
