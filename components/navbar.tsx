@@ -113,7 +113,13 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function Navbar() {
+export default function Navbar({
+  shopLogoUrl,
+  shopName,
+}: {
+  shopLogoUrl?: string | null;
+  shopName?: string | null;
+} = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -215,16 +221,16 @@ export default function Navbar() {
         <div className="dm-container flex h-14 items-center gap-3 sm:gap-5">
           {/* Logo */}
           <Link
-            href="/"
+            href={shopLogoUrl ? "#" : "/"}
             className="inline-flex shrink-0 items-center gap-2 rounded-lg py-1 dm-focus"
             onClick={() => setOpen(false)}
           >
             <Image
-              src="/logo.png"
-              alt="Midora Online"
+              src={shopLogoUrl || "/logo.png"}
+              alt={shopLogoUrl ? shopName || "Shop" : "Midora Online"}
               width={100}
               height={34}
-              className="h-7 w-auto sm:h-8"
+              className={`${shopLogoUrl ? "size-7 rounded-full object-cover sm:size-8" : "h-7 w-auto sm:h-8"}`}
               priority
             />
           </Link>
@@ -274,23 +280,44 @@ export default function Navbar() {
             </button>
 
             {session.isAuthenticated ? (
-              <Link
-                href="/chat"
-                className={`relative grid size-9 place-items-center rounded-full transition-colors dm-focus ${
-                  onChatPage
-                    ? "bg-accent text-white shadow-sm"
-                    : "text-foreground/60 hover:bg-foreground/[0.06] hover:text-foreground"
-                }`}
-                aria-label="Messages"
-                title="Messages"
-              >
-                <MaterialSymbol name="chat" className="!text-lg" />
-                {unread > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] px-1 h-[18px] place-items-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white shadow-sm">
-                    {unread > 99 ? "99+" : unread}
-                  </span>
-                )}
-              </Link>
+              <>
+                {/* Wishlist */}
+                <Link
+                  href="/customer/wishlist"
+                  className="relative grid size-9 place-items-center rounded-full transition-colors dm-focus text-foreground/60 hover:bg-foreground/[0.06] hover:text-foreground"
+                  aria-label="Wishlist"
+                  title="Wishlist"
+                >
+                  <MaterialSymbol name="favorite" className="!text-lg" />
+                </Link>
+                {/* Chat */}
+                <Link
+                  href="/chat"
+                  className={`relative grid size-9 place-items-center rounded-full transition-colors dm-focus ${
+                    onChatPage
+                      ? "bg-accent text-white shadow-sm"
+                      : "text-foreground/60 hover:bg-foreground/[0.06] hover:text-foreground"
+                  }`}
+                  aria-label="Messages"
+                  title="Messages"
+                >
+                  <MaterialSymbol name="chat" className="!text-lg" />
+                  {unread > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] px-1 h-[18px] place-items-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white shadow-sm">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </Link>
+                {/* Create Shop — shown when user has no shops */}
+                {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
+                  <Link
+                    href="/open-shop"
+                    className="hidden rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                  >
+                    Create Shop
+                  </Link>
+                ) : null}
+              </>
             ) : null}
 
             {displayName ? (
@@ -385,6 +412,30 @@ export default function Navbar() {
                 );
               })}
             </div>
+
+            {/* Mobile: wishlist + create shop — shown when logged in */}
+            {session.isAuthenticated ? (
+              <div className="mt-2 flex flex-col gap-0.5 px-2">
+                <Link
+                  href="/customer/wishlist"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/85 transition-colors dm-focus hover:bg-foreground/[0.04]"
+                >
+                  <MaterialSymbol name="favorite" className="!text-lg text-foreground/60" />
+                  Wishlist
+                </Link>
+                {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
+                  <Link
+                    href="/open-shop"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
+                  >
+                    <MaterialSymbol name="store" className="!text-lg" />
+                    Create Shop
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Sign in CTA — shown only when not logged in */}
             {!session.isAuthenticated && !authLoading && (

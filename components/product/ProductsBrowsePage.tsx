@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
-import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
@@ -21,15 +20,18 @@ export default function ProductsBrowsePage({
   items: ProductCardData[];
   initialQuery?: string;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
-  const [searchOpen, setSearchOpen] = useState(initialQuery.length > 0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [allItems, setAllItems] = useState(items);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(items.length >= 72);
+
+  useEffect(() => {
+    const urlQ = searchParams.get("q")?.trim() ?? "";
+    setQuery((prev) => (urlQ !== prev ? urlQ : prev));
+  }, [searchParams]);
 
   const q = query.trim();
   const categoryFilterActive = selectedCategory !== null;
@@ -41,33 +43,6 @@ export default function ProductsBrowsePage({
     enabled: isSearching,
     limit: 20,
   });
-
-  useEffect(() => {
-    const urlQ = searchParams.get("q")?.trim() ?? "";
-    setQuery((prev) => (urlQ !== prev ? urlQ : prev));
-    if (urlQ) setSearchOpen(true);
-  }, [searchParams]);
-
-  function syncQueryToUrl(nextQuery: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    const trimmed = nextQuery.trim();
-    if (trimmed) {
-      params.set("q", trimmed);
-    } else {
-      params.delete("q");
-    }
-    const qs = params.toString();
-    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
-  }
-
-  function handleQueryChange(next: string) {
-    setQuery(next);
-    syncQueryToUrl(next);
-  }
-
-  function handleSearchSubmit(next: string) {
-    handleQueryChange(next);
-  }
 
   const loadMore = useCallback(async () => {
     setLoadingMore(true);
@@ -92,15 +67,6 @@ export default function ProductsBrowsePage({
     }
   }, [page, allItems]);
 
-  function handleSearchToggle() {
-    if (searchOpen) {
-      setSearchOpen(false);
-      handleQueryChange("");
-    } else {
-      setSearchOpen(true);
-    }
-  }
-
   const categories = useMemo(
     () => collectCategoriesFromProducts(items),
     [items],
@@ -113,8 +79,14 @@ export default function ProductsBrowsePage({
       slug,
       title: fp.title,
       priceUGX: fp.price_ugx,
+      originalPriceUGX: fp.price_ugx,
+      discountPriceUGX: fp.discount_price ?? null,
+      discountPercent: fp.discount_price != null && fp.discount_price > 0 && fp.discount_price < fp.price_ugx
+        ? Math.round((1 - fp.discount_price / fp.price_ugx) * 100)
+        : 0,
       imageUrl: fp.primary_image,
       shopLogoUrl: fp.shop.logo_url ?? undefined,
+      stockQuantity: fp.stock_quantity,
       viewCount: fp.view_count,
       likeCount: fp.like_count,
       isLiked: fp.viewer_liked ?? undefined,
@@ -160,25 +132,9 @@ export default function ProductsBrowsePage({
         categories={categories}
         selected={selectedCategory}
         onSelect={setSelectedCategory}
-        searchActive={searchOpen}
-        onSearchToggle={handleSearchToggle}
       />
 
       <div className="space-y-4 sm:space-y-6">
-        <div
-          className={`overflow-hidden transition-all duration-300 ease-out ${
-            searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <ProductSearchBar
-            value={query}
-            onChange={handleQueryChange}
-            onSubmit={handleSearchSubmit}
-            placeholder="Search products…"
-            ariaLabel="Search products"
-          />
-        </div>
-
         {(isSearching || categoryFilterActive) && (
           <p className="text-sm text-muted">
             {isSearching ? (
@@ -196,10 +152,10 @@ export default function ProductsBrowsePage({
                 {" · "}
                 <button
                   type="button"
-                  onClick={() => handleQueryChange("")}
+                  onClick={() => setQuery("")}
                   className="font-semibold text-foreground underline-offset-2 hover:underline"
                 >
-                  clear search
+                  clear
                 </button>
               </>
             ) : (

@@ -24,7 +24,7 @@ export default function ProductComments({ productId }: Props) {
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const load = useCallback(async () => {
     try {

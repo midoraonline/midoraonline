@@ -8,8 +8,6 @@ type Slide = {
   id: string;
   headline: string;
   subtitle: string;
-  cta: string;
-  ctaHref: string;
   gradient: string;
   accent: string;
 };
@@ -19,8 +17,6 @@ const slides: Slide[] = [
     id: "discover",
     headline: "Discover local shops and products across Africa",
     subtitle: "Browse verified sellers, message merchants, and shop with confidence — all in one place.",
-    cta: "Start exploring",
-    ctaHref: "/products",
     gradient: "from-[#0F172A] via-[#1A2A4A] to-[#D4653C]/30",
     accent: "#D4653C",
   },
@@ -28,8 +24,6 @@ const slides: Slide[] = [
     id: "sell",
     headline: "Open your online shop in minutes",
     subtitle: "Join thousands of African merchants. List products, reach customers, and grow your business.",
-    cta: "Open a shop",
-    ctaHref: "/open-shop",
     gradient: "from-[#0F172A] via-[#1E3A5F] to-[#059669]/30",
     accent: "#059669",
   },
@@ -37,8 +31,6 @@ const slides: Slide[] = [
     id: "trending",
     headline: "Trending products handpicked for you",
     subtitle: "From fashion to electronics — discover what's popular in your community right now.",
-    cta: "Browse trending",
-    ctaHref: "/products",
     gradient: "from-[#0F172A] via-[#3A1A2A] to-[#D97706]/30",
     accent: "#D97706",
   },
@@ -46,8 +38,6 @@ const slides: Slide[] = [
     id: "community",
     headline: "Shop local, support your community",
     subtitle: "Every purchase helps a local business thrive. Midora connects you with shops near you.",
-    cta: "Find shops",
-    ctaHref: "/shops",
     gradient: "from-[#0F172A] via-[#1A2A3A] to-[#8B5CF6]/30",
     accent: "#8B5CF6",
   },
@@ -80,16 +70,16 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
           style={{ transitionDelay: "500ms" }}
         >
           <Link
-            href={slide.ctaHref}
+            href="/open-shop"
             className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-foreground shadow-lg transition-all hover:bg-white/90 hover:shadow-xl hover:-translate-y-0.5"
           >
-            {slide.cta}
+            Open a Shop
           </Link>
           <Link
-            href="/aboutus"
+            href="/onboarding"
             className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-2.5 text-sm font-semibold text-white/85 backdrop-blur-sm transition-all hover:bg-white/20 hover:border-white/30"
           >
-            Learn more
+            How it Works
           </Link>
         </div>
       </div>

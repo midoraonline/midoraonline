@@ -13,8 +13,14 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
     slug,
     title: p.title,
     priceUGX: p.price_ugx,
+    originalPriceUGX: p.price_ugx,
+    discountPriceUGX: p.discount_price ?? null,
+    discountPercent: p.discount_price != null && p.discount_price > 0 && p.discount_price < p.price_ugx
+      ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
+      : 0,
     imageUrl: p.primary_image,
     shopLogoUrl: p.shop.logo_url ?? undefined,
+    stockQuantity: p.stock_quantity,
     viewCount: p.view_count,
     likeCount: p.like_count,
     isLiked: p.viewer_liked ?? undefined,

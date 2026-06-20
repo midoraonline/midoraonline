@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
@@ -16,7 +16,6 @@ import type { ProductCardData } from "@/components/productcard";
 import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HomeHeroSlider from "@/components/home/HomeHeroSlider";
-import { useProductSearch } from "@/lib/hooks/useProductSearch";
 
 function SectionHeader({
   title,
@@ -71,29 +70,8 @@ type Props = {
 export default function HomeLanding({
   initialProducts,
 }: Props) {
-  const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-
-  function handleSearchToggle() {
-    if (searchOpen) {
-      setSearchOpen(false);
-      setQuery("");
-    } else {
-      setSearchOpen(true);
-    }
-  }
-
-  const q = query.trim();
-  const isSearching = q.length > 0;
-
-  const search = useProductSearch({
-    query,
-    category: selectedCategory,
-    enabled: isSearching,
-    limit: 24,
-  });
 
   const categories = useMemo(
     () => collectCategoriesFromProducts(initialProducts),
@@ -114,7 +92,6 @@ export default function HomeLanding({
   }, [initialProducts]);
 
   const browseProducts = useMemo(() => {
-    if (isSearching) return [];
     let list = initialProducts;
     if (selectedCategory) {
       list = list.filter(
@@ -144,7 +121,7 @@ export default function HomeLanding({
 
   return (
     <div className="w-full">
-      {!isSearching && !categoryFilterActive && (
+      {!categoryFilterActive && (
         <div className="mb-5 sm:mb-6 lg:mb-8">
           <HomeHeroSlider bgImages={heroImages} />
         </div>
@@ -155,8 +132,6 @@ export default function HomeLanding({
           categories={categories}
           selected={selectedCategory}
           onSelect={setSelectedCategory}
-          searchActive={searchOpen}
-          onSearchToggle={handleSearchToggle}
         />
 
         <ProductFilters
@@ -240,24 +215,12 @@ export default function HomeLanding({
 
           <section className="space-y-4">
             <SectionHeader
-              title={
-                isSearching
-                  ? `Products matching "${q}"${filterHint}`
-                  : `All Products${filterHint}`
-              }
-              subtitle={
-                isSearching
-                  ? undefined
-                  : "Browse all listings from shops on Midora."
-              }
-              href={isSearching ? undefined : "/products"}
-              linkLabel={isSearching ? undefined : "See all"}
+              title={`All Products${filterHint}`}
+              subtitle="Browse all listings from shops on Midora."
+              href="/products"
+              linkLabel="See all"
             />
-            {search.loading && isSearching ? (
-              <EmptyState message="Searching…" />
-            ) : search.error && isSearching ? (
-              <EmptyState message={search.error} />
-            ) : displayProducts.length === 0 ? (
+            {displayProducts.length === 0 ? (
               <EmptyState
                 message={
                   anyFiltersActive || isSearching
@@ -268,21 +231,11 @@ export default function HomeLanding({
             ) : (
               <>
                 <div className={browseProductGridClass}>
-                  {(isSearching ? displayProducts : displayProducts.slice(0, 24)).map((p) => (
+                  {displayProducts.slice(0, 24).map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
-                {isSearching && search.hasMore ? (
-                  <div className="pt-2 text-center">
-                    <Link
-                      href={`/products?q=${encodeURIComponent(q)}`}
-                      className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
-                    >
-                      View all {search.total} results
-                      <ArrowRight className="size-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                ) : !isSearching && initialProducts.length > 0 ? (
+                {initialProducts.length > 0 && (
                   <div className="pt-2 text-center">
                     <Link
                       href="/products"
@@ -292,12 +245,11 @@ export default function HomeLanding({
                       <ArrowRight className="size-3.5" aria-hidden />
                     </Link>
                   </div>
-                ) : null}
+                )}
               </>
             )}
-          </section>
+            </section>
 
-          {!isSearching && (
             <section className="dm-card relative overflow-hidden p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
               <div className="pointer-events-none absolute inset-0 opacity-[0.03]">
                 <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent blur-2xl" />
@@ -316,7 +268,6 @@ export default function HomeLanding({
                 <ArrowRight className="size-3.5" aria-hidden />
               </Link>
             </section>
-          )}
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
-import { productImageUrls, productPriceUgx } from "@/lib/api/products";
+import { productImageUrls, productPriceUgx, productOriginalPriceUgx, productIsDiscounted, productDiscountPercent } from "@/lib/api/products";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
@@ -16,10 +16,12 @@ import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
 import ProductComments from "@/components/product/ProductComments";
+import ProductReviews from "@/components/product/ProductReviews";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import StarRating from "@/components/StarRating";
+import { getProductReviewStats } from "@/lib/api/reviews";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -110,8 +112,13 @@ export default async function ProductDetails({
 
   const shop = product.shop;
 
+  const reviewStats = await getProductReviewStats(id);
+
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
+  const originalPrice = productOriginalPriceUgx(product);
+  const isDiscounted = productIsDiscounted(product);
+  const discountPct = productDiscountPercent(product);
   const productPath = `/products/${canonicalSlug}`;
   const listingUrl = `${SITE}${productPath}`;
   const waHref =
@@ -190,11 +197,31 @@ export default async function ProductDetails({
             <h1 className="font-display mt-2 text-xl font-semibold tracking-tight text-pretty sm:text-2xl">
               {product.title}
             </h1>
-            <p className="mt-3 text-xl font-semibold tabular-nums tracking-tight text-foreground sm:text-2xl">
-              {formatUGX(price)}
-            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <p className="text-xl font-semibold tabular-nums tracking-tight text-foreground sm:text-2xl">
+                {formatUGX(price)}
+              </p>
+              {isDiscounted && (
+                <>
+                  <p className="text-sm font-medium text-muted line-through">
+                    {formatUGX(originalPrice)}
+                  </p>
+                  <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                    -{discountPct}%
+                  </span>
+                </>
+              )}
+            </div>
             <div className="mt-2">
-              <StarRating rating={0} size="sm" placeholder />
+              {reviewStats.total_reviews > 0 ? (
+                <StarRating
+                  rating={reviewStats.average_rating}
+                  count={reviewStats.total_reviews}
+                  size="sm"
+                />
+              ) : (
+                <StarRating rating={0} size="sm" placeholder />
+              )}
             </div>
           </div>
 
@@ -234,33 +261,36 @@ export default async function ProductDetails({
 
           {/* Contact seller */}
           <div className="flex flex-col gap-2">
-            {waHref && shop ? (
-              <SellerContactConsent
-                shopId={shop.id}
-                productId={product.id}
-                whatsappNumber={shop.whatsapp_number ?? ""}
-                listingUrl={listingUrl}
-                title={product.title}
-              >
-                <div className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98]">
-                  <WhatsAppIcon className="size-4 shrink-0 text-white" />
-                  Message seller on WhatsApp
-                </div>
-              </SellerContactConsent>
-            ) : shop ? (
-              <p className="rounded-xl border border-border bg-surface px-4 py-3 text-center text-xs text-muted">
-                WhatsApp not connected — visit the shop page for other contact options.
-              </p>
-            ) : null}
+            <div className="flex gap-2">
+              {waHref && shop ? (
+                <SellerContactConsent
+                  shopId={shop.id}
+                  productId={product.id}
+                  whatsappNumber={shop.whatsapp_number ?? ""}
+                  listingUrl={listingUrl}
+                  title={product.title}
+                >
+                  <div className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98]">
+                    <WhatsAppIcon className="size-4 shrink-0 text-white" />
+                    WhatsApp
+                  </div>
+                </SellerContactConsent>
+              ) : shop ? (
+                <p className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-center text-xs text-muted">
+                  WhatsApp not connected
+                </p>
+              ) : null}
 
-            {shop && shop.owner_id && (
-              <MessageSellerButton
-                sellerId={shop.owner_id}
-                shopId={shop.id}
-                productId={product.id}
-                className="w-full rounded-xl py-3 text-sm"
-              />
-            )}
+              {shop && shop.owner_id && (
+                <div className="flex-1">
+                  <MessageSellerButton
+                    sellerId={shop.owner_id}
+                    shopId={shop.id}
+                    productId={product.id}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Trust + secondary actions */}
             <div className="flex items-center justify-between pt-1">
@@ -353,12 +383,6 @@ export default async function ProductDetails({
                 {product.like_count} likes
               </span>
             )}
-            {product.listing_score != null && product.listing_score > 0 && (
-              <span className="flex items-center gap-1 text-amber-600">
-                <MaterialSymbol name="trending_up" className="!text-sm" />
-                Score {product.listing_score}
-              </span>
-            )}
             <ReportListing productId={product.id} />
           </div>
 
@@ -368,6 +392,10 @@ export default async function ProductDetails({
               shopOwnerId={shop.owner_id ?? undefined}
               shopSlug={shop.slug ?? undefined}
               shopId={shop.id}
+              productId={product.id}
+              isPublished={product.is_published}
+              productPriceUgx={productPriceUgx(product)}
+              productDiscountPrice={product.discount_price}
             />
           )}
 
@@ -382,6 +410,9 @@ export default async function ProductDetails({
               </p>
             </section>
           )}
+
+          {/* Reviews */}
+          <ProductReviews productId={product.id} />
 
           {/* Comments */}
           <ProductComments productId={product.id} />

@@ -1,7 +1,6 @@
 "use client";
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import TradeDisclaimer from "@/components/TradeDisclaimer";
 import { apiListingEvents } from "@/lib/api";
 
 type Props = {

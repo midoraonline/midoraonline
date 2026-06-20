@@ -4,6 +4,7 @@ import EditShopForm from "@/components/shop/EditShopForm";
 import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
 import ShopProductGridRealtime from "@/components/shop/ShopProductGridRealtime";
 import ShopTabs from "@/components/shop/ShopTabs";
+import ShopReviews from "@/components/shop/ShopReviews";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export default async function ShopDetails({
@@ -128,6 +129,7 @@ export default async function ShopDetails({
       products={productsSection}
       about={aboutSection}
       contacts={contactsSection}
+      reviews={<ShopReviews shopId={shop.id} />}
       concierge={conciergeSection}
       shopSlug={shop.slug}
       shopId={shop.id}

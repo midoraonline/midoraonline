@@ -3,7 +3,8 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import type { Contact, Shop } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
-import { productMediaItems } from "@/lib/api/products";
+import { productMediaItems, productPrimaryImage } from "@/lib/api/products";
+import { productPageSlug } from "@/lib/productUrl";
 import ShopActions from "./ShopActions";
 import ShopHeroCarousel, { type HeroMedia } from "./ShopHeroCarousel";
 import {
@@ -15,8 +16,9 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
-import { getShopReviewStats } from "@/lib/api/reviews";
-import StarRating from "@/components/StarRating";
+import ShopHeaderRating from "@/components/shop/ShopHeaderRating";
+import ShopContactButtons from "@/components/shop/ShopContactButtons";
+import ShopAvailabilityToggle from "@/components/shop/ShopAvailabilityToggle";
 
 function ShopLogo({ logoUrl, name }: { logoUrl?: string | null; name: string }) {
   if (logoUrl) {
@@ -27,10 +29,8 @@ function ShopLogo({ logoUrl, name }: { logoUrl?: string | null; name: string }) 
     );
   }
   return (
-    <div className="grid size-20 shrink-0 place-items-center rounded-2xl bg-foreground/[0.06] ring-2 ring-foreground/[0.08] sm:size-24">
-      <span className="text-2xl font-bold text-foreground/30 select-none">
-        {name.slice(0, 2).toUpperCase()}
-      </span>
+    <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl ring-2 ring-foreground/[0.08] sm:size-24">
+      <Image src="/logo.png" alt="Midora Online" fill className="object-contain p-2" priority sizes="96px" />
     </div>
   );
 }
@@ -83,7 +83,6 @@ export default async function ShopHeader({
   shop: Shop;
   products?: Product[];
 }) {
-  const reviewStats = await getShopReviewStats(shop.id).catch(() => null);
   const location = locationDisplay(shop.location);
   const heroContacts = filterDuplicateContacts(shop);
   const secondaryContacts = heroContacts.filter(
@@ -223,24 +222,10 @@ export default async function ShopHeader({
       </div>
 
       {/* Rating */}
-      {reviewStats && reviewStats.total_reviews > 0 ? (
-        <div className="flex justify-center">
-          <span
-            className={immersive ? "drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]" : ""}
-            style={immersive ? { filter: "brightness(1.2)" } : undefined}
-          >
-            <StarRating
-              rating={reviewStats.average_rating}
-              count={reviewStats.total_reviews}
-              size="sm"
-            />
-          </span>
-        </div>
-      ) : (
-        <div className="flex justify-center">
-          <StarRating rating={0} size="sm" placeholder />
-        </div>
-      )}
+      <div className={`flex justify-center ${immersive ? "drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]" : ""}`}
+        style={immersive ? { filter: "brightness(1.2)" } : undefined}>
+        <ShopHeaderRating shopId={shop.id} />
+      </div>
 
       {/* Description */}
       {shop.description ? (
@@ -290,19 +275,16 @@ export default async function ShopHeader({
         </div>
       )}
 
-      {/* Primary CTA: WhatsApp */}
-      {waHref ? (
-        <div className="mx-auto w-full max-w-sm space-y-2 pt-1">
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
-          >
-            <WhatsAppIcon className="size-4 shrink-0 text-white" />
-            Contact on WhatsApp
-          </a>
-          {shop.is_active ? (
+      {/* Primary CTAs: WhatsApp + Native messaging */}
+      {(waHref || shop.owner_id) ? (
+        <ShopContactButtons
+          shopId={shop.id}
+          ownerId={shop.owner_id}
+          whatsappNumber={shop.whatsapp_number}
+          waHref={waHref}
+        />
+      ) : null}
+      {shop.is_active ? (
             <p
               className={`text-center text-xs ${!immersive ? "text-muted" : ""}`}
               style={immersive ? { color: "var(--hero-text-muted)" } : undefined}
@@ -323,8 +305,61 @@ export default async function ShopHeader({
               Seller on Midora · Final sale happens in WhatsApp
             </p>
           )}
+
+      {/* Owner: toggle available_now */}
+      <ShopAvailabilityToggle
+        shopId={shop.id}
+        shopOwnerId={shop.owner_id}
+        availableNow={shop.available_now ?? false}
+      />
+
+      {/* Promoted products */}
+      {publishedProducts.filter((p) => p.boosted).length > 0 && (
+        <div className="pt-2">
+          <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${immersive ? "text-white/60" : "text-muted"}`}>
+            Promoted
+          </p>
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
+            {publishedProducts
+              .filter((p) => p.boosted)
+              .slice(0, 6)
+              .map((p) => {
+                const imgSrc = productPrimaryImage(p);
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/products/${productPageSlug(p)}`}
+                    className={`group flex w-28 shrink-0 snap-start flex-col overflow-hidden rounded-xl text-left ${immersive ? "bg-white/10 backdrop-blur-sm" : "border border-border bg-surface"}`}
+                  >
+                    <div className="aspect-[4/3] overflow-hidden bg-foreground/[0.04]">
+                      {imgSrc ? (
+                        <Image
+                          src={imgSrc}
+                          alt={p.title}
+                          width={112}
+                          height={84}
+                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex size-full items-center justify-center text-[10px] text-muted">
+                          No image
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-2 py-1.5">
+                      <p className={`truncate text-[11px] font-medium ${immersive ? "text-white/90" : "text-foreground"}`}>
+                        {p.title}
+                      </p>
+                      <p className={`text-[10px] font-semibold ${immersive ? "text-white/70" : "text-foreground/70"}`}>
+                        UGX {(p.price_ugx ?? 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+          </div>
         </div>
-      ) : null}
+      )}
 
       {/* Secondary contacts: email, phone, social — shown as labelled chips */}
       {(shop.shop_email ||

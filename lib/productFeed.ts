@@ -17,6 +17,7 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
     priceUGX: p.price_ugx,
     imageUrl: p.primary_image,
     shopLogoUrl: p.shop.logo_url ?? undefined,
+    stockQuantity: p.stock_quantity,
     viewCount: p.view_count,
     likeCount: p.like_count,
     isLiked: p.viewer_liked ?? undefined,

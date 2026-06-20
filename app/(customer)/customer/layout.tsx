@@ -8,7 +8,8 @@ const NAV: DashboardNavItem[] = [
   { href: "/customer", label: "Overview", icon: <IconHome />, exact: true },
   { href: "/customer/profile", label: "Profile", icon: <IconUser /> },
   { href: "/customer/orders", label: "Orders", icon: <IconBag /> },
-  { href: "/customer/saved", label: "Saved shops", icon: <IconHeart /> },
+  { href: "/customer/wishlist", label: "Wishlist", icon: <IconHeart /> },
+  { href: "/customer/saved", label: "Saved shops", icon: <IconBookmark /> },
 ];
 
 const SECONDARY: DashboardNavItem[] = [
@@ -59,6 +60,13 @@ function IconHeart() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M12 21s-7-4.35-7-10a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 5.65-7 10-7 10Z" />
+    </svg>
+  );
+}
+function IconBookmark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
     </svg>
   );
 }

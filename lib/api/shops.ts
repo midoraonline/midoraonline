@@ -108,6 +108,16 @@ export function recordShopView(shopId: string) {
   );
 }
 
+export type ShopEventType = "whatsapp_clicked" | "messaged";
+
+export function recordShopEvent(shopId: string, eventType: ShopEventType) {
+  const params = new URLSearchParams({ event_type: eventType });
+  return apiFetch<{ status: string } | { error: string }>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/events?${params.toString()}`,
+    { method: "POST", body: "{}" }
+  );
+}
+
 export function followShop(shopId: string, token?: string | null) {
   return apiFetch<unknown>(`/api/v1/shops/${encodeURIComponent(shopId)}/follow`, {
     method: "POST",
@@ -306,5 +316,12 @@ export type ShopDashboardResponse = {
 export function getShopDashboard(shopId: string) {
   return apiFetch<ShopDashboardResponse>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/dashboard`
+  );
+}
+
+export function toggleShopAvailability(shopId: string, token?: string | null) {
+  return apiFetch<Shop>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/toggle-availability`,
+    { method: "POST", token }
   );
 }

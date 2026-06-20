@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiListingEvents } from "@/lib/api";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import TradeDisclaimer from "@/components/TradeDisclaimer";
 
 type Props = {
   sellerId: string;
@@ -57,23 +56,16 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
   };
 
   return (
-    <div>
-      <TradeDisclaimer
-        type="message"
-        onConfirm={doCreateConversation}
+    <div className={className}>
+      <button
+        type="button"
+        onClick={doCreateConversation}
+        disabled={loading}
+        className="dm-focus inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 disabled:opacity-50"
       >
-        {(open) => (
-          <button
-            type="button"
-            onClick={open}
-            disabled={loading}
-            className={`dm-focus inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95 disabled:opacity-50 ${className}`}
-          >
-            <MaterialSymbol name="chat" className="!text-sm shrink-0" />
-            <span className={compact ? "sr-only" : ""}>{loading ? "Starting…" : "Message seller"}</span>
-          </button>
-        )}
-      </TradeDisclaimer>
+        <MaterialSymbol name="chat" className="!text-sm shrink-0" />
+        <span className={compact ? "sr-only" : ""}>{loading ? "Starting…" : "Message seller"}</span>
+      </button>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );

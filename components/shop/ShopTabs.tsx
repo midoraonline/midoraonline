@@ -6,12 +6,13 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 
-type TabId = "products" | "about" | "contacts" | "help";
+type TabId = "products" | "about" | "contacts" | "reviews" | "help";
 
 export default function ShopTabs({
   products,
   about,
   contacts,
+  reviews,
   concierge,
   shopSlug,
   shopId,
@@ -19,6 +20,7 @@ export default function ShopTabs({
   products: ReactNode;
   about: ReactNode | null;
   contacts: ReactNode | null;
+  reviews: ReactNode;
   concierge: ReactNode;
   shopSlug: string;
   shopId: string;
@@ -30,6 +32,7 @@ export default function ShopTabs({
   ];
   if (about) tabs.push({ id: "about", label: "About", content: about });
   if (contacts) tabs.push({ id: "contacts", label: "Contacts", content: contacts });
+  tabs.push({ id: "reviews", label: "Reviews", content: reviews });
   tabs.push({ id: "help", label: "Help", content: concierge });
 
   const [activeTab, setActiveTab] = useState<TabId>("products");
@@ -57,13 +60,22 @@ export default function ShopTabs({
             );
           })}
           {canManage ? (
-            <Link
-              href={`/shops/${shopSlug}/analytics`}
-              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-accent hover:bg-accent/10 transition-colors"
-            >
-              <MaterialSymbol name="analytics" className="!text-lg" />
-              <span className="hidden sm:inline">Analytics</span>
-            </Link>
+            <div className="ml-auto flex items-center gap-1">
+              <Link
+                href={`/shops/${shopSlug}/edit`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-500/20 hover:border-orange-500/50 transition-colors"
+              >
+                <MaterialSymbol name="edit" className="!text-sm" />
+                <span className="hidden sm:inline">Edit</span>
+              </Link>
+              <Link
+                href={`/shops/${shopSlug}/analytics`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-500/20 hover:border-orange-500/50 transition-colors"
+              >
+                <MaterialSymbol name="analytics" className="!text-sm" />
+                <span className="hidden sm:inline">Analytics</span>
+              </Link>
+            </div>
           ) : null}
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Filter, Search, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { CATEGORY_ICON_CLASS, resolveCategoryIcon, ALL_CATEGORIES_ICON } from "@/lib/homeCategoryIcons";
 
@@ -9,16 +9,12 @@ type Props = {
   categories: string[];
   selected: string | null;
   onSelect: (key: string | null) => void;
-  searchActive?: boolean;
-  onSearchToggle?: () => void;
 };
 
 export default function CategoryFilterBar({
   categories,
   selected,
   onSelect,
-  searchActive,
-  onSearchToggle,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -34,24 +30,6 @@ export default function CategoryFilterBar({
     <>
       {/* Desktop: horizontal pill strip */}
       <div className="hidden sm:flex items-center gap-2 mb-5 overflow-x-auto pb-1 scrollbar-none">
-        {onSearchToggle && (
-          <button
-            type="button"
-            onClick={onSearchToggle}
-            aria-label="Toggle search"
-            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all dm-focus ${
-              searchActive
-                ? "bg-accent text-white shadow-sm"
-                : "bg-surface-subtle text-muted hover:text-foreground ring-1 ring-border"
-            }`}
-          >
-            <Search className="size-3.5" />
-            Search
-          </button>
-        )}
-
-        <div className="h-5 w-px shrink-0 bg-border" />
-
         {items.map(({ key, label }) => {
           const active = key === null ? selected === null : selected === key;
           const icon = key === null ? ALL_CATEGORIES_ICON : resolveCategoryIcon(label);
@@ -78,20 +56,6 @@ export default function CategoryFilterBar({
       {/* Mobile: filter button + drawer */}
       <div className="sm:hidden mb-4">
         <div className="flex items-center gap-2">
-          {onSearchToggle && (
-            <button
-              type="button"
-              onClick={onSearchToggle}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all dm-focus ${
-                searchActive
-                  ? "bg-accent text-white"
-                  : "bg-surface-subtle text-muted ring-1 ring-border"
-              }`}
-            >
-              <Search className="size-3.5" />
-            </button>
-          )}
-
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
