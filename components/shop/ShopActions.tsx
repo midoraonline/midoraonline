@@ -6,11 +6,12 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
+import { recordShopEvent } from "@/lib/api/shops";
 
 const baseIcon =
-  "inline-flex size-9 items-center justify-center rounded-lg text-foreground/70 outline-none ring-0 shadow-none transition-all duration-200 focus:outline-none focus-visible:outline-none";
+  "inline-flex size-9 items-center justify-center rounded-lg text-orange-600/70 outline-none ring-0 shadow-none transition-all duration-200 focus:outline-none focus-visible:outline-none";
 
-const hoverNeutral = "hover:bg-accent/18 hover:text-accent";
+const hoverNeutral = "hover:bg-orange-500/18 hover:text-orange-600";
 
 export default function ShopActions({
   shopSlug,
@@ -65,6 +66,7 @@ export default function ShopActions({
         else await apiShops.unlikeShop(shopId);
         setLiked(next);
         await syncEngagement();
+        recordShopEvent(shopId, "messaged").catch(() => {});
       } catch {
         /* keep prior */
       }
@@ -82,6 +84,7 @@ export default function ShopActions({
         else await apiShops.unfollowShop(shopId);
         setFollowed(next);
         await syncEngagement();
+        recordShopEvent(shopId, "messaged").catch(() => {});
       } catch {
         /* keep prior */
       }
@@ -106,6 +109,7 @@ export default function ShopActions({
       setTimeout(() => setShareState("idle"), 2200);
     } catch {
     }
+    recordShopEvent(shopId, "messaged").catch(() => {});
   }
 
   return (
@@ -113,7 +117,7 @@ export default function ShopActions({
       {canManage && (
         <Link
           href={`/shops/${shopSlug}/edit`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-foreground/[0.06] px-2.5 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.1] hover:text-foreground dm-focus"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-2.5 py-1.5 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-500/20 hover:border-orange-500/50 dm-focus"
           title="Edit shop"
           aria-label="Edit shop"
         >
@@ -151,7 +155,7 @@ export default function ShopActions({
         className={[
           baseIcon,
           followed
-            ? "text-accent hover:bg-accent/15 hover:text-accent"
+            ? "text-orange-600 hover:bg-orange-500/15 hover:text-orange-700"
             : hoverNeutral,
         ].join(" ")}
       >

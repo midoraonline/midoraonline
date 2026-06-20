@@ -114,7 +114,7 @@ export default async function ShopLayout({
           </div>
         </div>
       </div>
-      <Navbar />
+      <Navbar shopLogoUrl={shop.logo_url} shopName={shop.name} />
       <ShopHeader shop={shop} products={heroProducts} />
       <main className="flex-1">
         <div className="dm-container pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12">

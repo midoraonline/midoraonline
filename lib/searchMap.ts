@@ -10,8 +10,14 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     slug,
     title: item.title,
     priceUGX: item.price_ugx,
+    originalPriceUGX: item.price_ugx,
+    discountPriceUGX: item.discount_price ?? null,
+    discountPercent: item.discount_price != null && item.discount_price > 0 && item.discount_price < item.price_ugx
+      ? Math.round((1 - item.discount_price / item.price_ugx) * 100)
+      : 0,
     imageUrl: item.primary_image ?? item.image_urls?.[0] ?? undefined,
     shopLogoUrl: item.shop.logo_url ?? undefined,
+    stockQuantity: null,
     viewCount: item.view_count,
     likeCount: item.like_count,
     isLiked: item.viewer_liked ?? undefined,

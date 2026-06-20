@@ -11,8 +11,12 @@ export type ProductCardData = {
   slug: string;
   title: string;
   priceUGX: number;
+  originalPriceUGX?: number;
+  discountPriceUGX?: number | null;
+  discountPercent?: number;
   imageUrl?: string;
   shopLogoUrl?: string;
+  stockQuantity?: number | null;
   viewCount?: number;
   shopWhatsApp?: string | null;
   listingUrl?: string | null;
@@ -82,8 +86,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
     typeof product.viewCount === "number" ? product.viewCount : null;
   const freshness = timeAgo(product.updated_at || null);
   const isBoosted = product.boosted === true;
-  const isAvailable = product.shop.available_now !== false;
+  const isAvailable =
+    product.shop.available_now !== false &&
+    (product.stockQuantity === null || product.stockQuantity === undefined || product.stockQuantity > 0);
   const trustScore = product.shop.trust_score ?? null;
+  const isDiscounted = product.discountPriceUGX != null && product.discountPriceUGX > 0 && (product.originalPriceUGX ?? product.priceUGX) > product.discountPriceUGX;
+  const discountPct = isDiscounted ? Math.round((1 - product.discountPriceUGX! / (product.originalPriceUGX ?? product.priceUGX)) * 100) : 0;
 
   return (
     <article className="dm-card dm-card-hover flex flex-col overflow-hidden">
@@ -117,6 +125,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                   Boosted
                 </span>
               )}
+              {isDiscounted && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                  <MaterialSymbol name="sell" className="!text-[11px]" />
+                  -{discountPct}%
+                </span>
+              )}
               {freshness && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-black/65 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
                   {freshness}
@@ -139,9 +153,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               aria-hidden
             >
               <div className="space-y-1.5 px-4 pb-4">
-                <p className="text-sm font-semibold text-white drop-shadow-md">
-                  {product.title}
-                </p>
                 <p className="text-xs text-white/85">
                   {product.shop.name}
                   {product.shop.verified ? " · Verified" : ""}
@@ -197,9 +208,22 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <div className="flex items-center justify-between gap-2">
           <Link
             href={productHref}
-            className="dm-focus min-w-0 truncate text-sm font-bold tabular-nums text-accent"
+            className="dm-focus min-w-0 truncate"
           >
-            {formatUGX(product.priceUGX)}
+            {isDiscounted ? (
+              <span className="flex items-center gap-1.5">
+                <span className="text-sm font-bold tabular-nums text-accent">
+                  {formatUGX(product.discountPriceUGX!)}
+                </span>
+                <span className="text-[11px] font-medium text-muted line-through">
+                  {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
+                </span>
+              </span>
+            ) : (
+              <span className="text-sm font-bold tabular-nums text-accent">
+                {formatUGX(product.priceUGX)}
+              </span>
+            )}
           </Link>
 
           <ProductLikeButton
@@ -215,43 +239,41 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <div>
         </div>
 
-        {/* Mobile: both buttons as equal-size square icons */}
+        {/* Mobile: WhatsApp first, then message icon */}
         <div className="flex items-center gap-2 pt-0.5 sm:hidden">
+          {waHref && (
+            <ProductWhatsAppButton
+              waHref={waHref}
+              productId={product.id}
+              className="flex-1 rounded-xl py-2 text-[11px] font-bold shadow-sm"
+            />
+          )}
           {product.sellerId && (
             <MessageSellerButton
               sellerId={product.sellerId}
               shopId={product.shop.id}
               productId={product.id}
               compact
-              className={`size-10 shrink-0 rounded-xl p-0 ${!waHref ? "flex-1 size-auto py-2 px-3" : ""}`}
-            />
-          )}
-          {waHref && (
-            <ProductWhatsAppButton
-              waHref={waHref}
-              productId={product.id}
-              standalone={!product.sellerId}
-              className={product.sellerId ? "size-10 shrink-0 rounded-xl p-0" : "w-full rounded-xl py-2"}
+              className="size-10 shrink-0 rounded-xl p-0"
             />
           )}
         </div>
 
-        {/* sm+: labeled message button + compact WhatsApp */}
+        {/* sm+: WhatsApp labeled + accent message button */}
         <div className="hidden items-center gap-1.5 pt-0.5 sm:flex">
+          {waHref && (
+            <ProductWhatsAppButton
+              waHref={waHref}
+              productId={product.id}
+              className="min-w-0 flex-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold shadow-sm"
+            />
+          )}
           {product.sellerId && (
             <MessageSellerButton
               sellerId={product.sellerId}
               shopId={product.shop.id}
               productId={product.id}
-              className="min-w-0 flex-1 rounded-lg bg-surface-subtle px-2.5 py-1.5 text-[11px] font-medium text-foreground/80 shadow-sm ring-1 ring-inset ring-border hover:bg-border/40"
-            />
-          )}
-          {waHref && (
-            <ProductWhatsAppButton
-              waHref={waHref}
-              productId={product.id}
-              standalone={!product.sellerId}
-              className={product.sellerId ? "shrink-0" : "w-full"}
+              className="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px]"
             />
           )}
         </div>

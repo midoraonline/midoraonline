@@ -1,78 +1,44 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { apiProducts } from "@/lib/api";
 import type { LikedProduct } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import ProductLikeButton from "@/components/product/ProductLikeButton";
+import ProductCard, { type ProductCardData } from "@/components/productcard";
+import { productPageSlug } from "@/lib/productUrl";
 
-function fmtPrice(price: number): string {
-  return new Intl.NumberFormat("en-UG", {
-    style: "currency",
-    currency: "UGX",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-}
-
-function WishlistCard({ product }: { product: LikedProduct }) {
-  const img = product.image_urls?.[0] ?? null;
-
-  return (
-    <Link
-      href={`/products/${product.id}`}
-      className="dm-card group flex flex-col overflow-hidden transition hover:-translate-y-0.5"
-    >
-      {/* Image */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-subtle">
-        {img ? (
-          <Image
-            src={img}
-            alt={product.title}
-            fill
-            sizes="(max-width: 640px) 50vw, 33vw"
-            className="object-cover transition duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="grid h-full place-items-center text-muted">
-            <MaterialSymbol name="image" className="!text-3xl" />
-          </div>
-        )}
-        {/* Like button overlay */}
-        <div className="absolute right-2 top-2" onClick={(e) => e.preventDefault()}>
-          <ProductLikeButton
-            productId={product.id}
-            size="compact"
-            initialLiked={true}
-            initialLikeCount={0}
-          />
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug">{product.title}</p>
-        <p className="text-xs text-muted">{product.category ?? "Uncategorised"}</p>
-        <p className="mt-auto pt-1 text-sm font-bold text-accent">
-          {fmtPrice(product.price_ugx)}
-        </p>
-        <div className="flex items-center gap-2 text-[11px] text-muted">
-          <span className="flex items-center gap-0.5">
-            <MaterialSymbol name="visibility" className="!text-xs" />
-            {product.view_count}
-          </span>
-          {product.location_name && (
-            <span className="flex items-center gap-0.5">
-              <MaterialSymbol name="location_on" className="!text-xs" />
-              {product.location_name}
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
+function toCard(p: LikedProduct): ProductCardData {
+  return {
+    id: p.id,
+    slug: productPageSlug(p),
+    title: p.title,
+    priceUGX: p.price_ugx,
+    originalPriceUGX: p.price_ugx,
+    discountPriceUGX: p.discount_price ?? null,
+    discountPercent: p.discount_price != null && p.discount_price > 0 && p.discount_price < p.price_ugx
+      ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
+      : 0,
+    imageUrl: p.image_urls?.[0] ?? undefined,
+    stockQuantity: null,
+    viewCount: p.view_count,
+    category: p.category ?? null,
+    location_name: p.location_name ?? null,
+    shopWhatsApp: p.shop_whatsapp ?? null,
+    sellerId: p.owner_id ?? null,
+    shop: {
+      id: p.shop_id,
+      name: p.shop_name ?? "Shop",
+      slug: p.shop_slug ?? p.shop_id,
+      verified: false,
+      category: null,
+      trust_score: null,
+      available_now: null,
+      location: null,
+    },
+    boosted: false,
+    updated_at: p.created_at ?? null,
+  };
 }
 
 export default function WishlistPage() {
@@ -134,7 +100,7 @@ export default function WishlistPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((p) => (
-            <WishlistCard key={p.id} product={p} />
+            <ProductCard key={p.id} product={toCard(p)} />
           ))}
         </div>
       )}

@@ -17,6 +17,9 @@ import {
   productImageUrls,
   productPrimaryImage,
   productPriceUgx,
+  productIsDiscounted,
+  productDiscountPercent,
+  productOriginalPriceUgx,
   type ItemType,
   type Product,
 } from "@/lib/api/products";
@@ -110,7 +113,7 @@ export default function ShopCatalogEditor({
     if (!isAuthed) return;
     setError(null);
     try {
-      await apiProducts.updateProduct(p.id, { is_published: !p.is_published });
+      await apiProducts.toggleAvailability(p.id);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Update failed.");
@@ -220,7 +223,21 @@ export default function ShopCatalogEditor({
                         {p.title}
                       </p>
                       <p className="mt-0.5 text-xs text-muted">
-                        {formatUGX(productPriceUgx(p))}
+                        {productIsDiscounted(p) ? (
+                          <span className="flex items-center gap-1.5">
+                            <span className="font-semibold text-red-600 dark:text-red-400">
+                              {formatUGX(productPriceUgx(p))}
+                            </span>
+                            <span className="text-[11px] line-through text-muted/60">
+                              {formatUGX(productOriginalPriceUgx(p))}
+                            </span>
+                            <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                              -{productDiscountPercent(p)}%
+                            </span>
+                          </span>
+                        ) : (
+                          formatUGX(productPriceUgx(p))
+                        )}
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted">
                         <StatusBadge status={p.status} is_published={p.is_published} />

@@ -31,10 +31,14 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   />
                 </div>
               ) : (
-                <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
-                  <span className="select-none text-xs font-bold text-foreground/30">
-                    {shop.name.slice(0, 2).toUpperCase()}
-                  </span>
+                <div className="relative size-9 shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/[0.06]">
+                  <Image
+                    src="/logo.png"
+                    alt="Midora Online"
+                    fill
+                    className="object-contain p-1"
+                    sizes="36px"
+                  />
                 </div>
               )}
               <p className="text-sm font-semibold tracking-tight">{shop.name}</p>

@@ -20,19 +20,7 @@ export type ShopCardData = {
   reviewCount?: number | null;
 };
 
-function initials(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "?"
-  );
-}
-
 export default function ShopCard({ shop, className = "" }: { shop: ShopCardData; className?: string }) {
-  const initial = initials(shop.name);
   const shopTypeLabel =
     shop.shopType === "both" ? "Products & Services"
     : shop.shopType === "service" ? "Services"
@@ -57,12 +45,12 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
                 loading="lazy"
               />
             ) : (
-              <span
-                className="grid size-full place-items-center text-base font-bold tracking-tight text-foreground/30"
-                aria-hidden
-              >
-                {initial}
-              </span>
+              <img
+                src="/logo.png"
+                alt="Midora Online"
+                className="size-full object-contain p-1.5"
+                loading="lazy"
+              />
             )}
           </div>
 

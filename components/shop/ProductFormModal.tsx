@@ -92,6 +92,7 @@ type FormDraft = {
   title: string;
   description: string;
   price_ugx: string;
+  discount_price: string;
   stock_quantity: string;
   category: string;
   image_urls: string[];
@@ -103,6 +104,7 @@ function emptyDraft(): FormDraft {
     title: "",
     description: "",
     price_ugx: "",
+    discount_price: "",
     stock_quantity: "",
     category: "",
     image_urls: [],
@@ -115,6 +117,7 @@ function productToDraft(p: Product): FormDraft {
     title: p.title ?? "",
     description: p.description ?? "",
     price_ugx: p.price_ugx != null ? String(p.price_ugx) : "",
+    discount_price: p.discount_price != null ? String(p.discount_price) : "",
     stock_quantity: p.stock_quantity != null ? String(p.stock_quantity) : "",
     category: p.category ?? "",
     image_urls: productImageUrls(p),
@@ -160,6 +163,9 @@ export default function ProductFormModal({
         title: draft.title.trim(),
         description: draft.description.trim() || undefined,
         price_ugx: Number.isFinite(price) && price >= 0 ? price : undefined,
+        discount_price: draft.discount_price.trim()
+          ? Number(draft.discount_price.replace(/,/g, ""))
+          : undefined,
         category: draft.category.trim() || undefined,
         image_urls: draft.image_urls.length ? [...draft.image_urls] : undefined,
         is_published: draft.is_published,
@@ -248,6 +254,20 @@ export default function ProductFormModal({
               value={draft.price_ugx}
               onChange={(e) => setDraft((d) => ({ ...d, price_ugx: e.target.value }))}
               placeholder="5000"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground/80">
+              Discount price (UGX){" "}
+              <span className="font-normal text-muted">— optional, leave empty for no discount</span>
+            </label>
+            <input
+              className="dm-input-xs dm-focus w-full"
+              inputMode="numeric"
+              value={draft.discount_price}
+              onChange={(e) => setDraft((d) => ({ ...d, discount_price: e.target.value }))}
+              placeholder="4000"
             />
           </div>
 

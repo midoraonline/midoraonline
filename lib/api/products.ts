@@ -16,6 +16,8 @@ export type Product = {
   description?: string | null;
   price_ugx?: number | null;
   price?: number | null;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
   stock_quantity?: number | null;
   image_urls?: string[] | string | null;
   image_url?: string | null;
@@ -62,6 +64,8 @@ export type CreateProductRequest = {
   title: string;
   description?: string;
   price_ugx?: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
   stock_quantity?: number;
   category?: string;
   item_type?: ItemType;
@@ -84,6 +88,12 @@ function buildCreatePayload(body: CreateProductRequest): Record<string, unknown>
   if (body.price_ugx !== undefined && body.price_ugx !== null && !Number.isNaN(body.price_ugx)) {
     o.price_ugx = body.price_ugx;
   }
+  if (body.discount_price !== undefined) {
+    o.discount_price = body.discount_price;
+  }
+  if (body.discount_expires_at !== undefined) {
+    o.discount_expires_at = body.discount_expires_at;
+  }
   if (body.stock_quantity !== undefined && body.stock_quantity !== null && !Number.isNaN(body.stock_quantity)) {
     o.stock_quantity = body.stock_quantity;
   }
@@ -101,6 +111,8 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.title !== undefined) o.title = body.title;
   if (body.description !== undefined) o.description = body.description;
   if (body.price_ugx !== undefined) o.price_ugx = body.price_ugx;
+  if (body.discount_price !== undefined) o.discount_price = body.discount_price;
+  if (body.discount_expires_at !== undefined) o.discount_expires_at = body.discount_expires_at;
   if (body.stock_quantity !== undefined) o.stock_quantity = body.stock_quantity;
   if (body.category !== undefined) o.category = body.category;
   if (body.item_type !== undefined) o.item_type = body.item_type;
@@ -114,8 +126,32 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
 }
 
 export function productPriceUgx(p: Product): number {
+  const discountPrice = p.discount_price ?? null;
+  const originalPrice = p.price_ugx ?? p.price;
+  const basePrice = typeof originalPrice === "number" && !Number.isNaN(originalPrice) ? originalPrice : 0;
+  if (discountPrice !== null && typeof discountPrice === "number" && !Number.isNaN(discountPrice) && discountPrice < basePrice) {
+    return discountPrice;
+  }
+  return basePrice;
+}
+
+export function productOriginalPriceUgx(p: Product): number {
   const n = p.price_ugx ?? p.price;
   return typeof n === "number" && !Number.isNaN(n) ? n : 0;
+}
+
+export function productIsDiscounted(p: Product): boolean {
+  const dp = p.discount_price;
+  if (dp == null) return false;
+  const op = productOriginalPriceUgx(p);
+  return typeof dp === "number" && !Number.isNaN(dp) && dp > 0 && dp < op;
+}
+
+export function productDiscountPercent(p: Product): number {
+  if (!productIsDiscounted(p)) return 0;
+  const op = productOriginalPriceUgx(p);
+  const dp = p.discount_price!;
+  return Math.round((1 - dp / op) * 100);
 }
 
 function parseProductImageUrls(p: Product): string[] {
@@ -254,6 +290,25 @@ export function repostProduct(productId: string, token?: string | null) {
   });
 }
 
+export function setDiscount(
+  productId: string,
+  body: { discount_price: number | null; discount_expires_at?: string | null },
+  token?: string | null,
+) {
+  return apiFetch<Product>(`${productBase(productId)}/discount`, {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export function toggleAvailability(productId: string, token?: string | null) {
+  return apiFetch<Product>(`${productBase(productId)}/toggle-availability`, {
+    method: "POST",
+    token,
+  });
+}
+
 export function getAlgorithmFeed(opts?: { page?: number; limit?: number; token?: string }) {
   const limit = opts?.limit ?? 20;
   const page = opts?.page ?? 1;
@@ -274,8 +329,11 @@ export type HomeFeedProduct = {
   shop_id: string;
   title: string;
   price_ugx: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
   image_urls: string[];
   primary_image?: string;
+  stock_quantity: number;
   category?: string | null;
   item_type?: string | null;
   view_count: number;
@@ -317,6 +375,8 @@ export type SimilarProduct = {
   shop_id: string;
   title: string;
   price_ugx: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
   image_urls?: string[] | null;
   category?: string | null;
   item_type?: string | null;
@@ -327,6 +387,7 @@ export type SimilarProduct = {
   shop_name?: string | null;
   shop_slug?: string | null;
   owner_id?: string | null;
+  shop_whatsapp?: string | null;
 };
 
 export function getSimilarProducts(productId: string, limit = 8) {
@@ -362,6 +423,8 @@ export type LikedProduct = {
   title: string;
   description?: string | null;
   price_ugx: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
   image_urls?: string[] | null;
   category?: string | null;
   item_type?: string | null;
@@ -371,6 +434,10 @@ export type LikedProduct = {
   is_published: boolean;
   view_count: number;
   created_at?: string | null;
+  shop_name?: string | null;
+  shop_slug?: string | null;
+  shop_whatsapp?: string | null;
+  owner_id?: string | null;
 };
 
 export type LikedProductsResponse = {

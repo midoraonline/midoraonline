@@ -79,8 +79,14 @@ export default function ProductsBrowsePage({
       slug,
       title: fp.title,
       priceUGX: fp.price_ugx,
+      originalPriceUGX: fp.price_ugx,
+      discountPriceUGX: fp.discount_price ?? null,
+      discountPercent: fp.discount_price != null && fp.discount_price > 0 && fp.discount_price < fp.price_ugx
+        ? Math.round((1 - fp.discount_price / fp.price_ugx) * 100)
+        : 0,
       imageUrl: fp.primary_image,
       shopLogoUrl: fp.shop.logo_url ?? undefined,
+      stockQuantity: fp.stock_quantity,
       viewCount: fp.view_count,
       likeCount: fp.like_count,
       isLiked: fp.viewer_liked ?? undefined,

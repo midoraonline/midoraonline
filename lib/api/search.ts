@@ -21,6 +21,8 @@ export type SearchProductItem = {
   shop_id: string;
   title: string;
   price_ugx: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
   image_urls?: string[] | null;
   primary_image?: string | null;
   category?: string | null;
