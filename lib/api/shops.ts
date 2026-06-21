@@ -262,7 +262,7 @@ export type VerificationStatus =
 
 export type DocumentUpload = {
   url: string;
-  type: "national_id_front" | "national_id_back" | "selfie" | "business_cert";
+  type: "national_id_front" | "national_id_back" | "selfie" | "business_cert" | "shop_photo" | "business_reg" | "tax_doc";
   label: string;
 };
 

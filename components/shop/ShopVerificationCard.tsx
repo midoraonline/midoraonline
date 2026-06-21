@@ -128,11 +128,11 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
   const [s2Whatsapp, setS2Whatsapp] = useState("");
   const [s2Location, setS2Location] = useState("");
   const [s2Notes, setS2Notes] = useState("");
-  const [s2Docs, setS2Docs] = useState<{ type: string; url: string; label: string }[]>([]);
+  const [s2Docs, setS2Docs] = useState<{ type: DocType; url: string; label: string }[]>([]);
 
   // Stage 3 form state
   const [s3Notes, setS3Notes] = useState("");
-  const [s3Docs, setS3Docs] = useState<{ type: string; url: string; label: string }[]>([]);
+  const [s3Docs, setS3Docs] = useState<{ type: DocType; url: string; label: string }[]>([]);
 
   const load = useCallback(async () => {
     if (!session.isAuthenticated) return;
@@ -265,7 +265,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           description="Share your NIN/ID documents and contact details so we can confirm you're a real person. Earns you the Identity Verified badge."
         >
           {/* Reviewer notes on rejection */}
-          {stage2Status === "rejected" && (verification?.metadata as Record<string, unknown>)?.stage2_notes && (
+          {stage2Status === "rejected" && Boolean((verification?.metadata as Record<string, unknown>)?.stage2_notes) && (
             <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-xs text-rose-800">
               <strong>Reviewer notes:</strong>{" "}
               {String((verification?.metadata as Record<string, unknown>).stage2_notes)}
@@ -387,7 +387,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           locked={stage2Status !== "verified"}
           lockedMessage="Complete Identity Verification (Stage 2) first to unlock this stage."
         >
-          {stage3Status === "rejected" && (verification?.metadata as Record<string, unknown>)?.stage3_notes && (
+          {stage3Status === "rejected" && Boolean((verification?.metadata as Record<string, unknown>)?.stage3_notes) && (
             <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-xs text-rose-800">
               <strong>Reviewer notes:</strong>{" "}
               {String((verification?.metadata as Record<string, unknown>).stage3_notes)}
