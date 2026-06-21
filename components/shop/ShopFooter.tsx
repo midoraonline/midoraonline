@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Shop } from "@/lib/api/shops";
 import { recordShopEvent } from "@/lib/api/shops";
+import { whatsappDigits } from "@/lib/whatsappProduct";
 import { locationDisplay, platformLabel } from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -68,7 +69,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
               )}
               {shop.whatsapp_number && (
                 <a
-                  href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, "")}`}
+                  href={`https://wa.me/${whatsappDigits(shop.whatsapp_number)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={footerIcon}

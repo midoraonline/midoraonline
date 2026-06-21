@@ -139,6 +139,18 @@ export default function ShopCatalogEditor({
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("openAdd") === "true") {
+        setModal({ mode: "add" });
+        // Clean up URL without reloading
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, []);
+
   async function removeProduct(id: string) {
     if (!isAuthed) return;
     if (!window.confirm("Remove this listing? This cannot be undone.")) return;

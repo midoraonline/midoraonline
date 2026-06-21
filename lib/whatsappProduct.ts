@@ -1,5 +1,11 @@
 export function whatsappDigits(input: string): string {
-  return input.replace(/\D/g, "");
+  let digits = input.replace(/\D/g, "");
+  if (digits.startsWith("0")) {
+    digits = "256" + digits.slice(1);
+  } else if (!digits.startsWith("256") && digits.length === 9) {
+    digits = "256" + digits;
+  }
+  return digits;
 }
 
 export function productInquiryWhatsAppUrl(

@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiLeads, apiListingEvents } from "@/lib/api";
+import { whatsappDigits } from "@/lib/whatsappProduct";
 
 type Props = {
   shopId: string;
@@ -28,7 +29,7 @@ export default function SellerContactConsent({
   const handleOpenWhatsApp = useCallback(() => {
     const text = `Hi, I'm interested in "${title}"${listingUrl ? `\n\n${listingUrl}` : ""}`;
     const encoded = encodeURIComponent(text);
-    const waUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}?text=${encoded}`;
+    const waUrl = `https://wa.me/${whatsappDigits(whatsappNumber)}?text=${encoded}`;
 
     apiLeads.createLead(shopId, productId, "whatsapp").catch(() => {});
     apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
