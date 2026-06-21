@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { apiShops, apiProducts } from "@/lib/api";
-import type { Shop } from "@/lib/api/shops";
+import type { Shop, Verification } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
