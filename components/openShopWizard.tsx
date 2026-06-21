@@ -20,6 +20,7 @@ function slugFromName(name: string): string {
     || "shop";
 }
 
+export default function OpenShopWizard() {
   const session = useAppSession();
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
