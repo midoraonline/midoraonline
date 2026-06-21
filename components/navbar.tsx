@@ -60,12 +60,12 @@ function ProfileDropdown({
         type="button"
         onClick={() => setDdOpen((v) => !v)}
         aria-expanded={ddOpen}
-        className="flex items-center justify-center sm:gap-2 rounded-full border border-border size-9 sm:size-auto sm:pl-1.5 sm:pr-2 sm:py-1 text-xs font-medium transition-all dm-focus hover:shadow-sm hover:border-border-strong bg-surface text-foreground"
+        className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-border h-9 px-1 sm:pl-1.5 sm:pr-2 text-xs font-medium transition-all dm-focus hover:shadow-sm hover:border-border-strong bg-surface text-foreground"
       >
-        <span className="grid size-7 place-items-center rounded-full bg-foreground/[0.08] text-[11px] font-semibold shrink-0">
+        <span className="grid size-7 place-items-center rounded-full bg-foreground/[0.08] text-[11px] font-semibold shrink-0 leading-none">
           {initials}
         </span>
-        <span className="max-w-[100px] truncate lg:max-w-[120px] hidden sm:block">{displayName}</span>
+        <span className="max-w-[100px] truncate lg:max-w-[120px] hidden sm:block leading-none">{displayName}</span>
         <MaterialSymbol
           name="expand_more"
           className={`!text-base text-muted transition-transform duration-200 hidden sm:block ${ddOpen ? "rotate-180" : ""}`}
@@ -405,17 +405,9 @@ export default function Navbar({
               })}
             </div>
 
-            {/* Mobile: wishlist + create shop — shown when logged in */}
+            {/* Mobile: create shop — shown when logged in */}
             {session.isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-0.5 px-2">
-                <Link
-                  href="/customer/wishlist"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/85 transition-colors dm-focus hover:bg-foreground/[0.04]"
-                >
-                  <MaterialSymbol name="favorite" className="!text-lg text-foreground/60" />
-                  Wishlist
-                </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"

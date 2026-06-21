@@ -361,7 +361,7 @@ export default function ShopCatalogEditor({
                       {p.is_published && (
                         <button
                           type="button"
-                          className="dm-focus inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 transition-colors dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300"
+                          className="dm-focus inline-flex items-center gap-1.5 rounded-xl border border-foreground/[0.1] bg-foreground/[0.04] px-2.5 py-1 text-[11px] font-semibold text-foreground/90 transition-colors hover:bg-foreground/[0.08]"
                           title="Repost to the Latest Feed to boost visibility"
                           onClick={() => void handleRepost(p)}
                         >
