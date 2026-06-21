@@ -48,6 +48,7 @@ export type Product = {
     is_active: boolean;
     category?: string | null;
     trust_score: number;
+    trust_badges?: string[];
     available_now: boolean;
     location?: string | null;
   } | null;
@@ -354,6 +355,7 @@ export type HomeFeedProduct = {
     is_active: boolean;
     category?: string | null;
     trust_score: number;
+    trust_badges?: string[];
     available_now: boolean;
     location?: string | null;
   };

@@ -17,19 +17,23 @@ export default function ShopOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [verification, setVerification] = useState<Verification | null>(null);
+
   const load = useCallback(async () => {
     if (!shopId) return;
     setLoading(true);
     setError(null);
     try {
-      const [s, p] = await Promise.all([
+      const [s, p, v] = await Promise.all([
         apiShops.getShop(shopId),
         apiProducts
           .listShopProducts(shopId)
           .catch(() => ({ items: [] as Product[] })),
+        apiShops.getVerification(shopId).catch(() => null),
       ]);
       setShop(s);
       setProducts(p.items ?? []);
+      setVerification(v);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load shop");
     } finally {
@@ -60,8 +64,30 @@ export default function ShopOverviewPage() {
   }
   if (!shop) return null;
 
+  const badges = verification?.badges ?? [];
+
   return (
     <div className="space-y-5">
+      {/* Verification progress banner */}
+      {verification && (!badges.includes("business_verified") || !badges.includes("identity_verified")) && (
+        <section className="dm-card overflow-hidden bg-gradient-to-r from-surface to-accent/5 p-4 sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-display text-sm font-semibold text-foreground/90">Verification incomplete</h3>
+              <p className="mt-1 text-xs text-muted max-w-lg">
+                Complete your verification journey to unlock trust badges. Shops with badges get more views and sales.
+              </p>
+            </div>
+            <Link
+              href={`/merchant/shops/${shopId}/verification`}
+              className="dm-btn dm-btn-primary dm-btn-sm shrink-0 whitespace-nowrap"
+            >
+              Complete verification →
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Views" value={shop.view_count ?? 0} />
         <StatCard label="Followers" value={shop.follower_count ?? 0} />
@@ -72,16 +98,24 @@ export default function ShopOverviewPage() {
       <section className="dm-card p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Recent products</h2>
-          <Link
-            href={`/merchant/shops/${shopId}/catalog`}
-            className="text-xs font-semibold text-foreground/75 hover:text-foreground"
-          >
-            Manage catalog →
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/merchant/shops/${shopId}/catalog?openAdd=true`}
+              className="dm-btn dm-btn-secondary dm-btn-sm"
+            >
+              Add Product
+            </Link>
+            <Link
+              href={`/merchant/shops/${shopId}/catalog`}
+              className="text-xs font-semibold text-foreground/75 hover:text-foreground"
+            >
+              Manage catalog →
+            </Link>
+          </div>
         </div>
         {products.length === 0 ? (
           <p className="mt-4 text-sm text-muted">
-            No products yet. Add your first product from the catalog tab.
+            No products yet. Add your first product to start selling.
           </p>
         ) : (
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">

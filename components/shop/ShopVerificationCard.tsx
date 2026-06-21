@@ -1,62 +1,138 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { apiShops } from "@/lib/api";
-import type { Verification, VerificationStatus, DocumentUpload } from "@/lib/api/shops";
+import type { Verification, VerificationStatus } from "@/lib/api/shops";
 import { ApiError } from "@/lib/api/base";
 import { useAppSession } from "@/lib/state";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import ProductFormModal from "@/components/shop/ProductFormModal";
+import { ImageUpload } from "@/components/image-upload";
 
-const STATUS_COPY: Record<
-  VerificationStatus,
-  { label: string; tone: string; description: string }
-> = {
-  unverified: {
-    label: "Not submitted",
-    tone: "bg-foreground/[0.06] text-foreground/70",
-    description:
-      "Submit your shop for verification to earn a trust badge and unlock the public directory. You'll need to upload identification documents and provide contact details.",
+// ── Badge metadata ────────────────────────────────────────────────────────────
+const BADGE_META: Record<string, { icon: string; label: string; color: string; desc: string }> = {
+  shop_listed: {
+    icon: "storefront",
+    label: "Shop Listed",
+    color: "bg-primary/10 text-primary border-primary/20",
+    desc: "Your shop is registered on Midora. Every shop on the platform earns this badge automatically.",
   },
-  pending: {
-    label: "Pending review",
-    tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-    description:
-      "We're reviewing your submission. You'll get an email as soon as there's a decision.",
+  identity_verified: {
+    icon: "verified_user",
+    label: "Identity Verified",
+    color: "bg-emerald-500/15 text-emerald-700 border-emerald-500/25",
+    desc: "Your identity has been confirmed by the Midora team. Customers can trust this is a real person behind the shop.",
   },
-  verified: {
-    label: "Verified",
-    tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-    description: "Your shop is verified and visible in the public directory.",
-  },
-  rejected: {
-    label: "Changes requested",
-    tone: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
-    description:
-      "Please review the notes below and resubmit when you've addressed the feedback.",
+  business_verified: {
+    icon: "domain_verification",
+    label: "Business Verified",
+    color: "bg-accent/15 text-accent border-accent/25",
+    desc: "Your physical business has been verified. This is the highest trust level on Midora.",
   },
 };
 
-const DOCUMENT_TYPES: { type: DocumentUpload["type"]; label: string }[] = [
-  { type: "national_id_front", label: "National ID (Front)" },
-  { type: "national_id_back", label: "National ID (Back)" },
-  { type: "selfie", label: "Selfie with ID" },
-  { type: "business_cert", label: "Business Certificate (optional)" },
-];
+// ── Stage status pill ─────────────────────────────────────────────────────────
+function StatusPill({ status }: { status: VerificationStatus }) {
+  const cfg: Record<VerificationStatus, { label: string; cls: string }> = {
+    unverified: { label: "Not submitted", cls: "bg-foreground/[0.06] text-foreground/50" },
+    pending:    { label: "Under review",  cls: "bg-amber-500/15 text-amber-700" },
+    verified:   { label: "Approved",      cls: "bg-emerald-500/15 text-emerald-700" },
+    rejected:   { label: "Changes requested", cls: "bg-rose-500/15 text-rose-700" },
+  };
+  const c = cfg[status] ?? cfg.unverified;
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${c.cls}`}>
+      {c.label}
+    </span>
+  );
+}
 
+// ── Stage step connector line ─────────────────────────────────────────────────
+function StepLine({ done }: { done: boolean }) {
+  return (
+    <div className={`mx-auto my-0.5 h-6 w-px ${done ? "bg-emerald-400" : "bg-border"}`} />
+  );
+}
+
+// ── Individual stage circle icon ──────────────────────────────────────────────
+function StageCircle({
+  stage, status, active,
+}: {
+  stage: number;
+  status: VerificationStatus;
+  active: boolean;
+}) {
+  const base = "flex size-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition-all";
+  if (status === "verified")
+    return (
+      <div className={`${base} border-emerald-400 bg-emerald-500/15 text-emerald-700`}>
+        <MaterialSymbol name="check" className="!text-base" />
+      </div>
+    );
+  if (status === "pending")
+    return (
+      <div className={`${base} border-amber-400 bg-amber-500/10 text-amber-700`}>
+        <MaterialSymbol name="hourglass_top" className="!text-base" />
+      </div>
+    );
+  if (status === "rejected")
+    return (
+      <div className={`${base} border-rose-400 bg-rose-500/10 text-rose-700`}>
+        <MaterialSymbol name="close" className="!text-base" />
+      </div>
+    );
+  if (active)
+    return (
+      <div className={`${base} border-accent bg-accent/10 text-accent`}>
+        {stage}
+      </div>
+    );
+  return (
+    <div className={`${base} border-border bg-surface-subtle text-muted`}>
+      {stage}
+    </div>
+  );
+}
+
+// ── Document type definitions per stage ──────────────────────────────────────
+const STAGE2_DOCS = [
+  { type: "national_id_front", label: "National ID (Front)" },
+  { type: "national_id_back",  label: "National ID (Back)" },
+  { type: "selfie",            label: "Selfie with ID" },
+  { type: "business_cert",     label: "Business Certificate (optional)" },
+] as const;
+
+const STAGE3_DOCS = [
+  { type: "shop_photo",    label: "Physical Shop Photo" },
+  { type: "business_reg",  label: "Business Registration (optional)" },
+  { type: "tax_doc",       label: "Tax Compliance Document (optional)" },
+] as const;
+
+type DocType = typeof STAGE2_DOCS[number]["type"] | typeof STAGE3_DOCS[number]["type"];
+
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function ShopVerificationCard({ shopId }: { shopId: string }) {
   const session = useAppSession();
   const [verification, setVerification] = useState<Verification | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [phone, setPhone] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [location, setLocation] = useState("");
-  const [documents, setDocuments] = useState<DocumentUpload[]>([]);
-  const [activeStep, setActiveStep] = useState<number>(0);
+  const [activeForm, setActiveForm] = useState<2 | 3 | null>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+
+  // Stage 2 form state
+  const [s2Phone, setS2Phone] = useState("");
+  const [s2Whatsapp, setS2Whatsapp] = useState("");
+  const [s2Location, setS2Location] = useState("");
+  const [s2Notes, setS2Notes] = useState("");
+  const [s2Docs, setS2Docs] = useState<{ type: string; url: string; label: string }[]>([]);
+
+  // Stage 3 form state
+  const [s3Notes, setS3Notes] = useState("");
+  const [s3Docs, setS3Docs] = useState<{ type: string; url: string; label: string }[]>([]);
 
   const load = useCallback(async () => {
     if (!session.isAuthenticated) return;
@@ -65,17 +141,15 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
     try {
       const v = await apiShops.getVerification(shopId);
       setVerification(v);
-      if (v.submitted_phone) setPhone(v.submitted_phone);
-      if (v.submitted_whatsapp) setWhatsapp(v.submitted_whatsapp);
-      if (v.submitted_location) setLocation(v.submitted_location);
-      if (v.submitted_docs) setDocuments(v.submitted_docs);
+      // Pre-fill stage 2 fields if present
+      if (v.submitted_phone)   setS2Phone(v.submitted_phone);
+      if (v.submitted_whatsapp) setS2Whatsapp(v.submitted_whatsapp);
+      if (v.submitted_location) setS2Location(v.submitted_location);
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setVerification(null);
       } else {
-        setError(
-          err instanceof Error ? err.message : "Failed to load verification",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load verification");
       }
     } finally {
       setLoading(false);
@@ -84,53 +158,35 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
 
   useEffect(() => {
     if (!session.hydrated) return;
-    if (!session.isAuthenticated) {
-      setLoading(false);
-      return;
-    }
+    if (!session.isAuthenticated) { setLoading(false); return; }
     load();
   }, [load, session.hydrated, session.isAuthenticated]);
 
   useRealtimeTable(
-    {
-      table: "shop_verifications",
-      channel: `shop-verification:${shopId}`,
-      filter: `shop_id=eq.${shopId}`,
-      enabled: !!shopId,
-    },
-    () => {
-      void load();
-    },
+    { table: "shop_verifications", channel: `shop-verification:${shopId}`, filter: `shop_id=eq.${shopId}`, enabled: !!shopId },
+    () => void load(),
   );
 
-  function addDocument(type: DocumentUpload["type"]) {
-    const url = window.prompt(`Enter URL for ${DOCUMENT_TYPES.find(d => d.type === type)?.label}:`);
-    if (url && url.trim()) {
-      setDocuments(prev => [
-        ...prev.filter(d => d.type !== type),
-        { url: url.trim(), type, label: DOCUMENT_TYPES.find(d => d.type === type)?.label || type },
-      ]);
-    }
+  function addDoc(stage: 2 | 3, type: DocType, label: string, url: string) {
+    const setter = stage === 2 ? setS2Docs : setS3Docs;
+    setter(prev => [...prev.filter(d => d.type !== type), { type, url, label }]);
   }
 
-  function removeDocument(type: string) {
-    setDocuments(prev => prev.filter(d => d.type !== type));
+  function removeDoc(stage: 2 | 3, type: string) {
+    const setter = stage === 2 ? setS2Docs : setS3Docs;
+    setter(prev => prev.filter(d => d.type !== type));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(stage: 2 | 3) {
     setSubmitting(true);
     setError(null);
     try {
-      const v = await apiShops.submitForVerification(shopId, {
-        notes: notes.trim() || undefined,
-        documents: documents.length > 0 ? documents : undefined,
-        submitted_phone: phone.trim() || undefined,
-        submitted_whatsapp: whatsapp.trim() || undefined,
-        submitted_location: location.trim() || undefined,
-      });
+      const body = stage === 2
+        ? { notes: s2Notes.trim() || undefined, documents: s2Docs, submitted_phone: s2Phone.trim() || undefined, submitted_whatsapp: s2Whatsapp.trim() || undefined, submitted_location: s2Location.trim() || undefined }
+        : { notes: s3Notes.trim() || undefined, documents: s3Docs };
+      const v = await apiShops.submitForVerificationStage(shopId, stage, body);
       setVerification(v);
-      setActiveStep(0);
+      setActiveForm(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit");
     } finally {
@@ -138,168 +194,369 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
     }
   }
 
-  const status: VerificationStatus = verification?.status ?? "unverified";
-  const copy = STATUS_COPY[status];
-  const canSubmit = status === "unverified" || status === "rejected";
-  const duration = verification?.shop_duration_days ?? 0;
+  if (loading) return <div className="dm-card p-8 text-sm text-muted">Loading verification status…</div>;
 
-  const steps = [
-    { label: "Contact Info", done: !!(phone || whatsapp || location) },
-    { label: "Documents", done: documents.length >= 2 },
-    { label: "Notes", done: true },
-  ];
+  const badges = verification?.badges ?? ["shop_listed"];
+  const stage2Status = verification?.stage2_status ?? "unverified";
+  const stage3Status = verification?.stage3_status ?? "unverified";
+
+  const canSubmitStage2 = stage2Status === "unverified" || stage2Status === "rejected";
+  const canSubmitStage3 = stage2Status === "verified" && (stage3Status === "unverified" || stage3Status === "rejected");
 
   return (
-    <section className="dm-card space-y-6 p-6 sm:p-8 lg:p-10">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Verification</h2>
-          <p className="mt-1 text-sm text-muted">{copy.description}</p>
-        </div>
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${copy.tone}`}
-        >
-          {copy.label}
-        </span>
+    <div className="space-y-6">
+      {/* ── Page intro ──────────────────────────────────────── */}
+      <div className="dm-card p-5 sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted">Verification Journey</p>
+        <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">Build trust with buyers</h2>
+        <p className="mt-1 text-sm text-muted">
+          Complete each stage to earn trust badges. Badges appear on your public shop page and help customers feel confident buying from you.
+        </p>
       </div>
 
-      {duration > 0 && (
-        <div className="flex items-center gap-2 rounded-2xl bg-foreground/[0.04] px-3 py-2 text-xs text-foreground/80">
-          <MaterialSymbol name="calendar_today" className="!text-sm" />
-          Shop on platform for {duration} day{duration !== 1 ? "s" : ""}
-        </div>
+      {error && (
+        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">{error}</p>
       )}
 
-      {error ? (
-        <p className="rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      {/* ── Stage stepper ────────────────────────────────────── */}
+      <div className="dm-card divide-y divide-border overflow-hidden">
 
-      {verification?.notes ? (
-        <p className="rounded-2xl bg-foreground/[0.04] px-3 py-2 text-xs text-foreground/80 ring-1 ring-foreground/[0.06]">
-          <strong className="font-semibold">Reviewer notes:</strong> {verification.notes}
-        </p>
-      ) : null}
+        {/* Stage 1 — Auto ──────────────────────────────── */}
+        <StageBlock
+          number={1}
+          title="Shop Listed"
+          icon="storefront"
+          status="verified"
+          badgeKey="shop_listed"
+          hasBadge={badges.includes("shop_listed")}
+          description="Your shop is registered on Midora. This badge is automatically granted to every shop on the platform."
+          autoGranted
+        >
+          {/* Add Product CTA always shown after Stage 1 */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowProductModal(true)}
+              className="dm-btn dm-btn-primary dm-btn-sm gap-1.5"
+            >
+              <MaterialSymbol name="add_circle" className="!text-base" />
+              Add your first product
+            </button>
+            <Link
+              href={`/merchant/shops/${shopId}/catalog`}
+              className="dm-btn dm-btn-secondary dm-btn-sm"
+            >
+              Manage catalog →
+            </Link>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            You can add products and manage your catalog at any time — verification and products are independent.
+          </p>
+        </StageBlock>
 
-      {canSubmit ? (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="flex items-center gap-2 text-xs">
-            {steps.map((step, i) => (
-              <div key={step.label} className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
-                    i === activeStep
-                      ? "bg-primary/20 text-primary"
-                      : step.done
-                      ? "bg-emerald-500/15 text-emerald-600"
-                      : "bg-foreground/[0.06] text-foreground/60"
-                  }`}
+        {/* Stage 2 — Identity ──────────────────────────── */}
+        <StageBlock
+          number={2}
+          title="Identity Verified"
+          icon="verified_user"
+          status={stage2Status}
+          badgeKey="identity_verified"
+          hasBadge={badges.includes("identity_verified")}
+          description="Share your NIN/ID documents and contact details so we can confirm you're a real person. Earns you the Identity Verified badge."
+        >
+          {/* Reviewer notes on rejection */}
+          {stage2Status === "rejected" && (verification?.metadata as Record<string, unknown>)?.stage2_notes && (
+            <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-xs text-rose-800">
+              <strong>Reviewer notes:</strong>{" "}
+              {String((verification?.metadata as Record<string, unknown>).stage2_notes)}
+            </div>
+          )}
+
+          {/* Pending state */}
+          {stage2Status === "pending" && (
+            <p className="mt-3 text-sm text-muted">
+              Your submission is under review. We'll email you when a decision is made — usually within 1 business day.
+            </p>
+          )}
+
+          {/* Approved state */}
+          {stage2Status === "verified" && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700">
+              <MaterialSymbol name="check_circle" className="!text-base text-emerald-500" />
+              Identity Verified badge earned! Proceed to Stage 3 to get the Business Verified badge.
+            </div>
+          )}
+
+          {/* Submit form */}
+          {canSubmitStage2 && (
+            <>
+              {activeForm !== 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveForm(2)}
+                  className="dm-btn dm-btn-primary dm-btn-sm mt-4"
                 >
-                  {step.done ? (
-                    <MaterialSymbol name="check_circle" className="!text-xs" />
-                  ) : (
-                    <span className="size-1.5 rounded-full bg-current" />
-                  )}
-                  {step.label}
-                </span>
-                {i < steps.length - 1 && <span className="text-foreground/20">—</span>}
-              </div>
-            ))}
-          </div>
+                  {stage2Status === "rejected" ? "Resubmit documents" : "Start Identity Verification →"}
+                </button>
+              ) : (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); void handleSubmit(2); }}
+                  className="mt-4 space-y-4 rounded-xl border border-border bg-surface-subtle p-4"
+                >
+                  <p className="text-xs font-semibold text-foreground/80">Identity Verification — Stage 2</p>
+                  <p className="text-xs text-muted">
+                    All fields marked * are required. Your information is reviewed securely by the Midora team and never shared publicly.
+                  </p>
 
-          <div className="space-y-3">
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-foreground/80">Valid Phone Number *</span>
-              <input
-                type="tel"
-                className="dm-input dm-focus w-full"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+256 7XX XXX XXX"
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-foreground/80">WhatsApp Number *</span>
-              <input
-                type="tel"
-                className="dm-input dm-focus w-full"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="+256 7XX XXX XXX"
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-foreground/80">Physical Location *</span>
-              <input
-                type="text"
-                className="dm-input dm-focus w-full"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Shop 12, Nakawa Market, Kampala"
-              />
-            </label>
-          </div>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-foreground/80">Phone number *</span>
+                    <input type="tel" className="dm-input" value={s2Phone} onChange={e => setS2Phone(e.target.value)}
+                      placeholder="+256 7XX XXX XXX" required />
+                  </label>
 
-          <div className="space-y-2">
-            <span className="text-xs font-medium text-foreground/80">
-              Upload Documents * (minimum: National ID front + back)
-            </span>
-            {DOCUMENT_TYPES.map((dt) => {
-              const existing = documents.find(d => d.type === dt.type);
-              return (
-                <div key={dt.type} className="flex items-center justify-between rounded-xl bg-foreground/[0.03] px-3 py-2">
-                  <span className="text-xs text-foreground/80">{dt.label}</span>
-                  {existing ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-emerald-600">Uploaded</span>
-                      <button
-                        type="button"
-                        onClick={() => removeDocument(dt.type)}
-                        className="text-[10px] text-rose-500 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => addDocument(dt.type)}
-                      className="text-[10px] font-medium text-accent hover:underline"
-                    >
-                      + Add URL
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-foreground/80">WhatsApp number *</span>
+                    <input type="tel" className="dm-input" value={s2Whatsapp} onChange={e => setS2Whatsapp(e.target.value)}
+                      placeholder="+256 7XX XXX XXX" required />
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-foreground/80">Physical location *</span>
+                    <input type="text" className="dm-input" value={s2Location} onChange={e => setS2Location(e.target.value)}
+                      placeholder="e.g. Shop 12, Nakawa Market, Kampala" required />
+                  </label>
+
+                  <div className="space-y-3">
+                    <span className="text-xs font-medium text-foreground/80">Documents * (minimum: National ID front + back)</span>
+                    {STAGE2_DOCS.map(dt => {
+                      const existing = s2Docs.find(d => d.type === dt.type);
+                      return (
+                        <div key={dt.type} className="rounded-xl bg-surface px-3 py-2.5 ring-1 ring-border space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-foreground/80">{dt.label}</span>
+                            {existing && (
+                              <button type="button" onClick={() => removeDoc(2, dt.type)} className="text-[10px] text-rose-500 hover:underline">Remove</button>
+                            )}
+                          </div>
+                          {existing ? (
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600">
+                              <MaterialSymbol name="check_circle" className="!text-xs" />
+                              Uploaded
+                            </div>
+                          ) : (
+                            <ImageUpload
+                              endpoint="imageUploader"
+                              label={`Upload ${dt.label}`}
+                              onUploadComplete={(url) => addDoc(2, dt.type as DocType, dt.label, url)}
+                              className=""
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-foreground/80">Notes for the reviewer (optional)</span>
+                    <textarea className="dm-textarea !min-h-[80px]" value={s2Notes} onChange={e => setS2Notes(e.target.value)}
+                      placeholder="Any additional context that helps verify your identity." />
+                  </label>
+
+                  <div className="flex items-center gap-3">
+                    <button type="submit" disabled={submitting}
+                      className="dm-btn dm-btn-primary disabled:opacity-60">
+                      {submitting ? "Submitting…" : "Submit for review"}
                     </button>
+                    <button type="button" onClick={() => setActiveForm(null)} className="dm-btn dm-btn-ghost dm-btn-sm">Cancel</button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+        </StageBlock>
+
+        {/* Stage 3 — Business ──────────────────────────── */}
+        <StageBlock
+          number={3}
+          title="Business Verified"
+          icon="domain_verification"
+          status={stage3Status}
+          badgeKey="business_verified"
+          hasBadge={badges.includes("business_verified")}
+          description="Share a photo of your physical shop location and optional registration documents. This is the highest trust level on Midora."
+          locked={stage2Status !== "verified"}
+          lockedMessage="Complete Identity Verification (Stage 2) first to unlock this stage."
+        >
+          {stage3Status === "rejected" && (verification?.metadata as Record<string, unknown>)?.stage3_notes && (
+            <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-xs text-rose-800">
+              <strong>Reviewer notes:</strong>{" "}
+              {String((verification?.metadata as Record<string, unknown>).stage3_notes)}
+            </div>
+          )}
+
+          {stage3Status === "pending" && (
+            <p className="mt-3 text-sm text-muted">
+              Your business verification is under review. We'll email you within 1 business day.
+            </p>
+          )}
+
+          {stage3Status === "verified" && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700">
+              <MaterialSymbol name="check_circle" className="!text-base text-emerald-500" />
+              Business Verified badge earned! You've completed all verification stages.
+            </div>
+          )}
+
+          {canSubmitStage3 && (
+            <>
+              {activeForm !== 3 ? (
+                <button type="button" onClick={() => setActiveForm(3)} className="dm-btn dm-btn-primary dm-btn-sm mt-4">
+                  {stage3Status === "rejected" ? "Resubmit documents" : "Start Business Verification →"}
+                </button>
+              ) : (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); void handleSubmit(3); }}
+                  className="mt-4 space-y-4 rounded-xl border border-border bg-surface-subtle p-4"
+                >
+                  <p className="text-xs font-semibold text-foreground/80">Business Verification — Stage 3</p>
+                  <p className="text-xs text-muted">
+                    Share evidence of your physical business. This helps build maximum trust with buyers.
+                  </p>
+
+                  <div className="space-y-3">
+                    <span className="text-xs font-medium text-foreground/80">Documents * (minimum: Shop photo)</span>
+                    {STAGE3_DOCS.map(dt => {
+                      const existing = s3Docs.find(d => d.type === dt.type);
+                      return (
+                        <div key={dt.type} className="rounded-xl bg-surface px-3 py-2.5 ring-1 ring-border space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-foreground/80">{dt.label}</span>
+                            {existing && (
+                              <button type="button" onClick={() => removeDoc(3, dt.type)} className="text-[10px] text-rose-500 hover:underline">Remove</button>
+                            )}
+                          </div>
+                          {existing ? (
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600">
+                              <MaterialSymbol name="check_circle" className="!text-xs" />
+                            Uploaded
+                            </div>
+                          ) : (
+                            <ImageUpload
+                              endpoint="imageUploader"
+                              label={`Upload ${dt.label}`}
+                              onUploadComplete={(url) => addDoc(3, dt.type as DocType, dt.label, url)}
+                              className=""
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-foreground/80">Notes for the reviewer (optional)</span>
+                    <textarea className="dm-textarea !min-h-[80px]" value={s3Notes} onChange={e => setS3Notes(e.target.value)}
+                      placeholder="Any details that help verify your business — registration number, trading name, etc." />
+                  </label>
+
+                  <div className="flex items-center gap-3">
+                    <button type="submit" disabled={submitting} className="dm-btn dm-btn-primary disabled:opacity-60">
+                      {submitting ? "Submitting…" : "Submit for review"}
+                    </button>
+                    <button type="button" onClick={() => setActiveForm(null)} className="dm-btn dm-btn-ghost dm-btn-sm">Cancel</button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+        </StageBlock>
+      </div>
+
+      {/* ── Badge legend ─────────────────────────────────────── */}
+      <div className="dm-card p-5 sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">What your badges mean</p>
+        <div className="space-y-3">
+          {Object.entries(BADGE_META).map(([key, b]) => (
+            <div key={key} className="flex items-start gap-3">
+              <div className={`flex size-8 shrink-0 items-center justify-center rounded-full border ${b.color}`}>
+                <MaterialSymbol name={b.icon} className="!text-sm" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">
+                  {b.label}
+                  {badges.includes(key) && (
+                    <span className="ml-2 text-[10px] font-semibold text-emerald-600">✓ Earned</span>
                   )}
-                </div>
-              );
-            })}
+                </p>
+                <p className="text-xs text-muted">{b.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Add Product modal */}
+      {showProductModal && (
+        <ProductFormModal
+          mode="add"
+          shopId={shopId}
+          itemType="product"
+          onClose={() => setShowProductModal(false)}
+          onSaved={() => setShowProductModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── StageBlock sub-component ──────────────────────────────────────────────────
+function StageBlock({
+  number, title, icon, status, badgeKey, hasBadge, description, autoGranted,
+  locked, lockedMessage, children,
+}: {
+  number: number;
+  title: string;
+  icon: string;
+  status: VerificationStatus;
+  badgeKey: string;
+  hasBadge: boolean;
+  description: string;
+  autoGranted?: boolean;
+  locked?: boolean;
+  lockedMessage?: string;
+  children?: React.ReactNode;
+}) {
+  const meta = BADGE_META[badgeKey];
+  return (
+    <div className={`p-5 sm:p-6 ${locked ? "opacity-60" : ""}`}>
+      <div className="flex items-start gap-4">
+        <StageCircle stage={number} status={status} active={!locked} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-display font-semibold tracking-tight">{title}</p>
+            {autoGranted && (
+              <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold text-foreground/60 uppercase tracking-wide">
+                Auto
+              </span>
+            )}
+            {hasBadge && meta && (
+              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${meta.color}`}>
+                <MaterialSymbol name={meta.icon} className="!text-xs" />
+                {meta.label}
+              </span>
+            )}
+            {!autoGranted && <StatusPill status={status} />}
           </div>
-
-          <label className="block space-y-1.5">
-            <span className="text-xs font-medium text-foreground/80">
-              Notes for the reviewer (optional)
-            </span>
-            <textarea
-              className="dm-textarea !min-h-[80px] dm-focus"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Share anything that helps our team verify your shop."
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="dm-pill dm-focus bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
-          >
-            {submitting
-              ? "Submitting…"
-              : status === "rejected"
-              ? "Resubmit for review"
-              : "Submit for verification"}
-          </button>
-        </form>
-      ) : null}
-    </section>
+          <p className="mt-1 text-sm text-muted">{description}</p>
+          {locked && lockedMessage && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
+              <MaterialSymbol name="lock" className="!text-sm" />
+              {lockedMessage}
+            </p>
+          )}
+          {!locked && children}
+        </div>
+      </div>
+    </div>
   );
 }

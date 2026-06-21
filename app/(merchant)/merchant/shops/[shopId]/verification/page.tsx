@@ -9,19 +9,14 @@ export default function MerchantVerificationPage() {
   const shopId = typeof params.shopId === "string" ? params.shopId : "";
 
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-          Shop · Verification
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-base font-semibold tracking-tight">Shop Verification</h2>
+        <p className="mt-1 text-xs text-muted">
+          Complete the 3-stage verification journey to unlock trust badges for your public shop page.
         </p>
-        <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-          Trust & safety
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Submit your shop for review. Approved shops get an active badge and appear in
-          public listings.
-        </p>
-      </header>
+      </div>
+
       <ShopVerificationCard shopId={shopId} />
     </div>
   );

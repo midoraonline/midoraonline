@@ -54,6 +54,7 @@ export type Shop = {
   like_count?: number | null;
   viewer_following?: boolean | null;
   viewer_liked_shop?: boolean | null;
+  trust_badges?: string[];
 };
 
 export type Paginated<T> = {
@@ -279,12 +280,35 @@ export type Verification = {
   submitted_whatsapp?: string | null;
   submitted_location?: string | null;
   shop_duration_days?: number;
+  // Stage-aware fields
+  current_stage?: number;
+  badges?: string[];
+  stage2_status?: VerificationStatus;
+  stage3_status?: VerificationStatus;
 };
 
 export function getVerification(shopId: string, token?: string | null) {
   return apiFetch<Verification>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/verification`,
     { token }
+  );
+}
+
+export function submitForVerificationStage(
+  shopId: string,
+  stage: 2 | 3,
+  body: {
+    notes?: string;
+    documents?: DocumentUpload[];
+    submitted_phone?: string;
+    submitted_whatsapp?: string;
+    submitted_location?: string;
+  } = {},
+  token?: string | null
+) {
+  return apiFetch<Verification>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/verification/submit`,
+    { method: "POST", token, body: { ...body, stage } }
   );
 }
 

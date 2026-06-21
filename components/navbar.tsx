@@ -10,9 +10,26 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
 
-function ProfileDropdown({ onNavigate }: { onNavigate?: () => void }) {
+import { LogOut } from "lucide-react";
+
+function ProfileDropdown({
+  displayName,
+  initials,
+  email,
+  dashboardHref,
+  role,
+  onNavigate,
+}: {
+  displayName: string;
+  initials: string;
+  email: string;
+  dashboardHref: string;
+  role: string | null;
+  onNavigate?: () => void;
+}) {
   const [ddOpen, setDdOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (!ddOpen) return;
@@ -30,69 +47,63 @@ function ProfileDropdown({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
   };
 
+  const handleSignOut = () => {
+    close();
+    // Assuming /logout route handles session clearing and redirection
+    router.push("/logout");
+  };
+
   return (
     <div ref={ref} className="relative">
-      {/* Desktop trigger */}
+      {/* Trigger: User Pill */}
       <button
         type="button"
         onClick={() => setDdOpen((v) => !v)}
         aria-expanded={ddOpen}
-        className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04] md:inline-flex dm-focus"
+        className="flex items-center justify-center sm:gap-2 rounded-full border border-border size-9 sm:size-auto sm:pl-1.5 sm:pr-2 sm:py-1 text-xs font-medium transition-all dm-focus hover:shadow-sm hover:border-border-strong bg-surface text-foreground"
       >
-        <MaterialSymbol name="person" className="!text-lg" />
-        Profile
+        <span className="grid size-7 place-items-center rounded-full bg-foreground/[0.08] text-[11px] font-semibold shrink-0">
+          {initials}
+        </span>
+        <span className="max-w-[100px] truncate lg:max-w-[120px] hidden sm:block">{displayName}</span>
         <MaterialSymbol
           name="expand_more"
-          className={`!text-base text-muted transition-transform duration-200 ${ddOpen ? "rotate-180" : ""}`}
+          className={`!text-base text-muted transition-transform duration-200 hidden sm:block ${ddOpen ? "rotate-180" : ""}`}
         />
       </button>
 
-      {/* Mobile trigger */}
-      <button
-        type="button"
-        onClick={() => setDdOpen((v) => !v)}
-        aria-expanded={ddOpen}
-        aria-label="Profile"
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
-      >
-        <MaterialSymbol name="person" className="!text-lg" />
-      </button>
-
       {ddOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
           <div className="p-1.5">
             <Link
-              href="/login"
+              href={dashboardHref}
               onClick={close}
-              className="flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
             >
-              Sign in
+              <MaterialSymbol name={role === "admin" ? "admin_panel_settings" : role === "merchant" ? "storefront" : "account_circle"} className="!text-base text-muted shrink-0" />
+              {role === "admin" ? "Admin Panel" : role === "merchant" ? "Shop Dashboard" : "My Account"}
             </Link>
+            
+            {/* Show Orders only for customers, or maybe merchants who buy, but primarily customers */}
+            {role !== "admin" && (
+              <Link
+                href="/customer/orders"
+                onClick={close}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+              >
+                <MaterialSymbol name="receipt_long" className="!text-base text-muted shrink-0" />
+                My Orders
+              </Link>
+            )}
             <div className="my-1 h-px bg-border" />
-            <Link
-              href="/account"
-              onClick={close}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50 dm-focus"
             >
-              <MaterialSymbol name="account_circle" className="!text-base text-muted" />
-              My account
-            </Link>
-            <Link
-              href="/customer/saved"
-              onClick={close}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
-            >
-              <MaterialSymbol name="favorite" className="!text-base text-muted" />
-              Wishlist
-            </Link>
-            <Link
-              href="/customer/orders"
-              onClick={close}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
-            >
-              <MaterialSymbol name="receipt_long" className="!text-base text-muted" />
-              Orders
-            </Link>
+              <LogOut className="size-4 shrink-0" />
+              Sign out
+            </button>
           </div>
         </div>
       )}
@@ -320,43 +331,24 @@ export default function Navbar({
               </>
             ) : null}
 
-            {displayName ? (
-              <>
-                <Link
-                  href={dashboardHref}
-                  className={[
-                    "hidden items-center gap-2 rounded-full border border-border pl-1.5 pr-3 py-1 text-xs font-medium transition-all dm-focus hover:shadow-sm md:inline-flex",
-                    onAccount
-                      ? "bg-accent text-white border-accent shadow-sm"
-                      : "bg-surface text-foreground hover:border-border-strong",
-                  ].join(" ")}
-                >
-                  <span className="grid size-7 place-items-center rounded-full bg-foreground/[0.08] text-[11px] font-semibold">
-                    {initials}
-                  </span>
-                  <span className="max-w-[120px] truncate lg:max-w-[140px]">{displayName}</span>
-                </Link>
-                <Link
-                  href={dashboardHref}
-                  className={[
-                    "inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-all dm-focus hover:shadow-sm md:hidden",
-                    onAccount
-                      ? "bg-accent text-white shadow-sm"
-                      : "bg-surface text-foreground border border-border",
-                  ].join(" ")}
-                  aria-label="Account"
-                  title="Account"
-                  onClick={() => setOpen(false)}
-                >
-                  <span className="grid size-7 place-items-center rounded-full bg-foreground/[0.08] text-[10px] font-semibold">
-                    {initials}
-                  </span>
-                </Link>
-              </>
+            {session.isAuthenticated && displayName ? (
+              <ProfileDropdown
+                displayName={displayName}
+                initials={initials}
+                email={session.user?.email || ""}
+                dashboardHref={dashboardHref}
+                role={role}
+                onNavigate={() => setOpen(false)}
+              />
             ) : authLoading ? (
               <span className="inline-flex size-9 shrink-0 rounded-full md:hidden" aria-hidden />
             ) : (
-              <ProfileDropdown onNavigate={() => setOpen(false)} />
+              <Link
+                href="/login"
+                className="hidden items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover md:inline-flex"
+              >
+                Sign in
+              </Link>
             )}
 
             <button

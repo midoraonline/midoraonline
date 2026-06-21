@@ -7,7 +7,9 @@ import LocationInput from "@/components/LocationInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
-type Step = 1 | 2 | 3;
+import { useRouter } from "next/navigation";
+
+type Step = 1 | 2;
 
 function slugFromName(name: string): string {
   return name
@@ -18,8 +20,8 @@ function slugFromName(name: string): string {
     || "shop";
 }
 
-export default function OpenShopWizard() {
   const session = useAppSession();
+  const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [creating, setCreating] = useState(false);
   const [savingContext, setSavingContext] = useState(false);
@@ -103,7 +105,7 @@ export default function OpenShopWizard() {
         context_type: "policy",
         content: contextContent.trim(),
       });
-      setStep(3);
+      router.push(`/merchant/shops/${createdShop.id}/verification`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save AI context. Please try again.");
     } finally {
@@ -123,7 +125,6 @@ export default function OpenShopWizard() {
         <div className="flex items-center gap-1 text-xs text-muted">
           <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 1 ? "border-primary text-primary" : "border-border")}>1 · Details</span>
           <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 2 ? "border-primary text-primary" : "border-border")}>2 · AI concierge</span>
-          <span className={"inline-flex rounded-full border px-2 py-1 text-[11px] " + (step === 3 ? "border-primary text-primary" : "border-border")}>3 · Done</span>
         </div>
       </div>
 
@@ -251,23 +252,6 @@ export default function OpenShopWizard() {
         </form>
       )}
 
-      {step === 3 && createdShop && (
-        <div className="space-y-4">
-          <p className="text-sm font-semibold">You’re all set</p>
-          <p className="text-xs text-muted">Your shop is live. Add products and share your link.</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <a href={`/shops/${encodeURIComponent(createdShop.slug)}`} className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-4 py-2.5 text-sm text-center font-semibold">
-              View my shop
-            </a>
-            <a href={`/merchant/shops/${createdShop.id}/settings`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold">
-              Shop settings
-            </a>
-            <a href={`/chat?shop_id=${encodeURIComponent(createdShop.id)}`} className="dm-pill dm-focus border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2.5 text-sm text-center font-semibold sm:col-span-2">
-              Chat with concierge
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

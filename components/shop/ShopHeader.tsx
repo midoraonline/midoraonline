@@ -13,6 +13,7 @@ import {
   platformLabel,
 } from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { whatsappDigits } from "@/lib/whatsappProduct";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
@@ -39,7 +40,7 @@ function contactHref(c: Contact): { href: string; external?: boolean } {
   const v = c.value;
   const t = (c.type ?? "").toLowerCase();
   if (t === "email") return { href: `mailto:${v}` };
-  if (t === "whatsapp") return { href: `https://wa.me/${v.replace(/\D/g, "")}`, external: true };
+  if (t === "whatsapp") return { href: `https://wa.me/${whatsappDigits(v)}`, external: true };
   if (t === "phone") return { href: `tel:${v.replace(/\s/g, "")}` };
   if (v.startsWith("http")) return { href: v, external: true };
   return { href: `tel:${v}` };
