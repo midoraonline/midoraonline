@@ -212,16 +212,16 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             className="dm-focus min-w-0 truncate"
           >
             {isDiscounted ? (
-              <span className="flex items-center gap-1.5">
-                <span className="text-sm font-bold tabular-nums text-accent">
-                  {formatUGX(product.discountPriceUGX!)}
-                </span>
-                <span className="text-[11px] font-medium text-muted line-through">
+              <div className="flex flex-col justify-center">
+                <span className="text-[10px] font-medium text-muted line-through leading-none mb-0.5 truncate">
                   {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
                 </span>
-              </span>
+                <span className="text-sm font-bold tabular-nums text-accent leading-none truncate">
+                  {formatUGX(product.discountPriceUGX!)}
+                </span>
+              </div>
             ) : (
-              <span className="text-sm font-bold tabular-nums text-accent">
+              <span className="text-sm font-bold tabular-nums text-accent truncate">
                 {formatUGX(product.priceUGX)}
               </span>
             )}

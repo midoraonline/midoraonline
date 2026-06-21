@@ -178,29 +178,85 @@ export default async function ShopHeader({
           {shop.name}
         </h1>
         {shop.is_active ? (
-          <span
-            className={
-              immersive
-                ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
-                : "inline-flex items-center gap-1 rounded-full border border-green-600/30 bg-green-600/10 px-2.5 py-1 text-xs font-semibold text-green-700"
-            }
-            style={
-              immersive
-                ? {
-                    background: "var(--hero-chip-bg)",
-                    borderColor: "var(--hero-chip-border)",
-                    color: "var(--hero-text-strong)",
-                  }
-                : undefined
-            }
-          >
-            <MaterialSymbol
-              name="verified"
-              className={`!text-[14px] leading-none ${immersive ? "text-green-400" : "text-green-600"}`}
-              filled
-            />
-            Verified
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {shop.trust_badges?.includes("business_verified") && (
+              <span
+                key="business_verified"
+                className={
+                  immersive
+                    ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
+                    : "inline-flex items-center gap-1 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent"
+                }
+                style={
+                  immersive
+                    ? {
+                        background: "var(--hero-chip-bg)",
+                        borderColor: "var(--hero-chip-border)",
+                        color: "var(--hero-text-strong)",
+                      }
+                    : undefined
+                }
+              >
+                <MaterialSymbol
+                  name="domain_verification"
+                  className={`!text-[14px] leading-none ${immersive ? "text-white" : ""}`}
+                  filled
+                />
+                Business Verified
+              </span>
+            )}
+            {shop.trust_badges?.includes("identity_verified") && (
+              <span
+                key="identity_verified"
+                className={
+                  immersive
+                    ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
+                    : "inline-flex items-center gap-1 rounded-full border border-emerald-600/30 bg-emerald-600/10 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                }
+                style={
+                  immersive
+                    ? {
+                        background: "var(--hero-chip-bg)",
+                        borderColor: "var(--hero-chip-border)",
+                        color: "var(--hero-text-strong)",
+                      }
+                    : undefined
+                }
+              >
+                <MaterialSymbol
+                  name="verified_user"
+                  className={`!text-[14px] leading-none ${immersive ? "text-emerald-400" : "text-emerald-600"}`}
+                  filled
+                />
+                Identity Verified
+              </span>
+            )}
+            {(!shop.trust_badges || (!shop.trust_badges.includes("business_verified") && !shop.trust_badges.includes("identity_verified"))) && (
+              <span
+                className={
+                  immersive
+                    ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
+                    : "inline-flex items-center gap-1 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2.5 py-1 text-xs font-semibold text-foreground/80"
+                }
+                style={
+                  immersive
+                    ? {
+                        background: "var(--hero-chip-bg)",
+                        borderColor: "var(--hero-chip-border)",
+                        color: "var(--hero-text-strong)",
+                      }
+                    : undefined
+                }
+              >
+                <MaterialSymbol
+                  name="storefront"
+                  className="!text-[14px] leading-none"
+                  filled
+                />
+                Registered Shop
+              </span>
+            )}
+          </div>
         ) : (
           <span
             className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
@@ -295,7 +351,7 @@ export default async function ShopHeader({
                   immersive ? "font-medium text-white/95" : "font-medium text-emerald-600"
                 }
               >
-                ✓ Verified seller
+                {(shop.trust_badges?.includes("identity_verified") || shop.trust_badges?.includes("business_verified")) ? "✓ Verified seller" : "Seller on Midora"}
               </span>
             </p>
           ) : (
