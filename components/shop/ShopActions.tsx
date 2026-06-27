@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 import { recordShopEvent } from "@/lib/api/shops";
@@ -86,6 +87,7 @@ export default function ShopActions({
         else await apiShops.unfollowShop(shopId);
         setFollowed(next);
         await syncEngagement();
+        notifyFeedEngagement();
         router.refresh();
       } catch {
         /* keep prior */

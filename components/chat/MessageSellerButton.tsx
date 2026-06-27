@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiListingEvents } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 type Props = {
@@ -44,6 +45,7 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
 
       if (productId) {
         apiListingEvents.recordListingEvent(productId, "messaged").catch(() => {});
+        notifyFeedEngagement();
       }
 
       router.push(`/chat?conversation=${conv.id}`);
