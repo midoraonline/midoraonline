@@ -2,6 +2,7 @@
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { apiListingEvents } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 
 type Props = {
@@ -17,6 +18,7 @@ export default function ProductWhatsAppButton({
 }: Props) {
   const doOpen = () => {
     apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
+    notifyFeedEngagement();
     window.open(waHref, "_blank", "noopener,noreferrer");
   };
 

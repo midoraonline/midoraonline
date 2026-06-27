@@ -25,10 +25,8 @@ export async function getShopById(shopId: string): Promise<Shop | null> {
 export async function listPublicShops(opts?: {
   search?: string;
   shop_type?: string;
-  limit?: number;
 }): Promise<Shop[]> {
-  const res = await apiShops.listPublic(opts);
-  return res.items ?? [];
+  return apiShops.listAllPublic(opts);
 }
 
 // The listing endpoint omits contact fields (whatsapp_number, shop_email).
@@ -36,7 +34,6 @@ export async function listPublicShops(opts?: {
 export async function listPublicShopsWithContacts(opts?: {
   search?: string;
   shop_type?: string;
-  limit?: number;
 }): Promise<Shop[]> {
   const partial = await listPublicShops(opts);
   const full = await Promise.all(
