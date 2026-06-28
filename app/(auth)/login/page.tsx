@@ -92,7 +92,13 @@ function LoginPageInner() {
       let googleUrl: string;
 
       if (isLocal) {
-        const res = await fetch("/api/auth/google-url");
+        const currentOrigin = window.location.origin;
+        const query = new URLSearchParams({
+          origin: currentOrigin,
+          redirect_to: `${currentOrigin}/login`,
+          redirect_uri: `${currentOrigin}/login`,
+        }).toString();
+        const res = await fetch(`/api/auth/google-url?${query}`);
         if (!res.ok) throw new Error(await res.text());
         const data = (await res.json()) as { url: string };
         googleUrl = data.url;
