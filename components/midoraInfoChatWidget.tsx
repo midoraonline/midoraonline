@@ -8,7 +8,7 @@ export default function MidoraInfoChatWidget() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
+    <div className="fixed bottom-20 md:bottom-6 right-6 z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
       {open ? (
         <div className="w-[min(100%,320px)] sm:w-[360px] overflow-hidden rounded-2xl border border-border bg-surface sm:rounded-3xl">
           <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-surface/95">
