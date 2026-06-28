@@ -263,25 +263,25 @@ export default function HomeLanding({
 
         {/* Quick Action Banners (Redesigned Banners Grid) */}
         {!categoryFilterActive && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="flex overflow-x-auto gap-4 scrollbar-none pb-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 mb-8">
             <button
               onClick={() => {
                 setFilters(prev => ({ ...prev, maxPrice: 100000 }));
                 document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="sell" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="sell" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">Hot Deals</h3>
-                <p className="text-xs text-neutral-500 mt-1">Under UGX 100,000</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">Hot Deals</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Under UGX 100,000</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Shop now</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Shop now</span>
             </button>
 
             <button
@@ -289,19 +289,19 @@ export default function HomeLanding({
                 setFilters(prev => ({ ...prev, sort: "most_viewed" }));
                 document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="bolt" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="bolt" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">Fast Movers</h3>
-                <p className="text-xs text-neutral-500 mt-1">Popular this week</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">Fast Movers</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Popular this week</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Shop now</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Shop now</span>
             </button>
 
             <button
@@ -309,36 +309,36 @@ export default function HomeLanding({
                 setFilters(prev => ({ ...prev, sort: "newest" }));
                 document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="new_releases" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="new_releases" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">New Arrivals</h3>
-                <p className="text-xs text-neutral-500 mt-1">Fresh items daily</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">New Arrivals</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Fresh items daily</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Shop now</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Shop now</span>
             </button>
 
             <Link
               href="/open-shop"
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="storefront" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="storefront" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">List More. Sell More</h3>
-                <p className="text-xs text-neutral-500 mt-1">Grow your business</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">List More. Sell More</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Grow your business</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Open your shop</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Open your shop</span>
             </Link>
           </div>
         )}
