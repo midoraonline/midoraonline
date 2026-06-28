@@ -5,7 +5,8 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
-import { apiChat } from "@/lib/api";
+import { apiChat, apiAuth } from "@/lib/api";
+import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
@@ -45,10 +46,16 @@ function ProfileDropdown({
     onNavigate?.();
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     close();
-    // Assuming /logout route handles session clearing and redirection
-    router.push("/logout");
+    try {
+      await apiAuth.logout();
+    } catch {
+      /* ignore */
+    } finally {
+      notifyAuthChanged();
+      router.replace("/");
+    }
   };
 
   return (
