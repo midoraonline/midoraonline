@@ -66,18 +66,9 @@ export default function ShopListRealtime({
   // INSERT / UPDATE may be suppressed in some RLS configurations).
   const refreshFromApi = useCallback(async () => {
     try {
-      const res = await apiShops.listPublic({ limit: 100 });
-      const freshShops: Shop[] = res.items ?? [];
+      const freshShops = await apiShops.listAllPublic();
       if (freshShops.length > 0) {
-        setShops((prev) => {
-          let merged = prev.slice();
-          for (const shop of freshShops) {
-            if (shop.is_active !== false) {
-              merged = mergeShop(merged, shop);
-            }
-          }
-          return merged;
-        });
+        setShops(freshShops.filter((shop) => shop.is_active !== false));
       }
     } catch {
       // Silently ignore — realtime is the primary path.

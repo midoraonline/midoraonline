@@ -79,6 +79,28 @@ export function listPublic(opts?: {
   return apiFetch<Paginated<Shop>>(`/api/v1/shops${qs ? `?${qs}` : ""}`);
 }
 
+/** Paginate through all public shops (API max 100 per page). */
+export async function listAllPublic(opts?: {
+  search?: string;
+  shop_type?: string;
+}): Promise<Shop[]> {
+  const pageSize = 100;
+  let page = 1;
+  const all: Shop[] = [];
+  let total = 0;
+
+  while (page <= 50) {
+    const res = await listPublic({ ...opts, page, limit: pageSize });
+    const items = res.items ?? [];
+    total = res.total ?? items.length;
+    all.push(...items);
+    if (all.length >= total || items.length < pageSize) break;
+    page += 1;
+  }
+
+  return all;
+}
+
 export function bySlug(slug: string, opts?: { token?: string }) {
   return apiFetch<Shop>(`/api/v1/shops/by-slug/${encodeURIComponent(slug)}`, {
     ...(opts?.token ? { token: opts.token } : {}),

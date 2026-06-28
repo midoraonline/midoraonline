@@ -53,24 +53,7 @@ export async function loadAlgorithmFeed(): Promise<ProductCardData[]> {
 }
 
 export async function loadLatestFeed(): Promise<ProductCardData[]> {
-  try {
-    const data = await apiProducts.getHomeFeed(MAX_CARDS);
-    const site = publicSiteOrigin();
-    const merged = [
-      ...(data.fresh ?? []),
-      ...(data.algorithm ?? []),
-    ];
-    const deduped = [...new Map(merged.map((p) => [p.id, p])).values()]
-      .sort((a, b) => {
-        const aT = a.created_at ?? "";
-        const bT = b.created_at ?? "";
-        return bT.localeCompare(aT);
-      });
-    return deduped.map((p) => toCard(p, site));
-  } catch (e) {
-    console.error("Failed to load latest feed", e);
-    return [];
-  }
+  return loadAlgorithmFeed();
 }
 
 export async function loadMostViewedProducts(limit: number = 12): Promise<ProductCardData[]> {

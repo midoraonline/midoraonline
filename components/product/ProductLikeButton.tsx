@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiProducts } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 
 const btnBase =
-  "inline-flex items-center gap-1 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2 py-1 text-[11px] font-semibold text-foreground/85 transition-colors hover:bg-foreground/[0.08] dm-focus";
+  "group relative inline-flex items-center gap-1.5 rounded-full border transition-all duration-200 ease-out select-none";
 
 export default function ProductLikeButton({
   productId,
@@ -29,6 +30,9 @@ export default function ProductLikeButton({
   const session = useAppSession();
   const [liked, setLiked] = useState(initialLiked ?? false);
   const [count, setCount] = useState<number | null>(initialLikeCount ?? null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const heartRef = useRef<HTMLSpanElement>(null);
 
   const sync = useCallback(async () => {
     try {
@@ -44,9 +48,7 @@ export default function ProductLikeButton({
     if (!session.hydrated) return;
     if (!session.isAuthenticated) return;
     if (initialLiked !== undefined && (initialLikeCount ?? 0) > 0) return;
-    Promise.resolve().then(() => {
-      sync();
-    });
+    sync();
   }, [session.hydrated, session.isAuthenticated, sync, initialLiked, initialLikeCount]);
 
   async function toggle() {
@@ -55,22 +57,59 @@ export default function ProductLikeButton({
       router.push(`/login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
+
+    if (isPending) return;
+
     const prevLiked = liked;
     const prevCount = count;
     const next = !liked;
+
+    // Optimistic update
     setLiked(next);
     setCount((c) => Math.max(0, (c ?? 0) + (next ? 1 : -1)));
+    setIsPending(true);
+
+    // Trigger heart pop animation
+    if (next) {
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 400);
+    }
+
     try {
-      if (next) await apiProducts.likeProduct(productId);
-      else await apiProducts.unlikeProduct(productId);
+      if (next) {
+        await apiProducts.likeProduct(productId);
+      } else {
+        await apiProducts.unlikeProduct(productId);
+      }
+      notifyFeedEngagement();
       void sync();
     } catch {
+      // Rollback on error
       setLiked(prevLiked);
       setCount(prevCount);
+    } finally {
+      setIsPending(false);
     }
   }
 
-  const iconClass = size === "compact" ? "!text-[16px]" : "!text-[18px]";
+  const sizeClasses = size === "compact" 
+    ? "px-2 py-1 text-[11px]" 
+    : "px-3 py-1.5 text-[13px]";
+
+  const iconSize = size === "compact" ? "!text-[16px]" : "!text-[20px]";
+
+  // Dynamic styles based on state
+  const stateClasses = liked
+    ? "border-rose-200 bg-rose-50 text-rose-600 shadow-sm shadow-rose-100"
+    : "border-foreground/[0.08] bg-foreground/[0.03] text-foreground/70 hover:border-rose-200/60 hover:bg-rose-50/50 hover:text-rose-500";
+
+  const disabledClasses = isPending ? "opacity-70 cursor-wait" : "cursor-pointer active:scale-95";
+
+  const ariaLabel = session.isAuthenticated
+    ? liked
+      ? `Remove from watchlist. ${count ?? 0} likes`
+      : `Save for later. ${count ?? 0} likes`
+    : "Sign in to save for later";
 
   if (variant === "floating") {
     return (
@@ -116,13 +155,63 @@ export default function ProductLikeButton({
     <button
       type="button"
       onClick={() => void toggle()}
-      className={[btnBase, liked ? "border-rose-300/40 bg-rose-500/10 text-rose-700" : "", className].join(" ")}
+      disabled={isPending}
+      className={[
+        btnBase,
+        sizeClasses,
+        stateClasses,
+        disabledClasses,
+        className,
+      ].join(" ")}
       aria-pressed={liked}
-      title={session.isAuthenticated ? (liked ? "Remove from watchlist" : "Save for later") : "Sign in to save for later"}
+      aria-label={ariaLabel}
+      title={ariaLabel}
     >
-      <MaterialSymbol name="favorite" className={`${iconClass} leading-none`} filled={liked} />
+      <span
+        ref={heartRef}
+        className={[
+          "relative inline-flex leading-none transition-transform duration-200",
+          isAnimating ? "animate-heart-pop" : "",
+          liked ? "text-rose-500" : "",
+        ].join(" ")}
+      >
+        <MaterialSymbol
+          name="favorite"
+          className={`${iconSize} leading-none`}
+          filled={liked}
+        />
+        
+        {/* Particle burst effect on like */}
+        {isAnimating && (
+          <>
+            <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/30" />
+            <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              {[...Array(6)].map((_, i) => (
+                <span
+                  key={i}
+                  className="absolute h-1 w-1 rounded-full bg-rose-400"
+                  style={{
+                    animation: `heart-particle 400ms ease-out forwards`,
+                    animationDelay: `${i * 16}ms`,
+                    transform: `rotate(${i * 60}deg) translateY(-12px)`,
+                  }}
+                />
+              ))}
+            </span>
+          </>
+        )}
+      </span>
+
       {count !== null && (
-        <span className="tabular-nums text-[11px] text-muted">{count}</span>
+        <span
+          className={[
+            "tabular-nums font-medium transition-colors duration-200",
+            liked ? "text-rose-600" : "text-foreground/50",
+            isAnimating ? "animate-count-bump" : "",
+          ].join(" ")}
+        >
+          {count.toLocaleString()}
+        </span>
       )}
     </button>
   );

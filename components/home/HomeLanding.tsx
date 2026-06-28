@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
 import ProductFilters, {
@@ -16,6 +16,10 @@ import { catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HomeHeroSlider from "@/components/home/HomeHeroSlider";
 import { useAppSession } from "@/lib/state";
+import { apiProducts } from "@/lib/api";
+import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
+import { homeFeedProductToCard } from "@/lib/homeFeedCards";
+import { publicSiteOrigin } from "@/lib/publicSite";
 
 function SectionHeader({
   title,
@@ -70,6 +74,7 @@ type Props = {
 export default function HomeLanding({
   initialProducts,
 }: Props) {
+  const [products, setProducts] = useState(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
@@ -80,6 +85,37 @@ export default function HomeLanding({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
+
+  const refreshFeed = useCallback(async () => {
+    try {
+      const site = publicSiteOrigin();
+      const data = await apiProducts.getHomeFeed(72);
+      setProducts((data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site)));
+    } catch {
+      /* keep current feed */
+    }
+  }, []);
+
+  useEffect(() => {
+    function onEngagement() {
+      void refreshFeed();
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void refreshFeed();
+      }
+    }
+    window.addEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refreshFeed]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -111,14 +147,14 @@ export default function HomeLanding({
   };
 
   const categories = useMemo(
-    () => collectCategoriesFromProducts(initialProducts),
-    [initialProducts],
+    () => collectCategoriesFromProducts(products),
+    [products],
   );
 
   const heroImages = useMemo(() => {
     const seen = new Set<string>();
     const imgs: string[] = [];
-    for (const p of initialProducts) {
+    for (const p of products) {
       if (p.imageUrl && !seen.has(p.imageUrl)) {
         seen.add(p.imageUrl);
         imgs.push(p.imageUrl);
@@ -126,10 +162,10 @@ export default function HomeLanding({
       }
     }
     return imgs;
-  }, [initialProducts]);
+  }, [products]);
 
   const browseProducts = useMemo(() => {
-    let list = initialProducts;
+    let list = products;
     if (selectedCategory) {
       list = list.filter(
         (p) =>
@@ -139,7 +175,7 @@ export default function HomeLanding({
     }
     list = applyFilters(list, filters);
     return list;
-  }, [initialProducts, selectedCategory, filters]);
+  }, [products, selectedCategory, filters]);
 
   const displayProducts = browseProducts;
   const categoryFilterActive = selectedCategory !== null;
@@ -227,7 +263,7 @@ export default function HomeLanding({
         />
 
         <ProductFilters
-          products={initialProducts}
+          products={products}
           filters={filters}
           onChange={setFilters}
         />
@@ -373,7 +409,7 @@ export default function HomeLanding({
                     );
                   })}
                 </div>
-                {initialProducts.length > 0 && (
+                {products.length > 0 && (
                   <div className="pt-2 text-center">
                     <Link
                       href="/products"
