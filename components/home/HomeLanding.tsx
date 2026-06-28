@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
 import ProductFilters, {
@@ -438,63 +439,78 @@ export default function HomeLanding({
       </div>
 
       {/* Sticky Feedback Button */}
-      <button
+      <motion.button
+        whileHover={{ x: -2 }}
+        whileTap={{ scale: 0.96 }}
         onClick={() => setFeedbackOpen(true)}
         className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-3 rounded-l-xl shadow-lg flex items-center gap-1 cursor-pointer [writing-mode:vertical-lr] select-none"
       >
         <MaterialSymbol name="rate_review" className="!text-sm mb-1" />
         <span>Feedback</span>
-      </button>
+      </motion.button>
 
       {/* Feedback Modal */}
-      {feedbackOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-neutral-800 flex items-center gap-1.5">
-                <MaterialSymbol name="rate_review" className="text-orange-600" />
-                Submit Feedback
-              </h3>
-              <button
-                onClick={() => {
-                  setFeedbackOpen(false);
-                  setFeedbackSubmitted(false);
-                  setFeedbackText("");
-                }}
-                className="p-1 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 cursor-pointer"
-              >
-                <MaterialSymbol name="close" className="!text-lg" />
-              </button>
-            </div>
-            
-            {feedbackSubmitted ? (
-              <div className="text-center py-6 space-y-3">
-                <div className="size-10 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center mx-auto">
-                  <MaterialSymbol name="check_circle" className="!text-xl" filled />
-                </div>
-                <h4 className="font-bold text-neutral-800 text-sm">Thank you!</h4>
-                <p className="text-xs text-neutral-500">Your feedback has been submitted successfully.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <textarea
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Tell us what you think or report an issue..."
-                  className="w-full h-28 p-3 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-orange-500 resize-none"
-                />
+      <AnimatePresence>
+        {feedbackOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 15, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-neutral-800 flex items-center gap-1.5">
+                  <MaterialSymbol name="rate_review" className="text-orange-600" />
+                  Submit Feedback
+                </h3>
                 <button
-                  disabled={!feedbackText.trim()}
-                  onClick={() => setFeedbackSubmitted(true)}
-                  className="w-full py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  onClick={() => {
+                    setFeedbackOpen(false);
+                    setFeedbackSubmitted(false);
+                    setFeedbackText("");
+                  }}
+                  className="p-1 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 cursor-pointer"
                 >
-                  Submit
+                  <MaterialSymbol name="close" className="!text-lg" />
                 </button>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+              
+              {feedbackSubmitted ? (
+                <div className="text-center py-6 space-y-3">
+                  <div className="size-10 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center mx-auto">
+                    <MaterialSymbol name="check_circle" className="!text-xl" filled />
+                  </div>
+                  <h4 className="font-bold text-neutral-800 text-sm">Thank you!</h4>
+                  <p className="text-xs text-neutral-500">Your feedback has been submitted successfully.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <textarea
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    placeholder="Tell us what you think or report an issue..."
+                    className="w-full h-28 p-3 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-orange-500 resize-none"
+                  />
+                  <button
+                    disabled={!feedbackText.trim()}
+                    onClick={() => setFeedbackSubmitted(true)}
+                    className="w-full py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Submit
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
