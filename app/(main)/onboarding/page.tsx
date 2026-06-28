@@ -13,11 +13,10 @@ import {
   Sparkles,
   Store,
   UserPlus,
-  Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
-const softCard = "rounded-2xl border border-border/50 bg-card text-card-foreground shadow-sm";
+const softCard = "rounded-3xl border border-neutral-200/60 bg-white p-6 sm:p-8 shadow-xs transition-all hover:shadow-md hover:border-orange-200/50";
 
 function Reveal({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) {
   return (
@@ -25,7 +24,7 @@ function Reveal({ children, delayMs = 0 }: { children: ReactNode; delayMs?: numb
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5, delay: delayMs / 1000, ease: "easeOut" }}
+      transition={{ duration: 0.6, delay: delayMs / 1000, ease: "easeOut" }}
     >
       {children}
     </motion.div>
@@ -34,103 +33,78 @@ function Reveal({ children, delayMs = 0 }: { children: ReactNode; delayMs?: numb
 
 export default function OnboardingPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-10 sm:space-y-14">
+    <div className="mx-auto w-full max-w-5xl space-y-12 sm:space-y-16 lg:space-y-20 pb-12">
 
+      {/* Hero Section */}
       <Reveal>
-        <section className="relative overflow-hidden rounded-3xl">
-          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10 lg:p-8">
-            <div>
-              <p className="inline-flex items-center gap-2 rounded-full bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-foreground/70">
-                <Sparkles className="size-3.5 shrink-0" aria-hidden />
-                Brand-first mall
-              </p>
-              <h1 className="font-display mt-6 text-pretty text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl lg:text-5xl xl:text-[3.25rem]">
-                Your brand deserves the spotlight—not buried in an endless product grid.
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                Midora Online is built so shoppers meet{" "}
-                <span className="font-semibold text-foreground">shops first</span>, then
-                products. Merchants get a clear storefront; customers get discovery that
-                feels human.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href="/merchant/new"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform duration-300 hover:-translate-y-0.5 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                >
-                  Open your shop
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
-                <Link
-                  href="/shops"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground/[0.07] px-6 py-3.5 text-sm font-semibold text-foreground transition-colors duration-300 hover:bg-foreground/[0.1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/20"
-                >
-                  Explore shops
-                </Link>
-              </div>
-              <div className="mt-8 flex flex-wrap gap-2">
-                {["From 5,000 UGX/mo", "Verified-ready", "Policies & trust"].map((t) => (
-                  <span
-                    key={t}
-                    className="rounded-full bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold text-foreground/75"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
+        <section className="relative overflow-hidden rounded-3xl bg-neutral-900 text-white min-h-[380px] sm:min-h-[440px] flex items-center p-6 sm:p-12 lg:p-16">
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: "url('/hero_lady_market.png')" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+          
+          <div className="relative z-10 max-w-2xl space-y-6">
+            <p className="inline-flex items-center gap-2 rounded-full bg-orange-500/20 border border-orange-500/30 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-orange-400">
+              <Sparkles className="size-3.5 shrink-0" aria-hidden />
+              Brand-First Marketplace
+            </p>
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-white">
+              Your brand deserves the spotlight—not buried in an endless grid.
+            </h1>
+            <p className="max-w-md text-xs sm:text-sm text-neutral-300 leading-relaxed">
+              Midora Online is built so shoppers meet <span className="font-bold text-orange-400">shops first</span>, then products. Merchants get a custom storefront; customers get discovery that feels human.
+            </p>
+            
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link
+                href="/open-shop"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 px-6 py-3 text-xs font-bold text-white transition-all shadow-lg hover:shadow-orange-600/15 active:scale-95 cursor-pointer"
+              >
+                Open your shop
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+              <Link
+                href="/shops"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 px-6 py-3 text-xs font-bold text-white backdrop-blur-xs transition-all active:scale-95 cursor-pointer"
+              >
+                Explore shops
+              </Link>
             </div>
-
-            <div className={`flex flex-col gap-4 p-5 sm:p-6 ${softCard}`}>
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-foreground/55">
-                Why it works
-              </p>
-              <ul className="space-y-5 text-sm leading-relaxed text-foreground">
-                <li className="flex gap-3">
-                  <Store className="mt-0.5 size-5 shrink-0 text-foreground/50" aria-hidden />
-                  <span>
-                    <strong className="text-foreground">Shop pages</strong> carry your
-                    story, logo, and policies—before anyone clicks &ldquo;buy.&rdquo;
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <Package className="mt-0.5 size-5 shrink-0 text-foreground/50" aria-hidden />
-                  <span>
-                    <strong className="text-foreground">Products</strong> sit inside that
-                    brand context, so discovery builds recognition.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <Zap className="mt-0.5 size-5 shrink-0 text-foreground/50" aria-hidden />
-                  <span>
-                    <strong className="text-foreground">Fast setup</strong> for merchants;
-                    a calmer browse for shoppers.
-                  </span>
-                </li>
-              </ul>
+            
+            <div className="flex flex-wrap gap-2 pt-2">
+              {["From 5,000 UGX/mo", "Verified-ready", "Policies & trust"].map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-white/5 border border-white/5 px-3 py-1 text-[10px] font-bold text-neutral-300"
+                >
+                  {t}
+                </span>
+              ))}
             </div>
           </div>
         </section>
       </Reveal>
 
+      {/* Why Midora Heading */}
       <section className="space-y-6" aria-labelledby="why-midora-heading">
         <Reveal>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2
-                id="why-midora-heading"
-                className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
-              >
-                Why Midora Online
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
-                Generic marketplaces optimize for the cheapest click. We optimize for{" "}
-                <span className="font-medium text-foreground">brand memory</span>—so repeat
-                customers know who they bought from.
-              </p>
-            </div>
+          <div>
+            <h2
+              id="why-midora-heading"
+              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
+            >
+              Why Midora Online
+            </h2>
+            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
+              Generic marketplaces optimize for the cheapest click. We optimize for{" "}
+              <span className="font-semibold text-orange-600">brand memory</span>—so repeat customers know exactly who they bought from.
+            </p>
           </div>
         </Reveal>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        
+        {/* Core Value Cards */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               title: "Discovery, not noise",
@@ -148,37 +122,45 @@ export default function OnboardingPage() {
               icon: Shield,
             },
           ].map((item, i) => (
-            <Reveal key={item.title} delayMs={i * 70}>
-              <article className={`flex h-full flex-col p-6 sm:p-7 ${softCard}`}>
-                <item.icon className="size-8 text-foreground/45" aria-hidden />
-                <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
+            <Reveal key={item.title} delayMs={i * 80}>
+              <motion.article 
+                whileHover={{ y: -4, scale: 1.01 }}
+                transition={{ duration: 0.2 }}
+                className={`flex h-full flex-col p-6 bg-white border border-neutral-200/70 rounded-3xl shadow-xs`}
+              >
+                <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl w-fit">
+                  <item.icon className="size-6 shrink-0" aria-hidden />
+                </div>
+                <h3 className="mt-4 font-bold text-neutral-850 text-sm">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{item.body}</p>
-              </article>
+                <p className="mt-2 text-xs leading-relaxed text-neutral-500">{item.body}</p>
+              </motion.article>
             </Reveal>
           ))}
         </div>
       </section>
 
+      {/* Two paths: Merchants vs Shoppers */}
       <section className="space-y-6" aria-labelledby="how-heading">
         <Reveal>
           <div>
             <h2
               id="how-heading"
-              className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
             >
               How to use Midora
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
+            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
               Same platform, two simple paths—whether you sell or shop.
             </p>
           </div>
         </Reveal>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Reveal delayMs={40}>
-            <div className={`p-6 sm:p-7 ${softCard}`}>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/55">
+        
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Reveal delayMs={50}>
+            <div className={`${softCard}`}>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md w-fit">
                 Merchants
               </p>
               <ol className="mt-5 space-y-4">
@@ -189,10 +171,10 @@ export default function OnboardingPage() {
                   "Share your shop link; customers browse you first.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] text-sm font-bold text-foreground/80">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-orange-50 border border-orange-100 text-sm font-bold text-orange-600">
                       {idx + 1}
                     </span>
-                    <span className="pt-1 text-sm leading-relaxed text-foreground">
+                    <span className="pt-1 text-xs sm:text-sm leading-relaxed text-neutral-600">
                       {step}
                     </span>
                   </li>
@@ -200,9 +182,10 @@ export default function OnboardingPage() {
               </ol>
             </div>
           </Reveal>
+          
           <Reveal delayMs={100}>
-            <div className={`p-6 sm:p-7 ${softCard}`}>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/55">
+            <div className={`${softCard}`}>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md w-fit">
                 Shoppers
               </p>
               <ol className="mt-5 space-y-4">
@@ -213,10 +196,10 @@ export default function OnboardingPage() {
                   "Return to the same brand next time—no anonymous SKUs.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] text-sm font-bold text-foreground/80">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-sm font-bold text-emerald-600">
                       {idx + 1}
                     </span>
-                    <span className="pt-1 text-sm leading-relaxed text-foreground">
+                    <span className="pt-1 text-xs sm:text-sm leading-relaxed text-neutral-600">
                       {step}
                     </span>
                   </li>
@@ -227,22 +210,57 @@ export default function OnboardingPage() {
         </div>
       </section>
 
+      {/* Background Image Overlay CTA Section */}
+      <Reveal>
+        <section className="relative overflow-hidden rounded-3xl bg-neutral-900 text-white min-h-[300px] flex items-center p-6 sm:p-12">
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
+            style={{ backgroundImage: "url('/hero_lady_market.png')" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-transparent" />
+          
+          <div className="relative z-10 max-w-lg space-y-4">
+            <h2 className="font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+              Ready to grow your business or browse Kampala&apos;s best?
+            </h2>
+            <p className="text-xs text-neutral-300 leading-normal max-w-sm">
+              Create a shop space, publish your products, and chat directly with customers via WhatsApp. No fees, no fuss.
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link
+                href="/open-shop"
+                className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs rounded-full transition-all shadow-lg hover:shadow-orange-600/10 cursor-pointer"
+              >
+                Get Started
+              </Link>
+              <Link
+                href="/products"
+                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-xs rounded-full backdrop-blur-xs transition-all cursor-pointer"
+              >
+                Browse Feed
+              </Link>
+            </div>
+          </div>
+        </section>
+      </Reveal>
+
+      {/* Analytics / Stats tracking Section */}
       <section className="space-y-6" aria-labelledby="stats-heading">
         <Reveal>
           <div>
             <h2
               id="stats-heading"
-              className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
             >
               Track your performance
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
-              Every shop comes with built-in analytics so you always know how you&apos;re
-              doing.
+            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
+              Every shop comes with built-in analytics so you always know how your shop is performing.
             </p>
           </div>
         </Reveal>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               title: "Shop views",
@@ -260,23 +278,30 @@ export default function OnboardingPage() {
               icon: UserPlus,
             },
           ].map((item, i) => (
-            <Reveal key={item.title} delayMs={i * 70}>
-              <article className={`flex h-full flex-col p-6 sm:p-7 ${softCard}`}>
-                <item.icon className="size-8 text-foreground/45" aria-hidden />
-                <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
+            <Reveal key={item.title} delayMs={i * 80}>
+              <motion.article 
+                whileHover={{ y: -4, scale: 1.01 }}
+                transition={{ duration: 0.2 }}
+                className={`flex h-full flex-col p-6 bg-white border border-neutral-200/70 rounded-3xl shadow-xs`}
+              >
+                <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl w-fit">
+                  <item.icon className="size-6 shrink-0" aria-hidden />
+                </div>
+                <h3 className="mt-4 font-bold text-neutral-850 text-sm">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{item.body}</p>
-              </article>
+                <p className="mt-2 text-xs leading-relaxed text-neutral-500">{item.body}</p>
+              </motion.article>
             </Reveal>
           ))}
         </div>
+        
         <Reveal>
-          <p className="text-sm text-muted">
+          <p className="text-xs text-neutral-500">
             Access your analytics from{" "}
             <Link
               href="/merchant"
-              className="font-semibold text-foreground underline-offset-2 hover:underline"
+              className="font-bold text-orange-600 underline-offset-2 hover:underline"
             >
               your merchant dashboard
             </Link>{" "}
@@ -285,28 +310,32 @@ export default function OnboardingPage() {
         </Reveal>
       </section>
 
+      {/* Merchant vs Shopper Detailed Grid */}
       <section className="space-y-6" aria-labelledby="value-heading">
         <Reveal>
           <div>
             <h2
               id="value-heading"
-              className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
             >
               Value we add
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
+            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
               One neutral mall, two audiences—each gets structure that respects their goals.
             </p>
           </div>
         </Reveal>
-        <div className="grid gap-4 lg:grid-cols-2">
+        
+        <div className="grid gap-6 lg:grid-cols-2">
           <Reveal>
-            <div className={`h-full p-6 sm:p-8 ${softCard}`}>
-              <div className="flex items-center gap-2 text-foreground">
-                <Store className="size-6 text-foreground/50" aria-hidden />
-                <h3 className="font-display text-xl font-semibold">For merchants</h3>
+            <div className={`${softCard}`}>
+              <div className="flex items-center gap-2.5 text-neutral-850">
+                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                  <Store className="size-5 shrink-0" aria-hidden />
+                </div>
+                <h3 className="font-bold text-sm sm:text-base">For merchants</h3>
               </div>
-              <ul className="mt-4 space-y-3 text-sm leading-relaxed text-foreground">
+              <ul className="mt-4 space-y-3 text-xs sm:text-sm leading-relaxed text-neutral-600">
                 <li className="pl-1">
                   Faster launch than a bespoke site; stronger brand than a lone listing.
                 </li>
@@ -317,19 +346,21 @@ export default function OnboardingPage() {
                   One hub for discovery, questions, and repeat visits.
                 </li>
                 <li className="pl-1">
-                  Built-in analytics to track shop views, product engagement, and follower
-                  growth.
+                  Built-in analytics to track shop views, product engagement, and follower growth.
                 </li>
               </ul>
             </div>
           </Reveal>
+          
           <Reveal delayMs={80}>
-            <div className={`h-full p-6 sm:p-8 ${softCard}`}>
-              <div className="flex items-center gap-2 text-foreground">
-                <ShoppingBag className="size-6 text-foreground/50" aria-hidden />
-                <h3 className="font-display text-xl font-semibold">For shoppers</h3>
+            <div className={`${softCard}`}>
+              <div className="flex items-center gap-2.5 text-neutral-850">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <ShoppingBag className="size-5 shrink-0" aria-hidden />
+                </div>
+                <h3 className="font-bold text-sm sm:text-base">For shoppers</h3>
               </div>
-              <ul className="mt-4 space-y-3 text-sm leading-relaxed text-foreground">
+              <ul className="mt-4 space-y-3 text-xs sm:text-sm leading-relaxed text-neutral-600">
                 <li className="pl-1">See who you&apos;re buying from before you commit.</li>
                 <li className="pl-1">
                   Browse products with context—less guesswork, fewer regrets.
@@ -346,35 +377,35 @@ export default function OnboardingPage() {
         </div>
       </section>
 
+      {/* Final contact CTA */}
       <Reveal>
-        <section className={`flex flex-col gap-4 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-7 ${softCard}`}>
+        <section className={`flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between bg-white border border-neutral-200/70 rounded-3xl shadow-xs`}>
           <div className="flex items-start gap-3">
-            <MessageCircle
-              className="mt-0.5 size-5 shrink-0 text-foreground/45"
-              aria-hidden
-            />
-            <p className="text-sm text-foreground">
-              <span className="font-semibold">Need a hand?</span>{" "}
-              <span className="text-muted">Use the floating assistant or </span>
+            <div className="p-2 bg-orange-50 text-orange-600 rounded-xl shrink-0">
+              <MessageCircle className="size-5" aria-hidden />
+            </div>
+            <p className="text-xs sm:text-sm text-neutral-600">
+              <span className="font-bold">Need a hand?</span>{" "}
+              <span className="text-neutral-500">Use the floating assistant or </span>
               <Link
                 href="/contactus"
-                className="font-semibold text-foreground underline-offset-2 hover:underline"
+                className="font-bold text-orange-600 underline-offset-2 hover:underline"
               >
                 contact us
               </Link>
               .
             </p>
           </div>
-          <div className="flex flex-wrap gap-3 sm:shrink-0">
+          <div className="flex flex-wrap gap-3 sm:shrink-0 justify-end">
             <Link
               href="/shops"
-              className="inline-flex items-center gap-2 rounded-2xl bg-foreground/[0.07] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.1]"
+              className="inline-flex items-center gap-2 rounded-full bg-neutral-100 hover:bg-neutral-200 px-5 py-2.5 text-xs font-bold text-neutral-700 transition-colors"
             >
               Browse shops
             </Link>
             <Link
               href="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-95"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 text-xs font-bold transition-all shadow-md hover:shadow-orange-600/10 cursor-pointer"
             >
               <UserPlus className="size-4" aria-hidden />
               Get started

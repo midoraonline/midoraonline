@@ -13,12 +13,14 @@ export default function ProductLikeButton({
   productId,
   className = "",
   size = "default",
+  variant = "default",
   initialLiked,
   initialLikeCount,
 }: {
   productId: string;
   className?: string;
   size?: "default" | "compact";
+  variant?: "default" | "floating" | "outline";
   initialLiked?: boolean;
   initialLikeCount?: number;
 }) {
@@ -69,6 +71,46 @@ export default function ProductLikeButton({
   }
 
   const iconClass = size === "compact" ? "!text-[16px]" : "!text-[18px]";
+
+  if (variant === "floating") {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void toggle();
+        }}
+        className={`dm-focus flex size-9 items-center justify-center rounded-full bg-white shadow-md transition-transform hover:scale-105 active:scale-95 ${
+          liked ? "text-rose-500" : "text-neutral-500"
+        } ${className}`}
+        aria-pressed={liked}
+        title={liked ? "Remove from watchlist" : "Save for later"}
+      >
+        <MaterialSymbol name="favorite" className="!text-[20px]" filled={liked} />
+      </button>
+    );
+  }
+
+  if (variant === "outline") {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void toggle();
+        }}
+        className={`dm-focus flex items-center justify-center gap-1.5 rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100 ${
+          liked ? "border-rose-200 bg-rose-50/50 text-rose-600 hover:bg-rose-50" : ""
+        } ${className}`}
+        aria-pressed={liked}
+      >
+        <MaterialSymbol name="favorite" className="!text-[16px]" filled={liked} />
+        <span>{liked ? "Saved" : "Save"}</span>
+      </button>
+    );
+  }
 
   return (
     <button

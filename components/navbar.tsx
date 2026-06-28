@@ -15,14 +15,12 @@ import { LogOut } from "lucide-react";
 function ProfileDropdown({
   displayName,
   initials,
-  email,
   dashboardHref,
   role,
   onNavigate,
 }: {
   displayName: string;
   initials: string;
-  email: string;
   dashboardHref: string;
   role: string | null;
   onNavigate?: () => void;
@@ -180,9 +178,12 @@ export default function Navbar({
   }, [session.isAuthenticated]);
 
   useEffect(() => {
-    fetchUnread();
+    const timer = setTimeout(() => {
+      fetchUnread();
+    }, 100);
     unreadIntervalRef.current = setInterval(fetchUnread, 15000);
     return () => {
+      clearTimeout(timer);
       if (unreadIntervalRef.current) clearInterval(unreadIntervalRef.current);
     };
   }, [fetchUnread]);
@@ -207,15 +208,7 @@ export default function Navbar({
       ? "/merchant"
       : "/customer";
 
-  const onAccount =
-    pathname === "/account" ||
-    pathname.startsWith("/account/") ||
-    pathname === "/admin" ||
-    pathname.startsWith("/admin/") ||
-    pathname === "/merchant" ||
-    pathname.startsWith("/merchant/") ||
-    pathname === "/customer" ||
-    pathname.startsWith("/customer/");
+
 
   const onChatPage = pathname === "/chat";
 
@@ -267,15 +260,25 @@ export default function Navbar({
             })}
           </nav>
 
-          {/* Search */}
-          <div className="ml-auto hidden w-full md:block md:max-w-sm lg:max-w-md">
-            <ProductSearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              onSubmit={submitNavbarSearch}
-              placeholder="Search products…"
-              ariaLabel="Search products"
-            />
+          {/* Search & Live Counter */}
+          <div className="ml-auto hidden w-full md:flex md:items-center md:gap-3 md:max-w-md lg:max-w-lg">
+            <div className="flex-1">
+              <ProductSearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onSubmit={submitNavbarSearch}
+                placeholder="Search products…"
+                ariaLabel="Search products"
+              />
+            </div>
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full border border-emerald-100 whitespace-nowrap">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <MaterialSymbol name="wifi_tethering" className="!text-[13px] text-emerald-600" />
+              <span>1,284 sellers online</span>
+            </div>
           </div>
 
           {/* Right actions */}
@@ -335,7 +338,6 @@ export default function Navbar({
               <ProfileDropdown
                 displayName={displayName}
                 initials={initials}
-                email={session.user?.email || ""}
                 dashboardHref={dashboardHref}
                 role={role}
                 onNavigate={() => setOpen(false)}
@@ -366,10 +368,10 @@ export default function Navbar({
         {/* Mobile search bar */}
         <div
           className={`overflow-hidden transition-all duration-200 ease-out md:hidden ${
-            searchOpen ? "max-h-14 border-t border-border" : "max-h-0"
+            searchOpen ? "max-h-24 border-t border-border" : "max-h-0"
           }`}
         >
-          <div className="px-4 py-2">
+          <div className="px-4 py-2 flex flex-col gap-1">
             <ProductSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -377,6 +379,14 @@ export default function Navbar({
               placeholder="Search products…"
               ariaLabel="Search products"
             />
+            <div className="flex items-center gap-1 px-1 py-0.5 text-[10px] font-bold text-emerald-700">
+              <span className="relative flex h-1 w-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1 w-1 bg-emerald-500"></span>
+              </span>
+              <MaterialSymbol name="wifi_tethering" className="!text-[11px] text-emerald-600" />
+              <span>1,284 sellers online now</span>
+            </div>
           </div>
         </div>
 
