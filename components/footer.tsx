@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, MapPin, Facebook, Instagram, MessageCircle, ChevronUp } from "lucide-react";
+import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -153,7 +153,7 @@ export default function Footer() {
                 <TikTokIcon />
               </a>
               <a href="#" className="grid size-8 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:text-orange-600 hover:border-orange-500 transition-all bg-white" aria-label="WhatsApp">
-                <MessageCircle className="size-4" />
+                <WhatsAppIcon className="size-4 text-neutral-500 hover:text-orange-600 shrink-0" />
               </a>
             </div>
           </div>

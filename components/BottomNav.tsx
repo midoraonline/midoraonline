@@ -46,7 +46,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md border-t border-neutral-200/80 z-50 flex items-center justify-around pb-safe px-4 shadow-lg">
+    <div className="fixed bottom-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md border-t border-neutral-200/80 z-50 flex items-center justify-around md:hidden pb-safe px-4 shadow-lg">
       {tabs.map((tab) => {
         const isActive =
           tab.href === "/"
