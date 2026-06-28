@@ -78,9 +78,7 @@ export default function HomeLanding({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
-  // Redesign state
   const session = useAppSession();
-  const [showBackToTop, setShowBackToTop] = useState(false);
   const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -117,13 +115,7 @@ export default function HomeLanding({
     };
   }, [refreshFeed]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -504,16 +496,6 @@ export default function HomeLanding({
         </div>
       )}
 
-      {/* Floating Back to Top Button */}
-      {showBackToTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-20 md:bottom-6 left-6 z-40 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
-          title="Back to Top"
-        >
-          <MaterialSymbol name="arrow_upward" className="!text-lg" />
-        </button>
-      )}
     </div>
   );
 }

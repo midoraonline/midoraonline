@@ -134,8 +134,18 @@ export default function Navbar({
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const session = useAppSession();
   const [unread, setUnread] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const session = useAppSession();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const activeHref = useMemo(() => {
@@ -446,6 +456,17 @@ export default function Navbar({
           </div>
         ) : null}
       </div>
+      
+      {/* Floating Back to Top Button (Global across all pages) */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-20 md:bottom-6 left-6 z-40 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
+          title="Back to Top"
+        >
+          <MaterialSymbol name="arrow_upward" className="!text-lg" />
+        </button>
+      )}
     </header>
   );
 }

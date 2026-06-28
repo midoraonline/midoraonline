@@ -10,12 +10,12 @@ export default function BottomNav() {
   const session = useAppSession();
 
   const role = session.user?.user_role ?? null;
-  const sellHref =
-    role === "merchant"
+  const dashboardHref =
+    role === "admin"
+      ? "/admin"
+      : role === "merchant"
       ? "/merchant"
-      : (!session.ownedShopIds || session.ownedShopIds.length === 0)
-      ? "/open-shop"
-      : "/merchant";
+      : "/customer";
 
   const tabs = [
     {
@@ -24,24 +24,29 @@ export default function BottomNav() {
       icon: "home",
     },
     {
+      label: "Categories",
+      href: "/products",
+      icon: "grid_view",
+    },
+    {
       label: "Saved",
       href: "/customer/wishlist",
       icon: "favorite",
     },
     {
-      label: "Sell",
-      href: sellHref,
-      icon: "add_circle",
+      label: "Shops",
+      href: "/shops",
+      icon: "storefront",
     },
     {
-      label: "Stroll",
-      href: "/products",
-      icon: "explore",
+      label: "Account",
+      href: dashboardHref,
+      icon: "account_circle",
     },
   ];
 
   return (
-    <div className="fixed bottom-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md border-t border-neutral-200/80 z-50 flex items-center justify-around md:hidden pb-safe px-4 shadow-lg">
+    <div className="fixed bottom-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md border-t border-neutral-200/80 z-50 flex items-center justify-around pb-safe px-4 shadow-lg">
       {tabs.map((tab) => {
         const isActive =
           tab.href === "/"
