@@ -1,6 +1,7 @@
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
+import BottomNav from "@/components/BottomNav";
 import { Mail, MapPin } from "lucide-react";
 
 export default function MainLayout({
@@ -33,10 +34,11 @@ export default function MainLayout({
         </div>
       </div>
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0">
         <div className="dm-container pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12">{children}</div>
       </main>
       <Footer />
+      <BottomNav />
       <MidoraInfoChatWidget />
     </div>
   );
