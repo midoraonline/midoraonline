@@ -1,4 +1,5 @@
 import "server-only";
+import { cookies } from "next/headers";
 
 import { apiProducts } from "@/lib/api";
 import type { ProductCardData } from "@/components/productcard";
@@ -43,7 +44,9 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
 
 export async function loadAlgorithmFeed(): Promise<ProductCardData[]> {
   try {
-    const data = await apiProducts.getHomeFeed(MAX_CARDS);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("midora_access")?.value;
+    const data = await apiProducts.getHomeFeed(MAX_CARDS, undefined, token);
     const site = publicSiteOrigin();
     return (data.algorithm ?? []).map((p) => toCard(p, site));
   } catch (e) {
@@ -58,7 +61,9 @@ export async function loadLatestFeed(): Promise<ProductCardData[]> {
 
 export async function loadMostViewedProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
-    const data = await apiProducts.getHomeFeed(limit);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("midora_access")?.value;
+    const data = await apiProducts.getHomeFeed(limit, undefined, token);
     const site = publicSiteOrigin();
     const sorted = [...(data.algorithm ?? [])]
       .sort((a, b) => b.view_count - a.view_count)
@@ -71,7 +76,9 @@ export async function loadMostViewedProducts(limit: number = 12): Promise<Produc
 
 export async function loadPremiumFeed(limit: number = 12): Promise<ProductCardData[]> {
   try {
-    const data = await apiProducts.getHomeFeed(limit);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("midora_access")?.value;
+    const data = await apiProducts.getHomeFeed(limit, undefined, token);
     const site = publicSiteOrigin();
     const sorted = [...(data.premium ?? [])]
       .sort((a, b) => b.listing_score - a.listing_score)
@@ -84,7 +91,9 @@ export async function loadPremiumFeed(limit: number = 12): Promise<ProductCardDa
 
 export async function loadBoostedFeed(limit: number = 12): Promise<ProductCardData[]> {
   try {
-    const data = await apiProducts.getHomeFeed(MAX_CARDS);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("midora_access")?.value;
+    const data = await apiProducts.getHomeFeed(MAX_CARDS, undefined, token);
     const site = publicSiteOrigin();
     const all = [
       ...(data.algorithm ?? []),
@@ -102,7 +111,9 @@ export async function loadBoostedFeed(limit: number = 12): Promise<ProductCardDa
 
 export async function loadTrendingFeed(limit: number = 12): Promise<ProductCardData[]> {
   try {
-    const data = await apiProducts.getHomeFeed(limit);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("midora_access")?.value;
+    const data = await apiProducts.getHomeFeed(limit, undefined, token);
     const site = publicSiteOrigin();
     const sorted = [...(data.trending ?? [])]
       .sort((a, b) => b.listing_score - a.listing_score)
@@ -115,7 +126,9 @@ export async function loadTrendingFeed(limit: number = 12): Promise<ProductCardD
 
 export async function loadFreshFeed(limit: number = 12): Promise<ProductCardData[]> {
   try {
-    const data = await apiProducts.getHomeFeed(limit);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("midora_access")?.value;
+    const data = await apiProducts.getHomeFeed(limit, undefined, token);
     const site = publicSiteOrigin();
     const sorted = [...(data.fresh ?? [])]
       .sort((a, b) => {
