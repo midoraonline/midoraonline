@@ -60,7 +60,7 @@ export default function OpenShopWizard() {
         logo_url: logoUrl.trim() || undefined,
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
-        location: locationDisplay.trim() ? { display: locationDisplay.trim() } : undefined,
+        location: locationDisplay.trim() && locationDisplay.trim() !== "Online Shop" ? { display: locationDisplay.trim() } : undefined,
         shop_type: shopType,
         contacts: [],
         social_links: [],

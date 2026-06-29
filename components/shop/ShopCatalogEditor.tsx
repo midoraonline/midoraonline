@@ -7,9 +7,6 @@ import {
   Loader2,
   Pencil,
   Trash2,
-  ArrowUpCircle,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { apiProducts } from "@/lib/api";
 import type { ProductStatus } from "@/lib/api/products";
@@ -365,8 +362,7 @@ export default function ShopCatalogEditor({
                           title="Repost to the Latest Feed to boost visibility"
                           onClick={() => void handleRepost(p)}
                         >
-                          <ArrowUpCircle className="size-3.5" />
-                          Repost
+                          Repost to feed
                         </button>
                       )}
 

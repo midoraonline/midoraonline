@@ -31,6 +31,7 @@ type FormState = {
 };
 
 function shopToFormState(shop: Shop): FormState {
+  const loc = shop.location;
   return {
     name: shop.name ?? "",
     description: shop.description ?? "",
@@ -40,7 +41,11 @@ function shopToFormState(shop: Shop): FormState {
     whatsappNumber: shop.whatsapp_number ?? "",
     availabilityDays: shop.availability?.days ?? "",
     availabilityHours: shop.availability?.hours ?? "",
-    location: locationDisplay(shop.location),
+    location: typeof loc === "string"
+      ? loc
+      : loc && typeof loc === "object" && "display" in loc
+        ? String((loc as { display?: string }).display ?? "")
+        : "",
     shopType: shop.shop_type ?? "product",
     isActive: shop.is_active ?? true,
   };
@@ -233,7 +238,7 @@ function DetailsTab({
               hours: form.availabilityHours.trim() || null,
             }
           : null,
-        location: form.location.trim() ? { display: form.location.trim() } : null,
+        location: form.location.trim() && form.location.trim() !== "Online Shop" ? { display: form.location.trim() } : null,
         shop_type: form.shopType,
         is_active: form.isActive,
       });

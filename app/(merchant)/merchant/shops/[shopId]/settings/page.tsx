@@ -103,7 +103,7 @@ export default function MerchantShopSettingsPage() {
         logo_url: logoUrl.trim() || undefined,
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
-        location: locationDisplay.trim()
+        location: locationDisplay.trim() && locationDisplay.trim() !== "Online Shop"
           ? { display: locationDisplay.trim() }
           : undefined,
         shop_type: shopType,

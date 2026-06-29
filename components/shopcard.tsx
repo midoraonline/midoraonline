@@ -121,8 +121,7 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
           )}
           {shop.viewCount != null && shop.viewCount > 0 && (
             <span className="inline-flex items-center gap-1 text-[10px] text-muted">
-              <MaterialSymbol name="visibility" className="!text-xs" />
-              {shop.viewCount}
+              <span>Views: {shop.viewCount}</span>
             </span>
           )}
         </div>

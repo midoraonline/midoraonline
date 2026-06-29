@@ -239,7 +239,7 @@ export default function ProductCard({
                 <span className="truncate">{product.location_name || product.shop.location || "Kampala"}</span>
               </span>
               <span className="flex items-center gap-0.5 shrink-0 px-2">
-                <MaterialSymbol name="visibility" className="!text-[11px] text-neutral-400 shrink-0" />
+                <span className="text-neutral-400">Views: </span>
                 <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "12"}</span>
               </span>
               <span className="flex items-center gap-0.5 shrink-0">
@@ -405,8 +405,8 @@ export default function ProductCard({
             <span className="truncate">{product.location_name || product.shop.location || "Kampala"}</span>
           </span>
           <span className="flex items-center gap-0.5 shrink-0 px-2">
-            <MaterialSymbol name="visibility" className="!text-[11px] text-neutral-400 shrink-0" />
-            <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "12"} views</span>
+            <span className="text-neutral-400">Views: </span>
+            <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "12"}</span>
           </span>
           <span className="flex items-center gap-0.5 shrink-0">
             <MaterialSymbol name="star" className="!text-[11px] text-amber-500 shrink-0" filled />
