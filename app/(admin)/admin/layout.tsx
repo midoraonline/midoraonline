@@ -16,6 +16,7 @@ const NAV: DashboardNavItem[] = [
 const SECONDARY: DashboardNavItem[] = [
   { href: "/admin/chat", label: "Chat", icon: <IconChat /> },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: <IconReceipt /> },
+  { href: "/admin/feedback", label: "Feedback", icon: <IconFeedback /> },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -97,6 +98,16 @@ function IconChat() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       <path d="M8 9h8M8 13h6" />
+    </svg>
+  );
+}
+
+function IconFeedback() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="m18 10 4 4" />
+      <path d="m18 14 4-4" />
     </svg>
   );
 }
