@@ -102,6 +102,14 @@ export default function HomeLanding({
     }
   }, []);
 
+  // Fallback: if SSR returned no products (e.g. FastAPI was unreachable),
+  // fetch the feed on the client once hydration finishes.
+  useEffect(() => {
+    if (!session.hydrated) return;
+    if (products.length > 0) return;
+    void refreshFeed();
+  }, [session.hydrated, products.length, refreshFeed]);
+
   useEffect(() => {
     function onEngagement() {
       void refreshFeed();

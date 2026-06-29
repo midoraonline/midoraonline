@@ -41,17 +41,35 @@ async function loadFeed() {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      console.error("Feed fetch failed:", res.status, await res.text());
-      return EMPTY_FEED;
+    if (res.ok) {
+      const data: HomeFeedResponse = await res.json();
+      if (data.algorithm?.length) {
+        return {
+          products: (data.algorithm ?? []).map((p: HomeFeedProduct) =>
+            homeFeedProductToCard(p, site)
+          ),
+        };
+      }
     }
 
-    const data: HomeFeedResponse = await res.json();
-    return {
-      products: (data.algorithm ?? []).map((p: HomeFeedProduct) =>
-        homeFeedProductToCard(p, site)
-      ),
-    };
+    // Fallback: if the personalised home feed is empty or errored, fetch
+    // the latest products so anonymous users always see something.
+    const fallbackRes = await fetch(`${apiBase}/api/v1/feed/latest?limit=72`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (fallbackRes.ok) {
+      const fallbackData: HomeFeedProduct[] = await fallbackRes.json();
+      if (fallbackData.length) {
+        return {
+          products: fallbackData.map((p: HomeFeedProduct) =>
+            homeFeedProductToCard(p, site)
+          ),
+        };
+      }
+    }
+
+    return EMPTY_FEED;
   } catch (e) {
     console.error("Failed to load home feed", e);
     return EMPTY_FEED;

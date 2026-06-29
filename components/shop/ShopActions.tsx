@@ -69,6 +69,7 @@ export default function ShopActions({
         else await apiShops.unlikeShop(shopId);
         setLiked(next);
         await syncEngagement();
+        notifyFeedEngagement();
         router.refresh();
       } catch {
         /* keep prior */

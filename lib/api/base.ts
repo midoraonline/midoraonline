@@ -46,14 +46,10 @@ function resolveUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
   const prefix = path.startsWith("/") ? "" : "/";
 
-  // In the browser during local dev, route through the Next.js proxy so:
-  //  1. No CORS error (browser talks to localhost, not the production domain)
-  //  2. Set-Cookie headers are rewritten to work on localhost
-  if (
-    typeof window !== "undefined" &&
-    process.env.NODE_ENV === "development" &&
-    path.startsWith("/api/v1/")
-  ) {
+  // Route all browser API calls through the Next.js proxy so cookies
+  // are set on and sent to the same domain (fixes SSR personalization
+  // on Vercel serverless and avoids CORS issues).
+  if (typeof window !== "undefined" && path.startsWith("/api/v1/")) {
     return `/api/dev-proxy${path}`;
   }
 
@@ -108,6 +104,21 @@ async function tryRefreshCookie(): Promise<boolean> {
         });
         if (!res.ok) {
           return false;
+        }
+        // Mirror refreshed tokens to Next.js domain so proxy calls (and SSR)
+        // can read the cookie on subsequent requests.
+        try {
+          const body: Record<string, unknown> = await res.clone().json();
+          const access_token = body.access_token as string | undefined;
+          if (access_token) {
+            await fetch("/api/auth/set-cookies", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+          }
+        } catch {
+          // Non-fatal — tokens are still refreshed on the FastAPI domain.
         }
         return true;
       } catch {
