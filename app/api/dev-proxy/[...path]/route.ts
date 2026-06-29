@@ -1,25 +1,29 @@
 /**
- * Dev-only proxy — forwards all /api/v1/* calls to the production backend
- * and rewrites Set-Cookie headers so they work on localhost (strips Domain=
- * and Secure flags that the browser would otherwise reject for http://localhost).
+ * Universal API proxy — forwards all /api/v1/* calls to the FastAPI backend.
  *
- * Only reachable in development because production uses direct fetch calls.
+ * WHY THIS EXISTS:
+ * On Vercel (serverless), the FastAPI backend is on a different domain, so the
+ * `midora_access` cookie (set by FastAPI) is scoped to the FastAPI domain.
+ * Next.js SSR at the frontend domain cannot read it via `next/headers`,
+ * breaking personalization.
+ *
+ * By routing ALL browser API calls through this proxy, cookies are:
+ *   1. Set on the Next.js domain (Set-Cookie Domain= is stripped)
+ *   2. Sent to Next.js on every request (same-origin)
+ *   3. Readable by SSR via `next/headers`
+ *   4. Forwarded to FastAPI as-is
+ *
+ * This also eliminates CORS issues entirely.
  */
 import { type NextRequest, NextResponse } from "next/server";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
 async function proxy(req: NextRequest): Promise<NextResponse> {
-  if (process.env.NODE_ENV !== "development") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  // Reconstruct the upstream path: /api/dev-proxy/api/v1/... → /api/v1/...
   const incoming = req.nextUrl.pathname.replace(/^\/api\/dev-proxy/, "");
   const search = req.nextUrl.search ?? "";
   const target = `${API_BASE}${incoming}${search}`;
 
-  // Forward request headers, drop host so the upstream sees its own domain
   const reqHeaders = new Headers();
   req.headers.forEach((value, key) => {
     if (key.toLowerCase() === "host") return;
@@ -47,23 +51,21 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Build response — stream the body through
   const resBody = upstream.status === 204 ? null : await upstream.arrayBuffer();
   const res = new NextResponse(resBody, {
     status: upstream.status,
     statusText: upstream.statusText,
   });
 
-  // Copy response headers; rewrite Set-Cookie so cookies stick on localhost
+  // Rewrite Set-Cookie: always strip Domain= so cookies bind to Next.js's domain.
+  // Strip Secure in dev (localhost HTTP); keep in production (Vercel HTTPS).
+  const isHttps = req.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
   upstream.headers.forEach((value, key) => {
     if (key.toLowerCase() === "set-cookie") {
-      const localCookie = value
-        .replace(/;\s*domain=[^;,]*/gi, "")   // remove Domain= attribute
-        .replace(/;\s*secure(?=;|,|$)/gi, "")  // remove Secure flag
-        .replace(/;\s*samesite=none/gi, "; SameSite=Lax"); // Lax works on http
+      let localCookie = value.replace(/;\s*domain=[^;,]*/gi, "");
+      if (!isHttps) localCookie = localCookie.replace(/;\s*secure(?=;|,|$)/gi, "");
       res.headers.append("set-cookie", localCookie);
     } else if (key.toLowerCase() !== "content-encoding") {
-      // skip content-encoding — body is already decoded by fetch
       res.headers.set(key, value);
     }
   });

@@ -38,8 +38,13 @@ function LoginPageInner() {
       setGoogleLoading(true);
       setError(null);
       try {
-        await apiAuth.exchangeGoogleCode({ code, state });
+        const tokens = await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
+        await fetch("/api/auth/set-cookies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tokens),
+        }).catch(() => {});
         notifyAuthChanged();
         const next = searchParams.get("next");
         router.replace(next && next.startsWith("/") ? next : "/");
@@ -62,7 +67,13 @@ function LoginPageInner() {
     setLoading(true);
     setError(null);
     try {
-      await apiAuth.login({ email, password });
+      const tokens = await apiAuth.login({ email, password });
+      // Mirror tokens to Next.js domain so SSR can read the cookie
+      await fetch("/api/auth/set-cookies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tokens),
+      }).catch(() => {});
       notifyAuthChanged();
       const next = searchParams.get("next");
       router.push(next && next.startsWith("/") ? next : "/");

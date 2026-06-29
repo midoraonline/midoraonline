@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { apiProducts } from "@/lib/api";
-import { recordListingEvent } from "@/lib/api/listingEvents";
 import { useAppSession } from "@/lib/state";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 
@@ -15,15 +14,14 @@ export default function ProductPageEffects({ productId }: { productId: string })
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
     
-    // Increment global view counter
-    void apiProducts.recordProductView(productId).catch(() => {});
-    
-    // Record listing event for personalization if authenticated
-    if (session.isAuthenticated) {
-      void recordListingEvent(productId, "viewed").then(() => {
+    // Increment global view counter + record listing_event for personalization
+    // (backend handles both: increments products.view_count AND inserts a
+    // listing_events row with event_type='viewed' when buyer_id is present)
+    void apiProducts.recordProductView(productId).then(() => {
+      if (session.isAuthenticated) {
         notifyFeedEngagement();
-      }).catch(() => {});
-    }
+      }
+    }).catch(() => {});
   }, [productId, session.isAuthenticated]);
 
   return null;
