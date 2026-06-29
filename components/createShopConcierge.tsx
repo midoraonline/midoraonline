@@ -246,7 +246,7 @@ export default function CreateShopConcierge({
         logo_url: confirmForm.logoUrl.trim() || undefined,
         shop_email: confirmForm.shopEmail.trim() || undefined,
         whatsapp_number: confirmForm.whatsappNumber.trim() || undefined,
-        location: confirmForm.locationDisplay.trim()
+        location: confirmForm.locationDisplay.trim() && confirmForm.locationDisplay.trim() !== "Online Shop"
           ? { display: confirmForm.locationDisplay.trim() }
           : undefined,
         availability: confirmForm.availability.trim()

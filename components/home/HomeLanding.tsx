@@ -95,12 +95,7 @@ export default function HomeLanding({
   const refreshFeed = useCallback(async () => {
     try {
       const site = publicSiteOrigin();
-      // Read the access token from the cookie so the refresh is personalized
-      const token = document.cookie
-        .split("; ")
-        .find((r) => r.startsWith("midora_access="))
-        ?.split("=")[1];
-      const data = await apiProducts.getHomeFeed(72, undefined, token);
+      const data = await apiProducts.getHomeFeed(72);
       setProducts((data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site)));
     } catch {
       /* keep current feed */

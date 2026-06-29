@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import ProductCard, { type ProductCardData } from "@/components/productcard";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
@@ -177,15 +177,15 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
                 type="button"
                 onClick={() => void handleToggleAvailability(p.id)}
                 disabled={togglingId === p.id}
-                className="absolute right-2 top-2 z-10 inline-flex size-8 items-center justify-center rounded-full bg-background/90 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-background disabled:opacity-50"
+                className="absolute right-2 top-2 z-10 inline-flex items-center justify-center rounded-full bg-background/90 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-background disabled:opacity-50 px-2 py-1"
                 title={isUnpublished ? "Publish" : "Unpublish"}
               >
                 {togglingId === p.id ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : isUnpublished ? (
-                  <Eye className="size-3.5" />
+                  <span className="text-[10px] font-semibold whitespace-nowrap">Publish</span>
                 ) : (
-                  <EyeOff className="size-3.5" />
+                  <span className="text-[10px] font-semibold whitespace-nowrap">Unpublish</span>
                 )}
               </button>
             )}
