@@ -69,11 +69,29 @@ export function me(token?: string) {
   return apiFetch<MeResponse>("/api/v1/auth/me", token ? { token } : undefined);
 }
 
-export function logout() {
-  return apiFetch<{ message: string }>("/api/v1/auth/logout", {
-    method: "POST",
-    skipAuthRefresh: true,
-  });
+export async function logout() {
+  // 1. Clear Next.js-domain cookies so the browser stops sending them.
+  try {
+    await fetch("/api/auth/clear-cookies", { method: "POST" });
+  } catch {
+    /* best-effort */
+  }
+
+  // 2. Call FastAPI directly (NOT through the proxy) so that its Set-Cookie
+  //    headers keep the original Domain= scope and actually clear the
+  //    FastAPI-domain cookies. If we went through the proxy, the Domain=
+  //    would be stripped and the FastAPI-domain cookies would survive,
+  //    letting tryRefreshCookie re-authenticate the user on next me() call.
+  try {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
+    await fetch(`${base}/api/v1/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    /* best-effort — local Next.js cookies are already cleared */
+  }
 }
 
 export function verifyEmail(token: string) {
