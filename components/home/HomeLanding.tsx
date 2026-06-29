@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
@@ -18,6 +19,7 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HomeHeroSlider from "@/components/home/HomeHeroSlider";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
+import { submitFeedback } from "@/lib/api/feedback";
 import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
@@ -78,6 +80,7 @@ export default function HomeLanding({
   const [products, setProducts] = useState(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const router = useRouter();
 
   const session = useAppSession();
   const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
@@ -102,6 +105,7 @@ export default function HomeLanding({
   useEffect(() => {
     function onEngagement() {
       void refreshFeed();
+      router.refresh(); // invalidate server cache for / and /products
     }
     function onVisibilityChange() {
       if (document.visibilityState === "visible") {
@@ -499,8 +503,16 @@ export default function HomeLanding({
                     className="w-full h-28 p-3 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-orange-500 resize-none"
                   />
                   <button
-                    disabled={!feedbackText.trim()}
-                    onClick={() => setFeedbackSubmitted(true)}
+                    disabled={!feedbackText.trim() || feedbackSubmitted}
+                    onClick={async () => {
+                      if (!feedbackText.trim()) return;
+                      try {
+                        await submitFeedback(feedbackText);
+                        setFeedbackSubmitted(true);
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
                     className="w-full py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
                   >
                     Submit

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiAuth } from "@/lib/api";
+import { getOnlineUsersCount } from "@/lib/api/stats";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
@@ -142,6 +143,7 @@ export default function Navbar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [unread, setUnread] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(1284);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -195,10 +197,21 @@ export default function Navbar({
   }, [session.isAuthenticated]);
 
   useEffect(() => {
+    const fetchOnline = async () => {
+      try {
+        const res = await getOnlineUsersCount();
+        setOnlineCount(res.online_count);
+      } catch {}
+    };
+
     const timer = setTimeout(() => {
       fetchUnread();
+      fetchOnline();
     }, 100);
-    unreadIntervalRef.current = setInterval(fetchUnread, 15000);
+    unreadIntervalRef.current = setInterval(() => {
+      fetchUnread();
+      fetchOnline();
+    }, 15000);
     return () => {
       clearTimeout(timer);
       if (unreadIntervalRef.current) clearInterval(unreadIntervalRef.current);
@@ -294,7 +307,7 @@ export default function Navbar({
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
               <MaterialSymbol name="wifi_tethering" className="!text-[13px] text-emerald-600" />
-              <span>1,284 sellers online</span>
+              <span>{onlineCount.toLocaleString()} sellers online</span>
             </div>
           </div>
 
@@ -402,7 +415,7 @@ export default function Navbar({
                 <span className="relative inline-flex rounded-full h-1 w-1 bg-emerald-500"></span>
               </span>
               <MaterialSymbol name="wifi_tethering" className="!text-[11px] text-emerald-600" />
-              <span>1,284 sellers online now</span>
+              <span>{onlineCount.toLocaleString()} sellers online now</span>
             </div>
           </div>
         </div>
