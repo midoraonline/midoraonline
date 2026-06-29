@@ -8,14 +8,20 @@ import { NextResponse } from "next/server";
  * forwards the request from Next.js (server → backend, no CORS) so local
  * development works without touching the backend CORS config.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
   const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
   if (!base) {
     return NextResponse.json({ error: "API base URL not configured" }, { status: 500 });
   }
 
   try {
-    const res = await fetch(`${base}/api/v1/auth/google/url`, {
+    const targetUrl = new URL(`${base}/api/v1/auth/google/url`);
+    searchParams.forEach((value, key) => {
+      targetUrl.searchParams.set(key, value);
+    });
+
+    const res = await fetch(targetUrl.toString(), {
       headers: { Accept: "application/json" },
       // server-to-server — no credentials needed here
     });

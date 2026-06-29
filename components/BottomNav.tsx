@@ -10,12 +10,12 @@ export default function BottomNav() {
   const session = useAppSession();
 
   const role = session.user?.user_role ?? null;
-  const sellHref =
-    role === "merchant"
+  const dashboardHref =
+    role === "admin"
+      ? "/admin"
+      : role === "merchant"
       ? "/merchant"
-      : (!session.ownedShopIds || session.ownedShopIds.length === 0)
-      ? "/open-shop"
-      : "/merchant";
+      : "/customer";
 
   const tabs = [
     {
@@ -24,19 +24,24 @@ export default function BottomNav() {
       icon: "home",
     },
     {
+      label: "Categories",
+      href: "/products",
+      icon: "grid_view",
+    },
+    {
       label: "Saved",
       href: "/customer/wishlist",
       icon: "favorite",
     },
     {
-      label: "Sell",
-      href: sellHref,
-      icon: "add_circle",
+      label: "Shops",
+      href: "/shops",
+      icon: "storefront",
     },
     {
-      label: "Stroll",
-      href: "/products",
-      icon: "explore",
+      label: "Account",
+      href: dashboardHref,
+      icon: "account_circle",
     },
   ];
 

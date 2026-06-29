@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
 import ProductFilters, {
@@ -78,9 +79,7 @@ export default function HomeLanding({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
-  // Redesign state
   const session = useAppSession();
-  const [showBackToTop, setShowBackToTop] = useState(false);
   const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -117,13 +116,7 @@ export default function HomeLanding({
     };
   }, [refreshFeed]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -270,25 +263,25 @@ export default function HomeLanding({
 
         {/* Quick Action Banners (Redesigned Banners Grid) */}
         {!categoryFilterActive && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="flex overflow-x-auto gap-4 scrollbar-none pb-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 mb-8">
             <button
               onClick={() => {
                 setFilters(prev => ({ ...prev, maxPrice: 100000 }));
                 document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="sell" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="sell" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">Hot Deals</h3>
-                <p className="text-xs text-neutral-500 mt-1">Under UGX 100,000</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">Hot Deals</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Under UGX 100,000</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Shop now</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Shop now</span>
             </button>
 
             <button
@@ -296,19 +289,19 @@ export default function HomeLanding({
                 setFilters(prev => ({ ...prev, sort: "most_viewed" }));
                 document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="bolt" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="bolt" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">Fast Movers</h3>
-                <p className="text-xs text-neutral-500 mt-1">Popular this week</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">Fast Movers</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Popular this week</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Shop now</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Shop now</span>
             </button>
 
             <button
@@ -316,36 +309,36 @@ export default function HomeLanding({
                 setFilters(prev => ({ ...prev, sort: "newest" }));
                 document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="new_releases" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="new_releases" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">New Arrivals</h3>
-                <p className="text-xs text-neutral-500 mt-1">Fresh items daily</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">New Arrivals</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Fresh items daily</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Shop now</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Shop now</span>
             </button>
 
             <Link
               href="/open-shop"
-              className="flex flex-col justify-between p-5 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer"
+              className="flex flex-col justify-between p-4 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-orange-500/[0.01] border border-orange-200/50 hover:border-orange-400 hover:shadow-sm hover:scale-[1.01] transition-all text-left group cursor-pointer shrink-0 w-60 sm:w-auto h-32 sm:h-auto"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
-                    <MaterialSymbol name="storefront" className="!text-xl" />
+                  <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                    <MaterialSymbol name="storefront" className="!text-lg" />
                   </span>
-                  <MaterialSymbol name="arrow_forward" className="!text-lg text-orange-600 transition-transform group-hover:translate-x-1" />
+                  <MaterialSymbol name="arrow_forward" className="!text-base text-orange-600 transition-transform group-hover:translate-x-1" />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-800 text-sm">List More. Sell More</h3>
-                <p className="text-xs text-neutral-500 mt-1">Grow your business</p>
+                <h3 className="mt-2 font-bold text-neutral-800 text-xs sm:text-sm">List More. Sell More</h3>
+                <p className="text-[10px] text-neutral-500 mt-0.5">Grow your business</p>
               </div>
-              <span className="text-xs font-semibold text-orange-600 mt-4">Open your shop</span>
+              <span className="text-[10px] font-semibold text-orange-600 mt-2">Open your shop</span>
             </Link>
           </div>
         )}
@@ -446,74 +439,79 @@ export default function HomeLanding({
       </div>
 
       {/* Sticky Feedback Button */}
-      <button
+      <motion.button
+        whileHover={{ x: -2 }}
+        whileTap={{ scale: 0.96 }}
         onClick={() => setFeedbackOpen(true)}
         className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-3 rounded-l-xl shadow-lg flex items-center gap-1 cursor-pointer [writing-mode:vertical-lr] select-none"
       >
         <MaterialSymbol name="rate_review" className="!text-sm mb-1" />
         <span>Feedback</span>
-      </button>
+      </motion.button>
 
       {/* Feedback Modal */}
-      {feedbackOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-neutral-800 flex items-center gap-1.5">
-                <MaterialSymbol name="rate_review" className="text-orange-600" />
-                Submit Feedback
-              </h3>
-              <button
-                onClick={() => {
-                  setFeedbackOpen(false);
-                  setFeedbackSubmitted(false);
-                  setFeedbackText("");
-                }}
-                className="p-1 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 cursor-pointer"
-              >
-                <MaterialSymbol name="close" className="!text-lg" />
-              </button>
-            </div>
-            
-            {feedbackSubmitted ? (
-              <div className="text-center py-6 space-y-3">
-                <div className="size-10 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center mx-auto">
-                  <MaterialSymbol name="check_circle" className="!text-xl" filled />
-                </div>
-                <h4 className="font-bold text-neutral-800 text-sm">Thank you!</h4>
-                <p className="text-xs text-neutral-500">Your feedback has been submitted successfully.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <textarea
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Tell us what you think or report an issue..."
-                  className="w-full h-28 p-3 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-orange-500 resize-none"
-                />
+      <AnimatePresence>
+        {feedbackOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 15, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-neutral-800 flex items-center gap-1.5">
+                  <MaterialSymbol name="rate_review" className="text-orange-600" />
+                  Submit Feedback
+                </h3>
                 <button
-                  disabled={!feedbackText.trim()}
-                  onClick={() => setFeedbackSubmitted(true)}
-                  className="w-full py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  onClick={() => {
+                    setFeedbackOpen(false);
+                    setFeedbackSubmitted(false);
+                    setFeedbackText("");
+                  }}
+                  className="p-1 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 cursor-pointer"
                 >
-                  Submit
+                  <MaterialSymbol name="close" className="!text-lg" />
                 </button>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+              
+              {feedbackSubmitted ? (
+                <div className="text-center py-6 space-y-3">
+                  <div className="size-10 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center mx-auto">
+                    <MaterialSymbol name="check_circle" className="!text-xl" filled />
+                  </div>
+                  <h4 className="font-bold text-neutral-800 text-sm">Thank you!</h4>
+                  <p className="text-xs text-neutral-500">Your feedback has been submitted successfully.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <textarea
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    placeholder="Tell us what you think or report an issue..."
+                    className="w-full h-28 p-3 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-orange-500 resize-none"
+                  />
+                  <button
+                    disabled={!feedbackText.trim()}
+                    onClick={() => setFeedbackSubmitted(true)}
+                    className="w-full py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Submit
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Floating Back to Top Button */}
-      {showBackToTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-20 md:bottom-6 right-6 z-40 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
-          title="Back to Top"
-        >
-          <MaterialSymbol name="arrow_upward" className="!text-lg" />
-        </button>
-      )}
     </div>
   );
 }
