@@ -10,3 +10,10 @@ export function pingPresence(instanceId: string) {
     body: { instance_id: instanceId },
   });
 }
+
+export function leavePresence(instanceId: string) {
+  return apiFetch<{ status: string }>("/api/v1/presence/leave", {
+    method: "POST",
+    body: { instance_id: instanceId },
+  });
+}
