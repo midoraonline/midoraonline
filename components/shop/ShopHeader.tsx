@@ -19,7 +19,6 @@ import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import ShopHeaderRating from "@/components/shop/ShopHeaderRating";
 import ShopContactButtons from "@/components/shop/ShopContactButtons";
-import ShopAvailabilityToggle from "@/components/shop/ShopAvailabilityToggle";
 
 function ShopLogo({ logoUrl, name }: { logoUrl?: string | null; name: string }) {
   if (logoUrl) {
@@ -362,13 +361,6 @@ export default async function ShopHeader({
               Seller on Midora · Final sale happens in WhatsApp
             </p>
           )}
-
-      {/* Owner: toggle available_now */}
-      <ShopAvailabilityToggle
-        shopId={shop.id}
-        shopOwnerId={shop.owner_id}
-        availableNow={shop.available_now ?? false}
-      />
 
       {/* Promoted products */}
       {publishedProducts.filter((p) => p.boosted).length > 0 && (
