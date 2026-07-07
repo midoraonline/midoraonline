@@ -56,6 +56,13 @@ function resolveUrl(path: string): string {
   return `${getBaseUrl()}${prefix}${path}`;
 }
 
+/** Browser-only URL for API calls (via Next.js proxy when on /api/v1/). */
+export function resolveClientApiUrl(path: string): string {
+  if (typeof window === "undefined") return path;
+  if (path.startsWith("/api/v1/")) return `/api/dev-proxy${path}`;
+  return resolveUrl(path);
+}
+
 function shouldSerialiseAsJson(body: unknown): boolean {
   if (body == null) return false;
   if (typeof body === "string") return false;

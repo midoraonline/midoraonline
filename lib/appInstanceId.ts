@@ -1,10 +1,9 @@
 /**
  * Stable unique ID per browser tab / app instance.
  *
- * Stored in sessionStorage so:
- * - Each tab gets its own ID (correct multi-tab presence)
- * - Navigating within the same tab keeps the same ID
- * - Closing the tab clears the ID (instance goes offline)
+ * Stored in sessionStorage so each tab has its own ID. The server row is
+ * removed via `sendPresenceLeave()` on tab hide/close (sessionStorage alone
+ * does not notify the API when a tab is discarded).
  */
 
 const STORAGE_KEY = "midora:app-instance-id";
@@ -33,6 +32,15 @@ export function getAppInstanceId(): string {
     return id;
   } catch {
     return createId();
+  }
+}
+
+export function clearAppInstanceId(): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
   }
 }
 
