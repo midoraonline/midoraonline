@@ -16,7 +16,7 @@ import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import { catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import HomeHeroSlider from "@/components/home/HomeHeroSlider";
+import HomeHero from "@/components/home/HomeHero";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
 import { submitFeedback } from "@/lib/api/feedback";
@@ -156,18 +156,6 @@ export default function HomeLanding({
     [products],
   );
 
-  const heroImages = useMemo(() => {
-    const seen = new Set<string>();
-    const imgs: string[] = [];
-    for (const p of products) {
-      if (p.imageUrl && !seen.has(p.imageUrl)) {
-        seen.add(p.imageUrl);
-        imgs.push(p.imageUrl);
-        if (imgs.length >= 4) break;
-      }
-    }
-    return imgs;
-  }, [products]);
 
   const browseProducts = useMemo(() => {
     let list = products;
@@ -257,7 +245,7 @@ export default function HomeLanding({
       )}
 
       <div className="mb-5 sm:mb-6 lg:mb-8">
-        <HomeHeroSlider bgImages={heroImages} />
+        <HomeHero />
       </div>
 
       <div className="w-full">
