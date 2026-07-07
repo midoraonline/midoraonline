@@ -11,6 +11,7 @@ import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
+import PresenceHeartbeat from "@/components/PresenceHeartbeat";
 
 import { LogOut } from "lucide-react";
 
@@ -143,7 +144,7 @@ export default function Navbar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [unread, setUnread] = useState(0);
-  const [onlineCount, setOnlineCount] = useState(1284);
+  const [onlineCount, setOnlineCount] = useState(1);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -250,7 +251,9 @@ export default function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background">
+    <>
+      <PresenceHeartbeat />
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
       <div ref={menuRef}>
         <div className="dm-container flex h-14 items-center gap-3 sm:gap-5">
           {/* Logo */}
@@ -299,6 +302,7 @@ export default function Navbar({
                 onSubmit={submitNavbarSearch}
                 placeholder="Search products…"
                 ariaLabel="Search products"
+                variant="navbar"
               />
             </div>
           </div>
@@ -318,11 +322,16 @@ export default function Navbar({
             {/* Mobile search toggle */}
             <button
               type="button"
-              onClick={() => setSearchOpen(!searchOpen)}
+              onClick={() => setSearchOpen((open) => !open)}
               className="inline-flex size-9 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
-              aria-label="Toggle search"
+              aria-label={searchOpen ? "Close search" : "Open search"}
+              aria-expanded={searchOpen}
             >
-              <MaterialSymbol name="search" className="!text-lg" />
+              {searchOpen ? (
+                <X className="size-4" />
+              ) : (
+                <MaterialSymbol name="search" className="!text-lg" />
+              )}
             </button>
 
             {session.isAuthenticated ? (
@@ -400,16 +409,20 @@ export default function Navbar({
         {/* Mobile search bar */}
         <div
           className={`overflow-hidden transition-all duration-200 ease-out md:hidden ${
-            searchOpen ? "max-h-16 border-t border-border" : "max-h-0"
+            searchOpen ? "max-h-20 border-t border-border" : "max-h-0"
           }`}
         >
-          <div className="px-4 py-2">
+          <div className="px-4 py-2.5">
             <ProductSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              onSubmit={submitNavbarSearch}
+              onSubmit={(q) => {
+                submitNavbarSearch(q);
+                setSearchOpen(false);
+              }}
               placeholder="Search products…"
               ariaLabel="Search products"
+              variant="navbar"
             />
           </div>
         </div>
@@ -470,5 +483,6 @@ export default function Navbar({
         </button>
       )}
     </header>
+    </>
   );
 }
