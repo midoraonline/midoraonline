@@ -40,8 +40,11 @@
   --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.07), 0 4px 6px -4px rgb(15 23 42 / 0.04);
   --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.04);
   --shadow-glass: 0 12px 40px -12px rgb(15 23 42 / 0.15);
+  --shadow-product: 0 10px 28px -6px rgb(15 23 42 / 0.14), 0 6px 12px -4px rgb(15 23 42 / 0.08);
+  --shadow-product-hover: 0 24px 40px -10px rgb(15 23 42 / 0.18), 0 12px 20px -8px rgb(15 23 42 / 0.1);
 
   --radius: 0.75rem;
+  --radius-product: 1.75rem;
   --radius-inner: 0.5rem;
   --radius-sm: 0.5rem;
 
@@ -198,6 +201,38 @@ body {
     box-shadow: var(--shadow-md);
   }
 
+  .dm-product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-product);
+    box-shadow: var(--shadow-product);
+  }
+
+  /* Solid brand-orange CTA — use on Sign in, Feedback, primary actions */
+  .dm-btn-accent {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px -1px rgb(184 85 48 / 0.45), 0 1px 3px 0 rgb(15 23 42 / 0.08);
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .dm-btn-accent:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 6px 16px -2px rgb(184 85 48 / 0.5), 0 2px 6px 0 rgb(15 23 42 / 0.1);
+  }
+
+  @media (hover: hover) {
+    .dm-btn-accent:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .dm-btn-accent:active {
+    background: var(--accent-hover);
+    transform: translateY(0);
+    box-shadow: 0 2px 6px -1px rgb(184 85 48 / 0.4);
+  }
+
   /* Glass bar — reserved for navbars and floating headers */
   .dm-glass-bar {
     background: rgba(255, 255, 255, 0.82);
@@ -251,6 +286,12 @@ body {
       box-shadow: var(--shadow-lg);
       border-color: var(--border-strong);
     }
+
+    .dm-product-card.dm-card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-product-hover);
+      border-color: var(--border-strong);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -258,6 +299,9 @@ body {
       transition: none;
     }
     .dm-card-hover:hover {
+      transform: none;
+    }
+    .dm-product-card.dm-card-hover:hover {
       transform: none;
     }
   }
@@ -367,12 +411,12 @@ body {
   .dm-btn-primary {
     background: var(--accent);
     color: #fff;
-    box-shadow: 0 1px 2px 0 rgb(212 101 60 / 0.25), 0 0 0 1px rgb(212 101 60 / 0.15);
+    box-shadow: 0 2px 8px -1px rgb(184 85 48 / 0.45), 0 1px 3px 0 rgb(15 23 42 / 0.08);
   }
 
   .dm-btn-primary:hover {
     background: var(--accent-hover);
-    box-shadow: 0 4px 12px -2px rgb(212 101 60 / 0.3), 0 0 0 1px rgb(212 101 60 / 0.2);
+    box-shadow: 0 6px 16px -2px rgb(184 85 48 / 0.5), 0 2px 6px 0 rgb(15 23 42 / 0.1);
     transform: translateY(-1px);
   }
 
@@ -495,39 +539,70 @@ body {
 
   /* ── Skeleton loading ────────────────────────────────────── */
   /*
-   * Research (Bill Chung, 2018 + 2026 consensus):
-   * - Left-to-right shimmer beats pulse beats static placeholders
-   * - Slow & steady (≥1.8s) beats fast motion for perceived duration
-   * - Skeletons must perfectly mirror final content dimensions (zero CLS)
+   * Shimmer via ::after transform sweep (compositor-friendly).
+   * Match placeholder dimensions to real content to avoid CLS.
+   * Stagger grid cards with .skeleton-delay-N on the wrapper.
    */
   .dm-skeleton {
-    background: linear-gradient(
-      90deg,
-      var(--surface-subtle) 0%,
-      color-mix(in oklab, var(--border) 60%, var(--surface-subtle)) 35%,
-      var(--border) 50%,
-      color-mix(in oklab, var(--border) 60%, var(--surface-subtle)) 65%,
-      var(--surface-subtle) 100%
-    );
-    background-size: 300% 100%;
-    animation: skeleton-shimmer 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface-subtle);
     border-radius: var(--radius-inner);
   }
 
-  @keyframes skeleton-shimmer {
-    0%   { background-position: 100% 0; }
-    100% { background-position: -100% 0; }
+  .dm-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--border) 55%, white 45%) 45%,
+      color-mix(in oklab, var(--border) 35%, white 65%) 55%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: skeleton-shimmer-sweep 1.45s ease-in-out infinite;
+    will-change: transform;
   }
 
-  /* Staggered delay helpers for product grids */
-  .skeleton-delay-1  { animation-delay: 0.10s; }
-  .skeleton-delay-2  { animation-delay: 0.20s; }
-  .skeleton-delay-3  { animation-delay: 0.30s; }
-  .skeleton-delay-4  { animation-delay: 0.40s; }
-  .skeleton-delay-5  { animation-delay: 0.50s; }
-  .skeleton-delay-6  { animation-delay: 0.60s; }
-  .skeleton-delay-7  { animation-delay: 0.70s; }
-  .skeleton-delay-8  { animation-delay: 0.80s; }
+  .dm-skeleton-on-dark {
+    background: color-mix(in oklab, white 14%, transparent);
+  }
+
+  .dm-skeleton-on-dark::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, white 22%, transparent) 45%,
+      color-mix(in oklab, white 32%, transparent) 55%,
+      transparent 100%
+    );
+  }
+
+  @keyframes skeleton-shimmer-sweep {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Staggered shimmer wave across card grids */
+  .skeleton-delay-1 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-1::after { animation-delay: 0.08s; }
+  .skeleton-delay-2 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-2::after { animation-delay: 0.16s; }
+  .skeleton-delay-3 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-3::after { animation-delay: 0.24s; }
+  .skeleton-delay-4 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-4::after { animation-delay: 0.32s; }
+  .skeleton-delay-5 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-5::after { animation-delay: 0.40s; }
+  .skeleton-delay-6 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-6::after { animation-delay: 0.48s; }
+  .skeleton-delay-7 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-7::after { animation-delay: 0.56s; }
+  .skeleton-delay-8 .dm-skeleton::after,
+  .dm-skeleton.skeleton-delay-8::after { animation-delay: 0.64s; }
 
   /* Content fade-in — replaces skeleton the instant data arrives */
   .skeleton-reveal {
@@ -539,11 +614,16 @@ body {
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Reduced-motion: static grey boxes, no animation */
+  /* Reduced-motion: static placeholders, no sweep */
   @media (prefers-reduced-motion: reduce) {
+    .dm-skeleton::after {
+      display: none;
+    }
     .dm-skeleton {
-      animation: none;
       background: var(--surface-subtle);
+    }
+    .dm-skeleton-on-dark {
+      background: color-mix(in oklab, white 14%, transparent);
     }
     .skeleton-reveal {
       animation: none;

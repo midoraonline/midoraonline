@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 
 import ProductsBrowsePage from "@/components/product/ProductsBrowsePage";
+import ProductsBrowseSkeleton from "@/components/skeletons/ProductsBrowseSkeleton";
 import { loadLatestFeed } from "@/lib/productFeed";
 
 async function ProductsContent({ initialQuery }: { initialQuery: string }) {
@@ -19,7 +20,7 @@ export default async function ProductListing({
   const initialQuery = q?.trim() ?? "";
 
   return (
-    <Suspense fallback={<div className="p-8 text-sm text-muted">Loading products…</div>}>
+    <Suspense fallback={<ProductsBrowseSkeleton />}>
       <ProductsContent initialQuery={initialQuery} />
     </Suspense>
   );

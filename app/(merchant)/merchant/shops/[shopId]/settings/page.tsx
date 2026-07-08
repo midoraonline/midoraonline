@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
+import CategoryPicker from "@/components/CategoryPicker";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 
@@ -37,6 +38,7 @@ export default function MerchantShopSettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [locationDisplay, setLocationDisplay] = useState("");
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
+  const [category, setCategory] = useState("");
 
   const [contextEntries, setContextEntries] = useState<apiAiContext.AiContextEntry[]>([]);
   const [newContextType, setNewContextType] = useState("policy");
@@ -76,6 +78,7 @@ export default function MerchantShopSettingsPage() {
             : "",
         );
         setShopType((shopData.shop_type as apiShops.ShopType) ?? "product");
+        setCategory(shopData.category ?? "");
         setContextEntries(contextList);
       } catch (err) {
         if (!cancelled)
@@ -107,6 +110,7 @@ export default function MerchantShopSettingsPage() {
           ? { display: locationDisplay.trim() }
           : undefined,
         shop_type: shopType,
+        category: category.trim() || undefined,
       });
       setShop(updated);
     } catch (err) {
@@ -223,6 +227,17 @@ export default function MerchantShopSettingsPage() {
                 <option value="service">Service</option>
                 <option value="both">Both</option>
               </select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">Category</label>
+              <div className="rounded-xl border border-border bg-white p-3 sm:p-4">
+                <CategoryPicker
+                  value={category}
+                  onChange={setCategory}
+                  compact
+                  idPrefix="merchant-shop-category"
+                />
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">Shop email</label>

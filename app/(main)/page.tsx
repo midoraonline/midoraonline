@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import HomeLanding from "@/components/home/HomeLanding";
+import HomeFeedSkeleton from "@/components/skeletons/HomeFeedSkeleton";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import type { HomeFeedProduct, HomeFeedResponse } from "@/lib/api/products";
@@ -88,19 +89,7 @@ async function AlgorithmFeed() {
 }
 
 function FeedSkeleton() {
-  return (
-    <div className="w-full animate-pulse px-4 pt-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="flex flex-col gap-2">
-            <div className="aspect-[4/3] w-full rounded-2xl bg-foreground/[0.06]" />
-            <div className="h-3 w-3/4 rounded bg-foreground/[0.06]" />
-            <div className="h-3 w-1/2 rounded bg-foreground/[0.06]" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <HomeFeedSkeleton />;
 }
 
 export default function Home() {

@@ -10,6 +10,7 @@ import type { Shop } from "@/lib/api/shops";
 import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import LocationInput from "@/components/LocationInput";
+import CategoryPicker from "@/components/CategoryPicker";
 import { locationDisplay } from "./shopUtils";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -27,6 +28,7 @@ type FormState = {
   availabilityHours: string;
   location: string;
   shopType: apiShops.ShopType;
+  category: string;
   isActive: boolean;
 };
 
@@ -47,6 +49,7 @@ function shopToFormState(shop: Shop): FormState {
         ? String((loc as { display?: string }).display ?? "")
         : "",
     shopType: shop.shop_type ?? "product",
+    category: shop.category ?? "",
     isActive: shop.is_active ?? true,
   };
 }
@@ -240,6 +243,7 @@ function DetailsTab({
           : null,
         location: form.location.trim() && form.location.trim() !== "Online Shop" ? { display: form.location.trim() } : null,
         shop_type: form.shopType,
+        category: form.category.trim() || undefined,
         is_active: form.isActive,
       });
       setSuccess(true);
@@ -304,6 +308,17 @@ function DetailsTab({
               value={form.about}
               onChange={(e) => onChange("about", e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-xs font-medium text-foreground/80">Category</label>
+            <div className="rounded-xl border border-border bg-white p-3 sm:p-4">
+              <CategoryPicker
+                value={form.category}
+                onChange={(val) => onChange("category", val)}
+                compact
+                idPrefix="edit-shop-category"
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground/80">Shop type</label>

@@ -12,6 +12,7 @@ import {
   locationDisplay,
   platformLabel,
 } from "./shopUtils";
+import CategoryDisplay from "@/components/CategoryDisplay";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { whatsappDigits } from "@/lib/whatsappProduct";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -305,7 +306,7 @@ export default async function ShopHeader({
         <div className="flex flex-wrap items-center justify-center gap-2">
           {categoryChipLabels.map((cat) => (
             <MetaChip key={cat} immersive={immersive}>
-              {cat}
+              <CategoryDisplay label={cat} variant="inline" immersive={immersive} />
             </MetaChip>
           ))}
           {shop.shop_type ? (

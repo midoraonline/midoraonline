@@ -35,6 +35,9 @@ export type SearchProductItem = {
   created_at?: string | null;
   updated_at?: string | null;
   boosted?: boolean;
+  average_rating?: number | null;
+  review_count?: number | null;
+  is_negotiable?: boolean | null;
   similarity_score?: number | null;
   shop: SearchProductShop;
 };

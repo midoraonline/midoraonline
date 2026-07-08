@@ -7,7 +7,7 @@ import ProductCard, { type ProductCardData } from "@/components/productcard";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import { publicSiteOrigin } from "@/lib/publicSite";
-import { productPageSlug } from "@/lib/productUrl";
+import { productToCard } from "@/lib/productCardMap";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
@@ -30,32 +30,21 @@ type Props = {
 };
 
 function toCard(product: Product, shop: ShopContext, listingBase: string): ProductCardData {
-  const slug = productPageSlug(product);
-  return {
-    id: product.id,
-    slug,
-    title: product.title,
-    priceUGX: apiProducts.productOriginalPriceUgx(product),
-    originalPriceUGX: apiProducts.productOriginalPriceUgx(product),
-    discountPriceUGX: product.discount_price ?? null,
-    discountPercent: apiProducts.productIsDiscounted(product) ? apiProducts.productDiscountPercent(product) : 0,
-    imageUrl: apiProducts.productPrimaryImage(product),
-    shopLogoUrl: shop.logoUrl ?? undefined,
-    stockQuantity: product.stock_quantity ?? null,
-    shopWhatsApp: shop.whatsappNumber?.trim() ?? null,
-    listingUrl: `${listingBase}/products/${slug}`,
-    shop: {
+  return productToCard(
+    product,
+    {
       id: shop.id,
       name: shop.name,
       slug: shop.slug,
-      verified: shop.verified,
-      category: shop.category ?? null,
+      logo_url: shop.logoUrl,
+      whatsapp_number: shop.whatsappNumber,
+      owner_id: shop.ownerId,
+      is_active: shop.verified,
+      category: shop.category,
     },
-    category: product.category ?? null,
-    description: product.description ?? null,
-    inShopContext: true,
-    sellerId: shop.ownerId ?? null,
-  };
+    listingBase,
+    { inShopContext: true },
+  );
 }
 
 function upsert(list: Product[], next: Product): Product[] {
