@@ -137,6 +137,7 @@ export default function OpenShopWizard() {
                 <CategoryPicker
                   value={category}
                   onChange={setCategory}
+                  compact
                   idPrefix="open-shop-category"
                 />
               </div>

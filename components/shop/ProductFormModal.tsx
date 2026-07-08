@@ -316,11 +316,15 @@ export default function ProductFormModal({
           </div>
         ) : null}
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-3 sm:p-4">
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-2.5 sm:p-3">
+          <p className="mb-2 text-[11px] font-semibold text-neutral-800 sm:text-xs">
+            Category &amp; subcategory <span className="text-red-500">*</span>
+          </p>
           <CategoryPicker
             value={draft.category}
             onChange={(category) => setDraft((d) => ({ ...d, category }))}
             required
+            compact
             idPrefix="product-category"
           />
         </div>

@@ -54,6 +54,13 @@ export function resolveCategoryParts(
   return { parentLabel: trimmed, subcategoryLabel: null };
 }
 
+/** Parent categories with subcategories — use for browse filters and pickers. */
+export function getCategoriesForFilter(
+  items: { slug: string; label: string; sort_order: number; parent_slug?: string | null }[],
+): CategoryTreeGroup[] {
+  return groupCategoriesByParent(items);
+}
+
 export function groupCategoriesByParent(
   items: { slug: string; label: string; sort_order: number; parent_slug?: string | null }[],
 ): CategoryTreeGroup[] {

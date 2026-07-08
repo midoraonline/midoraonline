@@ -8,7 +8,6 @@ import {
   ALL_CATEGORIES_ICON,
   resolveCategoryIcon,
 } from "@/lib/homeCategoryIcons";
-import { groupCategoriesByParent } from "@/lib/categories";
 import {
   type CategoryFilterSelection,
   EMPTY_CATEGORY_FILTER,
@@ -29,8 +28,7 @@ export default function CategoryBrowseSection({
   showHeader = true,
   browseAllHref,
 }: Props) {
-  const { items } = useCategoryItems();
-  const tree = useMemo(() => groupCategoriesByParent(items), [items]);
+  const { tree } = useCategoryItems();
 
   const activeParentSlug = useMemo(() => {
     if (!selection.parentLabel) return null;
@@ -51,21 +49,21 @@ export default function CategoryBrowseSection({
     label === null ? !selection.parentLabel : selection.parentLabel === label;
 
   return (
-    <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm sm:mb-8">
+    <section className="mb-4 overflow-hidden rounded-xl border border-border bg-surface shadow-sm sm:mb-6 sm:rounded-2xl">
       {showHeader ? (
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-primary px-4 py-3.5 sm:px-5">
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-primary px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
           <div className="min-w-0">
-            <h2 className="font-display text-sm font-semibold tracking-tight text-white sm:text-base">
+            <h2 className="font-display text-xs font-semibold tracking-tight text-white sm:text-sm">
               Shop by category
             </h2>
-            <p className="mt-0.5 text-[11px] text-white/65 sm:text-xs">
-              Choose a category, then refine with subcategories
+            <p className="hidden text-[10px] text-white/65 sm:mt-0.5 sm:block sm:text-[11px]">
+              Pick a category, then refine with subcategories
             </p>
           </div>
           {browseAllHref ? (
             <Link
               href={browseAllHref}
-              className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-accent-hover sm:text-xs"
+              className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold text-white transition-colors hover:bg-accent-hover sm:px-3 sm:py-1.5 sm:text-[11px]"
             >
               Browse all
             </Link>
@@ -74,8 +72,16 @@ export default function CategoryBrowseSection({
       ) : null}
 
       {/* Parent categories */}
-      <div className="relative bg-surface px-3 py-5 sm:px-5">
-        <div className="flex items-start gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory sm:gap-4 md:flex-wrap md:justify-center md:overflow-visible">
+      <div className="relative bg-surface px-2 py-3 sm:px-4 sm:py-4">
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-surface to-transparent sm:hidden"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-surface to-transparent sm:hidden"
+          aria-hidden
+        />
+        <div className="flex items-start gap-2 overflow-x-auto pb-0.5 scrollbar-none snap-x snap-mandatory sm:gap-3 md:flex-wrap md:justify-center md:overflow-visible">
           <CategoryOrb
             label="All"
             icon={ALL_CATEGORIES_ICON}
@@ -110,25 +116,24 @@ export default function CategoryBrowseSection({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             className="overflow-hidden border-t border-border"
           >
-            <div className="bg-surface-subtle px-4 py-4 sm:px-5">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-accent">
+            <div className="bg-surface-subtle px-3 py-2.5 sm:px-4 sm:py-3">
+              <div className="mb-2 flex items-center gap-1.5 sm:mb-2.5 sm:gap-2">
+                <span className="flex size-6 items-center justify-center rounded-md bg-primary text-accent sm:size-7 sm:rounded-lg">
                   <MaterialSymbol
                     name={resolveCategoryIcon(activeGroup.parent.label)}
-                    className="!text-[15px] text-accent"
+                    className="!text-[13px] text-accent sm:!text-[15px]"
                     filled
                   />
                 </span>
-                <p className="text-xs font-semibold text-primary sm:text-sm">
+                <p className="text-[11px] font-semibold text-primary sm:text-xs">
                   {activeGroup.parent.label}
                 </p>
-                <span className="hidden h-px flex-1 bg-border sm:block" aria-hidden />
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none snap-x snap-mandatory">
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-2 sm:overflow-visible">
                 <SubcategoryChip
                   label={`All ${activeGroup.parent.label}`}
                   active={
@@ -164,8 +169,8 @@ export default function CategoryBrowseSection({
 
       {/* Active filters */}
       {isCategoryFilterActive(selection) ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-subtle/60 px-4 py-3 sm:px-5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-subtle/60 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
             Filtering
           </span>
           {selection.parentLabel ? (
@@ -195,7 +200,7 @@ export default function CategoryBrowseSection({
           <button
             type="button"
             onClick={() => onSelectionChange(EMPTY_CATEGORY_FILTER)}
-            className="ml-auto text-xs font-semibold text-accent transition-colors hover:text-accent-hover"
+            className="ml-auto text-[11px] font-semibold text-accent transition-colors hover:text-accent-hover sm:text-xs"
           >
             Clear all
           </button>
@@ -222,20 +227,20 @@ function CategoryOrb({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-[76px] shrink-0 snap-start flex-col items-center gap-2 sm:w-[84px]"
+      className="group flex w-[60px] shrink-0 snap-start flex-col items-center gap-1 sm:w-[68px] sm:gap-1.5 md:w-[72px]"
     >
       <div
-        className={`flex size-[3.75rem] items-center justify-center rounded-2xl transition-all duration-200 sm:size-16 ${
+        className={`flex size-11 items-center justify-center rounded-xl transition-all duration-200 sm:size-12 sm:rounded-2xl ${
           active
-            ? "bg-primary shadow-md shadow-primary/20 ring-2 ring-accent ring-offset-2 ring-offset-surface"
+            ? "bg-primary shadow-md shadow-primary/20 ring-2 ring-accent ring-offset-1 ring-offset-surface"
             : selected
-              ? "bg-primary/5 ring-2 ring-accent/70 ring-offset-2 ring-offset-surface"
+              ? "bg-primary/5 ring-2 ring-accent/70 ring-offset-1 ring-offset-surface"
               : "border border-border bg-surface group-hover:border-border-strong group-hover:shadow-sm"
         }`}
       >
         <MaterialSymbol
           name={icon}
-          className={`!text-[22px] sm:!text-2xl transition-colors ${
+          className={`!text-[18px] transition-colors sm:!text-xl ${
             active
               ? "text-accent"
               : selected
@@ -246,7 +251,7 @@ function CategoryOrb({
         />
       </div>
       <span
-        className={`max-w-[76px] line-clamp-2 text-center text-[10px] leading-tight sm:max-w-[84px] sm:text-[11px] ${
+        className={`max-w-[60px] line-clamp-2 text-center text-[9px] leading-tight sm:max-w-[68px] sm:text-[10px] md:max-w-[72px] ${
           active
             ? "font-bold text-primary"
             : selected
@@ -273,7 +278,7 @@ function SubcategoryChip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-10 shrink-0 snap-start items-center rounded-full border px-4 text-xs font-semibold transition-all sm:h-11 sm:text-sm ${
+      className={`inline-flex h-8 shrink-0 snap-start items-center rounded-full border px-3 text-[11px] font-semibold transition-all sm:h-9 sm:px-3.5 sm:text-xs ${
         active
           ? "border-primary bg-primary text-white shadow-sm"
           : "border-border bg-surface text-foreground/80 hover:border-accent/40 hover:bg-accent/[0.06] hover:text-primary"
@@ -296,22 +301,22 @@ function FilterChip({
   const isSub = variant === "sub";
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+      className={`inline-flex max-w-[140px] items-center gap-0.5 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold sm:max-w-none sm:gap-1 sm:px-2.5 sm:py-1 sm:text-[11px] ${
         isSub
           ? "bg-accent text-white"
           : "border border-border bg-surface text-primary"
       }`}
     >
-      {label}
+      <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
-        className={`rounded-full p-0.5 transition-colors ${
+        className={`shrink-0 rounded-full p-0.5 transition-colors ${
           isSub ? "hover:bg-white/20" : "hover:bg-surface-subtle"
         }`}
         aria-label={`Remove ${label} filter`}
       >
-        <MaterialSymbol name="close" className="!text-[14px]" />
+        <MaterialSymbol name="close" className="!text-[12px] sm:!text-[14px]" />
       </button>
     </span>
   );

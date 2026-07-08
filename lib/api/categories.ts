@@ -1,7 +1,7 @@
 import { apiFetch } from "./base";
 import {
   CANONICAL_CATEGORY_LABELS,
-  groupCategoriesByParent,
+  getCategoriesForFilter,
   type CategoryLabel,
   type CategoryTreeGroup,
 } from "@/lib/categories";
@@ -42,5 +42,14 @@ export async function listCategories(): Promise<CategoryLabel[]> {
 }
 
 export async function listCategoryTree(): Promise<CategoryTreeGroup[]> {
-  return groupCategoriesByParent(await listCategoryItems());
+  return getCategoriesForFilter(await listCategoryItems());
+}
+
+/** Fetch flat items and grouped parent/subcategory tree for filters and forms. */
+export async function fetchCategoryFilterData(): Promise<{
+  items: CategoryItem[];
+  tree: CategoryTreeGroup[];
+}> {
+  const items = await listCategoryItems();
+  return { items, tree: getCategoriesForFilter(items) };
 }

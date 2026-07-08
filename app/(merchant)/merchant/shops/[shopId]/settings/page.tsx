@@ -234,6 +234,7 @@ export default function MerchantShopSettingsPage() {
                 <CategoryPicker
                   value={category}
                   onChange={setCategory}
+                  compact
                   idPrefix="merchant-shop-category"
                 />
               </div>

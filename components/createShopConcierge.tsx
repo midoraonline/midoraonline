@@ -430,6 +430,7 @@ export default function CreateShopConcierge({
                   <CategoryPicker
                     value={f.category}
                     onChange={(v) => field("category", v)}
+                    compact
                     idPrefix="shop-category"
                   />
                 </div>

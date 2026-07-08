@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { groupCategoriesByParent, resolveCategoryParts } from "@/lib/categories";
+import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { resolveCategoryIcon } from "@/lib/homeCategoryIcons";
@@ -13,6 +13,7 @@ type Props = {
   required?: boolean;
   className?: string;
   idPrefix?: string;
+  compact?: boolean;
 };
 
 export default function CategoryPicker({
@@ -21,9 +22,9 @@ export default function CategoryPicker({
   required,
   className = "",
   idPrefix = "category",
+  compact = false,
 }: Props) {
-  const { items } = useCategoryItems();
-  const tree = useMemo(() => groupCategoriesByParent(items), [items]);
+  const { items, tree } = useCategoryItems();
 
   const resolved = useMemo(() => resolveCategoryParts(value, items), [value, items]);
 
@@ -72,72 +73,78 @@ export default function CategoryPicker({
     onChange(label);
   }
 
-  return (
-    <div className={`space-y-3 ${className}`}>
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-parent`} className={formLabelClass}>
-          Main category {required ? <span className="text-red-500">*</span> : null}
-        </label>
-        <div className="relative">
-          <select
-            id={`${idPrefix}-parent`}
-            className={`${formFieldClass} appearance-none pr-10`}
-            value={parentSlug}
-            required={required}
-            onChange={(e) => handleParentChange(e.target.value)}
-          >
-            <option value="">Select main category</option>
-            {tree.map(({ parent }) => (
-              <option key={parent.slug} value={parent.slug}>
-                {parent.label}
-              </option>
-            ))}
-          </select>
-          <MaterialSymbol
-            name="expand_more"
-            className="pointer-events-none absolute right-3 top-1/2 !text-lg -translate-y-1/2 text-neutral-400"
-          />
-        </div>
-      </div>
+  const labelClass = compact ? "text-[11px] font-semibold text-neutral-700" : formLabelClass;
+  const fieldClass = compact
+    ? "h-9 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-xs text-neutral-900 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 appearance-none pr-9"
+    : `${formFieldClass} appearance-none pr-10`;
 
-      {parentSlug && children.length > 0 ? (
-        <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-sub`} className={formLabelClass}>
-            Subcategory {required ? <span className="text-red-500">*</span> : null}
+  return (
+    <div className={`space-y-2.5 sm:space-y-3 ${className}`}>
+      <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+        <div className="space-y-1">
+          <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
+            Category {required ? <span className="text-red-500">*</span> : null}
           </label>
           <div className="relative">
             <select
-              id={`${idPrefix}-sub`}
-              className={`${formFieldClass} appearance-none pr-10`}
-              value={subcategoryLabel}
+              id={`${idPrefix}-parent`}
+              className={fieldClass}
+              value={parentSlug}
               required={required}
-              onChange={(e) => handleSubcategoryChange(e.target.value)}
+              onChange={(e) => handleParentChange(e.target.value)}
             >
-              <option value="">Select subcategory</option>
-              {children.map((child) => (
-                <option key={child.slug} value={child.label}>
-                  {child.label}
+              <option value="">Select category</option>
+              {tree.map(({ parent }) => (
+                <option key={parent.slug} value={parent.slug}>
+                  {parent.label}
                 </option>
               ))}
             </select>
             <MaterialSymbol
               name="expand_more"
-              className="pointer-events-none absolute right-3 top-1/2 !text-lg -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute right-2.5 top-1/2 !text-base -translate-y-1/2 text-neutral-400"
             />
           </div>
         </div>
-      ) : null}
+
+        {parentSlug && children.length > 0 ? (
+          <div className="space-y-1 sm:col-span-2">
+            <label className={labelClass}>
+              Subcategory {required ? <span className="text-red-500">*</span> : null}
+            </label>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {children.map((child) => {
+                const active = subcategoryLabel === child.label;
+                return (
+                  <button
+                    key={child.slug}
+                    type="button"
+                    onClick={() => handleSubcategoryChange(child.label)}
+                    className={`inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all sm:px-3 sm:py-1.5 sm:text-xs ${
+                      active
+                        ? "border-primary bg-primary text-white shadow-sm"
+                        : "border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
+                    }`}
+                  >
+                    <span className="truncate">{child.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {parentSlug && activeGroup ? (
-        <div className="flex items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-accent shadow-sm">
+        <div className="flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface text-accent shadow-sm sm:size-8 sm:rounded-lg">
             <MaterialSymbol
               name={resolveCategoryIcon(activeGroup.parent.label)}
-              className="!text-base"
+              className="!text-sm sm:!text-base"
               filled
             />
           </div>
-          <div className="min-w-0 text-xs leading-snug text-neutral-700">
+          <div className="min-w-0 text-[11px] leading-snug text-neutral-700 sm:text-xs">
             <span className="font-semibold text-neutral-900">{activeGroup.parent.label}</span>
             {subcategoryLabel ? (
               <>
@@ -145,7 +152,9 @@ export default function CategoryPicker({
                 <span className="font-medium text-accent">{subcategoryLabel}</span>
               </>
             ) : children.length > 0 ? (
-              <p className="text-[11px] text-neutral-500">Choose a subcategory to be more discoverable</p>
+              <p className="text-[10px] text-neutral-500 sm:text-[11px]">
+                Tap a subcategory above
+              </p>
             ) : null}
           </div>
         </div>

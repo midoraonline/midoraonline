@@ -315,6 +315,7 @@ function DetailsTab({
               <CategoryPicker
                 value={form.category}
                 onChange={(val) => onChange("category", val)}
+                compact
                 idPrefix="edit-shop-category"
               />
             </div>

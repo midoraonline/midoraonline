@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listCategoryItems, type CategoryItem } from "@/lib/api/categories";
-import { CANONICAL_CATEGORY_LABELS } from "@/lib/categories";
+import { CANONICAL_CATEGORY_LABELS, getCategoriesForFilter } from "@/lib/categories";
 
 let cachedItems: CategoryItem[] | null = null;
 let inflight: Promise<CategoryItem[]> | null = null;
@@ -38,6 +38,7 @@ async function loadCategoryItems(): Promise<CategoryItem[]> {
 export function useCategoryItems() {
   const [items, setItems] = useState<CategoryItem[]>(cachedItems ?? fallbackItems());
   const [loading, setLoading] = useState(!cachedItems);
+  const tree = useMemo(() => getCategoriesForFilter(items), [items]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +53,7 @@ export function useCategoryItems() {
     };
   }, []);
 
-  return { items, loading, tree: items };
+  return { items, tree, loading };
 }
 
 export { loadCategoryItems };

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import HomeLanding from "@/components/home/HomeLanding";
+import HomeFeedSkeleton from "@/components/skeletons/HomeFeedSkeleton";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import type { HomeFeedProduct, HomeFeedResponse } from "@/lib/api/products";
@@ -88,30 +89,7 @@ async function AlgorithmFeed() {
 }
 
 function FeedSkeleton() {
-  return (
-    <div className="w-full animate-pulse">
-      <div className="mb-5 sm:mb-6 lg:mb-8">
-        <div className="min-h-[380px] rounded-3xl bg-primary/10 sm:min-h-[460px]" />
-      </div>
-      <div className="mb-6 rounded-2xl border border-border bg-surface p-4">
-        <div className="mb-4 h-10 rounded-xl bg-surface-subtle" />
-        <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="size-16 shrink-0 rounded-2xl bg-surface-subtle" />
-          ))}
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex flex-col gap-2">
-            <div className="aspect-square w-full rounded-2xl bg-surface-subtle sm:aspect-[4/3]" />
-            <div className="h-3 w-3/4 rounded bg-surface-subtle" />
-            <div className="h-3 w-1/2 rounded bg-surface-subtle" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <HomeFeedSkeleton />;
 }
 
 export default function Home() {
