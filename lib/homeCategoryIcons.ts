@@ -12,6 +12,10 @@ export const CATEGORY_ICON_MAP: Record<string, string> = {
   "Books & Stationery": "menu_book",
   "Kids & Baby":        "child_care",
   "Pets":               "pets",
+  "Jewelry & Watches":  "diamond",
+  "Toys & Games":       "toys",
+  "Arts & Crafts":      "palette",
+  "Building & Hardware":"construction",
   "Other":              "category",
 };
 
@@ -33,6 +37,10 @@ export function resolveCategoryIcon(label: string): string {
   if (/book|stationery|school|education|office/.test(l))       return CATEGORY_ICON_MAP["Books & Stationery"]!;
   if (/baby|kid|toy/.test(l))                                  return CATEGORY_ICON_MAP["Kids & Baby"]!;
   if (/pet|animal|dog|cat/.test(l))                            return CATEGORY_ICON_MAP["Pets"]!;
+  if (/jewel|watch|ring|necklace|bracelet/.test(l))            return CATEGORY_ICON_MAP["Jewelry & Watches"]!;
+  if (/toy|game|puzzle|doll/.test(l))                          return CATEGORY_ICON_MAP["Toys & Games"]!;
+  if (/art|craft|handmade|artisan/.test(l))                    return CATEGORY_ICON_MAP["Arts & Crafts"]!;
+  if (/build|hardware|plumb|cement|paint/.test(l))             return CATEGORY_ICON_MAP["Building & Hardware"]!;
   return CATEGORY_ICON_MAP["Other"]!;
 }
 

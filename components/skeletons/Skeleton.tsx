@@ -38,7 +38,7 @@ export function ProductCardSkeleton({ delay = 0 }: { delay?: number }) {
   return (
     <article
       aria-hidden="true"
-      className={`dm-card overflow-hidden flex flex-col ${delayClass}`}
+      className={`dm-product-card overflow-hidden flex flex-col ${delayClass}`}
     >
       {/* Image — aspect-square on mobile, 4/3 on sm+ (matches ProductCard) */}
       <Skeleton className="w-full aspect-square sm:aspect-[4/3]" rounded="sm" />

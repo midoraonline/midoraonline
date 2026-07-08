@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
-import CategorySelect from "@/components/CategorySelect";
+import CategoryDisplay from "@/components/CategoryDisplay";
+import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
 import { useAppSession } from "@/lib/state";
@@ -107,9 +108,7 @@ function ShopPreview({ form }: { form: ConfirmForm }) {
           </span>
         ) : null}
         {form.category ? (
-          <span className="rounded-full border border-border px-2 py-0.5">
-            {form.category}
-          </span>
+          <CategoryDisplay label={form.category} variant="chip" />
         ) : null}
         {form.locationDisplay ? (
           <span className="rounded-full border border-border px-2 py-0.5">
@@ -415,7 +414,7 @@ export default function CreateShopConcierge({
               </select>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Category
               </label>
@@ -427,11 +426,13 @@ export default function CreateShopConcierge({
                   onEdit={() => dismissSuggestion("category")}
                 />
               ) : (
-                <CategorySelect
-                  value={f.category}
-                  onChange={(v) => field("category", v)}
-                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
-                />
+                <div className="rounded-xl border border-border bg-white p-3 sm:p-4">
+                  <CategoryPicker
+                    value={f.category}
+                    onChange={(v) => field("category", v)}
+                    idPrefix="shop-category"
+                  />
+                </div>
               )}
             </div>
 

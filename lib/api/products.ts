@@ -36,6 +36,8 @@ export type Product = {
   updated_at?: string | null;
   boosted?: boolean;
   average_rating?: number | null;
+  review_count?: number | null;
+  is_negotiable?: boolean | null;
   ai_seo_tags?: string | null;
   ai_generated_desc?: boolean | null;
   shop?: {
@@ -72,6 +74,7 @@ export type CreateProductRequest = {
   item_type?: ItemType;
   image_urls?: string[] | string;
   is_published?: boolean;
+  is_negotiable?: boolean;
   location_name?: string;
   status?: ProductStatus;
 };
@@ -101,6 +104,7 @@ function buildCreatePayload(body: CreateProductRequest): Record<string, unknown>
   if (body.category !== undefined && body.category !== "") o.category = body.category;
   if (body.item_type !== undefined) o.item_type = body.item_type;
   if (body.is_published !== undefined) o.is_published = body.is_published;
+  if (body.is_negotiable !== undefined) o.is_negotiable = body.is_negotiable;
   if (body.location_name !== undefined && body.location_name !== "") o.location_name = body.location_name;
   const imgs = normalizeImageUrlsForApi(body.image_urls);
   if (imgs?.length) o.image_urls = imgs;
@@ -118,6 +122,7 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.category !== undefined) o.category = body.category;
   if (body.item_type !== undefined) o.item_type = body.item_type;
   if (body.is_published !== undefined) o.is_published = body.is_published;
+  if (body.is_negotiable !== undefined) o.is_negotiable = body.is_negotiable;
   if (body.location_name !== undefined) o.location_name = body.location_name;
   if (body.image_urls !== undefined) {
     const imgs = normalizeImageUrlsForApi(body.image_urls);
@@ -342,6 +347,8 @@ export type HomeFeedProduct = {
   viewer_liked?: boolean | null;
   listing_score: number;
   average_rating?: number | null;
+  review_count?: number | null;
+  is_negotiable?: boolean | null;
   location_name?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -386,10 +393,15 @@ export type SimilarProduct = {
   location_name?: string | null;
   created_at?: string | null;
   view_count: number;
+  is_negotiable?: boolean | null;
+  average_rating?: number | null;
+  review_count?: number | null;
   shop_name?: string | null;
   shop_slug?: string | null;
   owner_id?: string | null;
   shop_whatsapp?: string | null;
+  shop_is_active?: boolean | null;
+  shop_trust_badges?: string[];
 };
 
 export function getSimilarProducts(productId: string, limit = 8) {
@@ -434,12 +446,17 @@ export type LikedProduct = {
   listing_score: number;
   location_name?: string | null;
   is_published: boolean;
+  is_negotiable?: boolean | null;
   view_count: number;
   created_at?: string | null;
+  average_rating?: number | null;
+  review_count?: number | null;
   shop_name?: string | null;
   shop_slug?: string | null;
   shop_whatsapp?: string | null;
   owner_id?: string | null;
+  shop_is_active?: boolean | null;
+  shop_trust_badges?: string[];
 };
 
 export type LikedProductsResponse = {

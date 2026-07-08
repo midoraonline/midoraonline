@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, X } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { apiProducts } from "@/lib/api";
 import {
   productImageUrls,
@@ -9,9 +9,15 @@ import {
   type ItemType,
   type Product,
 } from "@/lib/api/products";
-import CategorySelect from "@/components/CategorySelect";
+import CategoryPicker from "@/components/CategoryPicker";
+import FormModal, {
+  formFieldClass,
+  formLabelClass,
+  formTextareaClass,
+} from "@/components/FormModal";
 import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
+import { X } from "lucide-react";
 
 function MediaGrid({
   urls,
@@ -26,13 +32,9 @@ function MediaGrid({
       {urls.map((url, i) => (
         <li
           key={`${url}-${i}`}
-          className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-foreground/[0.04]"
+          className="group relative aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50"
         >
-          <img
-            src={url}
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <img src={url} alt="" className="h-full w-full object-cover" />
           <button
             type="button"
             onClick={() => onRemove(i)}
@@ -57,17 +59,15 @@ function MediaUploadSection({
   shopLogoUrl?: string | null;
 }) {
   return (
-    <div className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] p-3 space-y-3">
-      <div className="flex items-center gap-2">
-        <p className="text-xs font-semibold text-foreground/80">Photos &amp; videos</p>
-      </div>
+    <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 space-y-3 sm:p-4">
+      <p className="text-xs font-semibold text-neutral-800">Photos &amp; videos</p>
       {urls.length > 0 ? (
         <MediaGrid urls={urls} onRemove={(i) => onChange(urls.filter((_, j) => j !== i))} />
       ) : (
-        <p className="text-[11px] text-muted">No media yet.</p>
+        <p className="text-[11px] text-neutral-500">No media yet. Add at least one photo.</p>
       )}
       <div className="space-y-1">
-        <p className="text-[11px] font-medium text-foreground/60">Photos</p>
+        <p className="text-[11px] font-medium text-neutral-600">Photos</p>
         <ImageUpload
           endpoint="productImage"
           multiple
@@ -77,7 +77,7 @@ function MediaUploadSection({
         />
       </div>
       <div className="space-y-1">
-        <p className="text-[11px] font-medium text-foreground/60">Video (optional)</p>
+        <p className="text-[11px] font-medium text-neutral-600">Video (optional)</p>
         <VideoUpload
           endpoint="productVideo"
           label="Add video"
@@ -97,6 +97,7 @@ type FormDraft = {
   category: string;
   image_urls: string[];
   is_published: boolean;
+  is_negotiable: boolean;
 };
 
 function emptyDraft(): FormDraft {
@@ -109,6 +110,7 @@ function emptyDraft(): FormDraft {
     category: "",
     image_urls: [],
     is_published: true,
+    is_negotiable: true,
   };
 }
 
@@ -122,6 +124,7 @@ function productToDraft(p: Product): FormDraft {
     category: p.category ?? "",
     image_urls: productImageUrls(p),
     is_published: p.is_published ?? true,
+    is_negotiable: p.is_negotiable !== false,
   };
 }
 
@@ -143,7 +146,7 @@ export default function ProductFormModal({
   onSaved: () => void;
 }) {
   const [draft, setDraft] = useState<FormDraft>(() =>
-    mode === "edit" && product ? productToDraft(product) : emptyDraft()
+    mode === "edit" && product ? productToDraft(product) : emptyDraft(),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,6 +156,10 @@ export default function ProductFormModal({
     e.preventDefault();
     if (!draft.title.trim()) {
       setError("Title is required.");
+      return;
+    }
+    if (!draft.category.trim()) {
+      setError("Please select a category and subcategory.");
       return;
     }
     setSaving(true);
@@ -169,6 +176,7 @@ export default function ProductFormModal({
         category: draft.category.trim() || undefined,
         image_urls: draft.image_urls.length ? [...draft.image_urls] : undefined,
         is_published: draft.is_published,
+        is_negotiable: draft.is_negotiable,
       };
       if (mode === "add") {
         body.item_type = itemType;
@@ -195,148 +203,154 @@ export default function ProductFormModal({
     }
   }
 
+  const title = mode === "add" ? `Add ${itemType}` : "Edit listing";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 pt-10 pb-10 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-2xl bg-background p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">
-            {mode === "add" ? `Add ${itemType}` : "Edit listing"}
-          </h2>
+    <FormModal
+      title={title}
+      onClose={onClose}
+      maxWidthClass="sm:max-w-xl"
+      footer={
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="dm-focus flex size-8 items-center justify-center rounded-xl hover:bg-foreground/[0.06]"
+            className="rounded-xl px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
           >
-            <X className="size-5" />
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="product-form-modal"
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-orange-700 disabled:opacity-60"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving…
+              </>
+            ) : mode === "add" ? (
+              `Add ${itemType}`
+            ) : (
+              "Save changes"
+            )}
           </button>
         </div>
+      }
+    >
+      {error ? (
+        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {error}
+        </p>
+      ) : null}
 
-        {error && (
-          <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {error}
-          </p>
-        )}
+      {saved ? (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
+          <CheckCircle2 className="size-4 shrink-0" /> Saved!
+        </div>
+      ) : null}
 
-        {saved && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 dark:border-green-900/40 dark:bg-green-950/30 dark:text-green-300">
-            <CheckCircle2 className="size-4 shrink-0" /> Saved!
-          </div>
-        )}
+      <form id="product-form-modal" onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className={formLabelClass}>
+            Title <span className="text-red-500">*</span>
+          </label>
+          <input
+            className={formFieldClass}
+            value={draft.title}
+            onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+            placeholder={`What are you selling?`}
+            required
+          />
+        </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-foreground/80">
-              Title <span className="text-red-500">*</span>
-            </label>
+        <div className="space-y-1.5">
+          <label className={formLabelClass}>Description</label>
+          <textarea
+            className={formTextareaClass}
+            rows={3}
+            value={draft.description}
+            onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+            placeholder="Describe condition, size, features, or what's included…"
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className={formLabelClass}>Price (UGX)</label>
             <input
-              className="dm-input-xs dm-focus w-full"
-              value={draft.title}
-              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-foreground/80">Description</label>
-            <textarea
-              className="dm-textarea-xs dm-focus w-full min-h-[72px]"
-              rows={2}
-              value={draft.description}
-              onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-            />
-          </div>
-
-          <div className={`space-y-1 ${itemType === "service" ? "" : ""}`}>
-            <label className="text-xs font-medium text-foreground/80">Price (UGX)</label>
-            <input
-              className="dm-input-xs dm-focus w-full"
+              className={formFieldClass}
               inputMode="numeric"
               value={draft.price_ugx}
               onChange={(e) => setDraft((d) => ({ ...d, price_ugx: e.target.value }))}
-              placeholder="5000"
+              placeholder="50000"
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-foreground/80">
-              Discount price (UGX){" "}
-              <span className="font-normal text-muted">— optional, leave empty for no discount</span>
+          <div className="space-y-1.5">
+            <label className={formLabelClass}>
+              Discount price{" "}
+              <span className="font-normal text-neutral-400">(optional)</span>
             </label>
             <input
-              className="dm-input-xs dm-focus w-full"
+              className={formFieldClass}
               inputMode="numeric"
               value={draft.discount_price}
               onChange={(e) => setDraft((d) => ({ ...d, discount_price: e.target.value }))}
-              placeholder="4000"
+              placeholder="40000"
             />
           </div>
+        </div>
 
-          {itemType === "product" && (
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground/80">Stock quantity</label>
-              <input
-                className="dm-input-xs dm-focus w-full"
-                inputMode="numeric"
-                value={draft.stock_quantity}
-                onChange={(e) => setDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
-                placeholder="10"
-              />
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-foreground/80">Category</label>
-            <CategorySelect
-              value={draft.category}
-              onChange={(category) => setDraft((d) => ({ ...d, category }))}
-            />
-          </div>
-
-          <MediaUploadSection
-            urls={draft.image_urls}
-            onChange={(next) => setDraft((d) => ({ ...d, image_urls: next }))}
-            shopLogoUrl={shopLogoUrl}
-          />
-
-          <label className="flex cursor-pointer items-center gap-2">
+        {itemType === "product" ? (
+          <div className="space-y-1.5 sm:max-w-[200px]">
+            <label className={formLabelClass}>Stock quantity</label>
             <input
-              type="checkbox"
-              className="rounded border-border"
-              checked={draft.is_published}
-              onChange={(e) => setDraft((d) => ({ ...d, is_published: e.target.checked }))}
+              className={formFieldClass}
+              inputMode="numeric"
+              value={draft.stock_quantity}
+              onChange={(e) => setDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
+              placeholder="10"
             />
-            <span className="text-xs font-medium text-foreground/85">
-              Published on storefront
-            </span>
-          </label>
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl px-4 py-2 text-xs font-medium text-muted hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="dm-focus inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  Saving…
-                </>
-              ) : mode === "add" ? (
-                `Add ${itemType}`
-              ) : (
-                "Save changes"
-              )}
-            </button>
           </div>
-        </form>
-      </div>
-    </div>
+        ) : null}
+
+        <div className="rounded-xl border border-neutral-200 bg-white p-3 sm:p-4">
+          <CategoryPicker
+            value={draft.category}
+            onChange={(category) => setDraft((d) => ({ ...d, category }))}
+            required
+            idPrefix="product-category"
+          />
+        </div>
+
+        <MediaUploadSection
+          urls={draft.image_urls}
+          onChange={(next) => setDraft((d) => ({ ...d, image_urls: next }))}
+          shopLogoUrl={shopLogoUrl}
+        />
+
+        <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 py-2.5">
+          <input
+            type="checkbox"
+            className="size-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
+            checked={draft.is_negotiable}
+            onChange={(e) => setDraft((d) => ({ ...d, is_negotiable: e.target.checked }))}
+          />
+          <span className="text-sm font-medium text-neutral-800">Price is negotiable</span>
+        </label>
+
+        <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 py-2.5">
+          <input
+            type="checkbox"
+            className="size-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
+            checked={draft.is_published}
+            onChange={(e) => setDraft((d) => ({ ...d, is_published: e.target.checked }))}
+          />
+          <span className="text-sm font-medium text-neutral-800">Published on storefront</span>
+        </label>
+      </form>
+    </FormModal>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { productImageUrls, productPriceUgx, productOriginalPriceUgx, productIsDiscounted, productDiscountPercent } from "@/lib/api/products";
+import CategoryDisplay from "@/components/CategoryDisplay";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
@@ -178,6 +179,9 @@ export default async function ProductDetails({
               <span className="rounded-full bg-foreground/[0.05] px-2.5 py-0.5 text-[10px] font-medium text-muted">
                 {product.item_type === "service" ? "Service" : "Product"}
               </span>
+              {product.category ? (
+                <CategoryDisplay label={product.category} variant="chip" />
+              ) : null}
               {product.boosted && (
                 <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-accent">
                   Promoted
@@ -328,12 +332,14 @@ export default async function ProductDetails({
               </h2>
               <dl className="divide-y divide-border text-sm">
                 {product.category && (
-                  <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex items-start gap-3 px-4 py-3">
                     <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
                       <MaterialSymbol name="category" className="!text-sm" />
                       Category
                     </dt>
-                    <dd className="font-medium text-foreground">{product.category}</dd>
+                    <dd className="min-w-0 flex-1">
+                      <CategoryDisplay label={product.category} variant="detail" />
+                    </dd>
                   </div>
                 )}
                 {product.location_name && (

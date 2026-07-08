@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ShopCard from "@/components/shopcard";
 import type { Shop } from "@/lib/api/shops";
-import { browseShopGridClass, shopHasProductCategory } from "@/lib/browseCategories";
+import { browseShopGridClass, shopMatchesCategoryFilter, type CategoryFilterSelection } from "@/lib/browseCategories";
+import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { apiShops } from "@/lib/api";
 
@@ -43,17 +44,18 @@ function matchesShopSearch(shop: Shop, q: string, productCats?: string[]): boole
 export default function ShopListRealtime({
   initialShops,
   shopProductCategories,
-  productCategoryFilter = null,
+  categoryFilter = { parentLabel: null, subcategoryLabel: null },
   searchQuery = "",
   gridClassName,
 }: {
   initialShops: Shop[];
   shopProductCategories: Record<string, string[]>;
-  productCategoryFilter?: string | null;
+  categoryFilter?: CategoryFilterSelection;
   searchQuery?: string;
   gridClassName?: string;
 }) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
+  const { items: categoryItems } = useCategoryItems();
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -119,12 +121,19 @@ export default function ShopListRealtime({
 
   const visible = useMemo(() => {
     let list = activeShops;
-    if (productCategoryFilter) {
-      list = list.filter((s) => shopHasProductCategory(s.id, shopProductCategories, productCategoryFilter));
+    if (categoryFilter.parentLabel || categoryFilter.subcategoryLabel) {
+      list = list.filter((s) =>
+        shopMatchesCategoryFilter(
+          s.category,
+          shopProductCategories[s.id] ?? [],
+          categoryFilter,
+          categoryItems,
+        ),
+      );
     }
     list = list.filter((s) => matchesShopSearch(s, searchQuery, shopProductCategories[s.id]));
     return list;
-  }, [activeShops, productCategoryFilter, searchQuery, shopProductCategories]);
+  }, [activeShops, categoryFilter, categoryItems, searchQuery, shopProductCategories]);
 
   const grid = gridClassName ?? browseShopGridClass;
 

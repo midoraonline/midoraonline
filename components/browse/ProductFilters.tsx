@@ -184,7 +184,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
   return (
     <>
       {/* Desktop filter bar */}
-      <div className="hidden sm:flex items-center gap-2 mb-5 flex-wrap">
+      <div className="hidden sm:flex items-center gap-2 flex-wrap">
         {/* Sort dropdown */}
         <div ref={sortRef} className="relative">
           <button
@@ -326,7 +326,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
       </div>
 
       {/* Mobile filter bar */}
-      <div className="sm:hidden mb-4">
+      <div className="sm:hidden">
         <div className="flex items-center gap-2">
           <button
             type="button"

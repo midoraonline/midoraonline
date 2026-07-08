@@ -1,5 +1,6 @@
 import type { Shop } from "@/lib/api/shops";
 import type { ProductCardData } from "@/components/productcard";
+import { resolveCategoryParts } from "@/lib/categories";
 
 export function normCat(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
@@ -7,6 +8,100 @@ export function normCat(s: string | null | undefined): string {
 
 export function catEquals(a: string | null | undefined, selected: string): boolean {
   return normCat(a) === normCat(selected);
+}
+
+export type CategoryFilterSelection = {
+  parentLabel: string | null;
+  subcategoryLabel: string | null;
+};
+
+export const EMPTY_CATEGORY_FILTER: CategoryFilterSelection = {
+  parentLabel: null,
+  subcategoryLabel: null,
+};
+
+export function isCategoryFilterActive(selection: CategoryFilterSelection): boolean {
+  return Boolean(selection.parentLabel || selection.subcategoryLabel);
+}
+
+export function categoryFilterDisplayLabel(selection: CategoryFilterSelection): string | null {
+  if (!isCategoryFilterActive(selection)) return null;
+  if (selection.subcategoryLabel) {
+    if (selection.parentLabel) {
+      return `${selection.parentLabel} › ${selection.subcategoryLabel}`;
+    }
+    return selection.subcategoryLabel;
+  }
+  return selection.parentLabel;
+}
+
+export function productMatchesCategoryFilter(
+  product: { category?: string | null; shop: { category?: string | null } },
+  selection: CategoryFilterSelection,
+  items: { slug: string; label: string; parent_slug?: string | null }[],
+): boolean {
+  if (!isCategoryFilterActive(selection)) return true;
+
+  if (selection.subcategoryLabel) {
+    return (
+      catEquals(product.category, selection.subcategoryLabel) ||
+      catEquals(product.shop.category, selection.subcategoryLabel)
+    );
+  }
+
+  const parentSlug = items.find(
+    (c) => c.label === selection.parentLabel && !c.parent_slug,
+  )?.slug;
+  const childLabels = new Set(
+    items.filter((c) => c.parent_slug === parentSlug).map((c) => c.label),
+  );
+
+  function matchesLabel(label: string | null | undefined) {
+    if (!label?.trim()) return false;
+    const trimmed = label.trim();
+    if (catEquals(trimmed, selection.parentLabel!)) return true;
+    if (childLabels.has(trimmed)) return true;
+    const parts = resolveCategoryParts(trimmed, items);
+    return Boolean(
+      parts.parentLabel && catEquals(parts.parentLabel, selection.parentLabel),
+    );
+  }
+
+  return matchesLabel(product.category) || matchesLabel(product.shop.category);
+}
+
+export function shopMatchesCategoryFilter(
+  shopCategory: string | null | undefined,
+  productCats: string[],
+  selection: CategoryFilterSelection,
+  items: { slug: string; label: string; parent_slug?: string | null }[],
+): boolean {
+  if (!isCategoryFilterActive(selection)) return true;
+
+  if (selection.subcategoryLabel) {
+    if (catEquals(shopCategory, selection.subcategoryLabel)) return true;
+    return productCats.some((c) => catEquals(c, selection.subcategoryLabel!));
+  }
+
+  const parentSlug = items.find(
+    (c) => c.label === selection.parentLabel && !c.parent_slug,
+  )?.slug;
+  const childLabels = new Set(
+    items.filter((c) => c.parent_slug === parentSlug).map((c) => c.label),
+  );
+
+  function matchesLabel(label: string | null | undefined) {
+    if (!label?.trim()) return false;
+    const trimmed = label.trim();
+    if (catEquals(trimmed, selection.parentLabel!)) return true;
+    if (childLabels.has(trimmed)) return true;
+    const parts = resolveCategoryParts(trimmed, items);
+    return Boolean(
+      parts.parentLabel && catEquals(parts.parentLabel, selection.parentLabel),
+    );
+  }
+
+  return matchesLabel(shopCategory) || productCats.some((c) => matchesLabel(c));
 }
 
 export function collectCategoriesFromShops(shops: Shop[]): string[] {

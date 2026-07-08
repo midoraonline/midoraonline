@@ -4,14 +4,22 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
+import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
-import { browseProductGridClass, catEquals, collectCategoriesFromProducts } from "@/lib/browseCategories";
+import {
+  browseProductGridClass,
+  categoryFilterDisplayLabel,
+  EMPTY_CATEGORY_FILTER,
+  isCategoryFilterActive,
+  productMatchesCategoryFilter,
+  type CategoryFilterSelection,
+} from "@/lib/browseCategories";
+import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { apiProducts } from "@/lib/api";
-import { useProductSearch } from "@/lib/hooks/useProductSearch";
-import { productPageSlug } from "@/lib/productUrl";
 import type { HomeFeedProduct } from "@/lib/api/products";
+import { useProductSearch } from "@/lib/hooks/useProductSearch";
+import { homeFeedProductToCard } from "@/lib/productCardMap";
 
 export default function ProductsBrowsePage({
   items,
@@ -22,8 +30,9 @@ export default function ProductsBrowsePage({
 }) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
   const [allItems, setAllItems] = useState(items);
+  const { items: categoryItems } = useCategoryItems();
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(items.length >= 72);
@@ -34,12 +43,13 @@ export default function ProductsBrowsePage({
   }, [searchParams]);
 
   const q = query.trim();
-  const categoryFilterActive = selectedCategory !== null;
+  const categoryFilterActive = isCategoryFilterActive(categoryFilter);
+  const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
   const isSearching = q.length > 0;
 
   const search = useProductSearch({
     query,
-    category: selectedCategory,
+    category: categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel,
     enabled: isSearching,
     limit: 20,
   });
@@ -67,71 +77,28 @@ export default function ProductsBrowsePage({
     }
   }, [page, allItems]);
 
-  const categories = useMemo(
-    () => collectCategoriesFromProducts(items),
-    [items],
-  );
-
   function toCardLocal(fp: HomeFeedProduct): ProductCardData {
-    const slug = productPageSlug(fp);
-    return {
-      id: fp.id,
-      slug,
-      title: fp.title,
-      priceUGX: fp.price_ugx,
-      originalPriceUGX: fp.price_ugx,
-      discountPriceUGX: fp.discount_price ?? null,
-      discountPercent: fp.discount_price != null && fp.discount_price > 0 && fp.discount_price < fp.price_ugx
-        ? Math.round((1 - fp.discount_price / fp.price_ugx) * 100)
-        : 0,
-      imageUrl: fp.primary_image,
-      shopLogoUrl: fp.shop.logo_url ?? undefined,
-      stockQuantity: fp.stock_quantity,
-      viewCount: fp.view_count,
-      likeCount: fp.like_count,
-      isLiked: fp.viewer_liked ?? undefined,
-      shopWhatsApp: fp.shop.whatsapp_number ?? null,
-      listingUrl: `/${slug}`,
-      sellerId: fp.shop.owner_id ?? null,
-      shop: {
-        id: fp.shop.id,
-        name: fp.shop.name,
-        slug: fp.shop.slug,
-        verified: fp.shop.is_active,
-        category: fp.shop.category ?? null,
-        trust_score: fp.shop.trust_score ?? null,
-        available_now: fp.shop.available_now ?? null,
-        location: fp.shop.location ?? null,
-      },
-      category: fp.category ?? null,
-      boosted: fp.boosted,
-      updated_at: fp.updated_at ?? fp.created_at ?? null,
-      location_name: fp.location_name ?? null,
-    };
+    return homeFeedProductToCard(fp, typeof window !== "undefined" ? window.location.origin : "");
   }
 
   const browseItems = useMemo(() => {
     if (isSearching) return [];
     let list = allItems;
-    if (selectedCategory) {
-      list = list.filter(
-        (p) =>
-          catEquals(p.category, selectedCategory) ||
-          catEquals(p.shop.category, selectedCategory),
-      );
+    if (categoryFilterActive) {
+      list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter, categoryItems));
     }
     return list;
-  }, [allItems, selectedCategory, isSearching]);
+  }, [allItems, categoryFilter, categoryFilterActive, categoryItems, isSearching]);
 
   const displayItems = isSearching ? search.items : browseItems;
-  const filterHint = categoryFilterActive ? ` · ${selectedCategory}` : "";
+  const filterHint = categoryFilterLabel ? ` · ${categoryFilterLabel}` : "";
 
   return (
     <div className="w-full">
-      <CategoryFilterBar
-        categories={categories}
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
+      <CategoryBrowseSection
+        selection={categoryFilter}
+        onSelectionChange={setCategoryFilter}
+        showHeader={false}
       />
 
       <div className="space-y-4 sm:space-y-6">
@@ -143,7 +110,7 @@ export default function ProductsBrowsePage({
                 {categoryFilterActive ? (
                   <span>
                     {" "}
-                    in <span className="font-semibold text-foreground">{selectedCategory}</span>
+                    in <span className="font-semibold text-foreground">{categoryFilterLabel}</span>
                   </span>
                 ) : null}
                 {search.mode ? (
@@ -161,11 +128,11 @@ export default function ProductsBrowsePage({
             ) : (
               <>
                 Filtered by{" "}
-                <span className="font-semibold text-foreground">{selectedCategory}</span>
+                <span className="font-semibold text-foreground">{categoryFilterLabel}</span>
                 {" · "}
                 <button
                   type="button"
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => setCategoryFilter(EMPTY_CATEGORY_FILTER)}
                   className="font-semibold text-foreground underline-offset-2 hover:underline"
                 >
                   clear category

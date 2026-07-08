@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import CategoryDisplay from "@/components/CategoryDisplay";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { apiListingEvents } from "@/lib/api";
-import TradeDisclaimer from "@/components/TradeDisclaimer";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
+import TradeDisclaimer from "@/components/TradeDisclaimer";
 
 export type ProductCardData = {
   id: string;
@@ -41,7 +43,42 @@ export type ProductCardData = {
   likeCount?: number;
   isLiked?: boolean;
   rating?: number;
+  reviewCount?: number;
+  negotiable?: boolean;
 };
+
+function formatRating(value: number): string {
+  return value % 1 === 0 ? value.toFixed(1) : value.toFixed(1);
+}
+
+function VerifiedBadge({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[9px] font-semibold text-sky-700">
+      <VerifiedIcon className="!text-[10px] text-sky-600" size={10} />
+      {compact ? "Verified" : "Verified seller"}
+    </span>
+  );
+}
+
+function RatingDisplay({ rating, reviewCount }: { rating?: number; reviewCount?: number }) {
+  if (rating == null || rating <= 0) {
+    return (
+      <span className="flex items-center gap-0.5 shrink-0 text-neutral-400">
+        <MaterialSymbol name="star" className="!text-[11px] shrink-0" />
+        <span>No reviews</span>
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-0.5 shrink-0">
+      <MaterialSymbol name="star" className="!text-[11px] text-amber-500 shrink-0" filled />
+      <span className="font-semibold text-foreground">{formatRating(rating)}</span>
+      {reviewCount != null && reviewCount > 0 ? (
+        <span className="text-neutral-400">({reviewCount})</span>
+      ) : null}
+    </span>
+  );
+}
 
 function formatUGX(value: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -135,7 +172,7 @@ export default function ProductCard({
 
   if (layout === "horizontal") {
     return (
-      <article className="dm-card dm-card-hover flex flex-row h-full overflow-hidden bg-white shadow-xs border border-neutral-100 rounded-2xl min-h-[180px] sm:min-h-[220px] w-full">
+      <article className="dm-product-card dm-card-hover flex flex-row h-full overflow-hidden bg-surface min-h-[180px] sm:min-h-[220px] w-full">
         {/* Image area (Left) */}
         <div className="relative w-2/5 sm:w-1/2 bg-surface-subtle overflow-hidden group shrink-0">
           <Link href={productHref} className="dm-focus block w-full h-full outline-none">
@@ -193,7 +230,7 @@ export default function ProductCard({
             {/* Title & Discount Inline */}
             <div className="flex items-start gap-1">
               <Link href={productHref} className="dm-focus block flex-1 outline-none min-w-0">
-                <h3 className="line-clamp-1 sm:line-clamp-2 text-sm sm:text-base font-bold tracking-tight text-neutral-900 leading-snug hover:text-orange-600 transition-colors">
+                <h3 className="line-clamp-1 sm:line-clamp-2 text-sm sm:text-base font-bold tracking-tight text-foreground leading-snug hover:text-accent transition-colors">
                   {product.title}
                 </h3>
               </Link>
@@ -206,11 +243,11 @@ export default function ProductCard({
 
             {/* Price Row */}
             <div className="flex flex-wrap items-baseline gap-1.5">
-              <span className="text-base sm:text-lg font-extrabold tabular-nums text-orange-600">
+              <span className="text-base sm:text-lg font-extrabold tabular-nums text-accent">
                 {formatUGX(isDiscounted ? product.discountPriceUGX! : product.priceUGX)}
               </span>
               {isDiscounted && (
-                <span className="text-xs font-medium text-neutral-400 line-through tabular-nums">
+                <span className="text-xs font-medium text-muted line-through tabular-nums">
                   {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
                 </span>
               )}
@@ -218,16 +255,18 @@ export default function ProductCard({
 
             {/* Status Pills */}
             <div className="flex flex-wrap gap-1 mt-1">
-              {product.shop.verified && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700 border border-emerald-100">
-                  <MaterialSymbol name="verified" className="!text-[10px] text-emerald-600" filled />
-                  Verified
+              {product.shop.verified ? <VerifiedBadge compact /> : null}
+              {product.negotiable !== false ? (
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
+                  <MaterialSymbol name="handshake" className="!text-[10px]" />
+                  Negotiable
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
+                  <MaterialSymbol name="sell" className="!text-[10px]" />
+                  Fixed price
                 </span>
               )}
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-neutral-50 px-2 py-0.5 text-[9px] font-semibold text-neutral-600 border border-neutral-200">
-                <MaterialSymbol name="handshake" className="!text-[10px] text-neutral-500" />
-                Negotiable
-              </span>
             </div>
           </div>
 
@@ -235,17 +274,14 @@ export default function ProductCard({
             {/* Details Row: Location, Views, Rating */}
             <div className="flex items-center justify-between text-[10px] text-neutral-500 border-t border-neutral-100 pt-2">
               <span className="flex items-center gap-0.5 min-w-0 flex-1">
-                <MaterialSymbol name="location_on" className="!text-[11px] text-neutral-400 shrink-0" />
+                <MaterialSymbol name="location_on" className="!text-[11px] shrink-0 text-muted" />
                 <span className="truncate">{product.location_name || product.shop.location || "Kampala"}</span>
               </span>
               <span className="flex items-center gap-0.5 shrink-0 px-2">
                 <span className="text-neutral-400">Views: </span>
-                <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "12"}</span>
+                <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "—"}</span>
               </span>
-              <span className="flex items-center gap-0.5 shrink-0">
-                <MaterialSymbol name="star" className="!text-[11px] text-amber-500 shrink-0" filled />
-                <span className="font-semibold text-neutral-800">{product.rating || "4.5"}</span>
-              </span>
+              <RatingDisplay rating={product.rating} reviewCount={product.reviewCount} />
             </div>
 
             {/* Action Buttons */}
@@ -259,7 +295,7 @@ export default function ProductCard({
                     <button
                       type="button"
                       onClick={open}
-                      className="dm-focus flex items-center justify-center gap-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:bg-orange-800 py-2 text-xs font-bold text-white transition-colors cursor-pointer"
+                      className="dm-focus flex items-center justify-center gap-1.5 rounded-xl bg-accent hover:bg-accent-hover active:opacity-90 py-2 text-xs font-bold text-white transition-colors cursor-pointer"
                     >
                       <MaterialSymbol name="chat" className="!text-[14px]" />
                       Chat
@@ -269,7 +305,7 @@ export default function ProductCard({
               ) : (
                 <Link
                   href={productHref}
-                  className="dm-focus flex items-center justify-center gap-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:bg-orange-800 py-2 text-xs font-bold text-white transition-colors"
+                  className="dm-focus flex items-center justify-center gap-1.5 rounded-xl bg-accent hover:bg-accent-hover active:opacity-90 py-2 text-xs font-bold text-white transition-colors"
                 >
                   <MaterialSymbol name="chat" className="!text-[14px]" />
                   Chat
@@ -292,7 +328,7 @@ export default function ProductCard({
 
   // Default Vertical Layout
   return (
-    <article className="dm-card dm-card-hover flex flex-col overflow-hidden bg-white shadow-xs border border-neutral-100 rounded-2xl w-full">
+    <article className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden">
       {/* Image area */}
       <div className="relative aspect-square w-full bg-surface-subtle sm:aspect-[4/3] overflow-hidden group">
         <Link href={productHref} className="dm-focus block w-full h-full outline-none">
@@ -361,7 +397,7 @@ export default function ProductCard({
         {/* Title & Discount Inline */}
         <div className="flex items-start gap-1">
           <Link href={productHref} className="dm-focus block flex-1 outline-none min-w-0">
-            <h3 className="line-clamp-1 text-sm font-semibold tracking-tight text-neutral-900 leading-snug hover:text-orange-600 transition-colors">
+            <h3 className="line-clamp-1 text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent">
               {product.title}
             </h3>
           </Link>
@@ -372,13 +408,21 @@ export default function ProductCard({
           )}
         </div>
 
+        {(product.category || product.shop.category) ? (
+          <CategoryDisplay
+            label={product.category ?? product.shop.category}
+            variant="compact"
+            className="mt-0.5"
+          />
+        ) : null}
+
         {/* Price Row */}
         <div className="flex flex-wrap items-baseline gap-1.5">
-          <span className="text-base font-extrabold tabular-nums text-orange-600">
+          <span className="text-base font-extrabold tabular-nums text-accent">
             {formatUGX(isDiscounted ? product.discountPriceUGX! : product.priceUGX)}
           </span>
           {isDiscounted && (
-            <span className="text-xs font-medium text-neutral-400 line-through tabular-nums">
+            <span className="text-xs font-medium text-muted line-through tabular-nums">
               {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
             </span>
           )}
@@ -386,37 +430,35 @@ export default function ProductCard({
 
         {/* Status Pills */}
         <div className="flex flex-wrap gap-1 mt-0.5">
-          {product.shop.verified && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700 border border-emerald-100">
-              <MaterialSymbol name="verified" className="!text-[10px] text-emerald-600" filled />
-              Verified seller
+          {product.shop.verified ? <VerifiedBadge /> : null}
+          {product.negotiable !== false ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
+              <MaterialSymbol name="handshake" className="!text-[10px]" />
+              Price negotiable
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
+              <MaterialSymbol name="sell" className="!text-[10px]" />
+              Fixed price
             </span>
           )}
-          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-50 px-2 py-0.5 text-[9px] font-semibold text-neutral-600 border border-neutral-200">
-            <MaterialSymbol name="handshake" className="!text-[10px] text-neutral-500" />
-            Price negotiable
-          </span>
         </div>
 
         {/* Details Row: Location, Views, Rating */}
-        <div className="flex items-center justify-between text-[10px] text-neutral-500 mt-1 border-t border-neutral-100 pt-2 pb-1">
+        <div className="mt-1 flex items-center justify-between border-t border-border pt-2 text-[10px] text-muted">
           <span className="flex items-center gap-0.5 min-w-0 flex-1">
-            <MaterialSymbol name="location_on" className="!text-[11px] text-neutral-400 shrink-0" />
+            <MaterialSymbol name="location_on" className="!text-[11px] shrink-0 text-muted" />
             <span className="truncate">{product.location_name || product.shop.location || "Kampala"}</span>
           </span>
           <span className="flex items-center gap-0.5 shrink-0 px-2">
             <span className="text-neutral-400">Views: </span>
-            <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "12"}</span>
+            <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "—"}</span>
           </span>
-          <span className="flex items-center gap-0.5 shrink-0">
-            <MaterialSymbol name="star" className="!text-[11px] text-amber-500 shrink-0" filled />
-            <span className="font-semibold text-neutral-800">{product.rating || "4.5"}</span>
-            <span className="text-neutral-400">({product.likeCount || 12})</span>
-          </span>
+          <RatingDisplay rating={product.rating} reviewCount={product.reviewCount} />
         </div>
 
         {/* WhatsApp Button */}
-        <div className="mt-2 pt-1 border-t border-neutral-100">
+        <div className="mt-2 border-t border-border pt-2">
           {waHref ? (
             <TradeDisclaimer type="whatsapp" onConfirm={() => {
               apiListingEvents.recordListingEvent(product.id, "whatsapp_clicked").catch(() => {});
