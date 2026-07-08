@@ -6,8 +6,11 @@ export function normCat(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
 }
 
-export function catEquals(a: string | null | undefined, selected: string): boolean {
-  return normCat(a) === normCat(selected);
+export function catEquals(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  return normCat(a) === normCat(b);
 }
 
 export type CategoryFilterSelection = {
@@ -49,8 +52,11 @@ export function productMatchesCategoryFilter(
     );
   }
 
+  const parentLabel = selection.parentLabel;
+  if (!parentLabel) return true;
+
   const parentSlug = items.find(
-    (c) => c.label === selection.parentLabel && !c.parent_slug,
+    (c) => c.label === parentLabel && !c.parent_slug,
   )?.slug;
   const childLabels = new Set(
     items.filter((c) => c.parent_slug === parentSlug).map((c) => c.label),
@@ -59,11 +65,11 @@ export function productMatchesCategoryFilter(
   function matchesLabel(label: string | null | undefined) {
     if (!label?.trim()) return false;
     const trimmed = label.trim();
-    if (catEquals(trimmed, selection.parentLabel!)) return true;
+    if (catEquals(trimmed, parentLabel)) return true;
     if (childLabels.has(trimmed)) return true;
     const parts = resolveCategoryParts(trimmed, items);
     return Boolean(
-      parts.parentLabel && catEquals(parts.parentLabel, selection.parentLabel),
+      parts.parentLabel && catEquals(parts.parentLabel, parentLabel),
     );
   }
 
@@ -83,8 +89,11 @@ export function shopMatchesCategoryFilter(
     return productCats.some((c) => catEquals(c, selection.subcategoryLabel!));
   }
 
+  const parentLabel = selection.parentLabel;
+  if (!parentLabel) return true;
+
   const parentSlug = items.find(
-    (c) => c.label === selection.parentLabel && !c.parent_slug,
+    (c) => c.label === parentLabel && !c.parent_slug,
   )?.slug;
   const childLabels = new Set(
     items.filter((c) => c.parent_slug === parentSlug).map((c) => c.label),
@@ -93,11 +102,11 @@ export function shopMatchesCategoryFilter(
   function matchesLabel(label: string | null | undefined) {
     if (!label?.trim()) return false;
     const trimmed = label.trim();
-    if (catEquals(trimmed, selection.parentLabel!)) return true;
+    if (catEquals(trimmed, parentLabel)) return true;
     if (childLabels.has(trimmed)) return true;
     const parts = resolveCategoryParts(trimmed, items);
     return Boolean(
-      parts.parentLabel && catEquals(parts.parentLabel, selection.parentLabel),
+      parts.parentLabel && catEquals(parts.parentLabel, parentLabel),
     );
   }
 
