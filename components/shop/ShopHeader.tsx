@@ -177,6 +177,21 @@ export default async function ShopHeader({
         >
           {shop.name}
         </h1>
+        {shop.available_now ? (
+          <span
+            className={
+              immersive
+                ? "inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-100 backdrop-blur-sm"
+                : "inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+            }
+          >
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+            </span>
+            Available now
+          </span>
+        ) : null}
         {shop.is_active ? (
           <div className="flex flex-wrap items-center gap-2">
             {shop.trust_badges?.includes("business_verified") && (

@@ -365,6 +365,7 @@ export function getShopDashboard(shopId: string) {
   );
 }
 
+/** Refresh shop available_now from the owner's online presence (not a manual on/off). */
 export function toggleShopAvailability(shopId: string, token?: string | null) {
   return apiFetch<Shop>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/toggle-availability`,

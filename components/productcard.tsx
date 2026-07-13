@@ -132,14 +132,6 @@ function timeLabel(iso: string | null | undefined): { label: string; className: 
   };
 }
 
-function getPeopleViewing(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return (Math.abs(hash) % 8) + 2; // returns between 2 and 9 viewers deterministically
-}
-
 export default function ProductCard({
   product,
   layout = "vertical",
@@ -167,8 +159,7 @@ export default function ProductCard({
   const discountPct = isDiscounted
     ? Math.round((1 - product.discountPriceUGX! / (product.originalPriceUGX ?? product.priceUGX)) * 100)
     : 0;
-
-  const peopleViewing = getPeopleViewing(product.id);
+  const shopLive = product.shop.available_now === true;
 
   if (layout === "horizontal") {
     return (
@@ -204,6 +195,12 @@ export default function ProductCard({
                   Popular
                 </span>
               )}
+              {shopLive && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm uppercase tracking-wider">
+                  <MaterialSymbol name="sensors" className="!text-[11px] animate-pulse" />
+                  Live Now
+                </span>
+              )}
             </div>
           </div>
 
@@ -215,12 +212,6 @@ export default function ProductCard({
               initialLiked={product.isLiked}
               initialLikeCount={product.likeCount}
             />
-          </div>
-
-          {/* People Viewing Overlay (Bottom Right) */}
-          <div className="absolute bottom-2 right-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-[9px] font-medium text-white shadow-sm backdrop-blur-xs pointer-events-none">
-            <MaterialSymbol name="group" className="!text-[11px]" />
-            <span>{peopleViewing} viewing</span>
           </div>
         </div>
 
@@ -366,7 +357,7 @@ export default function ProductCard({
                 {tInfo.label}
               </span>
             )}
-            {product.shop.available_now && (
+            {shopLive && (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm uppercase tracking-wider">
                 <MaterialSymbol name="sensors" className="!text-[11px] animate-pulse" />
                 Live Now
@@ -383,12 +374,6 @@ export default function ProductCard({
             initialLiked={product.isLiked}
             initialLikeCount={product.likeCount}
           />
-        </div>
-
-        {/* People Viewing Overlay (Bottom Right) */}
-        <div className="absolute bottom-2 right-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-[9px] font-medium text-white shadow-sm backdrop-blur-xs pointer-events-none">
-          <MaterialSymbol name="group" className="!text-[11px]" />
-          <span>{peopleViewing} people viewing</span>
         </div>
       </div>
 
