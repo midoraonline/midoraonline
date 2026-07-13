@@ -6,10 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiAuth } from "@/lib/api";
+import { getOnlineUsersCount } from "@/lib/api/stats";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
+import PresenceHeartbeat from "@/components/PresenceHeartbeat";
 
 import { LogOut } from "lucide-react";
 
@@ -142,6 +144,7 @@ export default function Navbar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [unread, setUnread] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(1);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -195,10 +198,21 @@ export default function Navbar({
   }, [session.isAuthenticated]);
 
   useEffect(() => {
+    const fetchOnline = async () => {
+      try {
+        const res = await getOnlineUsersCount();
+        setOnlineCount(res.online_count);
+      } catch {}
+    };
+
     const timer = setTimeout(() => {
       fetchUnread();
+      fetchOnline();
     }, 100);
-    unreadIntervalRef.current = setInterval(fetchUnread, 15000);
+    unreadIntervalRef.current = setInterval(() => {
+      fetchUnread();
+      fetchOnline();
+    }, 15000);
     return () => {
       clearTimeout(timer);
       if (unreadIntervalRef.current) clearInterval(unreadIntervalRef.current);
@@ -237,7 +251,9 @@ export default function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background">
+    <>
+      <PresenceHeartbeat />
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
       <div ref={menuRef}>
         <div className="dm-container flex h-14 items-center gap-3 sm:gap-5">
           {/* Logo */}
@@ -277,8 +293,8 @@ export default function Navbar({
             })}
           </nav>
 
-          {/* Search & Live Counter */}
-          <div className="ml-auto hidden w-full md:flex md:items-center md:gap-3 md:max-w-md lg:max-w-lg">
+          {/* Search — desktop only */}
+          <div className="ml-auto hidden w-full md:flex md:items-center md:max-w-md lg:max-w-lg">
             <div className="flex-1">
               <ProductSearchBar
                 value={searchQuery}
@@ -286,28 +302,36 @@ export default function Navbar({
                 onSubmit={submitNavbarSearch}
                 placeholder="Search products…"
                 ariaLabel="Search products"
+                variant="navbar"
               />
-            </div>
-            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full border border-emerald-100 whitespace-nowrap">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-              </span>
-              <MaterialSymbol name="wifi_tethering" className="!text-[13px] text-emerald-600" />
-              <span>1,284 sellers online</span>
             </div>
           </div>
 
           {/* Right actions */}
           <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0 md:gap-2" suppressHydrationWarning>
+            {/* Sellers online — always visible in navbar */}
+            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-100 whitespace-nowrap">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <span>{onlineCount.toLocaleString()}</span>
+              <span className="hidden sm:inline"> online</span>
+            </div>
+
             {/* Mobile search toggle */}
             <button
               type="button"
-              onClick={() => setSearchOpen(!searchOpen)}
+              onClick={() => setSearchOpen((open) => !open)}
               className="inline-flex size-9 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
-              aria-label="Toggle search"
+              aria-label={searchOpen ? "Close search" : "Open search"}
+              aria-expanded={searchOpen}
             >
-              <MaterialSymbol name="search" className="!text-lg" />
+              {searchOpen ? (
+                <X className="size-4" />
+              ) : (
+                <MaterialSymbol name="search" className="!text-lg" />
+              )}
             </button>
 
             {session.isAuthenticated ? (
@@ -360,11 +384,11 @@ export default function Navbar({
                 onNavigate={() => setOpen(false)}
               />
             ) : authLoading ? (
-              <span className="inline-flex size-9 shrink-0 rounded-full md:hidden" aria-hidden />
+              <span className="inline-flex size-9 shrink-0 rounded-full" aria-hidden />
             ) : (
               <Link
                 href="/login"
-                className="hidden items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover md:inline-flex"
+                className="dm-btn-accent dm-focus inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm"
               >
                 Sign in
               </Link>
@@ -385,25 +409,21 @@ export default function Navbar({
         {/* Mobile search bar */}
         <div
           className={`overflow-hidden transition-all duration-200 ease-out md:hidden ${
-            searchOpen ? "max-h-24 border-t border-border" : "max-h-0"
+            searchOpen ? "max-h-20 border-t border-border" : "max-h-0"
           }`}
         >
-          <div className="px-4 py-2 flex flex-col gap-1">
+          <div className="px-4 py-2.5">
             <ProductSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              onSubmit={submitNavbarSearch}
+              onSubmit={(q) => {
+                submitNavbarSearch(q);
+                setSearchOpen(false);
+              }}
               placeholder="Search products…"
               ariaLabel="Search products"
+              variant="navbar"
             />
-            <div className="flex items-center gap-1 px-1 py-0.5 text-[10px] font-bold text-emerald-700">
-              <span className="relative flex h-1 w-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1 w-1 bg-emerald-500"></span>
-              </span>
-              <MaterialSymbol name="wifi_tethering" className="!text-[11px] text-emerald-600" />
-              <span>1,284 sellers online now</span>
-            </div>
           </div>
         </div>
 
@@ -448,18 +468,6 @@ export default function Navbar({
               </div>
             ) : null}
 
-            {/* Sign in CTA — shown only when not logged in */}
-            {!session.isAuthenticated && !authLoading && (
-              <div className="mt-3 border-t border-border px-4 pt-3">
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex w-full items-center justify-center rounded-xl bg-accent py-2.5 text-sm font-semibold text-white transition-all dm-focus hover:bg-accent-hover"
-                >
-                  Sign in to Midora
-                </Link>
-              </div>
-            )}
           </div>
         ) : null}
       </div>
@@ -475,5 +483,6 @@ export default function Navbar({
         </button>
       )}
     </header>
+    </>
   );
 }

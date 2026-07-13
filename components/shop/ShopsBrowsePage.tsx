@@ -1,11 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Search, X } from "lucide-react";
 
-import CategoryFilterBar from "@/components/browse/CategoryFilterBar";
+import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ShopListRealtime from "@/components/shop/ShopListRealtime";
-import { browseShopGridClass, collectCategoriesFromShopProductMap } from "@/lib/browseCategories";
+import {
+  browseShopGridClass,
+  categoryFilterDisplayLabel,
+  EMPTY_CATEGORY_FILTER,
+  isCategoryFilterActive,
+  type CategoryFilterSelection,
+} from "@/lib/browseCategories";
 import type { Shop } from "@/lib/api/shops";
 
 export default function ShopsBrowsePage({
@@ -16,13 +22,10 @@ export default function ShopsBrowsePage({
   shopProductCategories: Record<string, string[]>;
 }) {
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
 
-  const categories = useMemo(
-    () => collectCategoriesFromShopProductMap(shopProductCategories),
-    [shopProductCategories],
-  );
-  const categoryFilterActive = selectedCategory !== null;
+  const categoryFilterActive = isCategoryFilterActive(categoryFilter);
+  const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
   const q = query.trim();
 
   const totalShops = initialShops.filter((s) => (s as { is_active?: boolean }).is_active !== false).length;
@@ -66,10 +69,10 @@ export default function ShopsBrowsePage({
       </div>
 
       {/* Category filter bar */}
-      <CategoryFilterBar
-        categories={categories}
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
+      <CategoryBrowseSection
+        selection={categoryFilter}
+        onSelectionChange={setCategoryFilter}
+        showHeader={false}
       />
 
       <div className="space-y-4">
@@ -81,7 +84,7 @@ export default function ShopsBrowsePage({
                 {categoryFilterActive ? (
                   <span>
                     {" "}
-                    in <span className="font-semibold text-foreground">{selectedCategory}</span>
+                    in <span className="font-semibold text-foreground">{categoryFilterLabel}</span>
                   </span>
                 ) : null}
                 {" · "}
@@ -96,11 +99,11 @@ export default function ShopsBrowsePage({
             ) : (
               <>
                 Filtered by{" "}
-                <span className="font-semibold text-foreground">{selectedCategory}</span>
+                <span className="font-semibold text-foreground">{categoryFilterLabel}</span>
                 {" · "}
                 <button
                   type="button"
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => setCategoryFilter(EMPTY_CATEGORY_FILTER)}
                   className="font-semibold text-foreground underline-offset-2 hover:underline"
                 >
                   clear category
@@ -113,7 +116,7 @@ export default function ShopsBrowsePage({
         <ShopListRealtime
           initialShops={initialShops}
           shopProductCategories={shopProductCategories}
-          productCategoryFilter={selectedCategory}
+          categoryFilter={categoryFilter}
           searchQuery={query}
           gridClassName={browseShopGridClass}
         />

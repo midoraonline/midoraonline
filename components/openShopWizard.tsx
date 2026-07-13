@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiShops } from "@/lib/api";
+import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
 import { useAppSession } from "@/lib/state";
@@ -32,6 +33,7 @@ export default function OpenShopWizard() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [locationDisplay, setLocationDisplay] = useState("");
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
+  const [category, setCategory] = useState("");
 
   async function handleCreateShop(e: React.FormEvent) {
     e.preventDefault();
@@ -60,8 +62,9 @@ export default function OpenShopWizard() {
         logo_url: logoUrl.trim() || undefined,
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
-        location: locationDisplay.trim() ? { display: locationDisplay.trim() } : undefined,
+        location: locationDisplay.trim() && locationDisplay.trim() !== "Online Shop" ? { display: locationDisplay.trim() } : undefined,
         shop_type: shopType,
+        category: category.trim() || undefined,
         contacts: [],
         social_links: [],
       });
@@ -127,6 +130,17 @@ export default function OpenShopWizard() {
                 label="Upload logo"
                 previewUrl={logoUrl || undefined}
               />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-foreground/80">Shop category</label>
+              <div className="rounded-2xl border border-border bg-surface p-3">
+                <CategoryPicker
+                  value={category}
+                  onChange={setCategory}
+                  compact
+                  idPrefix="open-shop-category"
+                />
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">Shop type</label>

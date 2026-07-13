@@ -12,6 +12,7 @@ import {
   locationDisplay,
   platformLabel,
 } from "./shopUtils";
+import CategoryDisplay from "@/components/CategoryDisplay";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { whatsappDigits } from "@/lib/whatsappProduct";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -19,7 +20,6 @@ import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import ShopHeaderRating from "@/components/shop/ShopHeaderRating";
 import ShopContactButtons from "@/components/shop/ShopContactButtons";
-import ShopAvailabilityToggle from "@/components/shop/ShopAvailabilityToggle";
 
 function ShopLogo({ logoUrl, name }: { logoUrl?: string | null; name: string }) {
   if (logoUrl) {
@@ -306,7 +306,7 @@ export default async function ShopHeader({
         <div className="flex flex-wrap items-center justify-center gap-2">
           {categoryChipLabels.map((cat) => (
             <MetaChip key={cat} immersive={immersive}>
-              {cat}
+              <CategoryDisplay label={cat} variant="inline" immersive={immersive} />
             </MetaChip>
           ))}
           {shop.shop_type ? (
@@ -362,13 +362,6 @@ export default async function ShopHeader({
               Seller on Midora · Final sale happens in WhatsApp
             </p>
           )}
-
-      {/* Owner: toggle available_now */}
-      <ShopAvailabilityToggle
-        shopId={shop.id}
-        shopOwnerId={shop.owner_id}
-        availableNow={shop.available_now ?? false}
-      />
 
       {/* Promoted products */}
       {publishedProducts.filter((p) => p.boosted).length > 0 && (

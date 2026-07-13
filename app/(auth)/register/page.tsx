@@ -42,8 +42,13 @@ function RegisterPageInner() {
       setGoogleLoading(true);
       setError(null);
       try {
-        await apiAuth.exchangeGoogleCode({ code, state });
+        const tokens = await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
+        await fetch("/api/auth/set-cookies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tokens),
+        }).catch(() => {});
         notifyAuthChanged();
         router.replace("/");
       } catch (err) {
@@ -65,12 +70,17 @@ function RegisterPageInner() {
     setLoading(true);
     setError(null);
     try {
-      await apiAuth.register({
+      const tokens = await apiAuth.register({
         email,
         password,
         full_name: fullName,
         user_role: role,
       });
+      await fetch("/api/auth/set-cookies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tokens),
+      }).catch(() => {});
       notifyAuthChanged();
       router.push("/");
     } catch (err) {

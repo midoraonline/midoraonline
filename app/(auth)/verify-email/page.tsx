@@ -29,7 +29,12 @@ function VerifyEmailPageInner() {
       try {
         const res = await apiAuth.verifyEmail(token);
         if (cancelled) return;
-        // API sets cookies on the verify endpoint; rehydrate session.
+        // Mirror tokens to Next.js domain for SSR cookie access
+        await fetch("/api/auth/set-cookies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: res.access_token, refresh_token: res.refresh_token }),
+        }).catch(() => {});
         notifyAuthChanged();
         setStatus("success");
         setMessage(res.message || "Email verified successfully.");

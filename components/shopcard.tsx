@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CategoryDisplay from "@/components/CategoryDisplay";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import StarRating from "@/components/StarRating";
@@ -67,9 +68,9 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
               )}
             </div>
 
-            <p className="mt-0.5 text-[11px] font-medium text-muted sm:text-xs">
-              {shop.category}
-            </p>
+            <div className="mt-0.5">
+              <CategoryDisplay label={shop.category} variant="compact" />
+            </div>
 
             <div className="mt-1">
               {shop.rating != null && shop.rating > 0 ? (
@@ -121,8 +122,7 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
           )}
           {shop.viewCount != null && shop.viewCount > 0 && (
             <span className="inline-flex items-center gap-1 text-[10px] text-muted">
-              <MaterialSymbol name="visibility" className="!text-xs" />
-              {shop.viewCount}
+              <span>Views: {shop.viewCount}</span>
             </span>
           )}
         </div>

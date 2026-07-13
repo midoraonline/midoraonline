@@ -56,7 +56,7 @@ function ChatPageInner() {
         <button
           type="button"
           onClick={() => router.push("/login")}
-          className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white dm-focus"
+          className="dm-btn-accent dm-focus mt-4 rounded-xl px-5 py-2.5 text-sm font-semibold"
         >
           Sign in
         </button>

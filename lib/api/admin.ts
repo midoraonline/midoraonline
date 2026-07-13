@@ -335,3 +335,15 @@ export function reviewListing(listingId: string, action: "approve" | "reject", n
     { method: "POST" }
   );
 }
+
+export type AdminFeedback = {
+  id: string;
+  feedback_text: string;
+  created_at: string;
+  user_id?: string | null;
+  users?: { full_name?: string | null; email?: string | null } | null;
+};
+
+export function listFeedback(limit: number = 100) {
+  return apiFetch<{ items: AdminFeedback[] }>(`/api/v1/admin/feedback?limit=${limit}`);
+}
