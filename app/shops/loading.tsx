@@ -8,10 +8,10 @@ import ShopsBrowseSkeleton from "@/components/skeletons/ShopsBrowseSkeleton";
 export default function ShopsDirectoryLoading() {
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="border-b border-border bg-surface/80">
+      <div className="border-b border-primary/20 bg-primary text-primary-foreground">
         <div className="dm-container flex h-9 items-center justify-center sm:justify-between">
-          <div className="hidden items-center gap-4 text-xs text-muted sm:flex">
-            <span className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
+          <div className="hidden items-center gap-4 text-xs text-white/75 sm:flex">
+            <span className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
               <Mail className="size-3.5 text-accent" />
               midoraonline@gmail.com
             </span>
@@ -20,9 +20,9 @@ export default function ShopsDirectoryLoading() {
               Kampala, Uganda
             </span>
           </div>
-          <div className="text-xs text-muted">
+          <div className="text-xs text-white/80">
             Rent a shop for{" "}
-            <span className="font-semibold text-foreground">5,000 UGX/month</span>
+            <span className="font-semibold text-accent">5,000 UGX/month</span>
           </div>
         </div>
       </div>
