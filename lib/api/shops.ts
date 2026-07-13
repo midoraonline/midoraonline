@@ -231,7 +231,9 @@ export type CreateShopRequest = {
 };
 
 export function createShop(body: CreateShopRequest, token?: string | null) {
-  return apiFetch<Shop>("/api/v1/shops/", {
+  // No trailing slash — Next.js / proxies often strip it, which caused
+  // POST /shops/ → POST /shops and a FastAPI 405 Method Not Allowed.
+  return apiFetch<Shop>("/api/v1/shops", {
     method: "POST",
     token,
     body,
