@@ -181,10 +181,7 @@ export default function HomeLanding({ initialProducts }: Props) {
         browseAllHref="/products"
       />
 
-      <div className="mb-5 rounded-2xl border border-border bg-surface p-3 sm:p-4">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted">
-          Refine results
-        </p>
+      <div className="mb-5 rounded-2xl border border-border bg-surface px-3 py-3 sm:px-4">
         <ProductFilters products={products} filters={filters} onChange={setFilters} />
       </div>
 
