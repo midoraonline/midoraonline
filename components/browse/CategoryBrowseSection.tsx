@@ -30,27 +30,24 @@ export default function CategoryBrowseSection({
 }: Props) {
   const { tree } = useCategoryItems();
 
-  const activeParentSlug = useMemo(() => {
-    if (!selection.parentLabel) return null;
-    return tree.find((g) => g.parent.label === selection.parentLabel)?.parent.slug ?? null;
-  }, [selection.parentLabel, tree]);
-
   const activeGroup = useMemo(
-    () => tree.find((g) => g.parent.slug === activeParentSlug) ?? null,
-    [tree, activeParentSlug],
+    () => (selection.parentLabel ? tree.find((g) => g.parent.label === selection.parentLabel) ?? null : null),
+    [selection.parentLabel, tree],
   );
 
-  const parentActive = (label: string | null) =>
-    label === null
+  function isParentActive(label: string | null) {
+    return label === null
       ? !selection.parentLabel
       : selection.parentLabel === label && !selection.subcategoryLabel;
+  }
 
-  const parentSelected = (label: string | null) =>
-    label === null ? !selection.parentLabel : selection.parentLabel === label;
+  function isParentSelected(label: string | null) {
+    return label === null ? !selection.parentLabel : selection.parentLabel === label;
+  }
 
   return (
     <section className="mb-4 overflow-hidden rounded-xl border border-border bg-surface shadow-sm sm:mb-6 sm:rounded-2xl">
-      {showHeader ? (
+      {showHeader && (
         <div className="flex items-center justify-between gap-2 border-b border-border bg-primary px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
           <div className="min-w-0">
             <h2 className="font-display text-xs font-semibold tracking-tight text-white sm:text-sm">
@@ -60,18 +57,18 @@ export default function CategoryBrowseSection({
               Pick a category, then refine with subcategories
             </p>
           </div>
-          {browseAllHref ? (
+          {browseAllHref && (
             <Link
               href={browseAllHref}
               className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold text-white transition-colors hover:bg-accent-hover sm:px-3 sm:py-1.5 sm:text-[11px]"
             >
               Browse all
             </Link>
-          ) : null}
+          )}
         </div>
-      ) : null}
+      )}
 
-      {/* Parent categories */}
+      {/* Parent category orbs */}
       <div className="relative bg-surface px-2 py-3 sm:px-4 sm:py-4">
         <div
           className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-surface to-transparent sm:hidden"
@@ -85,8 +82,8 @@ export default function CategoryBrowseSection({
           <CategoryOrb
             label="All"
             icon={ALL_CATEGORIES_ICON}
-            selected={parentSelected(null)}
-            active={parentActive(null)}
+            selected={isParentSelected(null)}
+            active={isParentActive(null)}
             onClick={() => onSelectionChange(EMPTY_CATEGORY_FILTER)}
           />
 
@@ -95,22 +92,19 @@ export default function CategoryBrowseSection({
               key={parent.slug}
               label={parent.label}
               icon={resolveCategoryIcon(parent.label)}
-              selected={parentSelected(parent.label)}
-              active={parentSelected(parent.label) && !selection.subcategoryLabel}
+              selected={isParentSelected(parent.label)}
+              active={isParentActive(parent.label)}
               onClick={() =>
-                onSelectionChange({
-                  parentLabel: parent.label,
-                  subcategoryLabel: null,
-                })
+                onSelectionChange({ parentLabel: parent.label, subcategoryLabel: null })
               }
             />
           ))}
         </div>
       </div>
 
-      {/* Subcategories */}
+      {/* Subcategory chips — animated expand */}
       <AnimatePresence initial={false}>
-        {activeGroup && activeGroup.children.length > 0 ? (
+        {activeGroup && activeGroup.children.length > 0 && (
           <motion.div
             key={activeGroup.parent.slug}
             initial={{ height: 0, opacity: 0 }}
@@ -120,8 +114,9 @@ export default function CategoryBrowseSection({
             className="overflow-hidden border-t border-border"
           >
             <div className="bg-surface-subtle px-3 py-2.5 sm:px-4 sm:py-3">
+              {/* Subcategory section header */}
               <div className="mb-2 flex items-center gap-1.5 sm:mb-2.5 sm:gap-2">
-                <span className="flex size-6 items-center justify-center rounded-md bg-primary text-accent sm:size-7 sm:rounded-lg">
+                <span className="flex size-6 items-center justify-center rounded-md bg-primary sm:size-7 sm:rounded-lg">
                   <MaterialSymbol
                     name={resolveCategoryIcon(activeGroup.parent.label)}
                     className="!text-[13px] text-accent sm:!text-[15px]"
@@ -131,9 +126,14 @@ export default function CategoryBrowseSection({
                 <p className="text-[11px] font-semibold text-primary sm:text-xs">
                   {activeGroup.parent.label}
                 </p>
+                <span className="ml-auto text-[10px] text-muted">
+                  {activeGroup.children.length} subcategories
+                </span>
               </div>
 
+              {/* Subcategory chip list */}
               <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-2 sm:overflow-visible">
+                {/* "All [Parent]" chip */}
                 <SubcategoryChip
                   label={`All ${activeGroup.parent.label}`}
                   active={
@@ -164,39 +164,34 @@ export default function CategoryBrowseSection({
               </div>
             </div>
           </motion.div>
-        ) : null}
+        )}
       </AnimatePresence>
 
-      {/* Active filters */}
-      {isCategoryFilterActive(selection) ? (
+      {/* Active filter chips */}
+      {isCategoryFilterActive(selection) && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-subtle/60 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2.5">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
             Filtering
           </span>
-          {selection.parentLabel ? (
+
+          {selection.parentLabel && (
             <FilterChip
               label={selection.parentLabel}
-              onRemove={() =>
-                onSelectionChange({
-                  parentLabel: null,
-                  subcategoryLabel: null,
-                })
-              }
+              onRemove={() => onSelectionChange(EMPTY_CATEGORY_FILTER)}
               variant="parent"
             />
-          ) : null}
-          {selection.subcategoryLabel ? (
+          )}
+
+          {selection.subcategoryLabel && (
             <FilterChip
               label={selection.subcategoryLabel}
               onRemove={() =>
-                onSelectionChange({
-                  parentLabel: selection.parentLabel,
-                  subcategoryLabel: null,
-                })
+                onSelectionChange({ parentLabel: selection.parentLabel, subcategoryLabel: null })
               }
               variant="sub"
             />
-          ) : null}
+          )}
+
           <button
             type="button"
             onClick={() => onSelectionChange(EMPTY_CATEGORY_FILTER)}
@@ -205,10 +200,12 @@ export default function CategoryBrowseSection({
             Clear all
           </button>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
+
+// --- Sub-components ---
 
 function CategoryOrb({
   label,
@@ -234,7 +231,7 @@ function CategoryOrb({
           active
             ? "bg-primary shadow-md shadow-primary/20 ring-2 ring-accent ring-offset-1 ring-offset-surface"
             : selected
-              ? "bg-primary/5 ring-2 ring-accent/70 ring-offset-1 ring-offset-surface"
+              ? "bg-primary/5 ring-2 ring-accent/60 ring-offset-1 ring-offset-surface"
               : "border border-border bg-surface group-hover:border-border-strong group-hover:shadow-sm"
         }`}
       >
@@ -244,7 +241,7 @@ function CategoryOrb({
             active
               ? "text-accent"
               : selected
-                ? "text-primary"
+                ? "text-accent/70"
                 : "text-muted group-hover:text-foreground"
           }`}
           filled={active || selected}
@@ -281,7 +278,7 @@ function SubcategoryChip({
       className={`inline-flex h-8 shrink-0 snap-start items-center rounded-full border px-3 text-[11px] font-semibold transition-all sm:h-9 sm:px-3.5 sm:text-xs ${
         active
           ? "border-primary bg-primary text-white shadow-sm"
-          : "border-border bg-surface text-foreground/80 hover:border-accent/40 hover:bg-accent/[0.06] hover:text-primary"
+          : "border-border bg-surface text-foreground/75 hover:border-accent/40 hover:bg-accent/[0.06] hover:text-primary"
       }`}
     >
       {label}
@@ -311,10 +308,10 @@ function FilterChip({
       <button
         type="button"
         onClick={onRemove}
+        aria-label={`Remove ${label} filter`}
         className={`shrink-0 rounded-full p-0.5 transition-colors ${
           isSub ? "hover:bg-white/20" : "hover:bg-surface-subtle"
         }`}
-        aria-label={`Remove ${label} filter`}
       >
         <MaterialSymbol name="close" className="!text-[12px] sm:!text-[14px]" />
       </button>

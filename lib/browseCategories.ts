@@ -46,10 +46,20 @@ export function productMatchesCategoryFilter(
   if (!isCategoryFilterActive(selection)) return true;
 
   if (selection.subcategoryLabel) {
-    return (
-      catEquals(product.category, selection.subcategoryLabel) ||
-      catEquals(product.shop.category, selection.subcategoryLabel)
-    );
+    const sub = selection.subcategoryLabel;
+    // Direct label match
+    if (catEquals(product.category, sub) || catEquals(product.shop.category, sub)) return true;
+    // Also resolve the stored category string through the tree (handles compound values)
+    const prodParts = resolveCategoryParts(product.category, items);
+    if (catEquals(prodParts.subcategoryLabel, sub)) return true;
+    const shopParts = resolveCategoryParts(product.shop.category, items);
+    if (catEquals(shopParts.subcategoryLabel, sub)) return true;
+    // If both parent and subcategory match are selected, also match parent-labelled products
+    if (selection.parentLabel) {
+      if (catEquals(prodParts.parentLabel, selection.parentLabel) && !prodParts.subcategoryLabel) return true;
+      if (catEquals(shopParts.parentLabel, selection.parentLabel) && !shopParts.subcategoryLabel) return true;
+    }
+    return false;
   }
 
   const parentLabel = selection.parentLabel;
