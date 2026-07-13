@@ -31,19 +31,17 @@ export default function CategoryPicker({
   const [parentSlug, setParentSlug] = useState<string>("");
   const [subcategoryLabel, setSubcategoryLabel] = useState<string>("");
 
-  // Sync internal state from the incoming `value` prop (handles editing an existing record)
+  // Sync from prop when editing an existing value. Do NOT clear local parentSlug
+  // when value is "" — that happens after picking a parent that still needs a
+  // subcategory, and wiping parentSlug would hide the subcategory chips.
   useEffect(() => {
-    if (!value.trim()) {
-      setParentSlug("");
-      setSubcategoryLabel("");
-      return;
-    }
+    if (!value.trim()) return;
+
     if (resolved.parentLabel) {
       const parent = tree.find((g) => g.parent.label === resolved.parentLabel);
       if (parent) {
         setParentSlug(parent.parent.slug);
         setSubcategoryLabel(resolved.subcategoryLabel ?? "");
-        return;
       }
     }
   }, [value, resolved.parentLabel, resolved.subcategoryLabel, tree]);
@@ -58,20 +56,23 @@ export default function CategoryPicker({
   function handleParentChange(slug: string) {
     setParentSlug(slug);
     setSubcategoryLabel("");
+    if (!slug) {
+      onChange("");
+      return;
+    }
     const group = tree.find((g) => g.parent.slug === slug);
     if (!group) {
       onChange("");
       return;
     }
-    // If this parent has no subcategories, the parent label itself is the final value
+    // Parents without children are complete; otherwise wait for a subcategory.
     onChange(group.children.length === 0 ? group.parent.label : "");
   }
 
   function handleSubcategoryClick(label: string) {
     if (subcategoryLabel === label) {
-      // Clicking the active chip deselects it → fall back to parent-only
       setSubcategoryLabel("");
-      onChange(activeGroup?.parent.label ?? "");
+      onChange("");
     } else {
       setSubcategoryLabel(label);
       onChange(label);
@@ -86,18 +87,13 @@ export default function CategoryPicker({
     ? "h-9 w-full rounded-lg border border-neutral-200 bg-white px-2.5 pr-9 text-xs text-neutral-900 appearance-none focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
     : "h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 pr-10 text-sm text-neutral-900 appearance-none focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60";
 
-  // The subcategory is required when the parent has children but none is chosen yet.
-  // We use a hidden input with `required` to let the browser catch this, rather than
-  // putting `required` on the select (which causes false positives when the value is
-  // intentionally "" while waiting for a subcategory pick).
-  const needsSubcategory = parentSlug && hasChildren && !subcategoryLabel;
+  const needsSubcategory = Boolean(parentSlug && hasChildren && !subcategoryLabel);
 
   return (
     <div className={`space-y-3 ${className}`}>
-      {/* ── Step 1: parent category ── */}
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
-          Category {required && <span className="text-red-500 ml-0.5">*</span>}
+          Category {required ? <span className="ml-0.5 text-red-500">*</span> : null}
         </label>
         <div className="relative">
           <select
@@ -130,28 +126,29 @@ export default function CategoryPicker({
         </div>
       </div>
 
-      {/* ── Step 2: subcategory chips (only when parent has children) ── */}
-      {parentSlug && hasChildren && (
+      {parentSlug && hasChildren ? (
         <div className="space-y-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
           <div className="flex items-center gap-2">
-            <span className={labelClass}>Subcategory</span>
-            {needsSubcategory && (
+            <span className={labelClass}>
+              Subcategory {required ? <span className="text-red-500">*</span> : null}
+            </span>
+            {needsSubcategory ? (
               <span className="text-[10px] font-semibold text-orange-600">
                 ← pick one to continue
               </span>
-            )}
-            {subcategoryLabel && (
+            ) : null}
+            {subcategoryLabel ? (
               <button
                 type="button"
                 onClick={() => handleSubcategoryClick(subcategoryLabel)}
-                className="ml-auto text-[10px] font-semibold text-neutral-500 hover:text-red-600 transition-colors"
+                className="ml-auto text-[10px] font-semibold text-neutral-500 transition-colors hover:text-red-600"
               >
                 Clear
               </button>
-            )}
+            ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto sm:max-h-none">
             {children.map((child) => {
               const active = subcategoryLabel === child.label;
               return (
@@ -171,22 +168,20 @@ export default function CategoryPicker({
             })}
           </div>
 
-          {/* Hidden input so browser/form validation fires when subcategory is required but missing */}
-          {required && (
+          {required ? (
             <input
               aria-hidden
               tabIndex={-1}
-              style={{ opacity: 0, position: "absolute", height: 0, width: 0 }}
+              className="sr-only"
               value={subcategoryLabel}
               required
               readOnly
             />
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {/* ── Current selection breadcrumb ── */}
-      {parentSlug && activeGroup && (
+      {parentSlug && activeGroup ? (
         <div
           className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] leading-snug ${
             needsSubcategory
@@ -215,7 +210,7 @@ export default function CategoryPicker({
             ) : null}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

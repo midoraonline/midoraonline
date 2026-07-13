@@ -2,30 +2,38 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { listCategoryItems, type CategoryItem } from "@/lib/api/categories";
-import { CANONICAL_CATEGORY_LABELS, getCategoriesForFilter } from "@/lib/categories";
+import {
+  buildCanonicalCategoryItems,
+  categoryItemsHaveSubcategories,
+  getCategoriesForFilter,
+} from "@/lib/categories";
 
 let cachedItems: CategoryItem[] | null = null;
 let inflight: Promise<CategoryItem[]> | null = null;
 
-function fallbackItems(): CategoryItem[] {
-  return CANONICAL_CATEGORY_LABELS.map((label, i) => ({
-    slug: label.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    label,
-    sort_order: i + 1,
-    parent_slug: null,
-  }));
+function nestedFallback(): CategoryItem[] {
+  return buildCanonicalCategoryItems();
+}
+
+function normalizeItems(items: CategoryItem[]): CategoryItem[] {
+  if (items.length > 0 && categoryItemsHaveSubcategories(items)) {
+    return items;
+  }
+  return nestedFallback();
 }
 
 async function loadCategoryItems(): Promise<CategoryItem[]> {
-  if (cachedItems) return cachedItems;
+  if (cachedItems && categoryItemsHaveSubcategories(cachedItems)) {
+    return cachedItems;
+  }
   if (!inflight) {
     inflight = listCategoryItems()
       .then((items) => {
-        cachedItems = items.length > 0 ? items : fallbackItems();
+        cachedItems = normalizeItems(items);
         return cachedItems;
       })
       .catch(() => {
-        cachedItems = fallbackItems();
+        cachedItems = nestedFallback();
         return cachedItems;
       })
       .finally(() => {
@@ -36,8 +44,12 @@ async function loadCategoryItems(): Promise<CategoryItem[]> {
 }
 
 export function useCategoryItems() {
-  const [items, setItems] = useState<CategoryItem[]>(cachedItems ?? fallbackItems());
-  const [loading, setLoading] = useState(!cachedItems);
+  const [items, setItems] = useState<CategoryItem[]>(
+    () => cachedItems ?? nestedFallback(),
+  );
+  const [loading, setLoading] = useState(
+    !(cachedItems && categoryItemsHaveSubcategories(cachedItems)),
+  );
   const tree = useMemo(() => getCategoriesForFilter(items), [items]);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { apiFetch } from "./base";
 import {
-  CANONICAL_CATEGORY_LABELS,
+  buildCanonicalCategoryItems,
+  categoryItemsHaveSubcategories,
   getCategoriesForFilter,
   type CategoryLabel,
   type CategoryTreeGroup,
@@ -17,28 +18,34 @@ export type CategoryListResponse = {
   items: CategoryItem[];
 };
 
+function nestedFallbackItems(): CategoryItem[] {
+  return buildCanonicalCategoryItems();
+}
+
+/**
+ * Prefer API items only when they include subcategories.
+ * Flat parent-only payloads (old DB / incomplete migration) fall back to the
+ * canonical nested tree so pickers always show subcategory chips.
+ */
 export async function listCategoryItems(): Promise<CategoryItem[]> {
   try {
     const res = await apiFetch<CategoryListResponse>("/api/v1/categories/");
-    if (res.items.length > 0) {
+    if (res.items.length > 0 && categoryItemsHaveSubcategories(res.items)) {
       return res.items.slice().sort((a, b) => a.sort_order - b.sort_order);
     }
   } catch {
-    /* use static fallback */
+    /* use nested fallback */
   }
-  return CANONICAL_CATEGORY_LABELS.map((label, i) => ({
-    slug: label.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    label,
-    sort_order: i + 1,
-    parent_slug: null,
-  }));
+  return nestedFallbackItems();
 }
 
 export async function listCategories(): Promise<CategoryLabel[]> {
   const items = await listCategoryItems();
-  const labels = items.map((c) => c.label);
-  if (labels.length > 0) return labels as CategoryLabel[];
-  return [...CANONICAL_CATEGORY_LABELS];
+  const parents = items.filter((c) => !c.parent_slug).map((c) => c.label);
+  if (parents.length > 0) return parents as CategoryLabel[];
+  return nestedFallbackItems()
+    .filter((c) => !c.parent_slug)
+    .map((c) => c.label) as CategoryLabel[];
 }
 
 export async function listCategoryTree(): Promise<CategoryTreeGroup[]> {

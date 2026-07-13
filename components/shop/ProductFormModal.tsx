@@ -18,6 +18,8 @@ import FormModal, {
 import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
 import { X } from "lucide-react";
+import { resolveCategoryParts } from "@/lib/categories";
+import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 
 function MediaGrid({
   urls,
@@ -151,6 +153,7 @@ export default function ProductFormModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const { items: categoryItems, tree: categoryTree } = useCategoryItems();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -160,6 +163,12 @@ export default function ProductFormModal({
     }
     if (!draft.category.trim()) {
       setError("Please select a category and subcategory.");
+      return;
+    }
+    const parts = resolveCategoryParts(draft.category, categoryItems);
+    const parentGroup = categoryTree.find((g) => g.parent.label === parts.parentLabel);
+    if (parentGroup && parentGroup.children.length > 0 && !parts.subcategoryLabel) {
+      setError("Please pick a subcategory for this category.");
       return;
     }
     setSaving(true);
