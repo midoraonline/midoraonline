@@ -402,6 +402,7 @@ export type SimilarProduct = {
   shop_whatsapp?: string | null;
   shop_is_active?: boolean | null;
   shop_trust_badges?: string[];
+  shop_available_now?: boolean | null;
 };
 
 export function getSimilarProducts(productId: string, limit = 8) {
@@ -457,6 +458,7 @@ export type LikedProduct = {
   owner_id?: string | null;
   shop_is_active?: boolean | null;
   shop_trust_badges?: string[];
+  shop_available_now?: boolean | null;
 };
 
 export type LikedProductsResponse = {
