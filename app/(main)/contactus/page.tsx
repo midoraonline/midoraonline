@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, FormEvent } from "react";
 import { apiContactus } from "@/lib/api";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -38,7 +39,23 @@ export default function ContactUs() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 sm:space-y-10">
+    <>
+      {/* Hero banner — sits at dm-container root level for true full-bleed */}
+      <div className="relative -mx-4 -mt-6 h-44 overflow-hidden sm:-mx-6 sm:-mt-8 sm:h-56 lg:-mx-8 lg:-mt-10 lg:h-64 xl:-mx-12">
+        <Image src="/contact_banner.png" alt="" fill className="object-cover object-center" priority />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
+        <div className="relative z-10 flex h-full flex-col justify-center dm-container">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Get in touch</p>
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
+            Contact Us
+          </h1>
+          <p className="mt-2 max-w-md text-sm text-white/75">
+            Questions about your shop, subscriptions, or partnerships? We&apos;re here to help.
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-5xl space-y-8 pt-8 sm:space-y-10 sm:pt-10">
       <section className="dm-card p-6 sm:p-8 lg:p-10">
         <p className="text-sm font-semibold text-muted">Contact</p>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -123,6 +140,7 @@ export default function ContactUs() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }
