@@ -9,7 +9,7 @@ export default function MidoraInfoChatWidget() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-6 z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
+    <div className="z-fab fixed bottom-20 md:bottom-6 right-6 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
       <AnimatePresence>
         {open && (
           <motion.div

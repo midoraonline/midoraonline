@@ -24,7 +24,7 @@ export default function HomeFeedbackWidget() {
         whileTap={{ scale: 0.96 }}
         type="button"
         onClick={() => setOpen(true)}
-        className="dm-btn-accent fixed right-0 top-1/2 z-40 flex -translate-y-1/2 cursor-pointer select-none items-center gap-1 rounded-l-2xl px-2.5 py-3.5 text-[10px] font-bold uppercase tracking-wider [writing-mode:vertical-lr] dm-focus"
+        className="dm-btn-accent z-fab fixed right-0 top-1/2 flex -translate-y-1/2 cursor-pointer select-none items-center gap-1 rounded-l-2xl px-2.5 py-3.5 text-[10px] font-bold uppercase tracking-wider [writing-mode:vertical-lr] dm-focus"
       >
         <MaterialSymbol name="rate_review" className="!text-sm mb-1" />
         <span>Feedback</span>
