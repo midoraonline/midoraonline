@@ -518,7 +518,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
 
       {/* ── Mobile drawer ── */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 sm:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-modal sm:hidden" role="dialog" aria-modal="true">
           <button
             aria-label="Close filters"
             onClick={() => setDrawerOpen(false)}

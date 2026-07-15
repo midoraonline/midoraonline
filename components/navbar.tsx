@@ -253,7 +253,7 @@ export default function Navbar({
   return (
     <>
       <PresenceHeartbeat />
-      <header className="sticky top-0 z-50 border-b border-border bg-background">
+      <header className="sticky top-0 z-sticky border-b border-border bg-background">
       <div ref={menuRef}>
         <div className="dm-container flex h-14 items-center gap-3 sm:gap-5">
           {/* Logo */}
@@ -476,7 +476,7 @@ export default function Navbar({
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-20 md:bottom-6 left-6 z-40 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
+          className="z-fab fixed bottom-20 md:bottom-6 left-6 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
           title="Back to Top"
         >
           <MaterialSymbol name="arrow_upward" className="!text-lg" />

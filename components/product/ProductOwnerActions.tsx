@@ -133,7 +133,7 @@ export default function ProductOwnerActions({
       </div>
 
       {discountModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-2xl">
             <h3 className="text-sm font-semibold mb-4">
               {isDiscounted ? "Edit Discount" : "Set Discount"}

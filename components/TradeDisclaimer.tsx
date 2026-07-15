@@ -17,7 +17,7 @@ export default function TradeDisclaimer({ onConfirm, type, children }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={() => setOpen(false)}
     >
       <div
