@@ -7,18 +7,19 @@ import ProductsBrowsePage from "@/components/product/ProductsBrowsePage";
 import ProductsBrowseSkeleton from "@/components/skeletons/ProductsBrowseSkeleton";
 import { loadLatestFeed } from "@/lib/productFeed";
 
-async function ProductsContent({ initialQuery }: { initialQuery: string }) {
+async function ProductsContent({ initialQuery, initialCategory }: { initialQuery: string; initialCategory: string }) {
   const items = await loadLatestFeed();
-  return <ProductsBrowsePage items={items} initialQuery={initialQuery} />;
+  return <ProductsBrowsePage items={items} initialQuery={initialQuery} initialCategory={initialCategory} />;
 }
 
 export default async function ProductListing({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; category?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, category } = await searchParams;
   const initialQuery = q?.trim() ?? "";
+  const initialCategory = category?.trim() ?? "";
 
   return (
     <>
@@ -37,7 +38,7 @@ export default async function ProductListing({
         </div>
       </div>
       <Suspense fallback={<ProductsBrowseSkeleton />}>
-        <ProductsContent initialQuery={initialQuery} />
+        <ProductsContent initialQuery={initialQuery} initialCategory={initialCategory} />
       </Suspense>
     </>
   );

@@ -17,6 +17,7 @@ import {
 import { apiShops } from "@/lib/api";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
+import { getListingEventStats, type ListingEventStats } from "@/lib/api/listingEvents";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -35,6 +36,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   const [engagement, setEngagement] = useState<ShopEngagement | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [shopProfile, setShopProfile] = useState<Shop | null>(null);
+  const [eventStatsMap, setEventStatsMap] = useState<Map<string, ListingEventStats>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,8 +47,19 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     try {
       const dash = await apiShops.getShopDashboard(shop.id);
       setEngagement(dash.engagement);
-      setProducts(dash.products ?? []);
+      const prods = dash.products ?? [];
+      setProducts(prods);
       setShopProfile(dash.shop as Shop);
+
+      const statResults = await Promise.all(
+        prods.map((p) => getListingEventStats(p.id).catch(() => null))
+      );
+      const map = new Map<string, ListingEventStats>();
+      prods.forEach((p, i) => {
+        const s = statResults[i];
+        if (s) map.set(p.id, s);
+      });
+      setEventStatsMap(map);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load analytics");
     } finally {
@@ -75,6 +88,33 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       { name: "Messages", value: Number(engagement?.messages ?? 0) },
     ];
   }, [engagement, shopProfile]);
+
+  const listingEventTotals = useMemo(() => {
+    let callClicks = 0, saves = 0, shares = 0;
+    for (const s of eventStatsMap.values()) {
+      callClicks += s.call_clicks;
+      saves += s.saves;
+      shares += s.shares;
+    }
+    return { callClicks, saves, shares };
+  }, [eventStatsMap]);
+
+  const listingEventRows = useMemo(() => {
+    return [...products]
+      .map((p) => {
+        const s = eventStatsMap.get(p.id);
+        return {
+          name: p.title.length > 26 ? `${p.title.slice(0, 24)}…` : p.title,
+          fullTitle: p.title,
+          callClicks: s?.call_clicks ?? 0,
+          saves: s?.saves ?? 0,
+          shares: s?.shares ?? 0,
+        };
+      })
+      .filter((r) => r.callClicks > 0 || r.saves > 0 || r.shares > 0)
+      .sort((a, b) => (b.callClicks + b.saves + b.shares) - (a.callClicks + a.saves + a.shares))
+      .slice(0, 12);
+  }, [products, eventStatsMap]);
 
   const productViewRows = useMemo(() => {
     return [...products]
@@ -186,6 +226,28 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
                 </p>
               </div>
             ))}
+            {(listingEventTotals.callClicks > 0 || listingEventTotals.saves > 0 || listingEventTotals.shares > 0) && (
+              <>
+                <div className="dm-card border-foreground/[0.06] p-5 sm:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Call clicks</p>
+                  <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight" style={{ color: ACCENT[0] }}>
+                    {formatNum(listingEventTotals.callClicks)}
+                  </p>
+                </div>
+                <div className="dm-card border-foreground/[0.06] p-5 sm:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Saves</p>
+                  <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight" style={{ color: ACCENT[1] }}>
+                    {formatNum(listingEventTotals.saves)}
+                  </p>
+                </div>
+                <div className="dm-card border-foreground/[0.06] p-5 sm:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Shares</p>
+                  <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight" style={{ color: ACCENT[2] }}>
+                    {formatNum(listingEventTotals.shares)}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           <section className="dm-card p-5 sm:p-8">
@@ -406,6 +468,45 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
                       }
                     />
                     <Bar dataKey="messages" fill="#4a6767" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          )}
+
+          {listingEventRows.length > 0 && (
+            <section className="dm-card p-5 sm:p-8">
+              <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+                Listing events
+              </h2>
+              <p className="mt-1 text-xs text-muted sm:text-sm">
+                Call clicks, saves, and shares per listing.
+              </p>
+              <div
+                className="mt-6 w-full"
+                style={{ height: Math.max(240, listingEventRows.length * 52) }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={listingEventRows}
+                    margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(102, 121, 143, 0.2)" />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={118}
+                      tick={{ fontSize: 10 }}
+                      stroke="rgba(42,51,49,0.45)"
+                    />
+                    <Tooltip
+                      labelFormatter={(_, payload) => payload?.[0]?.payload?.fullTitle ?? ""}
+                    />
+                    <Bar dataKey="callClicks" name="Call clicks" fill="#4a6767" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="saves" name="Saves" fill="#66798f" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="shares" name="Shares" fill="#757779" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

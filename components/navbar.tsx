@@ -12,6 +12,7 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import PresenceHeartbeat from "@/components/PresenceHeartbeat";
+import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 
 import { LogOut } from "lucide-react";
 
@@ -253,6 +254,8 @@ export default function Navbar({
       : "/customer";
   const shopSlug = session.ownedShopSlugs?.[0] ?? null;
 
+  const { tree: categoryTree } = useCategoryItems();
+
 
 
   const onChatPage = pathname === "/chat";
@@ -290,17 +293,64 @@ export default function Navbar({
           <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
             {navItems.map((item) => {
               const active = activeHref !== null && item.href === activeHref;
+              const linkClass = [
+                "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors dm-focus",
+                active ? "text-accent" : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground",
+              ].join(" ");
+
+              if (item.href === "/products" && categoryTree.length > 0) {
+                return (
+                  <div key={item.href} className="group relative">
+                    <Link href={item.href} className={`${linkClass} inline-flex items-center gap-0.5`}>
+                      {item.label}
+                      <MaterialSymbol name="expand_more" className="!text-base transition-transform duration-200 group-hover:rotate-180" />
+                    </Link>
+                    {/* Mega-menu — invisible by default, visible on group hover */}
+                    <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 pt-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
+                      <div className="w-[680px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-background p-5 shadow-xl">
+                        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted">Browse by category</p>
+                        <div className="grid grid-cols-4 gap-x-5 gap-y-4">
+                          {categoryTree.slice(0, 16).map((group) => (
+                            <div key={group.parent.slug}>
+                              <Link
+                                href={`/products?category=${encodeURIComponent(group.parent.label)}`}
+                                className="text-xs font-semibold text-foreground/90 transition-colors hover:text-accent"
+                              >
+                                {group.parent.label}
+                              </Link>
+                              {group.children.length > 0 && (
+                                <ul className="mt-1.5 space-y-1">
+                                  {group.children.slice(0, 4).map((child) => (
+                                    <li key={child.slug}>
+                                      <Link
+                                        href={`/products?category=${encodeURIComponent(child.label)}`}
+                                        className="text-xs text-muted transition-colors hover:text-foreground"
+                                      >
+                                        {child.label}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 border-t border-border pt-3">
+                          <Link
+                            href="/products"
+                            className="text-xs font-semibold text-accent transition-colors hover:text-accent/80"
+                          >
+                            View all products →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={[
-                    "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors dm-focus",
-                    active
-                      ? "text-accent"
-                      : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground",
-                  ].join(" ")}
-                >
+                <Link key={item.href} href={item.href} className={linkClass}>
                   {item.label}
                 </Link>
               );
@@ -473,6 +523,25 @@ export default function Navbar({
                 );
               })}
             </div>
+
+            {/* Mobile: browse by category */}
+            {categoryTree.length > 0 && (
+              <div className="mt-2 border-t border-border px-2 pt-3">
+                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted">Browse by category</p>
+                <div className="grid grid-cols-2 gap-0.5">
+                  {categoryTree.slice(0, 12).map((group) => (
+                    <Link
+                      key={group.parent.slug}
+                      href={`/products?category=${encodeURIComponent(group.parent.label)}`}
+                      onClick={() => setOpen(false)}
+                      className="rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
+                    >
+                      {group.parent.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Mobile: merchant-aware CTA */}
             {session.isAuthenticated ? (

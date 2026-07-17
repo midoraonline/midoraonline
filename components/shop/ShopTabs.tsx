@@ -16,6 +16,7 @@ export default function ShopTabs({
   concierge,
   shopSlug,
   shopId,
+  shopType,
 }: {
   products: ReactNode;
   about: ReactNode | null;
@@ -24,11 +25,13 @@ export default function ShopTabs({
   concierge: ReactNode;
   shopSlug: string;
   shopId: string;
+  shopType?: string | null;
 }) {
   const session = useAppSession();
   const canManage = canManageShopStorefront(session, shopId);
+  const productsLabel = shopType === "service" ? "Services" : "Products";
   const tabs: { id: TabId; label: string; content: ReactNode }[] = [
-    { id: "products", label: "Products", content: products },
+    { id: "products", label: productsLabel, content: products },
   ];
   if (about) tabs.push({ id: "about", label: "About", content: about });
   if (contacts) tabs.push({ id: "contacts", label: "Contacts", content: contacts });
