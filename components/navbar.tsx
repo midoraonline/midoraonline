@@ -20,12 +20,14 @@ function ProfileDropdown({
   initials,
   dashboardHref,
   role,
+  shopSlug,
   onNavigate,
 }: {
   displayName: string;
   initials: string;
   dashboardHref: string;
   role: string | null;
+  shopSlug?: string | null;
   onNavigate?: () => void;
 }) {
   const [ddOpen, setDdOpen] = useState(false);
@@ -91,6 +93,17 @@ function ProfileDropdown({
               {role === "admin" ? "Admin Panel" : role === "merchant" ? "Shop Dashboard" : "My Account"}
             </Link>
             
+            {/* View my shop link for merchants who have a shop */}
+            {role === "merchant" && shopSlug && (
+              <Link
+                href={`/shops/${shopSlug}`}
+                onClick={close}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+              >
+                <MaterialSymbol name="storefront" className="!text-base text-muted shrink-0" />
+                View my shop
+              </Link>
+            )}
             {/* Show Orders only for customers, or maybe merchants who buy, but primarily customers */}
             {role !== "admin" && (
               <Link
@@ -238,6 +251,7 @@ export default function Navbar({
       : role === "merchant"
       ? "/merchant"
       : "/customer";
+  const shopSlug = session.ownedShopSlugs?.[0] ?? null;
 
 
 
@@ -363,13 +377,20 @@ export default function Navbar({
                     </span>
                   )}
                 </Link>
-                {/* Create Shop — shown when user has no shops */}
-                {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
+                {/* Merchant-aware CTA */}
+                {role === "merchant" && shopSlug ? (
+                  <Link
+                    href={`/shops/${shopSlug}`}
+                    className="hidden rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                  >
+                    Go to my shop
+                  </Link>
+                ) : (!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
                     className="hidden rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
                   >
-                    Create Shop
+                    Open a shop
                   </Link>
                 ) : null}
               </>
@@ -381,6 +402,7 @@ export default function Navbar({
                 initials={initials}
                 dashboardHref={dashboardHref}
                 role={role}
+                shopSlug={shopSlug}
                 onNavigate={() => setOpen(false)}
               />
             ) : authLoading ? (
@@ -452,17 +474,26 @@ export default function Navbar({
               })}
             </div>
 
-            {/* Mobile: create shop — shown when logged in */}
+            {/* Mobile: merchant-aware CTA */}
             {session.isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-0.5 px-2">
-                {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
+                {role === "merchant" && shopSlug ? (
+                  <Link
+                    href={`/shops/${shopSlug}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
+                  >
+                    <MaterialSymbol name="storefront" className="!text-lg" />
+                    Go to my shop
+                  </Link>
+                ) : (!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
                   >
                     <MaterialSymbol name="store" className="!text-lg" />
-                    Create Shop
+                    Open a shop
                   </Link>
                 ) : null}
               </div>

@@ -121,7 +121,7 @@ export default function ShopActions({
       {canManage && (
         <Link
           href={`/shops/${shopSlug}/edit`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-2.5 py-1.5 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-500/20 hover:border-orange-500/50 dm-focus"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:border-border-strong hover:bg-foreground/[0.04] hover:text-foreground dm-focus"
           title="Edit shop"
           aria-label="Edit shop"
         >

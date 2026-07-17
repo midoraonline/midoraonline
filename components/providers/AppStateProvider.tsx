@@ -14,9 +14,11 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
     try {
       const user = await apiAuth.me();
       let ownedShopIds: string[] = [];
+      let ownedShopSlugs: string[] = [];
       try {
         const mine = await apiShops.myShops();
         ownedShopIds = mine.items.map((s) => s.id);
+        ownedShopSlugs = mine.items.map((s) => s.slug);
       } catch {
         /* non-merchants or API error */
       }
@@ -25,6 +27,7 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
         isAuthenticated: true,
         user,
         ownedShopIds,
+        ownedShopSlugs,
         profileError: null,
       });
     } catch {
@@ -33,6 +36,7 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
         isAuthenticated: false,
         user: null,
         ownedShopIds: [],
+        ownedShopSlugs: [],
         profileError: null,
       });
     }

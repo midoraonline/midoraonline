@@ -6,6 +6,7 @@ export type AppSession = {
   isAuthenticated: boolean;
   user: MeResponse | null | undefined;
   ownedShopIds: string[];
+  ownedShopSlugs: string[];
   profileError: string | null;
 };
 
@@ -14,6 +15,7 @@ const initialSession: AppSession = {
   isAuthenticated: false,
   user: null,
   ownedShopIds: [],
+  ownedShopSlugs: [],
   profileError: null,
 };
 
@@ -35,6 +37,7 @@ export function getSessionState(): AppSession {
     isAuthenticated: s.isAuthenticated,
     user: s.user,
     ownedShopIds: s.ownedShopIds,
+    ownedShopSlugs: s.ownedShopSlugs,
     profileError: s.profileError,
   };
 }

@@ -290,7 +290,7 @@ export default function ProductFormModal({
 
           <div className="space-y-1.5">
             <label className={formLabelClass}>
-              Discount price{" "}
+              Sale price{" "}
               <span className="font-normal text-neutral-400">(optional)</span>
             </label>
             <input
