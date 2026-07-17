@@ -24,9 +24,11 @@ import { homeFeedProductToCard } from "@/lib/productCardMap";
 export default function ProductsBrowsePage({
   items,
   initialQuery = "",
+  initialCategory = "",
 }: {
   items: ProductCardData[];
   initialQuery?: string;
+  initialCategory?: string;
 }) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
@@ -41,6 +43,23 @@ export default function ProductsBrowsePage({
     const urlQ = searchParams.get("q")?.trim() ?? "";
     setQuery((prev) => (urlQ !== prev ? urlQ : prev));
   }, [searchParams]);
+
+  // Pre-select category from ?category= URL param once items are loaded
+  useEffect(() => {
+    const urlCat = (searchParams.get("category")?.trim() || initialCategory?.trim() || "").toLowerCase();
+    if (!urlCat || !categoryItems.length) return;
+    const match = categoryItems.find(
+      (c) => c.label.toLowerCase() === urlCat || c.slug === urlCat
+    );
+    if (!match) return;
+    if (match.parent_slug) {
+      const parent = categoryItems.find((c) => c.slug === match.parent_slug);
+      setCategoryFilter({ parentLabel: parent?.label ?? null, subcategoryLabel: match.label });
+    } else {
+      setCategoryFilter({ parentLabel: match.label, subcategoryLabel: null });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryItems, searchParams]);
 
   const q = query.trim();
   const categoryFilterActive = isCategoryFilterActive(categoryFilter);

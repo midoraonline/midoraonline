@@ -68,6 +68,15 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
     setProducts(initialProducts);
   }, [initialProducts]);
 
+  // When ownership is confirmed, refetch products client-side so unpublished/pending ones appear.
+  useEffect(() => {
+    if (!isOwner) return;
+    apiProducts.listShopProducts(shop.id).then((res) => {
+      if (res.items?.length) setProducts(res.items);
+    }).catch(() => { /* ignore */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner, shop.id]);
+
   useRealtimeTable(
     {
       channel: `products:shop:${shop.id}`,
@@ -85,7 +94,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
       }
       const row = payload.new as Product | undefined;
       if (!row || !row.id) return;
-      if (row.is_published === false) {
+      if (row.is_published === false && !isOwner) {
         setProducts((prev) => prev.filter((p) => p.id !== row.id));
         return;
       }

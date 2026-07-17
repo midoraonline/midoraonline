@@ -133,6 +133,7 @@ export default async function ShopDetails({
       concierge={conciergeSection}
       shopSlug={shop.slug}
       shopId={shop.id}
+      shopType={shop.shop_type}
     />
   );
 }

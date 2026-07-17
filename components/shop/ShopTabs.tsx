@@ -16,6 +16,7 @@ export default function ShopTabs({
   concierge,
   shopSlug,
   shopId,
+  shopType,
 }: {
   products: ReactNode;
   about: ReactNode | null;
@@ -24,11 +25,13 @@ export default function ShopTabs({
   concierge: ReactNode;
   shopSlug: string;
   shopId: string;
+  shopType?: string | null;
 }) {
   const session = useAppSession();
   const canManage = canManageShopStorefront(session, shopId);
+  const productsLabel = shopType === "service" ? "Services" : "Products";
   const tabs: { id: TabId; label: string; content: ReactNode }[] = [
-    { id: "products", label: "Products", content: products },
+    { id: "products", label: productsLabel, content: products },
   ];
   if (about) tabs.push({ id: "about", label: "About", content: about });
   if (contacts) tabs.push({ id: "contacts", label: "Contacts", content: contacts });
@@ -62,15 +65,8 @@ export default function ShopTabs({
           {canManage ? (
             <div className="ml-auto flex items-center gap-1">
               <Link
-                href={`/shops/${shopSlug}/edit`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-500/20 hover:border-orange-500/50 transition-colors"
-              >
-                <MaterialSymbol name="edit" className="!text-sm" />
-                <span className="hidden sm:inline">Edit</span>
-              </Link>
-              <Link
                 href={`/shops/${shopSlug}/analytics`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-500/20 hover:border-orange-500/50 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground/70 hover:border-border-strong hover:bg-foreground/[0.04] hover:text-foreground transition-colors"
               >
                 <MaterialSymbol name="analytics" className="!text-sm" />
                 <span className="hidden sm:inline">Analytics</span>

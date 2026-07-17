@@ -293,6 +293,26 @@ export default async function ShopHeader({
         )}
       </div>
 
+      {/* Available now indicator — shown when shop explicitly sets availability status */}
+      {shop.available_now != null && (
+        <div className="flex justify-center">
+          {shop.available_now ? (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${immersive ? "bg-emerald-500/20 text-emerald-300" : "bg-emerald-500/10 text-emerald-700"}`}>
+              <span className="relative flex size-1.5 shrink-0">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+              </span>
+              Available now
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${immersive ? "bg-white/10 text-white/50" : "bg-foreground/[0.05] text-muted"}`}>
+              <span className="size-1.5 shrink-0 rounded-full bg-current opacity-50" />
+              Currently offline
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Rating */}
       <div className={`flex justify-center ${immersive ? "drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]" : ""}`}
         style={immersive ? { filter: "brightness(1.2)" } : undefined}>

@@ -11,6 +11,7 @@ export function useAppSession(): AppSession {
       isAuthenticated: s.isAuthenticated,
       user: s.user,
       ownedShopIds: s.ownedShopIds,
+      ownedShopSlugs: s.ownedShopSlugs,
       profileError: s.profileError,
     }))
   );

@@ -114,6 +114,8 @@ function Sidebar({
   pathname,
   accent,
   roleLabel,
+  returnHref,
+  returnLabel,
   onItemClick,
 }: {
   navItems: DashboardNavItem[];
@@ -121,6 +123,8 @@ function Sidebar({
   pathname: string;
   accent: { active: string; pill: string };
   roleLabel: string;
+  returnHref: string;
+  returnLabel: string;
   onItemClick?: () => void;
 }) {
   return (
@@ -153,6 +157,20 @@ function Sidebar({
           </>
         )}
       </nav>
+
+      {/* Back to site */}
+      <div className="mx-3 mt-2 border-t border-border py-3">
+        <Link
+          href={returnHref}
+          onClick={onItemClick}
+          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-muted transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          {returnLabel}
+        </Link>
+      </div>
     </div>
   );
 }
@@ -240,6 +258,8 @@ export default function DashboardShell({
             pathname={pathname}
             accent={accent}
             roleLabel={roleLabel}
+            returnHref={returnHref}
+            returnLabel={returnLabel}
           />
         </aside>
 
@@ -258,6 +278,8 @@ export default function DashboardShell({
                 pathname={pathname}
                 accent={accent}
                 roleLabel={roleLabel}
+                returnHref={returnHref}
+                returnLabel={returnLabel}
                 onItemClick={() => setDrawerOpen(false)}
               />
             </aside>

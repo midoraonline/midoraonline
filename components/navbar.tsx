@@ -12,6 +12,7 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import PresenceHeartbeat from "@/components/PresenceHeartbeat";
+import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 
 import { LogOut } from "lucide-react";
 
@@ -20,12 +21,14 @@ function ProfileDropdown({
   initials,
   dashboardHref,
   role,
+  shopSlug,
   onNavigate,
 }: {
   displayName: string;
   initials: string;
   dashboardHref: string;
   role: string | null;
+  shopSlug?: string | null;
   onNavigate?: () => void;
 }) {
   const [ddOpen, setDdOpen] = useState(false);
@@ -91,6 +94,17 @@ function ProfileDropdown({
               {role === "admin" ? "Admin Panel" : role === "merchant" ? "Shop Dashboard" : "My Account"}
             </Link>
             
+            {/* View my shop link for merchants who have a shop */}
+            {role === "merchant" && shopSlug && (
+              <Link
+                href={`/shops/${shopSlug}`}
+                onClick={close}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+              >
+                <MaterialSymbol name="storefront" className="!text-base text-muted shrink-0" />
+                View my shop
+              </Link>
+            )}
             {/* Show Orders only for customers, or maybe merchants who buy, but primarily customers */}
             {role !== "admin" && (
               <Link
@@ -238,6 +252,9 @@ export default function Navbar({
       : role === "merchant"
       ? "/merchant"
       : "/customer";
+  const shopSlug = session.ownedShopSlugs?.[0] ?? null;
+
+  const { tree: categoryTree } = useCategoryItems();
 
 
 
@@ -276,17 +293,64 @@ export default function Navbar({
           <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
             {navItems.map((item) => {
               const active = activeHref !== null && item.href === activeHref;
+              const linkClass = [
+                "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors dm-focus",
+                active ? "text-accent" : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground",
+              ].join(" ");
+
+              if (item.href === "/products" && categoryTree.length > 0) {
+                return (
+                  <div key={item.href} className="group relative">
+                    <Link href={item.href} className={`${linkClass} inline-flex items-center gap-0.5`}>
+                      {item.label}
+                      <MaterialSymbol name="expand_more" className="!text-base transition-transform duration-200 group-hover:rotate-180" />
+                    </Link>
+                    {/* Mega-menu — invisible by default, visible on group hover */}
+                    <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 pt-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
+                      <div className="w-[680px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-background p-5 shadow-xl">
+                        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted">Browse by category</p>
+                        <div className="grid grid-cols-4 gap-x-5 gap-y-4">
+                          {categoryTree.slice(0, 16).map((group) => (
+                            <div key={group.parent.slug}>
+                              <Link
+                                href={`/products?category=${encodeURIComponent(group.parent.label)}`}
+                                className="text-xs font-semibold text-foreground/90 transition-colors hover:text-accent"
+                              >
+                                {group.parent.label}
+                              </Link>
+                              {group.children.length > 0 && (
+                                <ul className="mt-1.5 space-y-1">
+                                  {group.children.slice(0, 4).map((child) => (
+                                    <li key={child.slug}>
+                                      <Link
+                                        href={`/products?category=${encodeURIComponent(child.label)}`}
+                                        className="text-xs text-muted transition-colors hover:text-foreground"
+                                      >
+                                        {child.label}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 border-t border-border pt-3">
+                          <Link
+                            href="/products"
+                            className="text-xs font-semibold text-accent transition-colors hover:text-accent/80"
+                          >
+                            View all products →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={[
-                    "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors dm-focus",
-                    active
-                      ? "text-accent"
-                      : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground",
-                  ].join(" ")}
-                >
+                <Link key={item.href} href={item.href} className={linkClass}>
                   {item.label}
                 </Link>
               );
@@ -363,13 +427,20 @@ export default function Navbar({
                     </span>
                   )}
                 </Link>
-                {/* Create Shop — shown when user has no shops */}
-                {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
+                {/* Merchant-aware CTA */}
+                {role === "merchant" && shopSlug ? (
+                  <Link
+                    href={`/shops/${shopSlug}`}
+                    className="hidden rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                  >
+                    Go to my shop
+                  </Link>
+                ) : (!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
                     className="hidden rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
                   >
-                    Create Shop
+                    Open a shop
                   </Link>
                 ) : null}
               </>
@@ -381,6 +452,7 @@ export default function Navbar({
                 initials={initials}
                 dashboardHref={dashboardHref}
                 role={role}
+                shopSlug={shopSlug}
                 onNavigate={() => setOpen(false)}
               />
             ) : authLoading ? (
@@ -452,17 +524,45 @@ export default function Navbar({
               })}
             </div>
 
-            {/* Mobile: create shop — shown when logged in */}
+            {/* Mobile: browse by category */}
+            {categoryTree.length > 0 && (
+              <div className="mt-2 border-t border-border px-2 pt-3">
+                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted">Browse by category</p>
+                <div className="grid grid-cols-2 gap-0.5">
+                  {categoryTree.slice(0, 12).map((group) => (
+                    <Link
+                      key={group.parent.slug}
+                      href={`/products?category=${encodeURIComponent(group.parent.label)}`}
+                      onClick={() => setOpen(false)}
+                      className="rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
+                    >
+                      {group.parent.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mobile: merchant-aware CTA */}
             {session.isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-0.5 px-2">
-                {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
+                {role === "merchant" && shopSlug ? (
+                  <Link
+                    href={`/shops/${shopSlug}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
+                  >
+                    <MaterialSymbol name="storefront" className="!text-lg" />
+                    Go to my shop
+                  </Link>
+                ) : (!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
                   >
                     <MaterialSymbol name="store" className="!text-lg" />
-                    Create Shop
+                    Open a shop
                   </Link>
                 ) : null}
               </div>
