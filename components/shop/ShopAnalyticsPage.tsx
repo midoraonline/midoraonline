@@ -160,7 +160,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-800">
+        <div className="dm-alert dm-alert--error px-4 py-3 text-sm">
           {error}
         </div>
       ) : null}

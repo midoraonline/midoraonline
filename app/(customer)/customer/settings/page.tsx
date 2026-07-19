@@ -4,6 +4,7 @@ import { useState } from "react";
 import { apiAuth } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import PushNotificationsSection from "@/components/PushNotificationsSection";
 
 // ── Status banner ─────────────────────────────────────────────────────────────
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
@@ -218,6 +219,7 @@ export default function CustomerSettingsPage() {
   return (
     <div className="space-y-5">
       <PasswordSection />
+      <PushNotificationsSection />
       <AccountInfoSection />
     </div>
   );

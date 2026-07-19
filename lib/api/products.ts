@@ -192,8 +192,23 @@ export function productPrimaryImage(p: Product): string | undefined {
 }
 
 export function isVideoUrl(url: string): boolean {
-  const clean = url.split(/[?#]/, 1)[0];
+  if (!url) return false;
+  // Fragment set when saving productVideo uploads (UploadThing URLs often lack extensions).
+  if (/#midora-video\b/i.test(url)) return true;
+  if (/[?&]midora_media=video\b/i.test(url)) return true;
+  const clean = url.split(/[?#]/, 1)[0] ?? url;
   return /\.(mp4|webm|mov|m4v)$/i.test(clean);
+}
+
+/** Tag a CDN URL so detail/edit UIs treat it as video even without a file extension. */
+export function tagVideoUrl(url: string): string {
+  if (!url || isVideoUrl(url)) return url;
+  const base = url.split("#")[0] ?? url;
+  return `${base}#midora-video`;
+}
+
+export function stripMediaTags(url: string): string {
+  return url.split("#")[0] ?? url;
 }
 
 export type ProductMedia =
@@ -411,10 +426,16 @@ export function getSimilarProducts(productId: string, limit = 8) {
   );
 }
 
-export function getHomeFeed(limit?: number, page?: number, token?: string) {
+export function getHomeFeed(
+  limit?: number,
+  page?: number,
+  token?: string,
+  excludeIds?: string,
+) {
   const params = new URLSearchParams();
   if (limit) params.set("limit", String(limit));
   if (page) params.set("page", String(page));
+  if (excludeIds) params.set("exclude_ids", excludeIds);
   const qs = params.toString();
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
     ...(token ? { token } : {}),

@@ -1,47 +1,18 @@
-"use client";
+import { notFound } from "next/navigation";
+import { merchantApi } from "@/lib/api/server";
+import ShopAnalyticsClient from "./ShopAnalyticsClient";
 
-import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
 
-import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
-import { apiShops } from "@/lib/api";
-import type { Shop } from "@/lib/api/shops";
+type Params = { shopId: string };
 
-export default function MerchantAnalyticsPage() {
-  const params = useParams();
-  const shopId = typeof params.shopId === "string" ? params.shopId : "";
-  const [shop, setShop] = useState<Shop | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    if (!shopId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const s = await apiShops.getShop(shopId);
-      setShop(s);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load shop");
-    } finally {
-      setLoading(false);
-    }
-  }, [shopId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  if (loading) {
-    return <div className="dm-card p-8 text-sm text-muted">Loading analytics…</div>;
-  }
-  if (error || !shop) {
-    return (
-      <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
-        {error || "Shop not found"}
-      </p>
-    );
-  }
-
-  return <ShopAnalyticsPage shop={shop} />;
+export default async function MerchantAnalyticsPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { shopId } = await params;
+  const shop = await merchantApi.shopById(shopId);
+  if (!shop) return notFound();
+  return <ShopAnalyticsClient initialShop={shop} />;
 }

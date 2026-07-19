@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import FormModal from "@/components/FormModal";
 import { apiProducts } from "@/lib/api";
 
 type Props = {
@@ -16,10 +18,40 @@ type Props = {
   productDiscountPrice?: number | null;
 };
 
+const UGX = new Intl.NumberFormat("en-UG", {
+  style: "currency",
+  currency: "UGX",
+  maximumFractionDigits: 0,
+});
+
+function parseAmount(v: string): number | null {
+  const n = Number(v.replace(/,/g, ""));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+type SaleState =
+  | { kind: "empty" }
+  | { kind: "invalid"; message: string }
+  | { kind: "ok"; savings: number; percent: number };
+
+function evaluate(priceStr: string, price: number | undefined): SaleState {
+  const trimmed = priceStr.trim();
+  if (!trimmed) return { kind: "empty" };
+  const sale = parseAmount(trimmed);
+  if (sale === null) return { kind: "invalid", message: "Enter a valid amount." };
+  if (!price || price <= 0)
+    return { kind: "invalid", message: "No original price to discount from." };
+  if (sale >= price)
+    return { kind: "invalid", message: "Sale price must be less than the price." };
+  return {
+    kind: "ok",
+    savings: price - sale,
+    percent: Math.round(((price - sale) / price) * 100),
+  };
+}
+
 export default function ProductOwnerActions({
   shopOwnerId,
-  shopSlug,
-  shopId,
   productId,
   isPublished,
   productPriceUgx,
@@ -28,69 +60,93 @@ export default function ProductOwnerActions({
   const session = useAppSession();
   const router = useRouter();
   const [discountModal, setDiscountModal] = useState(false);
-  const [discountValue, setDiscountValue] = useState(
+  const [salePrice, setSalePrice] = useState(
     productDiscountPrice ? String(productDiscountPrice) : "",
   );
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pending, setPending] = useState<
+    "availability" | "discount" | "remove-discount" | null
+  >(null);
 
   const canManage =
     session.hydrated &&
     session.isAuthenticated &&
-    (session.user?.user_role === "admin" || (shopOwnerId != null && session.user?.id === shopOwnerId));
+    (session.user?.user_role === "admin" ||
+      (shopOwnerId != null && session.user?.id === shopOwnerId));
+
+  const sale = useMemo(() => evaluate(salePrice, productPriceUgx), [
+    salePrice,
+    productPriceUgx,
+  ]);
+
+  const isDiscounted =
+    productDiscountPrice != null &&
+    productDiscountPrice > 0 &&
+    productPriceUgx != null &&
+    productDiscountPrice < productPriceUgx;
 
   if (!canManage) return null;
 
   async function handleToggleAvailability() {
     if (!productId) return;
-    setActionLoading("availability");
+    setPending("availability");
+    const request = apiProducts.toggleAvailability(productId);
+    toast.promise(request, {
+      loading: isPublished !== false ? "Unpublishing…" : "Publishing…",
+      success: isPublished !== false ? "Listing hidden" : "Listing published",
+      error: "Could not update visibility.",
+    });
     try {
-      await apiProducts.toggleAvailability(productId);
+      await request;
       router.refresh();
     } catch {
-      alert("Failed to toggle availability");
+      /* handled */
     } finally {
-      setActionLoading(null);
+      setPending(null);
     }
   }
 
   async function handleSetDiscount() {
-    if (!productId) return;
-    setActionLoading("discount");
+    if (!productId || sale.kind !== "ok") return;
+    const priceValue = parseAmount(salePrice);
+    if (priceValue == null) return;
+    setPending("discount");
+    const request = apiProducts.setDiscount(productId, {
+      discount_price: priceValue,
+    });
+    toast.promise(request, {
+      loading: "Applying discount…",
+      success: `Discount applied — ${sale.percent}% off`,
+      error: "Could not apply discount.",
+    });
     try {
-      const val = discountValue.trim();
-      const discountPrice = val ? parseFloat(val.replace(/,/g, "")) : null;
-      if (val && (isNaN(discountPrice!) || discountPrice! < 0)) {
-        alert("Enter a valid discount price");
-        return;
-      }
-      if (val && discountPrice! >= (productPriceUgx ?? 0)) {
-        alert("Discount price must be less than the original price");
-        return;
-      }
-      await apiProducts.setDiscount(productId, { discount_price: discountPrice ?? null });
+      await request;
       setDiscountModal(false);
       router.refresh();
     } catch {
-      alert("Failed to set discount");
+      /* handled */
     } finally {
-      setActionLoading(null);
+      setPending(null);
     }
   }
 
   async function handleRemoveDiscount() {
     if (!productId) return;
-    setActionLoading("remove-discount");
+    setPending("remove-discount");
+    const request = apiProducts.setDiscount(productId, { discount_price: null });
+    toast.promise(request, {
+      loading: "Removing discount…",
+      success: "Discount removed",
+      error: "Could not remove discount.",
+    });
     try {
-      await apiProducts.setDiscount(productId, { discount_price: null });
+      await request;
       router.refresh();
     } catch {
-      alert("Failed to remove discount");
+      /* handled */
     } finally {
-      setActionLoading(null);
+      setPending(null);
     }
   }
-
-  const isDiscounted = productDiscountPrice != null && productDiscountPrice > 0 && productPriceUgx != null && productDiscountPrice < productPriceUgx;
 
   return (
     <>
@@ -100,32 +156,33 @@ export default function ProductOwnerActions({
             <button
               type="button"
               onClick={() => void handleToggleAvailability()}
-              disabled={actionLoading === "availability"}
-              className="dm-focus inline-flex items-center gap-1.5 rounded-lg border border-foreground/[0.12] px-3 py-2 text-[11px] font-semibold text-foreground/80 hover:bg-foreground/[0.04] disabled:opacity-50"
+              disabled={pending === "availability"}
+              className="dm-btn dm-btn-secondary dm-btn-sm"
             >
               <MaterialSymbol
                 name={isPublished !== false ? "visibility_off" : "visibility"}
                 className="!text-sm"
+                aria-hidden="true"
               />
-              {actionLoading === "availability" ? "…" : isPublished !== false ? "Unpublish" : "Publish"}
+              {isPublished !== false ? "Unpublish" : "Publish"}
             </button>
             <button
               type="button"
               onClick={() => setDiscountModal(true)}
-              disabled={actionLoading === "discount"}
-              className="dm-focus inline-flex items-center gap-1.5 rounded-lg border border-red-300/50 px-3 py-2 text-[11px] font-semibold text-red-600 hover:bg-red-500/10 disabled:opacity-50"
+              disabled={pending === "discount"}
+              className="dm-btn dm-btn-secondary dm-btn-sm"
             >
-              <MaterialSymbol name="sell" className="!text-sm" />
-              {isDiscounted ? "Edit Discount" : "Set Discount"}
+              <MaterialSymbol name="sell" className="!text-sm" aria-hidden="true" />
+              {isDiscounted ? "Edit discount" : "Set discount"}
             </button>
             {isDiscounted && (
               <button
                 type="button"
                 onClick={() => void handleRemoveDiscount()}
-                disabled={actionLoading === "remove-discount"}
-                className="dm-focus inline-flex items-center gap-1.5 rounded-lg border border-foreground/[0.12] px-3 py-2 text-[11px] font-semibold text-foreground/60 hover:bg-foreground/[0.04] disabled:opacity-50"
+                disabled={pending === "remove-discount"}
+                className="dm-btn dm-btn-ghost dm-btn-sm"
               >
-                {actionLoading === "remove-discount" ? "…" : "Remove Discount"}
+                Remove discount
               </button>
             )}
           </>
@@ -133,44 +190,69 @@ export default function ProductOwnerActions({
       </div>
 
       {discountModal && (
-        <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-2xl">
-            <h3 className="text-sm font-semibold mb-4">
-              {isDiscounted ? "Edit Discount" : "Set Discount"}
-            </h3>
-            <p className="text-xs text-muted mb-3">
-              Original price: <strong>{productPriceUgx != null ? `UGX ${productPriceUgx.toLocaleString()}` : "-"}</strong>
-            </p>
-            <div className="space-y-1 mb-4">
-              <label className="text-xs font-medium text-foreground/80">Discounted price (UGX)</label>
-              <input
-                className="dm-input-xs dm-focus w-full"
-                inputMode="numeric"
-                value={discountValue}
-                onChange={(e) => setDiscountValue(e.target.value)}
-                placeholder="Enter discounted price"
-                autoFocus
-              />
-            </div>
+        <FormModal
+          title={isDiscounted ? "Edit discount" : "Set discount"}
+          onClose={() => (pending === "discount" ? undefined : setDiscountModal(false))}
+          maxWidthClass="sm:max-w-sm"
+          footer={
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setDiscountModal(false)}
-                className="rounded-xl px-4 py-2 text-xs font-medium text-muted hover:text-foreground"
+                disabled={pending === "discount"}
+                className="dm-btn dm-btn-ghost dm-btn-sm"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => void handleSetDiscount()}
-                disabled={actionLoading === "discount" || !discountValue.trim()}
-                className="dm-focus inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-semibold text-white hover:opacity-95 disabled:opacity-60"
+                disabled={pending === "discount" || sale.kind !== "ok"}
+                className="dm-btn dm-btn-primary"
               >
-                {actionLoading === "discount" ? "Saving…" : "Apply Discount"}
+                {pending === "discount" ? "Applying…" : "Apply discount"}
               </button>
             </div>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-muted">
+              Original price:{" "}
+              <strong className="text-foreground">
+                {productPriceUgx != null ? UGX.format(productPriceUgx) : "—"}
+              </strong>
+            </p>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="owner-sale-price"
+                className="text-sm font-medium text-foreground"
+              >
+                Sale price (what the buyer pays)
+              </label>
+              <input
+                id="owner-sale-price"
+                className="dm-input"
+                inputMode="numeric"
+                value={salePrice}
+                onChange={(e) => setSalePrice(e.target.value)}
+                placeholder="e.g. 40000"
+                aria-invalid={sale.kind === "invalid"}
+                autoFocus
+              />
+              {sale.kind === "ok" ? (
+                <p className="text-xs font-medium text-[color:var(--success)]">
+                  Buyer saves {UGX.format(sale.savings)} ({sale.percent}% off)
+                </p>
+              ) : sale.kind === "invalid" ? (
+                <p className="text-xs text-[color:var(--error)]">{sale.message}</p>
+              ) : (
+                <p className="text-xs text-muted">
+                  Enter the final price after the discount.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        </FormModal>
       )}
     </>
   );

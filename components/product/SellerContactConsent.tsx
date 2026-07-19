@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiLeads, apiListingEvents } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { whatsappDigits } from "@/lib/whatsappProduct";
 
 type Props = {
@@ -33,6 +34,7 @@ export default function SellerContactConsent({
 
     apiLeads.createLead(shopId, productId, "whatsapp").catch(() => {});
     apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
+    notifyFeedEngagement();
 
     window.open(waUrl, "_blank", "noopener,noreferrer");
     setShowConsent(false);
@@ -74,8 +76,8 @@ export default function SellerContactConsent({
               Your inquiry will be recorded so the seller can respond. Do you want to proceed?
             </p>
 
-            <div className="flex items-center gap-3 rounded-xl bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700">
-              <MaterialSymbol name="info" className="!text-base shrink-0" />
+            <div className="dm-alert dm-alert--warning flex items-center gap-3 px-3 py-2 text-[11px]">
+              <MaterialSymbol name="info" className="!text-base shrink-0" aria-hidden="true" />
               <span>
                 Only contact sellers for genuine inquiries. Fraudulent or spam messages may result in account suspension.
               </span>

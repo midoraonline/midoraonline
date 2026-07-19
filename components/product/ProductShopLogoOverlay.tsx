@@ -36,7 +36,7 @@ export default function ProductShopLogoOverlay({
   );
 
   const shell =
-    "absolute right-2 top-2 z-10 flex size-11 items-center justify-center overflow-hidden rounded-xl bg-white/95 shadow-md ring-1 ring-black/10 backdrop-blur-sm dark:bg-black/50 dark:ring-white/15 " +
+    "absolute right-2 top-2 z-10 flex size-11 items-center justify-center overflow-hidden rounded-xl bg-white/95 shadow-md ring-1 ring-black/10 backdrop-blur-sm " +
     className;
 
   if (shopHref) {

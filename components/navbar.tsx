@@ -6,12 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiAuth } from "@/lib/api";
-import { getOnlineUsersCount } from "@/lib/api/stats";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import { useRealtimeTable, usePresenceCount } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
-import PresenceHeartbeat from "@/components/PresenceHeartbeat";
 
 import { LogOut } from "lucide-react";
 
@@ -20,12 +19,14 @@ function ProfileDropdown({
   initials,
   dashboardHref,
   role,
+  ownedShopIds,
   onNavigate,
 }: {
   displayName: string;
   initials: string;
   dashboardHref: string;
   role: string | null;
+  ownedShopIds: string[];
   onNavigate?: () => void;
 }) {
   const [ddOpen, setDdOpen] = useState(false);
@@ -60,6 +61,15 @@ function ProfileDropdown({
     }
   };
 
+  const isMerchant = role === "merchant" || role === "admin";
+  const hasShops = ownedShopIds.length > 0;
+  const newProductHref =
+    ownedShopIds.length === 0
+      ? "/open-shop"
+      : ownedShopIds.length === 1
+        ? `/merchant/shops/${ownedShopIds[0]}/catalog?openAdd=true`
+        : `/merchant/shops?intent=new-product`;
+
   return (
     <div ref={ref} className="relative">
       {/* Trigger: User Pill */}
@@ -87,10 +97,47 @@ function ProfileDropdown({
               onClick={close}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
             >
-              <MaterialSymbol name={role === "admin" ? "admin_panel_settings" : role === "merchant" ? "storefront" : "account_circle"} className="!text-base text-muted shrink-0" />
-              {role === "admin" ? "Admin Panel" : role === "merchant" ? "Shop Dashboard" : "My Account"}
+              <MaterialSymbol
+                name={role === "admin" ? "admin_panel_settings" : role === "merchant" ? "space_dashboard" : "account_circle"}
+                className="!text-base text-muted shrink-0"
+              />
+              {role === "admin" ? "Admin Panel" : role === "merchant" ? "Merchant Dashboard" : "My Account"}
             </Link>
-            
+
+            {isMerchant ? (
+              <>
+                <Link
+                  href="/merchant/shops"
+                  onClick={close}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+                >
+                  <MaterialSymbol name="storefront" className="!text-base text-muted shrink-0" />
+                  My shops
+                  {hasShops ? (
+                    <span className="ml-auto rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted">
+                      {ownedShopIds.length}
+                    </span>
+                  ) : null}
+                </Link>
+                <Link
+                  href={newProductHref}
+                  onClick={close}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+                >
+                  <MaterialSymbol name="add_box" className="!text-base text-accent shrink-0" />
+                  New product
+                </Link>
+                <Link
+                  href="/merchant/leads"
+                  onClick={close}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+                >
+                  <MaterialSymbol name="trending_up" className="!text-base text-muted shrink-0" />
+                  Leads
+                </Link>
+              </>
+            ) : null}
+
             {/* Show Orders only for customers, or maybe merchants who buy, but primarily customers */}
             {role !== "admin" && (
               <Link
@@ -102,6 +149,16 @@ function ProfileDropdown({
                 My Orders
               </Link>
             )}
+
+            <Link
+              href={role === "merchant" ? "/merchant/settings" : role === "admin" ? "/admin" : "/customer/settings"}
+              onClick={close}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+            >
+              <MaterialSymbol name="settings" className="!text-base text-muted shrink-0" />
+              Settings
+            </Link>
+
             <div className="my-1 h-px bg-border" />
             <button
               type="button"
@@ -144,7 +201,6 @@ export default function Navbar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [unread, setUnread] = useState(0);
-  const [onlineCount, setOnlineCount] = useState(1);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -184,8 +240,6 @@ export default function Navbar({
 
   const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
 
-  const unreadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const fetchUnread = useCallback(async () => {
     if (!session.isAuthenticated) {
       setUnread(0);
@@ -197,26 +251,45 @@ export default function Navbar({
     } catch {}
   }, [session.isAuthenticated]);
 
-  useEffect(() => {
-    const fetchOnline = async () => {
-      try {
-        const res = await getOnlineUsersCount();
-        setOnlineCount(res.online_count);
-      } catch {}
-    };
+  // Live unread badge — any change to a conversation this user participates
+  // in triggers a fresh count read. RLS in Supabase (see migration 024)
+  // ensures we only receive events for our own rows.
+  useRealtimeTable(
+    {
+      table: "conversations",
+      channel: "navbar-unread",
+      event: "*",
+      enabled: session.isAuthenticated,
+    },
+    () => {
+      void fetchUnread();
+    },
+  );
 
+  // Global online count via Supabase Presence. Every browser tab joins the
+  // same channel — anonymous visitors track as `{ role: "guest" }`, logged-in
+  // users add their id + role, and merchants report their availability.
+  const presenceState = useMemo(() => {
+    if (session.isAuthenticated && session.user) {
+      return {
+        user_id: session.user.id,
+        role: session.user.user_role ?? "customer",
+        available: session.user.user_role === "merchant",
+      };
+    }
+    return { role: "guest" as const };
+  }, [session.isAuthenticated, session.user]);
+  const onlineCount = usePresenceCount(
+    "midora:presence:global",
+    presenceState,
+    true,
+  );
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      fetchUnread();
-      fetchOnline();
+      void fetchUnread();
     }, 100);
-    unreadIntervalRef.current = setInterval(() => {
-      fetchUnread();
-      fetchOnline();
-    }, 15000);
-    return () => {
-      clearTimeout(timer);
-      if (unreadIntervalRef.current) clearInterval(unreadIntervalRef.current);
-    };
+    return () => clearTimeout(timer);
   }, [fetchUnread]);
 
   /* Close mobile menu on outside click */
@@ -252,7 +325,6 @@ export default function Navbar({
 
   return (
     <>
-      <PresenceHeartbeat />
       <header className="sticky top-0 z-sticky border-b border-border bg-background">
       <div ref={menuRef}>
         <div className="dm-container flex h-14 items-center gap-3 sm:gap-5">
@@ -371,7 +443,22 @@ export default function Navbar({
                   >
                     Create Shop
                   </Link>
-                ) : null}
+                ) : (
+                  /* New product quick-action for merchants who already have a shop. */
+                  <Link
+                    href={
+                      session.ownedShopIds.length === 1
+                        ? `/merchant/shops/${session.ownedShopIds[0]}/catalog?openAdd=true`
+                        : `/merchant/shops?intent=new-product`
+                    }
+                    className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                    aria-label="Create a new product"
+                    title="New product"
+                  >
+                    <MaterialSymbol name="add" className="!text-base" />
+                    New product
+                  </Link>
+                )}
               </>
             ) : null}
 
@@ -381,6 +468,7 @@ export default function Navbar({
                 initials={initials}
                 dashboardHref={dashboardHref}
                 role={role}
+                ownedShopIds={session.ownedShopIds ?? []}
                 onNavigate={() => setOpen(false)}
               />
             ) : authLoading ? (

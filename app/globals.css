@@ -424,6 +424,69 @@ html.modal-open body {
     @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium;
   }
 
+  /*
+   * Semantic status modifiers for .dm-pill (and any small badge surface).
+   * Use in place of ad-hoc bg-emerald / text-emerald combos so status
+   * colors stay consistent everywhere. Pair with sizing utilities, e.g.
+   *   dm-pill dm-pill--success px-2 py-0.5 text-[10px]
+   */
+  .dm-pill--success {
+    background: var(--success-subtle);
+    color: var(--success);
+  }
+
+  .dm-pill--warning {
+    background: var(--warning-subtle);
+    color: var(--warning);
+  }
+
+  .dm-pill--error {
+    background: var(--error-subtle);
+    color: var(--error);
+  }
+
+  .dm-pill--info {
+    background: var(--info-subtle);
+    color: var(--info);
+  }
+
+  .dm-pill--muted {
+    background: var(--surface-subtle);
+    color: var(--muted);
+  }
+
+  /*
+   * Semantic alert / inline notice — a longer-form status surface.
+   * Composes with existing padding utilities: `dm-alert px-4 py-3 text-sm`.
+   */
+  .dm-alert {
+    @apply rounded-xl border;
+  }
+
+  .dm-alert--success {
+    background: var(--success-subtle);
+    color: var(--success);
+    border-color: color-mix(in oklab, var(--success) 25%, transparent);
+  }
+
+  .dm-alert--warning {
+    background: var(--warning-subtle);
+    color: var(--warning);
+    border-color: color-mix(in oklab, var(--warning) 25%, transparent);
+  }
+
+  .dm-alert--error {
+    background: var(--error-subtle);
+    color: var(--error);
+    border-color: color-mix(in oklab, var(--error) 25%, transparent);
+  }
+
+  .dm-alert--info {
+    background: var(--info-subtle);
+    color: var(--info);
+    border-color: color-mix(in oklab, var(--info) 25%, transparent);
+  }
+
   /* ── Links ───────────────────────────────────────────────── */
   .dm-link {
     color: var(--accent);
@@ -660,6 +723,139 @@ html.modal-open body {
     }
     .skeleton-reveal {
       animation: none;
+    }
+  }
+
+  /* ── Toasts (Sonner) ─────────────────────────────────────── */
+  /*
+   * Sonner is unstyled in this project. All look-and-feel lives here so
+   * every call site (`toast.success(...)`, `toast.error(...)`) renders
+   * identically. Never pass inline styles at call sites.
+   */
+  .dm-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 22rem;
+    padding: 0.875rem 1rem;
+    background: var(--surface);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    z-index: var(--z-toast);
+  }
+
+  .dm-toast-title {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .dm-toast-description {
+    margin-top: 0.125rem;
+    color: var(--foreground-muted);
+    font-size: 0.8125rem;
+  }
+
+  .dm-toast-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    padding: 0 0.75rem;
+    margin-left: auto;
+    border-radius: calc(var(--radius) - 4px);
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .dm-toast-action:hover {
+    background: var(--accent-hover);
+  }
+
+  .dm-toast-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: calc(var(--radius) - 4px);
+    background: transparent;
+    color: var(--foreground-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .dm-toast-cancel:hover {
+    color: var(--foreground);
+  }
+
+  .dm-toast-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--surface-subtle);
+    color: var(--foreground-muted);
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .dm-toast-close:hover {
+    background: var(--surface);
+    color: var(--foreground);
+  }
+
+  /* Semantic variants — accent stripe swaps to status color */
+  .dm-toast-success {
+    border-left-color: var(--success);
+    background: linear-gradient(0deg, var(--success-subtle), var(--success-subtle)),
+      var(--surface);
+    background-blend-mode: normal;
+  }
+
+  .dm-toast-error {
+    border-left-color: var(--error);
+    background: linear-gradient(0deg, var(--error-subtle), var(--error-subtle)),
+      var(--surface);
+  }
+
+  .dm-toast-warning {
+    border-left-color: var(--warning);
+    background: linear-gradient(0deg, var(--warning-subtle), var(--warning-subtle)),
+      var(--surface);
+  }
+
+  .dm-toast-info {
+    border-left-color: var(--info);
+    background: linear-gradient(0deg, var(--info-subtle), var(--info-subtle)),
+      var(--surface);
+  }
+
+  .dm-toast-loading {
+    border-left-color: var(--muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dm-toast {
+      transition: none !important;
+      animation: none !important;
     }
   }
 }

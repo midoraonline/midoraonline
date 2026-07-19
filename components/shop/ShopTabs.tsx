@@ -1,10 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { useAppSession } from "@/lib/state";
-import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 
 type TabId = "products" | "about" | "contacts" | "reviews" | "help";
 
@@ -14,19 +10,15 @@ export default function ShopTabs({
   contacts,
   reviews,
   concierge,
-  shopSlug,
-  shopId,
 }: {
   products: ReactNode;
   about: ReactNode | null;
   contacts: ReactNode | null;
   reviews: ReactNode;
   concierge: ReactNode;
-  shopSlug: string;
-  shopId: string;
+  shopSlug?: string;
+  shopId?: string;
 }) {
-  const session = useAppSession();
-  const canManage = canManageShopStorefront(session, shopId);
   const tabs: { id: TabId; label: string; content: ReactNode }[] = [
     { id: "products", label: "Products", content: products },
   ];
@@ -59,24 +51,6 @@ export default function ShopTabs({
               </button>
             );
           })}
-          {canManage ? (
-            <div className="ml-auto flex items-center gap-1">
-              <Link
-                href={`/shops/${shopSlug}/edit`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-500/20 hover:border-orange-500/50 transition-colors"
-              >
-                <MaterialSymbol name="edit" className="!text-sm" />
-                <span className="hidden sm:inline">Edit</span>
-              </Link>
-              <Link
-                href={`/shops/${shopSlug}/analytics`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-500/20 hover:border-orange-500/50 transition-colors"
-              >
-                <MaterialSymbol name="analytics" className="!text-sm" />
-                <span className="hidden sm:inline">Analytics</span>
-              </Link>
-            </div>
-          ) : null}
         </div>
       </div>
 

@@ -1,20 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
-import { canManageShopStorefront } from "@/lib/shop/storefront-access";
-import { recordShopEvent } from "@/lib/api/shops";
 
-const baseIcon =
-  "inline-flex size-9 items-center justify-center rounded-lg text-orange-600/70 outline-none ring-0 shadow-none transition-all duration-200 focus:outline-none focus-visible:outline-none";
-
-const hoverNeutral = "hover:bg-orange-500/18 hover:text-orange-600";
-
+/**
+ * Customer engagement toolbar — Like, Follow, Share.
+ *
+ * Labeled `dm-btn dm-btn-secondary dm-btn-sm` buttons designed to sit on a
+ * plain background (below the hero, inside the ShopHeroActionBar). All three
+ * work for anonymous viewers via localStorage flags; when signed in, likes
+ * and follows persist server-side.
+ */
 export default function ShopActions({
   shopSlug,
   shopName,
@@ -26,16 +26,19 @@ export default function ShopActions({
 }) {
   const session = useAppSession();
   const router = useRouter();
-  const canManage = canManageShopStorefront(session, shopId);
 
   const [liked, setLiked] = useState(false);
   const [followed, setFollowed] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
   const loadLocalFlags = useCallback(() => {
-    setLiked(typeof window !== "undefined" && localStorage.getItem(`shop_liked_${shopSlug}`) === "1");
+    setLiked(
+      typeof window !== "undefined" &&
+        localStorage.getItem(`shop_liked_${shopSlug}`) === "1",
+    );
     setFollowed(
-      typeof window !== "undefined" && localStorage.getItem(`shop_followed_${shopSlug}`) === "1"
+      typeof window !== "undefined" &&
+        localStorage.getItem(`shop_followed_${shopSlug}`) === "1",
     );
   }, [shopSlug]);
 
@@ -55,7 +58,6 @@ export default function ShopActions({
 
   useEffect(() => {
     if (!session.hydrated) return;
-    // Defer syncEngagement to prevent cascading renders
     Promise.resolve().then(() => {
       syncEngagement();
     });
@@ -107,47 +109,34 @@ export default function ShopActions({
         return;
       }
     } catch {
+      /* fall through to copy */
     }
     try {
       await navigator.clipboard.writeText(url);
       setShareState("copied");
       setTimeout(() => setShareState("idle"), 2200);
     } catch {
+      /* ignore */
     }
   }
 
   return (
-    <div className="flex items-center gap-0.5 sm:gap-1">
-      {canManage && (
-        <Link
-          href={`/shops/${shopSlug}/edit`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 px-2.5 py-1.5 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-500/20 hover:border-orange-500/50 dm-focus"
-          title="Edit shop"
-          aria-label="Edit shop"
-        >
-          <MaterialSymbol name="edit" className="!text-[16px] leading-none" />
-          <span className="hidden sm:inline">Edit</span>
-        </Link>
-      )}
-
+    <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
         onClick={() => void toggleLike()}
         aria-label={liked ? "Unlike shop" : "Like shop"}
         aria-pressed={liked}
-        title={liked ? "Unlike" : "Like"}
-        className={[
-          baseIcon,
-          liked
-            ? "text-rose-600 hover:bg-rose-100/90 hover:text-rose-700"
-            : hoverNeutral,
-        ].join(" ")}
+        className="dm-btn dm-btn-secondary dm-btn-sm"
+        style={liked ? { color: "#e11d48", borderColor: "#e11d48" } : undefined}
       >
         <MaterialSymbol
           name="favorite"
-          className="!text-[20px] leading-none sm:!text-[22px]"
+          className="!text-sm"
           filled={liked}
+          aria-hidden="true"
         />
+        {liked ? "Liked" : "Like"}
       </button>
 
       <button
@@ -155,38 +144,39 @@ export default function ShopActions({
         onClick={() => void toggleFollow()}
         aria-label={followed ? "Unfollow shop" : "Follow shop"}
         aria-pressed={followed}
-        title={followed ? "Following" : "Follow"}
-        className={[
-          baseIcon,
+        className="dm-btn dm-btn-secondary dm-btn-sm"
+        style={
           followed
-            ? "text-orange-600 hover:bg-orange-500/15 hover:text-orange-700"
-            : hoverNeutral,
-        ].join(" ")}
+            ? { color: "var(--accent)", borderColor: "var(--accent)" }
+            : undefined
+        }
       >
         <MaterialSymbol
           name={followed ? "how_to_reg" : "person_add"}
-          className="!text-[20px] leading-none sm:!text-[22px]"
+          className="!text-sm"
           filled={followed}
+          aria-hidden="true"
         />
+        {followed ? "Following" : "Follow"}
       </button>
 
       <button
         type="button"
         onClick={() => void handleShare()}
         aria-label={shareState === "copied" ? "Link copied" : "Share shop"}
-        title={shareState === "copied" ? "Copied" : "Share"}
-        className={[
-          baseIcon,
+        className="dm-btn dm-btn-secondary dm-btn-sm"
+        style={
           shareState === "copied"
-            ? "text-green-700 hover:bg-emerald-100/90 hover:text-green-800"
-            : hoverNeutral,
-        ].join(" ")}
+            ? { color: "var(--success)", borderColor: "var(--success)" }
+            : undefined
+        }
       >
-        {shareState === "copied" ? (
-          <MaterialSymbol name="check" className="!text-[20px] leading-none sm:!text-[22px]" />
-        ) : (
-          <MaterialSymbol name="share" className="!text-[20px] leading-none sm:!text-[22px]" />
-        )}
+        <MaterialSymbol
+          name={shareState === "copied" ? "check" : "share"}
+          className="!text-sm"
+          aria-hidden="true"
+        />
+        {shareState === "copied" ? "Copied" : "Share"}
       </button>
     </div>
   );

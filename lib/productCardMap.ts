@@ -1,6 +1,14 @@
 import type { ProductCardData } from "@/components/productcard";
 import type { HomeFeedProduct, Product, SimilarProduct, LikedProduct } from "@/lib/api/products";
-import { productDiscountPercent, productIsDiscounted, productOriginalPriceUgx, productPriceUgx, productPrimaryImage } from "@/lib/api/products";
+import {
+  isVideoUrl,
+  productDiscountPercent,
+  productImageUrls,
+  productIsDiscounted,
+  productOriginalPriceUgx,
+  productPriceUgx,
+  productPrimaryImage,
+} from "@/lib/api/products";
 import type { SearchProductItem } from "@/lib/api/search";
 import { productPageSlug } from "@/lib/productUrl";
 
@@ -35,6 +43,14 @@ function ratingFromAverage(avg?: number | null): number | undefined {
   return avg;
 }
 
+function anyVideoInUrls(urls: readonly (string | null | undefined)[] | null | undefined): boolean {
+  if (!urls) return false;
+  for (const u of urls) {
+    if (u && isVideoUrl(u)) return true;
+  }
+  return false;
+}
+
 export function homeFeedProductToCard(p: HomeFeedProduct, site: string): ProductCardData {
   const slug = productPageSlug(p);
   return {
@@ -49,6 +65,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
         ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
         : 0,
     imageUrl: p.primary_image,
+    hasVideo: anyVideoInUrls([p.primary_image]),
     shopLogoUrl: p.shop.logo_url ?? undefined,
     stockQuantity: p.stock_quantity,
     viewCount: p.view_count,
@@ -92,6 +109,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
         ? Math.round((1 - item.discount_price / item.price_ugx) * 100)
         : 0,
     imageUrl: item.primary_image ?? item.image_urls?.[0] ?? undefined,
+    hasVideo: anyVideoInUrls(item.image_urls ?? [item.primary_image]),
     shopLogoUrl: item.shop.logo_url ?? undefined,
     stockQuantity: null,
     viewCount: item.view_count,
@@ -136,6 +154,7 @@ export function productToCard(
     discountPriceUGX: product.discount_price ?? null,
     discountPercent: productIsDiscounted(product) ? productDiscountPercent(product) : 0,
     imageUrl: productPrimaryImage(product),
+    hasVideo: productImageUrls(product).some(isVideoUrl),
     shopLogoUrl: shop.logo_url ?? undefined,
     stockQuantity: product.stock_quantity ?? null,
     viewCount: product.view_count ?? undefined,
@@ -177,6 +196,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
         ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
         : 0,
     imageUrl: p.image_urls?.[0] ?? undefined,
+    hasVideo: anyVideoInUrls(p.image_urls),
     stockQuantity: null,
     viewCount: p.view_count,
     category: p.category ?? null,
@@ -217,6 +237,7 @@ export function likedProductToCard(p: LikedProduct): ProductCardData {
         ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
         : 0,
     imageUrl: p.image_urls?.[0] ?? undefined,
+    hasVideo: anyVideoInUrls(p.image_urls),
     stockQuantity: null,
     viewCount: p.view_count,
     category: p.category ?? null,

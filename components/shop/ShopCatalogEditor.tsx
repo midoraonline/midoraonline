@@ -8,6 +8,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import type { ProductStatus } from "@/lib/api/products";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/lib/api/products";
 import { useAppSession } from "@/lib/state";
 import ProductFormModal from "@/components/shop/ProductFormModal";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -32,13 +34,13 @@ function formatUGX(n: number) {
 }
 
 const STATUS_CONFIG: Record<ProductStatus, { label: string; className: string }> = {
-  active: { label: "Active", className: "text-green-700 dark:text-green-400" },
-  pending_review: { label: "Pending review", className: "text-amber-600 dark:text-amber-400" },
-  rejected: { label: "Rejected", className: "text-red-600 dark:text-red-400" },
-  draft: { label: "Draft", className: "text-foreground/60" },
-  hidden: { label: "Hidden", className: "text-foreground/60" },
-  expired: { label: "Expired", className: "text-foreground/60" },
-  sold: { label: "Sold", className: "text-foreground/60" },
+  active:         { label: "Active",         className: "text-[color:var(--success)]" },
+  pending_review: { label: "Pending review", className: "text-[color:var(--warning)]" },
+  rejected:       { label: "Rejected",       className: "text-[color:var(--error)]" },
+  draft:          { label: "Draft",          className: "text-foreground/60" },
+  hidden:         { label: "Hidden",         className: "text-foreground/60" },
+  expired:        { label: "Expired",        className: "text-foreground/60" },
+  sold:           { label: "Sold",           className: "text-foreground/60" },
 };
 
 function StatusBadge({ status, is_published }: { status?: ProductStatus | null; is_published?: boolean | null }) {
@@ -47,13 +49,13 @@ function StatusBadge({ status, is_published }: { status?: ProductStatus | null; 
     return <span className={cfg.className}>{cfg.label}</span>;
   }
   return is_published ? (
-    <span className="text-green-700 dark:text-green-400">Published</span>
+    <span className="text-[color:var(--success)]">Published</span>
   ) : (
     <span className="text-foreground/60">Draft</span>
   );
 }
 
-// ── Inline toggle switch — used for publish/availability states ─────────────
+// ── Inline toggle switch — uses the design-system dm-toggle utility ──────────
 function ToggleSwitch({
   checked,
   onChange,
@@ -77,20 +79,9 @@ function ToggleSwitch({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className={[
-        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent",
-        "transition-colors duration-200 ease-in-out dm-focus",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-primary" : "bg-foreground/20",
-      ].join(" ")}
+      className="dm-toggle dm-toggle-sm"
     >
-      <span
-        className={[
-          "pointer-events-none inline-block size-4 rounded-full bg-white shadow ring-0",
-          "transition-transform duration-200 ease-in-out",
-          checked ? "translate-x-4" : "translate-x-0",
-        ].join(" ")}
-      />
+      <span className="dm-toggle-thumb" />
     </button>
   );
 }
@@ -110,8 +101,9 @@ export default function ShopCatalogEditor({
 
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ mode: "add" } | { mode: "edit"; product: Product } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
   // Track per-item loading states for optimistic toggle feedback
   const [toggling, setToggling] = useState<Record<string, boolean>>({});
 
@@ -124,9 +116,8 @@ export default function ShopCatalogEditor({
     try {
       const { items: all } = await apiProducts.listShopProducts(shopId);
       setItems(all.filter((p) => (p.item_type ?? "product") === itemType));
-      setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load catalog");
+      toast.error(e instanceof Error ? e.message : "Failed to load catalog");
     } finally {
       setLoading(false);
     }
@@ -148,22 +139,29 @@ export default function ShopCatalogEditor({
     }
   }, []);
 
-  async function removeProduct(id: string) {
+  async function removeProduct(product: Product) {
     if (!isAuthed) return;
-    if (!window.confirm("Remove this listing? This cannot be undone.")) return;
-    setError(null);
+    setDeleting(true);
+    const request = apiProducts.deleteProduct(product.id);
+    toast.promise(request, {
+      loading: "Removing listing…",
+      success: "Listing removed",
+      error: (e) => (e instanceof Error ? e.message : "Delete failed."),
+    });
     try {
-      await apiProducts.deleteProduct(id);
-      if (modal?.mode === "edit" && modal.product?.id === id) setModal(null);
+      await request;
+      if (modal?.mode === "edit" && modal.product?.id === product.id) setModal(null);
+      setPendingDelete(null);
       await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed.");
+    } catch {
+      /* sonner surfaced */
+    } finally {
+      setDeleting(false);
     }
   }
 
   async function togglePublish(p: Product) {
     if (!isAuthed) return;
-    setError(null);
     // Optimistic UI update
     setToggling((prev) => ({ ...prev, [p.id]: true }));
     setItems((prev) =>
@@ -181,7 +179,7 @@ export default function ShopCatalogEditor({
           item.id === p.id ? { ...item, is_published: p.is_published } : item
         )
       );
-      setError(e instanceof Error ? e.message : "Update failed.");
+      toast.error(e instanceof Error ? e.message : "Update failed.");
     } finally {
       setToggling((prev) => ({ ...prev, [p.id]: false }));
     }
@@ -189,24 +187,34 @@ export default function ShopCatalogEditor({
 
   async function handleRepost(p: Product) {
     if (!isAuthed) return;
-    setError(null);
+    const request = apiProducts.repostProduct(p.id);
+    toast.promise(request, {
+      loading: "Reposting…",
+      success: "Reposted to the Latest Feed",
+      error: (e) =>
+        e instanceof Error ? e.message : "Repost failed. Daily limit might be reached.",
+    });
     try {
-      await apiProducts.repostProduct(p.id);
+      await request;
       await load();
-      alert("Product reposted to the Latest Feed!");
-     } catch (e: unknown) {
-       setError(e instanceof Error ? e.message : (e instanceof Object && 'message' in e && typeof e.message === 'string' ? e.message : "Repost failed. Daily limit might be reached."));
-     }
+    } catch {
+      /* sonner surfaced */
+    }
   }
 
   async function submitForReview(p: Product) {
     if (!isAuthed) return;
-    setError(null);
+    const request = apiProducts.updateProduct(p.id, { status: "pending_review" });
+    toast.promise(request, {
+      loading: "Submitting for review…",
+      success: "Submitted for review",
+      error: (e) => (e instanceof Error ? e.message : "Submit failed."),
+    });
     try {
-      await apiProducts.updateProduct(p.id, { status: "pending_review" });
+      await request;
       await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Submit failed.");
+    } catch {
+      /* sonner surfaced */
     }
   }
 
@@ -235,12 +243,6 @@ export default function ShopCatalogEditor({
         </p>
       </div>
 
-      {error && (
-        <p className="rounded-2xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-xs text-red-800 dark:border-red-900/50 dark:bg-red-950/40">
-          {error}
-        </p>
-      )}
-
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-foreground/90">
@@ -249,7 +251,7 @@ export default function ShopCatalogEditor({
           <button
             type="button"
             onClick={() => setModal({ mode: "add" })}
-            className="dm-focus inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-95"
+            className="dm-btn dm-btn-primary dm-btn-sm"
           >
             Add {itemType}
           </button>
@@ -295,13 +297,13 @@ export default function ShopCatalogEditor({
                       <p className="mt-0.5 text-xs text-muted">
                         {productIsDiscounted(p) ? (
                           <span className="flex items-center gap-1.5">
-                            <span className="font-semibold text-red-600 dark:text-red-400">
+                            <span className="font-semibold text-[color:var(--error)]">
                               {formatUGX(productPriceUgx(p))}
                             </span>
                             <span className="text-[11px] line-through text-muted/60">
                               {formatUGX(productOriginalPriceUgx(p))}
                             </span>
-                            <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                            <span className="dm-pill dm-pill--error px-1.5 py-0.5 text-[10px] font-bold">
                               -{productDiscountPercent(p)}%
                             </span>
                           </span>
@@ -332,11 +334,12 @@ export default function ShopCatalogEditor({
                         </button>
                         <button
                           type="button"
-                          className="dm-focus inline-flex size-8 items-center justify-center rounded-xl text-red-600/80 hover:bg-red-500/10 transition-colors"
+                          className="dm-focus inline-flex size-8 items-center justify-center rounded-xl transition-colors hover:bg-[color:var(--error-subtle)]"
+                          style={{ color: "var(--error)" }}
                           title="Delete listing"
-                          onClick={() => void removeProduct(p.id)}
+                          onClick={() => setPendingDelete(p)}
                         >
-                          <Trash2 className="size-3.5" />
+                          <Trash2 className="size-3.5" aria-hidden="true" />
                         </button>
                       </div>
 
@@ -370,7 +373,7 @@ export default function ShopCatalogEditor({
                       {p.status === "rejected" && (
                         <button
                           type="button"
-                          className="dm-focus inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-700 transition-colors"
+                          className="dm-btn dm-btn-primary dm-btn-sm"
                           title="Submit for admin review"
                           onClick={() => void submitForReview(p)}
                         >
@@ -398,6 +401,18 @@ export default function ShopCatalogEditor({
             setModal(null);
             void load();
           }}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Remove listing?"
+          message={`"${pendingDelete.title}" will be removed permanently. This cannot be undone.`}
+          confirmLabel="Remove listing"
+          destructive
+          busy={deleting}
+          onConfirm={() => void removeProduct(pendingDelete)}
+          onClose={() => setPendingDelete(null)}
         />
       )}
     </div>

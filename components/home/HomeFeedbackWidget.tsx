@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { submitFeedback } from "@/lib/api/feedback";
-import FormModal, { formTextareaClass } from "@/components/FormModal";
+import FormModal from "@/components/FormModal";
 
 export default function HomeFeedbackWidget() {
   const [open, setOpen] = useState(false);
@@ -50,21 +51,27 @@ export default function HomeFeedbackWidget() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="What can we do better?"
-                  className={formTextareaClass}
+                  className="dm-textarea"
                 />
                 <button
                   type="button"
                   disabled={!text.trim()}
                   onClick={async () => {
                     if (!text.trim()) return;
+                    const request = submitFeedback(text);
+                    toast.promise(request, {
+                      loading: "Sending feedback…",
+                      success: "Thanks — feedback received",
+                      error: "Couldn't send. Try again.",
+                    });
                     try {
-                      await submitFeedback(text);
+                      await request;
                       setSubmitted(true);
-                    } catch (err) {
-                      console.error(err);
+                    } catch {
+                      /* handled */
                     }
                   }}
-                  className="dm-btn-accent dm-focus w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  className="dm-btn dm-btn-primary w-full"
                 >
                   Submit
                 </button>

@@ -58,7 +58,9 @@ export default function ProductsBrowsePage({
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const data = await apiProducts.getHomeFeed(72, next);
+      // Send already-shown IDs so the server never re-serves them.
+      const excludeIds = allItems.map((p) => p.id).slice(-500).join(",") || undefined;
+      const data = await apiProducts.getHomeFeed(72, next, undefined, excludeIds);
       const existing = new Set(allItems.map((p) => p.id));
       const nextItems = (data.algorithm ?? [])
         .filter((fp) => !existing.has(fp.id))

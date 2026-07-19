@@ -4,10 +4,11 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Mail, MapPin } from "lucide-react";
 import ShopHeader from "@/components/shop/ShopHeader";
+import ShopHeroActionBar from "@/components/shop/ShopHeroActionBar";
 import ShopPageEffects from "@/components/shop/ShopPageEffects";
 import ShopChatWidget from "@/components/shopChatWidget";
 import { locationDisplay } from "@/components/shop/shopUtils";
-import { getShopBySlug, listShopProducts } from "@/lib/api/server";
+import { getShopBySlug, getShopBySlugForMetadata, listShopProducts } from "@/lib/api/server";
 
 export async function generateMetadata({
   params,
@@ -16,9 +17,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const slugParts = Array.isArray(slug) ? slug : slug ? [slug] : [];
-  const shop = await getShopBySlug(slugParts[0] ?? "");
+  // Soft-fail on upstream 5xx so metadata blips don't crash the RSC tree.
+  const shop = await getShopBySlugForMetadata(slugParts[0] ?? "");
 
-  if (!shop) return { title: "Shop not found | Midora Online" };
+  if (!shop) return { title: "Shop | Midora Online" };
 
   if (slugParts[1] === "analytics") {
     return {
@@ -83,46 +85,65 @@ export default async function ShopLayout({
   const subPage = slugParts[1];
   const isEditRoute = subPage === "edit";
   const isAnalyticsRoute = subPage === "analytics";
-  const skipShopViewPing = isEditRoute || isAnalyticsRoute;
+  const isManagementRoute = isEditRoute || isAnalyticsRoute;
+  const skipShopViewPing = isManagementRoute;
 
   // Fetch products for the hero carousel (same React.cache call as the page —
-  // no extra network round-trip is made).
-  const heroProducts =
-    !isEditRoute && !isAnalyticsRoute ? await listShopProducts(shop.id) : [];
+  // no extra network round-trip is made). Management routes don't need them.
+  const heroProducts = !isManagementRoute ? await listShopProducts(shop.id) : [];
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {!skipShopViewPing ? <ShopPageEffects shopId={shop.id} /> : null}
-      <div className="border-b border-border bg-surface/80">
-        <div className="dm-container flex h-9 items-center justify-center sm:justify-between">
-          <div className="hidden items-center gap-4 text-xs text-muted sm:flex">
-            <a
-              href="mailto:midoraonline@gmail.com"
-              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
-            >
-              <Mail className="size-3.5 text-accent" />
-              midoraonline@gmail.com
-            </a>
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="size-3.5 text-accent" />
-              Kampala, Uganda
-            </span>
-          </div>
-          <div className="text-xs text-muted">
-            Rent a shop for{" "}
-            <span className="font-semibold text-foreground">5,000 UGX/month</span>
+      {!isManagementRoute ? (
+        <div className="border-b border-border bg-surface/80">
+          <div className="dm-container flex h-9 items-center justify-center sm:justify-between">
+            <div className="hidden items-center gap-4 text-xs text-muted sm:flex">
+              <a
+                href="mailto:midoraonline@gmail.com"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+              >
+                <Mail className="size-3.5 text-accent" />
+                midoraonline@gmail.com
+              </a>
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-accent" />
+                Kampala, Uganda
+              </span>
+            </div>
+            <div className="text-xs text-muted">
+              Rent a shop for{" "}
+              <span className="font-semibold text-foreground">5,000 UGX/month</span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
       <Navbar shopLogoUrl={shop.logo_url} shopName={shop.name} />
-      <ShopHeader shop={shop} products={heroProducts} />
+      {!isManagementRoute ? (
+        <>
+          <ShopHeader
+            shop={shop}
+            products={heroProducts}
+            backHref="/shops"
+            backLabel="All shops"
+          />
+          <ShopHeroActionBar
+            shopId={shop.id}
+            shopSlug={shop.slug}
+            shopName={shop.name}
+            shopLogoUrl={shop.logo_url}
+          />
+        </>
+      ) : null}
       <main className="flex-1">
         <div className="dm-container pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12">
           {children}
         </div>
       </main>
       <Footer />
-      <ShopChatWidget shopId={shop.id} shopName={shop.name} />
+      {!isManagementRoute ? (
+        <ShopChatWidget shopId={shop.id} shopName={shop.name} />
+      ) : null}
     </div>
   );
 }

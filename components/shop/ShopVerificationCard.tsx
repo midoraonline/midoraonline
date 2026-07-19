@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { apiShops } from "@/lib/api";
 import type { Verification, VerificationStatus } from "@/lib/api/shops";
@@ -23,7 +23,7 @@ const BADGE_META: Record<string, { icon: string; label: string; color: string; d
   identity_verified: {
     icon: "verified_user",
     label: "Identity Verified",
-    color: "bg-emerald-500/15 text-emerald-700 border-emerald-500/25",
+    color: "dm-pill--success border-[color:color-mix(in_oklab,var(--success)_25%,transparent)]",
     desc: "Your identity has been confirmed by the Midora team. Customers can trust this is a real person behind the shop.",
   },
   business_verified: {
@@ -37,23 +37,16 @@ const BADGE_META: Record<string, { icon: string; label: string; color: string; d
 // ── Stage status pill ─────────────────────────────────────────────────────────
 function StatusPill({ status }: { status: VerificationStatus }) {
   const cfg: Record<VerificationStatus, { label: string; cls: string }> = {
-    unverified: { label: "Not submitted", cls: "bg-foreground/[0.06] text-foreground/50" },
-    pending:    { label: "Under review",  cls: "bg-amber-500/15 text-amber-700" },
-    verified:   { label: "Approved",      cls: "bg-emerald-500/15 text-emerald-700" },
-    rejected:   { label: "Changes requested", cls: "bg-rose-500/15 text-rose-700" },
+    unverified: { label: "Not submitted", cls: "dm-pill--muted" },
+    pending:    { label: "Under review",  cls: "dm-pill--warning" },
+    verified:   { label: "Approved",      cls: "dm-pill--success" },
+    rejected:   { label: "Changes requested", cls: "dm-pill--error" },
   };
   const c = cfg[status] ?? cfg.unverified;
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${c.cls}`}>
+    <span className={`dm-pill ${c.cls} px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide`}>
       {c.label}
     </span>
-  );
-}
-
-// ── Stage step connector line ─────────────────────────────────────────────────
-function StepLine({ done }: { done: boolean }) {
-  return (
-    <div className={`mx-auto my-0.5 h-6 w-px ${done ? "bg-emerald-400" : "bg-border"}`} />
   );
 }
 
@@ -68,20 +61,29 @@ function StageCircle({
   const base = "flex size-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition-all";
   if (status === "verified")
     return (
-      <div className={`${base} border-emerald-400 bg-emerald-500/15 text-emerald-700`}>
-        <MaterialSymbol name="check" className="!text-base" />
+      <div
+        className={`${base} dm-pill--success`}
+        style={{ borderColor: "color-mix(in oklab, var(--success) 45%, transparent)" }}
+      >
+        <MaterialSymbol name="check" className="!text-base" aria-hidden="true" />
       </div>
     );
   if (status === "pending")
     return (
-      <div className={`${base} border-amber-400 bg-amber-500/10 text-amber-700`}>
-        <MaterialSymbol name="hourglass_top" className="!text-base" />
+      <div
+        className={`${base} dm-pill--warning`}
+        style={{ borderColor: "color-mix(in oklab, var(--warning) 45%, transparent)" }}
+      >
+        <MaterialSymbol name="hourglass_top" className="!text-base" aria-hidden="true" />
       </div>
     );
   if (status === "rejected")
     return (
-      <div className={`${base} border-rose-400 bg-rose-500/10 text-rose-700`}>
-        <MaterialSymbol name="close" className="!text-base" />
+      <div
+        className={`${base} dm-pill--error`}
+        style={{ borderColor: "color-mix(in oklab, var(--error) 45%, transparent)" }}
+      >
+        <MaterialSymbol name="close" className="!text-base" aria-hidden="true" />
       </div>
     );
   if (active)
@@ -215,7 +217,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       </div>
 
       {error && (
-        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">{error}</p>
+        <p className="dm-alert dm-alert--error px-4 py-3 text-sm">{error}</p>
       )}
 
       {/* ── Stage stepper ────────────────────────────────────── */}
@@ -266,7 +268,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
         >
           {/* Reviewer notes on rejection */}
           {stage2Status === "rejected" && Boolean((verification?.metadata as Record<string, unknown>)?.stage2_notes) && (
-            <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-xs text-rose-800">
+            <div className="dm-alert dm-alert--error mt-3 px-4 py-3 text-xs">
               <strong>Reviewer notes:</strong>{" "}
               {String((verification?.metadata as Record<string, unknown>).stage2_notes)}
             </div>
@@ -275,14 +277,17 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           {/* Pending state */}
           {stage2Status === "pending" && (
             <p className="mt-3 text-sm text-muted">
-              Your submission is under review. We'll email you when a decision is made — usually within 1 business day.
+              Your submission is under review. We&apos;ll email you when a decision is made — usually within 1 business day.
             </p>
           )}
 
           {/* Approved state */}
           {stage2Status === "verified" && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700">
-              <MaterialSymbol name="check_circle" className="!text-base text-emerald-500" />
+            <div
+              className="mt-3 flex items-center gap-2 text-sm"
+              style={{ color: "var(--success)" }}
+            >
+              <MaterialSymbol name="check_circle" className="!text-base" aria-hidden="true" />
               Identity Verified badge earned! Proceed to Stage 3 to get the Business Verified badge.
             </div>
           )}
@@ -335,12 +340,22 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-foreground/80">{dt.label}</span>
                             {existing && (
-                              <button type="button" onClick={() => removeDoc(2, dt.type)} className="text-[10px] text-rose-500 hover:underline">Remove</button>
+                              <button
+                                type="button"
+                                onClick={() => removeDoc(2, dt.type)}
+                                className="text-[10px] hover:underline"
+                                style={{ color: "var(--error)" }}
+                              >
+                                Remove
+                              </button>
                             )}
                           </div>
                           {existing ? (
-                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600">
-                              <MaterialSymbol name="check_circle" className="!text-xs" />
+                            <div
+                              className="flex items-center gap-1.5 text-[10px] font-medium"
+                              style={{ color: "var(--success)" }}
+                            >
+                              <MaterialSymbol name="check_circle" className="!text-xs" aria-hidden="true" />
                               Uploaded
                             </div>
                           ) : (
@@ -388,7 +403,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           lockedMessage="Complete Identity Verification (Stage 2) first to unlock this stage."
         >
           {stage3Status === "rejected" && Boolean((verification?.metadata as Record<string, unknown>)?.stage3_notes) && (
-            <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-xs text-rose-800">
+            <div className="dm-alert dm-alert--error mt-3 px-4 py-3 text-xs">
               <strong>Reviewer notes:</strong>{" "}
               {String((verification?.metadata as Record<string, unknown>).stage3_notes)}
             </div>
@@ -396,14 +411,17 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
 
           {stage3Status === "pending" && (
             <p className="mt-3 text-sm text-muted">
-              Your business verification is under review. We'll email you within 1 business day.
+              Your business verification is under review. We&apos;ll email you within 1 business day.
             </p>
           )}
 
           {stage3Status === "verified" && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700">
-              <MaterialSymbol name="check_circle" className="!text-base text-emerald-500" />
-              Business Verified badge earned! You've completed all verification stages.
+            <div
+              className="mt-3 flex items-center gap-2 text-sm"
+              style={{ color: "var(--success)" }}
+            >
+              <MaterialSymbol name="check_circle" className="!text-base" aria-hidden="true" />
+              Business Verified badge earned! You&apos;ve completed all verification stages.
             </div>
           )}
 
@@ -432,12 +450,22 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-foreground/80">{dt.label}</span>
                             {existing && (
-                              <button type="button" onClick={() => removeDoc(3, dt.type)} className="text-[10px] text-rose-500 hover:underline">Remove</button>
+                              <button
+                                type="button"
+                                onClick={() => removeDoc(3, dt.type)}
+                                className="text-[10px] hover:underline"
+                                style={{ color: "var(--error)" }}
+                              >
+                                Remove
+                              </button>
                             )}
                           </div>
                           {existing ? (
-                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600">
-                              <MaterialSymbol name="check_circle" className="!text-xs" />
+                            <div
+                              className="flex items-center gap-1.5 text-[10px] font-medium"
+                              style={{ color: "var(--success)" }}
+                            >
+                              <MaterialSymbol name="check_circle" className="!text-xs" aria-hidden="true" />
                             Uploaded
                             </div>
                           ) : (
@@ -485,7 +513,12 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
                 <p className="text-sm font-semibold">
                   {b.label}
                   {badges.includes(key) && (
-                    <span className="ml-2 text-[10px] font-semibold text-emerald-600">✓ Earned</span>
+                    <span
+                      className="ml-2 text-[10px] font-semibold"
+                      style={{ color: "var(--success)" }}
+                    >
+                      ✓ Earned
+                    </span>
                   )}
                 </p>
                 <p className="text-xs text-muted">{b.desc}</p>

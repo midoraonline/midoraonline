@@ -5,6 +5,9 @@ import CategoryDisplay from "@/components/CategoryDisplay";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { apiListingEvents } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
+import { useImpressionTracker } from "@/lib/hooks/useImpressionTracker";
+import type { ImpressionPool } from "@/lib/impressions";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
@@ -18,6 +21,8 @@ export type ProductCardData = {
   discountPriceUGX?: number | null;
   discountPercent?: number;
   imageUrl?: string;
+  /** True when any media attached to the listing is a video URL. */
+  hasVideo?: boolean;
   shopLogoUrl?: string;
   stockQuantity?: number | null;
   viewCount?: number;
@@ -135,10 +140,21 @@ function timeLabel(iso: string | null | undefined): { label: string; className: 
 export default function ProductCard({
   product,
   layout = "vertical",
+  impressionPool,
+  impressionPosition,
 }: {
   product: ProductCardData;
   layout?: "vertical" | "horizontal";
+  /** Which feed layer this card belongs to. Enables per-pool impression reporting. */
+  impressionPool?: ImpressionPool;
+  /** 1-based position in the feed; used for exposure analytics. */
+  impressionPosition?: number;
 }) {
+  const impressionRef = useImpressionTracker<HTMLElement>({
+    listingId: product.id,
+    pool: impressionPool ?? (product.boosted ? "boosted" : "organic"),
+    position: impressionPosition,
+  });
   const unopt = product.imageUrl ? userMediaUnoptimized(product.imageUrl) : false;
   const waHref = product.shopWhatsApp?.trim()
     ? productInquiryWhatsAppUrl(product.shopWhatsApp, {
@@ -163,7 +179,7 @@ export default function ProductCard({
 
   if (layout === "horizontal") {
     return (
-      <article className="dm-product-card dm-card-hover flex flex-row h-full overflow-hidden bg-surface min-h-[180px] sm:min-h-[220px] w-full">
+      <article ref={impressionRef as React.RefObject<HTMLElement>} className="dm-product-card dm-card-hover flex flex-row h-full overflow-hidden bg-surface min-h-[180px] sm:min-h-[220px] w-full">
         {/* Image area (Left) */}
         <div className="relative w-2/5 sm:w-1/2 bg-surface-subtle overflow-hidden group shrink-0">
           <Link href={productHref} className="dm-focus block w-full h-full outline-none">
@@ -213,6 +229,17 @@ export default function ProductCard({
               initialLikeCount={product.likeCount}
             />
           </div>
+
+          {/* Video-available badge — bottom-left corner of the image tile */}
+          {product.hasVideo && (
+            <span
+              className="pointer-events-none absolute left-2 bottom-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
+              title="Video available"
+            >
+              <MaterialSymbol name="play_circle" className="!text-[11px]" filled aria-hidden="true" />
+              Video
+            </span>
+          )}
         </div>
 
         {/* Card body (Right) */}
@@ -280,6 +307,7 @@ export default function ProductCard({
               {waHref ? (
                 <TradeDisclaimer type="whatsapp" onConfirm={() => {
                   apiListingEvents.recordListingEvent(product.id, "whatsapp_clicked").catch(() => {});
+                  notifyFeedEngagement();
                   window.open(waHref, "_blank", "noopener,noreferrer");
                 }}>
                   {(open) => (
@@ -319,7 +347,7 @@ export default function ProductCard({
 
   // Default Vertical Layout
   return (
-    <article className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden">
+    <article ref={impressionRef as React.RefObject<HTMLElement>} className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden">
       {/* Image area */}
       <div className="relative aspect-square w-full bg-surface-subtle sm:aspect-[4/3] overflow-hidden group">
         <Link href={productHref} className="dm-focus block w-full h-full outline-none">
@@ -375,6 +403,17 @@ export default function ProductCard({
             initialLikeCount={product.likeCount}
           />
         </div>
+
+        {/* Video-available badge — bottom-left corner of the image tile */}
+        {product.hasVideo && (
+          <span
+            className="pointer-events-none absolute left-2 bottom-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
+            title="Video available"
+          >
+            <MaterialSymbol name="play_circle" className="!text-[11px]" filled aria-hidden="true" />
+            Video
+          </span>
+        )}
       </div>
 
       {/* Card body */}
@@ -447,6 +486,7 @@ export default function ProductCard({
           {waHref ? (
             <TradeDisclaimer type="whatsapp" onConfirm={() => {
               apiListingEvents.recordListingEvent(product.id, "whatsapp_clicked").catch(() => {});
+              notifyFeedEngagement();
               window.open(waHref, "_blank", "noopener,noreferrer");
             }}>
               {(open) => (

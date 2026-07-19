@@ -5,6 +5,7 @@ import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
 import ShopProductGridRealtime from "@/components/shop/ShopProductGridRealtime";
 import ShopTabs from "@/components/shop/ShopTabs";
 import ShopReviews from "@/components/shop/ShopReviews";
+import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export default async function ShopDetails({
@@ -29,7 +30,7 @@ export default async function ShopDetails({
     return <ShopAnalyticsPage shop={shop} />;
   }
 
-  const items = !isEditRoute && !isAnalyticsRoute ? await listShopProducts(shop.id) : [];
+  const items = await listShopProducts(shop.id);
 
   const desc = (shop.description ?? "").trim();
   const about = (shop.about ?? "").trim();
@@ -47,16 +48,27 @@ export default async function ShopDetails({
 
   const productsSection = (
     <>
-      <div className="mb-4 sm:mb-6">
-        <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
-          Products &amp; Services
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          {items.length > 0
-            ? `${items.length} item${items.length === 1 ? "" : "s"} from ${shop.name}`
-            : `${shop.name} hasn't listed any items yet.`}
-        </p>
+      <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+            {shop.shop_type === "service" ? "Services" : "Inventory"}
+          </p>
+          <h2 className="font-display mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
+            Current listings
+          </h2>
+        </div>
+        {items.length > 0 ? (
+          <p className="shrink-0 text-xs text-muted sm:text-sm">
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </p>
+        ) : null}
       </div>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-muted">
+          {shop.name} hasn&apos;t listed any items yet.
+        </p>
+      ) : null}
 
       <ShopProductGridRealtime
         shop={{
@@ -83,44 +95,50 @@ export default async function ShopDetails({
     </div>
   ) : null;
 
-  const contactsSection = extraContacts.length > 0 ? (
-    <div className="dm-card p-6 sm:p-8">
-      <h2 className="text-base font-semibold tracking-tight sm:text-lg">
-        More contact details
-      </h2>
-      <ul className="mt-4 space-y-2.5 text-sm">
-        {extraContacts.map((c, i) => (
-          <li key={i} className="text-foreground/90">
-            <span className="text-muted capitalize">
-              {c.label ?? c.type ?? "Contact"}:{" "}
-            </span>
-            {c.value}
-          </li>
-        ))}
-      </ul>
-    </div>
-  ) : null;
+  const contactsSection =
+    extraContacts.length > 0 ? (
+      <div className="dm-card p-6 sm:p-8">
+        <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+          More contact details
+        </h2>
+        <ul className="mt-4 space-y-2.5 text-sm">
+          {extraContacts.map((c, i) => (
+            <li key={i} className="flex items-start gap-2 text-foreground">
+              <span className="text-xs font-medium capitalize text-muted">
+                {c.label ?? c.type ?? "Contact"}:
+              </span>
+              <span className="min-w-0 break-words">{c.value}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
 
   const conciergeSection = (
     <div className="dm-card p-6 sm:p-8">
-      <h2 className="text-base font-semibold tracking-tight sm:text-lg">
-        Have a question?
-      </h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-        Ask the {shop.name} AI concierge about products, pricing, availability
-        or delivery — it&apos;s powered by Midora Online and ready to help.
-      </p>
-      <p className="mt-3 text-xs text-muted">
-        Use the chat button in the bottom-right corner to get started.
-      </p>
-      <p className="mt-6">
-        <Link
-          href="/policies"
-          className="dm-pill dm-focus inline-flex bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
+      <div className="flex items-start gap-3">
+        <span
+          className="grid size-10 shrink-0 place-items-center rounded-xl"
+          style={{ background: "var(--info-subtle)", color: "var(--info)" }}
+          aria-hidden="true"
         >
+          <MaterialSymbol name="smart_toy" className="!text-xl" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+            Have a question?
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Ask the {shop.name} AI concierge about products, pricing, availability
+            or delivery. Tap the chat button in the bottom-right to start.
+          </p>
+        </div>
+      </div>
+      <div className="mt-6">
+        <Link href="/policies" className="dm-btn dm-btn-primary">
           View platform policies
         </Link>
-      </p>
+      </div>
     </div>
   );
 

@@ -26,6 +26,11 @@ export type MeResponse = {
   phone_number?: string | null;
   user_role?: "customer" | "merchant" | "admin" | "staff" | null;
   email_verified?: boolean | null;
+  /**
+   * Short-lived JWT (role="authenticated") for Supabase Realtime subscriptions.
+   * Passed to `supabase.realtime.setAuth()` so RLS policies bind to `auth.uid()`.
+   */
+  supabase_realtime_token?: string | null;
 };
 
 export type VerifyEmailResponse = {

@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isVideoUrl } from "@/lib/api/products";
 
 function userMediaUnoptimized(src: string) {
   return /ufs\.sh|utfs\.io/i.test(src) || /\.svg(\?|$)/i.test(src);
 }
 
 function isVideoSrc(src: string) {
-  const clean = src.split(/[?#]/, 1)[0];
-  return /\.(mp4|webm|mov|m4v)$/i.test(clean);
+  return isVideoUrl(src);
 }
 
 const AUTO_MS = 5500;

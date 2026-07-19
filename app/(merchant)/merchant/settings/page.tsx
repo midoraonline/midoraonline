@@ -5,6 +5,7 @@ import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import PushNotificationsSection from "@/components/PushNotificationsSection";
 
 // ── Reusable form field ───────────────────────────────────────────────────────
 function Field({
@@ -348,6 +349,7 @@ export default function MerchantSettingsPage() {
     <div className="space-y-5">
       <ProfileSection />
       <PasswordSection />
+      <PushNotificationsSection />
       <AccountInfoSection />
     </div>
   );

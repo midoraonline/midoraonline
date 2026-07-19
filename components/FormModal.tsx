@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -30,6 +30,9 @@ function unlockBodyScroll() {
  * Bottom-sheet on mobile, centered card on desktop.
  * Always portaled to document.body at --z-modal so floating chat FABs
  * (--z-fab) and sticky nav (--z-sticky) cannot cover Save / actions.
+ *
+ * Waits for client mount before portaling — avoids blank/broken dialogs
+ * during SSR/hydration when document.body is not ready.
  */
 export default function FormModal({
   title,
@@ -38,7 +41,14 @@ export default function FormModal({
   footer,
   maxWidthClass = "sm:max-w-lg",
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     lockBodyScroll();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -48,9 +58,9 @@ export default function FormModal({
       document.removeEventListener("keydown", onKey);
       unlockBodyScroll();
     };
-  }, [onClose]);
+  }, [mounted, onClose]);
 
-  if (typeof document === "undefined") return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div
@@ -100,10 +110,4 @@ export default function FormModal({
   );
 }
 
-export const formFieldClass =
-  "h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100";
 
-export const formTextareaClass =
-  "min-h-[88px] w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100";
-
-export const formLabelClass = "text-xs font-semibold text-neutral-700";

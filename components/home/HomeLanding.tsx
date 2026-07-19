@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
@@ -89,20 +89,63 @@ export default function HomeLanding({ initialProducts }: Props) {
   const { items: categoryItems } = useCategoryItems();
   const session = useAppSession();
   const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Persistent set of listing IDs already rendered in this browsing session.
+  // Sent as `exclude_ids` so subsequent fetches never repeat content — this
+  // is how "pagination without repeats" survives cross-reload in a
+  // serverless deploy (the server has no per-user in-memory pagination state).
+  const seenIdsRef = useRef<Set<string>>(new Set(initialProducts.map((p) => p.id)));
 
   useEffect(() => {
     setProducts(initialProducts);
+    seenIdsRef.current = new Set(initialProducts.map((p) => p.id));
+    setHasMore(true);
   }, [initialProducts]);
+
+  const buildExcludeParam = useCallback((): string | undefined => {
+    // Cap the URL length to protect edge routing (server also enforces 500 max).
+    const ids = [...seenIdsRef.current].slice(-500);
+    return ids.length > 0 ? ids.join(",") : undefined;
+  }, []);
 
   const refreshFeed = useCallback(async () => {
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed(72);
-      setProducts((data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site)));
+      const data = await apiProducts.getHomeFeed(72, 1, undefined, buildExcludeParam());
+      const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
+      const filtered = cards.filter((c) => !seenIdsRef.current.has(c.id));
+      if (filtered.length > 0) {
+        filtered.forEach((c) => seenIdsRef.current.add(c.id));
+        setProducts((prev) => [...prev, ...filtered]);
+        setHasMore(true);
+      }
     } catch {
       /* keep current feed */
     }
-  }, []);
+  }, [buildExcludeParam]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const site = publicSiteOrigin();
+      const data = await apiProducts.getHomeFeed(72, 1, undefined, buildExcludeParam());
+      const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
+      const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));
+      if (fresh.length === 0) {
+        setHasMore(false);
+      } else {
+        fresh.forEach((c) => seenIdsRef.current.add(c.id));
+        setProducts((prev) => [...prev, ...fresh]);
+      }
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [buildExcludeParam, hasMore, loadingMore]);
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -246,23 +289,36 @@ export default function HomeLanding({ initialProducts }: Props) {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {browseProducts.slice(0, 24).map((p) => (
+                {browseProducts.map((p, idx) => (
                   <div key={p.id} className="h-full">
-                    <ProductCard product={p} layout="vertical" />
+                    <ProductCard
+                      product={p}
+                      layout="vertical"
+                      impressionPool={p.boosted ? "boosted" : "organic"}
+                      impressionPosition={idx + 1}
+                    />
                   </div>
                 ))}
               </div>
-              {products.length > 0 ? (
-                <div className="pt-2 text-center">
-                  <Link
-                    href="/products"
-                    className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
+              <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
+                {hasMore ? (
+                  <button
+                    type="button"
+                    onClick={() => void loadMore()}
+                    disabled={loadingMore}
+                    className="dm-btn dm-btn-secondary inline-flex items-center gap-1.5 px-6 disabled:opacity-60"
                   >
-                    View all products
-                    <ArrowRight className="size-3.5" aria-hidden />
-                  </Link>
-                </div>
-              ) : null}
+                    {loadingMore ? "Loading…" : "Load more"}
+                  </button>
+                ) : null}
+                <Link
+                  href="/products"
+                  className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
+                >
+                  View all products
+                  <ArrowRight className="size-3.5" aria-hidden />
+                </Link>
+              </div>
             </>
           )}
         </section>
