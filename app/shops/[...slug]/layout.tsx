@@ -115,7 +115,7 @@ export default async function ShopLayout({
             <span className="font-semibold text-accent">5,000 UGX/month</span>
           </div>
         </div>
-      ) : null}
+      </div>
       <Navbar shopLogoUrl={shop.logo_url} shopName={shop.name} />
       {!isManagementRoute ? (
         <>
