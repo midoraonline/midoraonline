@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { CheckCircle2, Loader2, Wand2, X } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { useUploadThing, getUploadThingAuthHeaders } from "@/lib/uploadthing";
 import { watermarkProductFilesIfShopLogo } from "@/lib/watermark/client-apply";
 import {
@@ -26,24 +27,8 @@ type ImageUploadProps = {
   watermarkLogoUrl?: string | null;
 };
 
-type Pending = {
-  id: string;
-  original: File;
-  originalUrl: string;
-  processed?: Blob;
-  processedUrl?: string;
-  useProcessed: boolean;
-  status: "idle" | "removing-bg" | "error";
-  errorMsg?: string;
-  progress?: { current: number; total: number };
-};
-
 function endpointDefaultsAllowBg(endpoint: Endpoint): boolean {
   return endpoint === "productImage" || endpoint === "shopLogo";
-}
-
-function fileToObjectUrl(f: File | Blob): string {
-  return URL.createObjectURL(f);
 }
 
 function fileExt(mime: string | undefined): string {
@@ -52,11 +37,21 @@ function fileExt(mime: string | undefined): string {
   return "jpg";
 }
 
+/**
+ * Image picker with a single-tap upload flow.
+ *
+ * Contract:
+ * - Picking files starts the upload immediately — no intermediate confirmation.
+ * - Background removal is opt-in via a toggle (only shown when `allowBackgroundRemoval`).
+ *   The AI model is ~40MB and only downloads on first opt-in use.
+ * - Watermarking (product logos) is transparent and runs before upload.
+ * - Success / failure go through sonner (see AppToaster).
+ */
 export function ImageUpload({
   endpoint,
   onUploadComplete,
   onUploadManyComplete,
-  label = "Upload image",
+  label = "Add photos",
   accept = "image/*",
   className = "",
   previewUrl,
@@ -64,198 +59,152 @@ export function ImageUpload({
   allowBackgroundRemoval,
   watermarkLogoUrl,
 }: ImageUploadProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<Pending[]>([]);
   const [uploadPct, setUploadPct] = useState(0);
-  const [lastSuccessCount, setLastSuccessCount] = useState<number>(0);
-  const [isPreparing, setIsPreparing] = useState(false);
+  const [preparing, setPreparing] = useState<
+    { stage: "watermark" | "bg"; current: number; total: number; pct?: number } | null
+  >(null);
+  const [autoRemoveBg, setAutoRemoveBg] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const reviewRef = useRef<HTMLDivElement>(null);
 
   const bgEnabled = allowBackgroundRemoval ?? endpointDefaultsAllowBg(endpoint);
-  const shouldWatermark = endpoint === "productImage" && Boolean(watermarkLogoUrl?.trim());
+  const shouldWatermark =
+    endpoint === "productImage" && Boolean(watermarkLogoUrl?.trim());
 
   const { startUpload, isUploading } = useUploadThing(endpoint, {
     headers: getUploadThingAuthHeaders,
-    onUploadBegin: () => {
-      setUploadPct(0);
-      setError(null);
-    },
-    onUploadProgress: (p) => {
-      setUploadPct(Math.round(p));
-    },
+    onUploadBegin: () => setUploadPct(0),
+    onUploadProgress: (p) => setUploadPct(Math.round(p)),
     onClientUploadComplete: (res) => {
       const urls = (res ?? [])
         .map((r) => r.ufsUrl ?? r.url)
         .filter((u): u is string => Boolean(u));
-      if (onUploadManyComplete && urls.length) {
-        onUploadManyComplete(urls);
-      } else if (urls[0] && onUploadComplete) {
-        onUploadComplete(urls[0]);
+      if (onUploadManyComplete && urls.length) onUploadManyComplete(urls);
+      else if (urls[0] && onUploadComplete) onUploadComplete(urls[0]);
+      setUploadPct(0);
+      if (urls.length) {
+        toast.success(
+          urls.length === 1 ? "Photo uploaded" : `${urls.length} photos uploaded`,
+        );
       }
-      setLastSuccessCount(urls.length);
-      setUploadPct(100);
-      setPending((list) => {
-        for (const p of list) {
-          URL.revokeObjectURL(p.originalUrl);
-          if (p.processedUrl) URL.revokeObjectURL(p.processedUrl);
-        }
-        return [];
-      });
     },
     onUploadError: (e) => {
       setUploadPct(0);
-      setError(e.message);
+      toast.error("Upload failed", { description: e.message });
     },
   });
 
-  useEffect(() => {
-    if (!lastSuccessCount) return;
-    const t = setTimeout(() => setLastSuccessCount(0), 4500);
-    return () => clearTimeout(t);
-  }, [lastSuccessCount]);
+  const removeBackgrounds = useCallback(
+    async (files: File[]): Promise<File[]> => {
+      const out: File[] = [];
+      for (let i = 0; i < files.length; i += 1) {
+        const file = files[i];
+        const onProgress: BgRemovalProgress = (_key, current, total) => {
+          setPreparing({
+            stage: "bg",
+            current: i + 1,
+            total: files.length,
+            pct: Math.round((current / Math.max(1, total)) * 100),
+          });
+        };
+        setPreparing({ stage: "bg", current: i + 1, total: files.length });
+        try {
+          const blob = await removeBackground(file, { onProgress });
+          const ext = fileExt(blob.type);
+          const stem = file.name.replace(/\.[^.]+$/, "");
+          out.push(
+            new File([blob], `${stem}-nobg.${ext}`, {
+              type: blob.type || "image/png",
+            }),
+          );
+        } catch (err) {
+          const msg =
+            err instanceof Error
+              ? err.message
+              : "Background removal failed for one image.";
+          toast.warning("Kept original background", { description: msg });
+          out.push(file);
+        }
+      }
+      return out;
+    },
+    [],
+  );
+
+  const uploadFiles = useCallback(
+    async (files: File[]) => {
+      if (!files.length) return;
+      try {
+        let processed = files;
+        if (bgEnabled && autoRemoveBg) {
+          processed = await removeBackgrounds(files);
+        }
+        if (shouldWatermark) {
+          setPreparing({ stage: "watermark", current: 0, total: processed.length });
+          try {
+            processed = await watermarkProductFilesIfShopLogo(
+              processed,
+              watermarkLogoUrl,
+            );
+          } catch (err) {
+            // Watermarking is best-effort — never block the actual upload.
+            // Common failure: dev / corporate-proxy environments where the
+            // server route can't fetch the shop logo from the CDN.
+            const description =
+              err instanceof Error
+                ? err.message
+                : "Uploading photos without the shop logo overlay.";
+            toast.warning("Logo overlay skipped", { description });
+          }
+        }
+        setPreparing(null);
+        startUpload(processed);
+      } catch (err) {
+        setPreparing(null);
+        const description =
+          err instanceof Error ? err.message : "Could not prepare images for upload.";
+        toast.error("Upload failed", { description });
+      }
+    },
+    [
+      bgEnabled,
+      autoRemoveBg,
+      removeBackgrounds,
+      shouldWatermark,
+      watermarkLogoUrl,
+      startUpload,
+    ],
+  );
 
   useEffect(() => {
-    if (pending.length > 0 && reviewRef.current) {
-      reviewRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [pending.length]);
+    if (bgEnabled && autoRemoveBg) prewarmBgRemoval();
+  }, [bgEnabled, autoRemoveBg]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    setError(null);
-    setLastSuccessCount(0);
     e.target.value = "";
-
-    if (!bgEnabled) {
-      void (async () => {
-        setError(null);
-        try {
-          setIsPreparing(shouldWatermark);
-          const toUpload = shouldWatermark
-            ? await watermarkProductFilesIfShopLogo(files, watermarkLogoUrl)
-            : files;
-          startUpload(toUpload);
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Could not prepare images for upload.");
-        } finally {
-          setIsPreparing(false);
-        }
-      })();
-      return;
-    }
-
-    prewarmBgRemoval();
-    const next: Pending[] = files.map((f) => ({
-      id: `${f.name}-${f.size}-${crypto.randomUUID()}`,
-      original: f,
-      originalUrl: fileToObjectUrl(f),
-      useProcessed: false,
-      status: "idle",
-    }));
-    setPending((list) => [...list, ...next]);
+    if (!files.length) return;
+    void uploadFiles(files);
   };
 
-  async function handleRemoveBg(id: string) {
-    setPending((list) =>
-      list.map((p) =>
-        p.id === id ? { ...p, status: "removing-bg", errorMsg: undefined } : p
-      )
-    );
+  const busy = isUploading || preparing !== null;
 
-    const progress: BgRemovalProgress = (_key, current, total) => {
-      setPending((list) =>
-        list.map((p) =>
-          p.id === id ? { ...p, progress: { current, total } } : p
-        )
-      );
-    };
-
-    try {
-      const target = pending.find((p) => p.id === id);
-      if (!target) return;
-      const blob = await removeBackground(target.original, { onProgress: progress });
-      const url = fileToObjectUrl(blob);
-      setPending((list) =>
-        list.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                processed: blob,
-                processedUrl: url,
-                useProcessed: true,
-                status: "idle",
-                progress: undefined,
-              }
-            : p
-        )
-      );
-    } catch (e) {
-      setPending((list) =>
-        list.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                status: "error",
-                errorMsg:
-                  e instanceof Error
-                    ? e.message
-                    : "Background removal failed — keep original.",
-                progress: undefined,
-              }
-            : p
-        )
-      );
+  const buttonLabel = (() => {
+    if (isUploading) return `Uploading… ${uploadPct}%`;
+    if (preparing?.stage === "watermark") return "Applying logo…";
+    if (preparing?.stage === "bg") {
+      const pct = preparing.pct ?? 0;
+      return `Removing background ${preparing.current}/${preparing.total}${
+        pct ? ` · ${pct}%` : "…"
+      }`;
     }
-  }
+    return label;
+  })();
 
-  function discard(id: string) {
-    setPending((list) => {
-      const gone = list.find((p) => p.id === id);
-      if (gone) {
-        URL.revokeObjectURL(gone.originalUrl);
-        if (gone.processedUrl) URL.revokeObjectURL(gone.processedUrl);
-      }
-      return list.filter((p) => p.id !== id);
-    });
-  }
-
-  function toggleUseProcessed(id: string, use: boolean) {
-    setPending((list) =>
-      list.map((p) => (p.id === id ? { ...p, useProcessed: use } : p))
-    );
-  }
-
-  async function confirmUpload() {
-    if (!pending.length || isUploading || isPreparing) return;
-    setUploadPct(0);
-    let files = pending.map((p) => {
-      if (p.useProcessed && p.processed) {
-        const ext = fileExt(p.processed.type);
-        const stem = p.original.name.replace(/\.[^.]+$/, "");
-        return new File([p.processed], `${stem}-nobg.${ext}`, {
-          type: p.processed.type || "image/png",
-        });
-      }
-      return p.original;
-    });
-    if (shouldWatermark) {
-      setError(null);
-      try {
-        setIsPreparing(true);
-        files = await watermarkProductFilesIfShopLogo(files, watermarkLogoUrl);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not prepare images for upload.");
-        return;
-      } finally {
-        setIsPreparing(false);
-      }
-    }
-    startUpload(files);
-  }
-
-  const reviewCount = pending.length;
+  const progressPct = isUploading
+    ? uploadPct
+    : preparing?.stage === "bg"
+      ? preparing.pct ?? 0
+      : 0;
 
   return (
     <div className={className}>
@@ -268,30 +217,25 @@ export function ImageUpload({
           className="hidden"
           aria-hidden
           onChange={handleChange}
-          disabled={isUploading || isPreparing}
+          disabled={busy}
         />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={isUploading || isPreparing}
-          className="dm-pill dm-focus inline-flex items-center gap-2 border border-border bg-surface text-foreground/85 hover:bg-primary/5 px-4 py-2 text-sm font-medium disabled:opacity-60"
+          disabled={busy}
+          className="dm-btn dm-btn-secondary dm-btn-sm"
         >
-          {isPreparing ? (
+          {busy ? (
             <>
-              <Loader2 className="size-4 animate-spin" />
-              Applying logo…
-            </>
-          ) : isUploading ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Uploading… {uploadPct}%
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              {buttonLabel}
             </>
           ) : (
-            label
+            buttonLabel
           )}
         </button>
-        {previewUrl && !reviewCount && !isUploading && !isPreparing && (
-          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-background">
+        {previewUrl && !busy && (
+          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-surface-subtle">
             <Image
               src={previewUrl}
               alt="Preview"
@@ -304,176 +248,39 @@ export function ImageUpload({
         )}
       </div>
 
-      {isUploading && (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
+      {bgEnabled ? (
+        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
+          <input
+            type="checkbox"
+            className="size-3.5 rounded border-border text-accent focus:ring-accent"
+            checked={autoRemoveBg}
+            onChange={(e) => setAutoRemoveBg(e.target.checked)}
+            disabled={busy}
+          />
+          <Sparkles className="size-3.5" aria-hidden="true" />
+          <span>
+            Auto-remove background
+            <span className="ml-1 text-[10px] text-muted">
+              (slow on first use — downloads a 40MB AI model)
+            </span>
+          </span>
+        </label>
+      ) : null}
+
+      {progressPct > 0 && busy ? (
+        <div
+          className="mt-2 h-1 overflow-hidden rounded-full bg-surface-subtle"
+          role="progressbar"
+          aria-valuenow={progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
           <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300"
-            style={{ width: `${uploadPct}%` }}
+            className="h-full rounded-full bg-accent transition-[width] duration-300"
+            style={{ width: `${progressPct}%` }}
           />
         </div>
-      )}
-
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
-
-      {lastSuccessCount > 0 && !isUploading && (
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-green-500/20 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 dark:bg-green-950/40 dark:text-green-200">
-          <CheckCircle2 className="size-4" />
-          Uploaded {lastSuccessCount} {lastSuccessCount === 1 ? "image" : "images"} — see {lastSuccessCount === 1 ? "it" : "them"} in the list below.
-        </div>
-      )}
-
-      {reviewCount > 0 && (
-        <div
-          ref={reviewRef}
-          className="mt-4 space-y-3 rounded-2xl border border-primary/30 bg-surface/80 p-3 shadow-sm ring-1 ring-primary/5 backdrop-blur-sm sm:p-4"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground/90">
-                Review {reviewCount === 1 ? "your image" : `your ${reviewCount} images`}
-              </p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
-                Tap{" "}
-                <span className="inline-flex items-center gap-0.5 font-semibold text-foreground/85">
-                  <Wand2 className="size-3" /> Remove background
-                </span>{" "}
-                to get a clean cut-out, or hit{" "}
-                <span className="font-semibold text-primary">Upload {reviewCount > 1 ? "all" : ""}</span>{" "}
-                to send {reviewCount === 1 ? "it" : "them"} as-is.
-                {shouldWatermark ? (
-                  <>
-                    {" "}
-                    Your shop logo is applied in the corner before upload.
-                  </>
-                ) : null}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void confirmUpload()}
-              disabled={isUploading || isPreparing}
-              className="dm-pill dm-focus inline-flex shrink-0 items-center gap-1.5 bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
-            >
-              {isPreparing ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  Applying logo…
-                </>
-              ) : isUploading ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  Uploading {uploadPct}%
-                </>
-              ) : (
-                <>Upload {reviewCount > 1 ? "all" : ""}</>
-              )}
-            </button>
-          </div>
-
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {pending.map((p) => {
-              const showUrl = p.useProcessed && p.processedUrl ? p.processedUrl : p.originalUrl;
-              const busy = p.status === "removing-bg";
-              const pct = p.progress
-                ? Math.round((p.progress.current / Math.max(1, p.progress.total)) * 100)
-                : 0;
-              return (
-                <li
-                  key={p.id}
-                  className="group relative overflow-hidden rounded-xl border border-foreground/[0.08] bg-background"
-                >
-                  <div
-                    className="aspect-[4/3] w-full"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(45deg, #e8ecef 25%, transparent 25%), linear-gradient(-45deg, #e8ecef 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e8ecef 75%), linear-gradient(-45deg, transparent 75%, #e8ecef 75%)",
-                      backgroundSize: "16px 16px",
-                      backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0",
-                    }}
-                  >
-                    <div className="relative h-full w-full">
-                      <Image
-                        src={showUrl}
-                        alt={p.original.name}
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 640px) 100vw, 28rem"
-                        unoptimized
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => discard(p.id)}
-                    disabled={isUploading || isPreparing}
-                    className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80 dm-focus disabled:opacity-50"
-                    aria-label="Discard"
-                    title="Discard"
-                  >
-                    <X className="size-4" strokeWidth={2.25} />
-                  </button>
-
-                  <div className="space-y-2 p-3">
-                    <p className="truncate text-xs text-muted" title={p.original.name}>
-                      {p.original.name}
-                    </p>
-                    {p.processedUrl ? (
-                      <div className="flex items-center gap-1 rounded-full bg-foreground/[0.05] p-0.5 text-[11px] font-medium">
-                        <button
-                          type="button"
-                          onClick={() => toggleUseProcessed(p.id, false)}
-                          className={`flex-1 rounded-full px-3 py-1 transition-colors ${
-                            !p.useProcessed
-                              ? "bg-surface text-foreground shadow-sm"
-                              : "text-muted hover:text-foreground"
-                          }`}
-                        >
-                          Original
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toggleUseProcessed(p.id, true)}
-                          className={`flex-1 rounded-full px-3 py-1 transition-colors ${
-                            p.useProcessed
-                              ? "bg-surface text-foreground shadow-sm"
-                              : "text-muted hover:text-foreground"
-                          }`}
-                        >
-                          No background
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => void handleRemoveBg(p.id)}
-                        onMouseEnter={prewarmBgRemoval}
-                        disabled={busy || isUploading || isPreparing}
-                        className="dm-focus inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-foreground/[0.12] bg-foreground/[0.03] px-3 py-1.5 text-[11px] font-semibold text-foreground/90 transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-60"
-                      >
-                        {busy ? (
-                          <>
-                            <Loader2 className="size-3.5 animate-spin" />
-                            {pct > 0 ? `Removing background… ${pct}%` : "Loading model…"}
-                          </>
-                        ) : (
-                          <>
-                            <Wand2 className="size-3.5" />
-                            Remove background
-                          </>
-                        )}
-                      </button>
-                    )}
-                    {p.status === "error" && (
-                      <p className="text-[11px] text-red-600">{p.errorMsg}</p>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }

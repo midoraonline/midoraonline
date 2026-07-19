@@ -11,6 +11,7 @@ const NAV: DashboardNavItem[] = [
   { href: "/admin/reports", label: "Reports", icon: <IconFlag /> },
   { href: "/admin/listings", label: "Listings", icon: <IconPackage /> },
   { href: "/admin/comments", label: "Comments", icon: <IconMessage /> },
+  { href: "/admin/feed-config", label: "Feed tuning", icon: <IconTune /> },
 ];
 
 const SECONDARY: DashboardNavItem[] = [
@@ -108,6 +109,22 @@ function IconFeedback() {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       <path d="m18 10 4 4" />
       <path d="m18 14 4-4" />
+    </svg>
+  );
+}
+
+function IconTune() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 21v-7" />
+      <path d="M4 10V3" />
+      <path d="M12 21v-9" />
+      <path d="M12 8V3" />
+      <path d="M20 21v-5" />
+      <path d="M20 12V3" />
+      <path d="M2 14h4" />
+      <path d="M10 8h4" />
+      <path d="M18 16h4" />
     </svg>
   );
 }

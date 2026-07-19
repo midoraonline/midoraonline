@@ -5,7 +5,6 @@ import type { Contact, Shop } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { productMediaItems, productPrimaryImage } from "@/lib/api/products";
 import { productPageSlug } from "@/lib/productUrl";
-import ShopActions from "./ShopActions";
 import ShopHeroCarousel, { type HeroMedia } from "./ShopHeroCarousel";
 import {
   filterDuplicateContacts,
@@ -21,19 +20,11 @@ import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import ShopHeaderRating from "@/components/shop/ShopHeaderRating";
 import ShopContactButtons from "@/components/shop/ShopContactButtons";
 
-function ShopLogo({ logoUrl, name }: { logoUrl?: string | null; name: string }) {
-  if (logoUrl) {
-    return (
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl ring-2 ring-foreground/[0.08] sm:size-24">
-        <Image src={logoUrl} alt={`${name} logo`} fill className="object-cover" priority sizes="96px" />
-      </div>
-    );
-  }
-  return (
-    <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl ring-2 ring-foreground/[0.08] sm:size-24">
-      <Image src="/logo.png" alt="Midora Online" fill className="object-contain p-2" priority sizes="96px" />
-    </div>
-  );
+function formatFollowerCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  if (n < 1_000_000) return `${Math.round(n / 1000)}k`;
+  return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`;
 }
 
 function contactHref(c: Contact): { href: string; external?: boolean } {
@@ -80,9 +71,15 @@ function MetaChip({ immersive, children }: { immersive: boolean; children: React
 export default async function ShopHeader({
   shop,
   products = [],
+  backHref = "/shops",
+  backLabel = "All shops",
 }: {
   shop: Shop;
   products?: Product[];
+  /** Where the top-left back arrow leads. Defaults to the shop browse. */
+  backHref?: string;
+  /** Label rendered next to the arrow. */
+  backLabel?: string;
 }) {
   const location = locationDisplay(shop.location);
   const heroContacts = filterDuplicateContacts(shop);
@@ -128,23 +125,20 @@ export default async function ShopHeader({
         ? [shop.category]
         : [];
 
-  // ── Back + actions row ──────────────────────────────────────────
+  // ── Back row — back arrow only; engagement + owner CTAs live below the hero ──────
   const topRow = (
-    <div className="flex items-center justify-between px-4 pt-4 pb-1 sm:px-6 sm:pt-5">
+    <div className="flex items-center px-4 pt-3 pb-1 sm:px-6 sm:pt-4">
       <Link
-        href="/shops"
+        href={backHref}
         className={
           immersive
             ? "inline-flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-black/35"
             : "inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
         }
       >
-        <MaterialSymbol name="arrow_back" className="!text-sm leading-none" />
-        All shops
+        <MaterialSymbol name="arrow_back" className="!text-sm leading-none" aria-hidden="true" />
+        {backLabel}
       </Link>
-      <div className={immersive ? "rounded-xl bg-black/20 backdrop-blur-sm" : ""}>
-        <ShopActions shopSlug={shop.slug} shopName={shop.name} shopId={shop.id} />
-      </div>
     </div>
   );
 
@@ -153,144 +147,114 @@ export default async function ShopHeader({
     <div
       className={
         immersive
-          ? "mx-auto w-full max-w-2xl space-y-4 px-4 pt-4 pb-12 text-center sm:max-w-3xl sm:px-6 sm:pt-5 sm:pb-14"
-          : "mx-auto w-full max-w-2xl space-y-4 px-4 pt-6 pb-10 text-center sm:max-w-3xl sm:px-6 sm:pt-8 sm:pb-12"
+          ? "mx-auto w-full max-w-2xl space-y-3 px-4 pt-2 pb-8 text-center sm:max-w-3xl sm:px-6 sm:pt-3 sm:pb-10"
+          : "mx-auto w-full max-w-2xl space-y-3 px-4 pt-4 pb-6 text-center sm:max-w-3xl sm:px-6 sm:pt-5 sm:pb-8"
       }
       style={immersive ? { color: "var(--hero-text-strong)" } : undefined}
     >
-      {/* Logo — only shown in plain hero; immersive uses product imagery */}
-      {!immersive && (
-        <div className="flex justify-center">
-          <ShopLogo logoUrl={shop.logo_url} name={shop.name} />
-        </div>
-      )}
-
-      {/* Shop name + verified badge */}
-      <div className="flex flex-wrap items-center justify-center gap-2">
+      {/* Identity: name, tight trust row */}
+      <div className="flex flex-col items-center gap-3">
         <h1
           className={
             immersive
-              ? "text-2xl font-semibold tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)] sm:text-3xl"
-              : "font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+              ? "font-display text-3xl font-semibold tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)] sm:text-4xl"
+              : "font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
           }
           style={immersive ? { color: "var(--hero-text-strong)" } : undefined}
         >
           {shop.name}
         </h1>
-        {shop.available_now ? (
-          <span
-            className={
-              immersive
-                ? "inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-100 backdrop-blur-sm"
-                : "inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-            }
-          >
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+
+        {/* Compact trust row: Verified pill · followers · available now */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-xs">
+          {shop.is_active ? (
+            <>
+              {shop.trust_badges?.includes("business_verified") ? (
+                <MetaChip immersive={immersive}>
+                  <MaterialSymbol
+                    name="domain_verification"
+                    className="!text-[14px] leading-none"
+                    filled
+                    aria-hidden="true"
+                  />
+                  Business Verified
+                </MetaChip>
+              ) : shop.trust_badges?.includes("identity_verified") ? (
+                <MetaChip immersive={immersive}>
+                  <MaterialSymbol
+                    name="verified_user"
+                    className="!text-[14px] leading-none"
+                    filled
+                    aria-hidden="true"
+                  />
+                  Verified
+                </MetaChip>
+              ) : (
+                <MetaChip immersive={immersive}>
+                  <MaterialSymbol
+                    name="storefront"
+                    className="!text-[14px] leading-none"
+                    filled
+                    aria-hidden="true"
+                  />
+                  Registered Shop
+                </MetaChip>
+              )}
+            </>
+          ) : (
+            <span
+              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
+              style={
+                immersive
+                  ? {
+                      background: "var(--hero-chip-bg)",
+                      borderColor: "var(--hero-chip-border)",
+                      color: "var(--hero-text-quiet)",
+                    }
+                  : {
+                      borderColor: "color-mix(in oklab, var(--foreground) 12%, transparent)",
+                      color: "color-mix(in oklab, var(--foreground) 55%, transparent)",
+                    }
+              }
+            >
+              Temporarily Closed
             </span>
-            Available now
-          </span>
-        ) : null}
-        {shop.is_active ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {shop.trust_badges?.includes("business_verified") && (
-              <span
-                key="business_verified"
-                className={
-                  immersive
-                    ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
-                    : "inline-flex items-center gap-1 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent"
-                }
-                style={
-                  immersive
-                    ? {
-                        background: "var(--hero-chip-bg)",
-                        borderColor: "var(--hero-chip-border)",
-                        color: "var(--hero-text-strong)",
-                      }
-                    : undefined
-                }
-              >
-                <MaterialSymbol
-                  name="domain_verification"
-                  className={`!text-[14px] leading-none ${immersive ? "text-white" : ""}`}
-                  filled
+          )}
+
+          {typeof shop.follower_count === "number" && shop.follower_count > 0 ? (
+            <MetaChip immersive={immersive}>
+              <MaterialSymbol
+                name="group"
+                className="!text-[14px] leading-none"
+                filled
+                aria-hidden="true"
+              />
+              {formatFollowerCount(shop.follower_count)} followers
+            </MetaChip>
+          ) : null}
+
+          {shop.available_now ? (
+            <span
+              className={
+                immersive
+                  ? "inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/15 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm"
+                  : "dm-pill dm-pill--success gap-1.5 px-2.5 py-1 text-xs font-semibold"
+              }
+            >
+              <span className="relative flex size-2">
+                <span
+                  className="absolute inline-flex size-full animate-ping rounded-full opacity-75"
+                  style={{ background: immersive ? "#fff" : "var(--success)" }}
                 />
-                Business Verified
-              </span>
-            )}
-            {shop.trust_badges?.includes("identity_verified") && (
-              <span
-                key="identity_verified"
-                className={
-                  immersive
-                    ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
-                    : "inline-flex items-center gap-1 rounded-full border border-emerald-600/30 bg-emerald-600/10 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-                }
-                style={
-                  immersive
-                    ? {
-                        background: "var(--hero-chip-bg)",
-                        borderColor: "var(--hero-chip-border)",
-                        color: "var(--hero-text-strong)",
-                      }
-                    : undefined
-                }
-              >
-                <MaterialSymbol
-                  name="verified_user"
-                  className={`!text-[14px] leading-none ${immersive ? "text-emerald-400" : "text-emerald-600"}`}
-                  filled
+                <span
+                  className="relative inline-flex size-2 rounded-full"
+                  style={{ background: immersive ? "#fff" : "var(--success)" }}
                 />
-                Identity Verified
               </span>
-            )}
-            {(!shop.trust_badges || (!shop.trust_badges.includes("business_verified") && !shop.trust_badges.includes("identity_verified"))) && (
-              <span
-                className={
-                  immersive
-                    ? "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
-                    : "inline-flex items-center gap-1 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2.5 py-1 text-xs font-semibold text-foreground/80"
-                }
-                style={
-                  immersive
-                    ? {
-                        background: "var(--hero-chip-bg)",
-                        borderColor: "var(--hero-chip-border)",
-                        color: "var(--hero-text-strong)",
-                      }
-                    : undefined
-                }
-              >
-                <MaterialSymbol
-                  name="storefront"
-                  className="!text-[14px] leading-none"
-                  filled
-                />
-                Registered Shop
-              </span>
-            )}
-          </div>
-        ) : (
-          <span
-            className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
-            style={
-              immersive
-                ? {
-                    background: "var(--hero-chip-bg)",
-                    borderColor: "var(--hero-chip-border)",
-                    color: "var(--hero-text-quiet)",
-                  }
-                : {
-                    borderColor: "color-mix(in oklab, var(--foreground) 12%, transparent)",
-                    color: "color-mix(in oklab, var(--foreground) 55%, transparent)",
-                  }
-            }
-          >
-            Temporarily Closed
-          </span>
-        )}
+              Available now
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Rating */}
@@ -356,27 +320,6 @@ export default async function ShopHeader({
           waHref={waHref}
         />
       ) : null}
-      {shop.is_active ? (
-            <p
-              className={`text-center text-xs ${!immersive ? "text-muted" : ""}`}
-              style={immersive ? { color: "var(--hero-text-muted)" } : undefined}
-            >
-              <span
-                className={
-                  immersive ? "font-medium text-white/95" : "font-medium text-emerald-600"
-                }
-              >
-                {(shop.trust_badges?.includes("identity_verified") || shop.trust_badges?.includes("business_verified")) ? "✓ Verified seller" : "Seller on Midora"}
-              </span>
-            </p>
-          ) : (
-            <p
-              className={`text-center text-xs ${!immersive ? "text-muted" : ""}`}
-              style={immersive ? { color: "var(--hero-text-muted)" } : undefined}
-            >
-              Seller on Midora · Final sale happens in WhatsApp
-            </p>
-          )}
 
       {/* Promoted products */}
       {publishedProducts.filter((p) => p.boosted).length > 0 && (
@@ -505,12 +448,12 @@ export default async function ShopHeader({
     <ShopHeroCarousel
       media={media}
       className="border-b border-white/[0.06]"
-      minHeightClass="min-h-[20rem] sm:min-h-[24rem] lg:min-h-[28rem]"
+      minHeightClass="min-h-[13rem] sm:min-h-[16rem] lg:min-h-[18rem]"
     >
       {heroContent}
     </ShopHeroCarousel>
   ) : (
-    <section className="border-b border-foreground/[0.08] bg-gradient-to-b from-surface/60 to-background">
+    <section className="border-b border-border bg-surface">
       {heroContent}
     </section>
   );

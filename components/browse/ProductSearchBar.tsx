@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Clock, Search, TrendingUp, X } from "lucide-react";
 
 import { apiSearch } from "@/lib/api";
+import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 
 type Suggestion = {
@@ -82,6 +83,7 @@ export default function ProductSearchBar({
     onChange(query);
     setFocused(false);
     apiSearch.logSearchQuery(query).catch(() => {});
+    notifyFeedEngagement();
     onSubmit?.(query);
   }
 
@@ -90,6 +92,8 @@ export default function ProductSearchBar({
       const q = value.trim();
       if (q) {
         setFocused(false);
+        apiSearch.logSearchQuery(q).catch(() => {});
+        notifyFeedEngagement();
         onSubmit?.(q);
       }
     }

@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ChatList from "@/components/chat/ChatList";
 import ChatThread from "@/components/chat/ChatThread";
+import EnablePushBanner from "@/components/chat/EnablePushBanner";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import type { Conversation } from "@/lib/api/chat";
@@ -66,6 +67,7 @@ function ChatPageInner() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-10rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-foreground/[0.06] bg-background sm:h-[calc(100vh-8rem)]">
+      <EnablePushBanner />
       <div className="flex h-full flex-col sm:flex-row">
         <div className={`w-full border-r border-foreground/[0.06] sm:w-80 sm:block ${showList ? "block" : "hidden sm:block"}`}>
           <div className="border-b border-foreground/[0.06] px-4 py-3">

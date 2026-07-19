@@ -2,16 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Plus, BarChart2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, BarChart2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { apiShops } from "@/lib/api";
 import type { Shop } from "@/lib/api/shops";
 import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import LocationInput from "@/components/LocationInput";
 import CategoryPicker from "@/components/CategoryPicker";
-import { locationDisplay } from "./shopUtils";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
 
@@ -43,27 +43,46 @@ function shopToFormState(shop: Shop): FormState {
     whatsappNumber: shop.whatsapp_number ?? "",
     availabilityDays: shop.availability?.days ?? "",
     availabilityHours: shop.availability?.hours ?? "",
-    location: typeof loc === "string"
-      ? loc
-      : loc && typeof loc === "object" && "display" in loc
-        ? String((loc as { display?: string }).display ?? "")
-        : "",
+    location:
+      typeof loc === "string"
+        ? loc
+        : loc && typeof loc === "object" && "display" in loc
+          ? String((loc as { display?: string }).display ?? "")
+          : "",
     shopType: shop.shop_type ?? "product",
     category: shop.category ?? "",
     isActive: shop.is_active ?? true,
   };
 }
 
+function formsEqual(a: FormState, b: FormState): boolean {
+  return (
+    a.name === b.name &&
+    a.description === b.description &&
+    a.about === b.about &&
+    a.logoUrl === b.logoUrl &&
+    a.shopEmail === b.shopEmail &&
+    a.whatsappNumber === b.whatsappNumber &&
+    a.availabilityDays === b.availabilityDays &&
+    a.availabilityHours === b.availabilityHours &&
+    a.location === b.location &&
+    a.shopType === b.shopType &&
+    a.category === b.category &&
+    a.isActive === b.isActive
+  );
+}
+
+// ── Access gates ────────────────────────────────────────────────────────────
 function NotLoggedIn({ shopSlug }: { shopSlug: string }) {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="dm-card space-y-4 p-8 text-center">
-        <AlertCircle className="mx-auto size-8 text-muted" />
+        <AlertCircle className="mx-auto size-8 text-muted" aria-hidden="true" />
         <p className="text-sm font-semibold">Sign in required</p>
         <p className="text-xs text-muted">Log in to edit your shop.</p>
         <Link
           href={`/login?next=/shops/${shopSlug}/edit`}
-          className="dm-pill dm-focus inline-flex bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+          className="dm-btn dm-btn-primary inline-flex"
         >
           Sign in
         </Link>
@@ -76,15 +95,13 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="dm-card space-y-4 p-8 text-center">
-        <AlertCircle className="mx-auto size-8 text-muted" />
+        <AlertCircle className="mx-auto size-8 text-muted" aria-hidden="true" />
         <p className="text-sm font-semibold">Access denied</p>
-        <p className="text-xs text-muted">You must be the shop owner or an admin to edit this page.</p>
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground dm-focus rounded-xl px-3 py-1.5 transition-colors"
-        >
-          <ArrowLeft className="size-3.5" />
+        <p className="text-xs text-muted">
+          You must be the shop owner or an admin to edit this page.
+        </p>
+        <button type="button" onClick={onBack} className="dm-btn dm-btn-ghost dm-btn-sm">
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
           Back to shop
         </button>
       </div>
@@ -92,6 +109,7 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ── Logo field ──────────────────────────────────────────────────────────────
 function LogoField({
   currentUrl,
   stagedUrl,
@@ -110,7 +128,7 @@ function LogoField({
     <div className="space-y-3">
       {displayUrl && (
         <div className="flex items-center gap-3">
-          <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-foreground/[0.04] ring-1 ring-foreground/[0.06]">
+          <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-subtle">
             <Image
               src={displayUrl}
               alt="Shop logo"
@@ -122,8 +140,17 @@ function LogoField({
           </div>
           <div className="min-w-0 space-y-1">
             {isStaged ? (
-              <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800/40">
-                <span className="size-1.5 rounded-full bg-amber-500" />
+              <p
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                style={{
+                  background: "var(--warning-subtle)",
+                  color: "var(--warning)",
+                }}
+              >
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ background: "var(--warning)" }}
+                />
                 New logo staged — save to apply
               </p>
             ) : (
@@ -132,7 +159,7 @@ function LogoField({
             <button
               type="button"
               onClick={onRemove}
-              className="text-[11px] text-muted transition-colors hover:text-red-600 dm-focus rounded"
+              className="text-[11px] text-muted transition-colors hover:text-[color:var(--error)] dm-focus rounded"
             >
               Remove logo
             </button>
@@ -155,154 +182,156 @@ function LogoField({
   );
 }
 
-// ── Reusable toggle switch ──────────────────────────────────────────────────
-function ToggleSwitch({
-  checked,
-  onChange,
-  id,
-  disabled,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  id?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      id={id}
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      disabled={disabled}
-      className={[
-        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-primary" : "bg-foreground/20",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "pointer-events-none inline-block size-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
-          checked ? "translate-x-5" : "translate-x-0",
-        ].join(" ")}
-      />
-    </button>
-  );
-}
-
+// ── Details tab ─────────────────────────────────────────────────────────────
 function DetailsTab({
   shop,
   form,
   stagedLogo,
+  isDirty,
   onChange,
   onLogoStaged,
   onLogoRemove,
+  onSaved,
 }: {
   shop: Shop;
   form: FormState;
   stagedLogo: string;
+  isDirty: boolean;
   onChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
   onLogoStaged: (url: string) => void;
   onLogoRemove: () => void;
+  onSaved: (savedForm: FormState) => void;
 }) {
   const router = useRouter();
   const session = useAppSession();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+
+  const errors = useMemo(() => {
+    const e: Partial<Record<keyof FormState, string>> = {};
+    if (!form.name.trim()) e.name = "Shop name is required.";
+    return e;
+  }, [form.name]);
+
+  const canSubmit = Object.keys(errors).length === 0;
+
+  const handleCancel = useCallback(() => {
+    if (isDirty) {
+      const ok =
+        typeof window === "undefined"
+          ? true
+          : window.confirm("Discard your changes?");
+      if (!ok) return;
+    }
+    router.push(`/shops/${shop.slug}`);
+  }, [isDirty, router, shop.slug]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setShowErrors(true);
     if (!session.isAuthenticated) {
-      setError("You must be logged in to save changes.");
-      return;
-    }
-    if (!form.name.trim()) {
-      setError("Shop name is required.");
-      return;
-    }
-    setError(null);
-    setSaving(true);
-    try {
-      const hasAvailability =
-        Boolean(form.availabilityDays.trim()) || Boolean(form.availabilityHours.trim());
-      await apiShops.updateShop(shop.id, {
-        name: form.name.trim(),
-        description: form.description.trim() || null,
-        about: form.about.trim() || null,
-        logo_url: form.logoUrl.trim() || null,
-        shop_email: form.shopEmail.trim() || null,
-        whatsapp_number: form.whatsappNumber.trim() || null,
-        availability: hasAvailability
-          ? {
-              days: form.availabilityDays.trim() || null,
-              hours: form.availabilityHours.trim() || null,
-            }
-          : null,
-        location: form.location.trim() && form.location.trim() !== "Online Shop" ? { display: form.location.trim() } : null,
-        shop_type: form.shopType,
-        category: form.category.trim() || undefined,
-        is_active: form.isActive,
+      toast.error("Sign in required", {
+        description: "Log in again to save your changes.",
       });
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        router.push(`/shops/${shop.slug}`);
-      }, 1400);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save changes. Please try again.");
+      return;
+    }
+    if (!canSubmit) return;
+
+    const hasAvailability =
+      Boolean(form.availabilityDays.trim()) ||
+      Boolean(form.availabilityHours.trim());
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      about: form.about.trim() || null,
+      logo_url: form.logoUrl.trim() || null,
+      shop_email: form.shopEmail.trim() || null,
+      whatsapp_number: form.whatsappNumber.trim() || null,
+      availability: hasAvailability
+        ? {
+            days: form.availabilityDays.trim() || null,
+            hours: form.availabilityHours.trim() || null,
+          }
+        : null,
+      location:
+        form.location.trim() && form.location.trim() !== "Online Shop"
+          ? { display: form.location.trim() }
+          : null,
+      shop_type: form.shopType,
+      category: form.category.trim() || undefined,
+      is_active: form.isActive,
+    };
+
+    setSaving(true);
+    const request = apiShops.updateShop(shop.id, payload);
+    toast.promise(request, {
+      loading: "Saving changes…",
+      success: "Shop updated",
+      error: (err) =>
+        err instanceof Error
+          ? err.message
+          : "Could not save changes. Please try again.",
+    });
+    try {
+      await request;
+      onSaved(form);
+      router.push(`/shops/${shop.slug}`);
+    } catch {
+      /* handled by sonner */
     } finally {
       setSaving(false);
     }
   }
 
-  if (success) {
-    return (
-      <div className="dm-card flex items-center gap-3 p-5 text-sm font-semibold text-green-700 dark:text-green-400">
-        <CheckCircle2 className="size-5 shrink-0 text-green-500" />
-        Changes saved — redirecting to your shop…
-      </div>
-    );
-  }
+  const errorId = (field: keyof FormState) =>
+    showErrors && errors[field] ? `edit-shop-error-${field}` : undefined;
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
-      {error && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
+    <form onSubmit={(e) => void handleSubmit(e)} noValidate className="space-y-5">
       <section className="dm-card space-y-4 p-5 sm:p-6">
         <h2 className="text-sm font-semibold tracking-tight">Basic information</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-foreground/80">
-              Shop name <span className="text-red-500">*</span>
+            <label htmlFor="edit-shop-name" className="text-sm font-medium text-foreground">
+              Shop name <span className="text-[color:var(--error)]">*</span>
             </label>
             <input
-              className="dm-input-xs dm-focus"
+              id="edit-shop-name"
+              className="dm-input"
               placeholder="e.g. My Coffee Shop"
               value={form.name}
               onChange={(e) => onChange("name", e.target.value)}
+              aria-invalid={showErrors && Boolean(errors.name)}
+              aria-describedby={errorId("name")}
             />
+            {showErrors && errors.name ? (
+              <p id={errorId("name")} className="text-xs text-[color:var(--error)]">
+                {errors.name}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-foreground/80">Short description</label>
+            <label
+              htmlFor="edit-shop-description"
+              className="text-sm font-medium text-foreground"
+            >
+              Short description
+            </label>
             <input
-              className="dm-input-xs dm-focus"
+              id="edit-shop-description"
+              className="dm-input"
               placeholder="Tagline shown on the shop page"
               value={form.description}
               onChange={(e) => onChange("description", e.target.value)}
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-foreground/80">About</label>
+            <label htmlFor="edit-shop-about" className="text-sm font-medium text-foreground">
+              About
+            </label>
             <textarea
-              className="dm-textarea-xs dm-focus"
+              id="edit-shop-about"
+              className="dm-textarea"
               placeholder="Longer description of your shop"
               rows={3}
               value={form.about}
@@ -310,8 +339,8 @@ function DetailsTab({
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-foreground/80">Category</label>
-            <div className="rounded-xl border border-border bg-white p-3 sm:p-4">
+            <p className="text-sm font-medium text-foreground">Category</p>
+            <div className="dm-card p-3 sm:p-4">
               <CategoryPicker
                 value={form.category}
                 onChange={(val) => onChange("category", val)}
@@ -321,9 +350,12 @@ function DetailsTab({
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">Shop type</label>
+            <label htmlFor="edit-shop-type" className="text-sm font-medium text-foreground">
+              Shop type
+            </label>
             <select
-              className="dm-input-xs appearance-none pr-9 dm-focus"
+              id="edit-shop-type"
+              className="dm-input appearance-none pr-9"
               value={form.shopType}
               onChange={(e) => onChange("shopType", e.target.value as apiShops.ShopType)}
             >
@@ -333,8 +365,7 @@ function DetailsTab({
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">Location</label>
-            {/* Use the same LocationInput (OpenStreetMap) as the Open Shop wizard */}
+            <p className="text-sm font-medium text-foreground">Location</p>
             <LocationInput
               value={form.location}
               onChange={(val) => onChange("location", val)}
@@ -369,19 +400,28 @@ function DetailsTab({
         <h2 className="text-sm font-semibold tracking-tight">Contact details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">Shop email</label>
+            <label htmlFor="edit-shop-email" className="text-sm font-medium text-foreground">
+              Shop email
+            </label>
             <input
+              id="edit-shop-email"
               type="email"
-              className="dm-input-xs dm-focus"
+              className="dm-input"
               placeholder="hello@shop.com"
               value={form.shopEmail}
               onChange={(e) => onChange("shopEmail", e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">WhatsApp number</label>
+            <label
+              htmlFor="edit-shop-whatsapp"
+              className="text-sm font-medium text-foreground"
+            >
+              WhatsApp number
+            </label>
             <input
-              className="dm-input-xs dm-focus"
+              id="edit-shop-whatsapp"
+              className="dm-input"
               placeholder="+256700000000"
               value={form.whatsappNumber}
               onChange={(e) => {
@@ -398,18 +438,24 @@ function DetailsTab({
         <h2 className="text-sm font-semibold tracking-tight">Availability</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">Open days</label>
+            <label htmlFor="edit-shop-days" className="text-sm font-medium text-foreground">
+              Open days
+            </label>
             <input
-              className="dm-input-xs dm-focus"
+              id="edit-shop-days"
+              className="dm-input"
               placeholder="e.g. Mon – Fri"
               value={form.availabilityDays}
               onChange={(e) => onChange("availabilityDays", e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/80">Hours</label>
+            <label htmlFor="edit-shop-hours" className="text-sm font-medium text-foreground">
+              Hours
+            </label>
             <input
-              className="dm-input-xs dm-focus"
+              id="edit-shop-hours"
+              className="dm-input"
               placeholder="e.g. 9 AM – 6 PM"
               value={form.availabilityHours}
               onChange={(e) => onChange("availabilityHours", e.target.value)}
@@ -418,64 +464,84 @@ function DetailsTab({
         </div>
       </section>
 
-      {/* ── Shop Status (proper toggle switch) ─────────────────────────────── */}
       <section className="dm-card p-5 sm:p-6">
         <h2 className="mb-4 text-sm font-semibold tracking-tight">Shop status</h2>
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-foreground/90">Shop is active</p>
+            <p className="text-sm font-medium text-foreground">Shop is active</p>
             <p className="text-xs text-muted">
               When off, your shop shows as temporarily closed to customers.
             </p>
           </div>
-          <ToggleSwitch
+          <button
+            type="button"
             id="shop-is-active"
-            checked={form.isActive}
-            onChange={(v) => onChange("isActive", v)}
-          />
+            role="switch"
+            aria-checked={form.isActive}
+            aria-label="Shop is active"
+            onClick={() => onChange("isActive", !form.isActive)}
+            className="dm-toggle"
+          >
+            <span className="dm-toggle-thumb" />
+          </button>
         </div>
       </section>
 
       <div className="flex items-center justify-between gap-4 pb-4">
         <button
           type="button"
-          onClick={() => router.push(`/shops/${shop.slug}`)}
-          className="text-xs text-muted hover:text-foreground dm-focus rounded-xl px-3 py-2 transition-colors"
+          onClick={handleCancel}
+          disabled={saving}
+          className="dm-btn dm-btn-ghost dm-btn-sm"
         >
           Cancel
         </button>
         <button
           type="submit"
-          disabled={saving}
-          className="dm-pill dm-focus inline-flex items-center gap-2 bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+          disabled={saving || (showErrors && !canSubmit)}
+          className="dm-btn dm-btn-primary"
         >
-          {saving ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Saving…
-            </>
-          ) : (
-            "Save changes"
-          )}
+          {saving ? "Saving…" : "Save changes"}
         </button>
       </div>
     </form>
   );
 }
 
+// ── Page shell ──────────────────────────────────────────────────────────────
 export default function EditShopForm({ shop }: { shop: Shop }) {
   const router = useRouter();
   const session = useAppSession();
 
   const [tab, setTab] = useState<EditTab>("details");
-  const [form, setForm] = useState<FormState>(() => shopToFormState(shop));
-  // Track the logo URL that has been uploaded but not yet saved — lets us show
-  // a preview + "staged" warning without touching the persisted shop record.
+  const [initialForm, setInitialForm] = useState<FormState>(() =>
+    shopToFormState(shop),
+  );
+  const [form, setForm] = useState<FormState>(initialForm);
   const [stagedLogo, setStagedLogo] = useState("");
+
+  const isDirty = !formsEqual(form, initialForm);
 
   function onChange<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  function onSaved(savedForm: FormState) {
+    setInitialForm(savedForm);
+    setForm(savedForm);
+    setStagedLogo("");
+  }
+
+  // Warn on hard navigation / refresh while dirty.
+  useEffect(() => {
+    if (!isDirty) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty]);
 
   if (!session.hydrated) {
     return (
@@ -502,9 +568,32 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
     { id: "services", label: "Services" },
   ];
 
+  function handleTabChange(next: EditTab) {
+    if (tab === "details" && next !== "details" && isDirty) {
+      const ok =
+        typeof window === "undefined"
+          ? true
+          : window.confirm("You have unsaved changes. Discard them?");
+      if (!ok) return;
+      setForm(initialForm);
+      setStagedLogo("");
+    }
+    setTab(next);
+  }
+
+  function handleBack() {
+    if (isDirty) {
+      const ok =
+        typeof window === "undefined"
+          ? true
+          : window.confirm("Discard your changes?");
+      if (!ok) return;
+    }
+    router.push(`/shops/${shop.slug}`);
+  }
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-7">
-      {/* ── Header: title + action buttons ────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>
@@ -513,37 +602,36 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {/* Add product — prominent CTA near analytics */}
           <button
             type="button"
-            onClick={() => setTab("products")}
-            className="dm-pill dm-focus inline-flex items-center gap-1.5 bg-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
+            onClick={() => handleTabChange("products")}
+            className="dm-btn dm-btn-primary dm-btn-sm"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3.5" aria-hidden="true" />
             Add product
           </button>
           <Link
             href={`/shops/${shop.slug}/analytics`}
-            className="dm-pill dm-focus inline-flex items-center gap-1.5 border border-foreground/[0.1] bg-foreground/[0.05] px-3 py-2 text-xs font-semibold text-foreground/90 hover:bg-foreground/[0.08]"
+            className="dm-btn dm-btn-secondary dm-btn-sm"
           >
-            <BarChart2 className="size-3.5" />
+            <BarChart2 className="size-3.5" aria-hidden="true" />
             Analytics
           </Link>
           <button
             type="button"
-            onClick={() => router.push(`/shops/${shop.slug}`)}
-            className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-xs text-muted transition-colors hover:text-foreground dm-focus"
+            onClick={handleBack}
+            className="dm-btn dm-btn-ghost dm-btn-sm"
           >
-            <ArrowLeft className="size-3.5" />
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
             Back to shop
           </button>
         </div>
       </div>
 
-      {/* ── Tab bar ─────────────────────────────────────────────────────── */}
       <div
         role="tablist"
-        className="flex flex-wrap gap-1 rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] p-1"
+        aria-label="Edit shop sections"
+        className="flex flex-wrap gap-1 rounded-2xl border border-border bg-surface-subtle p-1"
       >
         {tabs.map((t) => (
           <button
@@ -551,11 +639,11 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
             role="tab"
             type="button"
             aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => handleTabChange(t.id)}
             className={[
               "rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:text-sm",
               tab === t.id
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-surface text-foreground shadow-sm"
                 : "text-muted hover:text-foreground",
             ].join(" ")}
           >
@@ -569,18 +657,30 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           shop={shop}
           form={form}
           stagedLogo={stagedLogo}
+          isDirty={isDirty}
           onChange={onChange}
           onLogoStaged={(url) => setStagedLogo(url)}
           onLogoRemove={() => setStagedLogo("")}
+          onSaved={onSaved}
         />
       )}
 
       {tab === "products" && (
-        <ShopCatalogEditor shopId={shop.id} itemType="product" heading="Products" shopLogoUrl={shop.logo_url ?? null} />
+        <ShopCatalogEditor
+          shopId={shop.id}
+          itemType="product"
+          heading="Products"
+          shopLogoUrl={shop.logo_url ?? null}
+        />
       )}
 
       {tab === "services" && (
-        <ShopCatalogEditor shopId={shop.id} itemType="service" heading="Services" shopLogoUrl={shop.logo_url ?? null} />
+        <ShopCatalogEditor
+          shopId={shop.id}
+          itemType="service"
+          heading="Services"
+          shopLogoUrl={shop.logo_url ?? null}
+        />
       )}
     </div>
   );

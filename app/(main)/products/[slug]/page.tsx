@@ -3,16 +3,24 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
-import { productImageUrls, productPriceUgx, productOriginalPriceUgx, productIsDiscounted, productDiscountPercent } from "@/lib/api/products";
+import {
+  productImageUrls,
+  productPriceUgx,
+  productOriginalPriceUgx,
+  productIsDiscounted,
+  productDiscountPercent,
+} from "@/lib/api/products";
 import CategoryDisplay from "@/components/CategoryDisplay";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
+import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
+import PdpStickyActionBar from "@/components/product/PdpStickyActionBar";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl";
-import { getProductById, getShopById } from "@/lib/api/server";
+import { getProductById } from "@/lib/api/server";
 import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
@@ -77,7 +85,9 @@ export async function generateMetadata({
   return {
     title: `${product.title} | Midora Online`,
     description: desc,
-    keywords: [product.title, product.category ?? "", "Midora Online", "Uganda"].filter(Boolean),
+    keywords: [product.title, product.category ?? "", "Midora Online", "Uganda"].filter(
+      Boolean,
+    ),
     openGraph: {
       title: product.title,
       description: desc,
@@ -130,141 +140,200 @@ export default async function ProductDetails({
     });
   const verifiedShop = shop?.is_active !== false;
   const freshness = timeAgo(product.updated_at || product.created_at);
+  const inStock =
+    product.item_type === "product" &&
+    product.stock_quantity != null &&
+    product.stock_quantity > 0;
+  const lowStock = inStock && (product.stock_quantity ?? 0) <= 3;
 
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       <ProductPageEffects productId={product.id} />
 
-      {/* Breadcrumb */}
+      {/* Breadcrumb — skill §4.1 #1 */}
       <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
-        <Link
-          href="/products"
-          className="font-medium text-muted transition-colors hover:text-foreground"
-        >
+        <Link href="/products" className="dm-link font-medium">
           Products
         </Link>
-        <ChevronRight className="size-3.5 shrink-0 text-muted/50" aria-hidden />
+        <ChevronRight
+          className="size-3.5 shrink-0 text-muted/50"
+          aria-hidden="true"
+        />
         <span className="min-w-0 truncate text-foreground/80">{product.title}</span>
       </nav>
 
       <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10">
-        {/* Gallery */}
+        {/* Gallery — skill §4.1 #2 */}
         <div className="min-w-0">
           <ProductImageGallery images={images} title={product.title}>
             {shop ? (
-              <Link
-                href={`/shops/${shop.slug}`}
-                className="absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
-              >
-                <div className="size-6 overflow-hidden rounded-lg bg-foreground/[0.06]">
-                  {shop.logo_url ? (
-                    <img src={shop.logo_url} alt="" className="size-full object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center text-[9px] font-bold text-muted">
-                      {shop.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                {shop.name}
-              </Link>
+              <ProductShopLogoOverlay
+                shopName={shop.name}
+                logoUrl={shop.logo_url}
+                shopHref={`/shops/${shop.slug}`}
+                className="!left-3 !top-auto !bottom-3 !right-auto"
+              />
             ) : null}
           </ProductImageGallery>
         </div>
 
-        {/* Details */}
+        {/* Buy box — skill §4.1 #3 */}
         <div className="min-w-0 space-y-5">
-          {/* Header */}
+          {/* Header: chips → title → price → rating */}
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-foreground/[0.05] px-2.5 py-0.5 text-[10px] font-medium text-muted">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted">
                 {product.item_type === "service" ? "Service" : "Product"}
               </span>
               {product.category ? (
                 <CategoryDisplay label={product.category} variant="chip" />
               ) : null}
               {product.boosted && (
-                <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-accent">
+                <span
+                  className="dm-pill px-2.5 py-0.5 text-[10px] font-medium"
+                  style={{
+                    background: "color-mix(in oklab, var(--accent) 12%, transparent)",
+                    color: "var(--accent)",
+                  }}
+                >
                   Promoted
                 </span>
               )}
-              {product.status === "active" && (
-                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600">
-                  Active
-                </span>
-              )}
               {freshness && (
-                <span className="rounded-full bg-foreground/[0.05] px-2.5 py-0.5 text-[10px] font-medium text-muted">
+                <span className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted">
                   {freshness}
                 </span>
               )}
             </div>
+
             <h1 className="font-display mt-2 text-xl font-semibold tracking-tight text-pretty sm:text-2xl">
               {product.title}
             </h1>
-            <div className="mt-3 flex items-center gap-3">
-              <p className="text-xl font-semibold tabular-nums tracking-tight text-foreground sm:text-2xl">
+
+            <div className="mt-3 flex flex-wrap items-baseline gap-3">
+              <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground sm:text-3xl">
                 {formatUGX(price)}
               </p>
               {isDiscounted && (
                 <>
-                  <p className="text-sm font-medium text-muted line-through">
+                  <p className="text-base font-medium text-muted line-through">
                     {formatUGX(originalPrice)}
                   </p>
-                  <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                    -{discountPct}%
+                  <span
+                    className="dm-pill px-2.5 py-0.5 text-[11px] font-bold"
+                    style={{
+                      background: "var(--error-subtle)",
+                      color: "var(--error)",
+                    }}
+                  >
+                    -{discountPct}% off
                   </span>
                 </>
               )}
             </div>
+
             <div className="mt-2">
               {reviewStats.total_reviews > 0 ? (
-                <StarRating
-                  rating={reviewStats.average_rating}
-                  count={reviewStats.total_reviews}
-                  size="sm"
-                />
+                <a href="#reviews" className="inline-block">
+                  <StarRating
+                    rating={reviewStats.average_rating}
+                    count={reviewStats.total_reviews}
+                    size="sm"
+                  />
+                </a>
               ) : (
                 <StarRating rating={0} size="sm" placeholder />
               )}
             </div>
           </div>
 
-          {/* Shop Info */}
+          {/* Seller strip — skill §4.1 #3 */}
           {shop && (
-            <div className="rounded-xl border border-border bg-surface p-3">
-              <Link
-                href={`/shops/${shop.slug}`}
-                className="flex items-center gap-3 group"
-              >
-                <div className="size-10 overflow-hidden rounded-xl bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
-                  {shop.logo_url ? (
-                    <img src={shop.logo_url} alt="" className="size-full object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center text-xs font-bold text-muted">
-                      {shop.name.charAt(0).toUpperCase()}
-                    </div>
+            <Link
+              href={`/shops/${shop.slug}`}
+              className="dm-card group flex items-center gap-3 p-3 transition-colors hover:border-border-strong"
+            >
+              <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
+                {shop.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- CDN URLs
+                  <img
+                    src={shop.logo_url}
+                    alt=""
+                    className="size-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex size-full items-center justify-center text-xs font-bold text-muted">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold transition-colors group-hover:text-accent">
+                  {shop.name}
+                  {verifiedShop && (
+                    <VerifiedIcon className="ml-1 inline !text-sm" aria-label="Verified" />
                   )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold group-hover:text-accent transition-colors">
-                    {shop.name}
-                    {verifiedShop && <VerifiedIcon className="ml-1 inline !text-sm" />}
-                  </p>
-                  <p className="text-xs text-muted">
-                    {shop.available_now ? (
-                      <span className="font-medium text-emerald-600">Available now</span>
-                    ) : (
-                      "Shop on Midora"
-                    )}
-                  </p>
-                </div>
-                <MaterialSymbol name="chevron_right" className="!text-lg shrink-0 text-muted" />
-              </Link>
-            </div>
+                </p>
+                <p className="text-xs text-muted">
+                  {shop.available_now ? (
+                    <span
+                      className="font-medium"
+                      style={{ color: "var(--success)" }}
+                    >
+                      Available now
+                    </span>
+                  ) : (
+                    "Shop on Midora"
+                  )}
+                </p>
+              </div>
+              <MaterialSymbol
+                name="chevron_right"
+                className="!text-lg shrink-0 text-muted"
+                aria-hidden="true"
+              />
+            </Link>
           )}
 
-          {/* Contact seller */}
-          <div className="flex flex-col gap-2">
+          {/* Trust bar — skill §4.1 #3 */}
+          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
+            {verifiedShop && (
+              <li
+                className="inline-flex items-center gap-1.5 font-medium"
+                style={{ color: "var(--success)" }}
+              >
+                <MaterialSymbol name="verified_user" className="!text-sm" aria-hidden="true" />
+                Verified seller
+              </li>
+            )}
+            {waHref ? (
+              <li className="inline-flex items-center gap-1.5">
+                <MaterialSymbol name="chat" className="!text-sm" aria-hidden="true" />
+                Replies on WhatsApp
+              </li>
+            ) : null}
+            {inStock && (
+              <li
+                className="inline-flex items-center gap-1.5 font-medium"
+                style={{ color: lowStock ? "var(--warning)" : "var(--success)" }}
+              >
+                <MaterialSymbol name="inventory_2" className="!text-sm" aria-hidden="true" />
+                {lowStock
+                  ? `Only ${product.stock_quantity} left`
+                  : `${product.stock_quantity} in stock`}
+              </li>
+            )}
+            {product.location_name && (
+              <li className="inline-flex items-center gap-1.5">
+                <MaterialSymbol name="location_on" className="!text-sm" aria-hidden="true" />
+                {product.location_name}
+              </li>
+            )}
+          </ul>
+
+          {/* Primary + secondary CTAs — skill §4.1 #3 */}
+          <div id="pdp-buybox-end" className="space-y-2">
             <div className="flex gap-2">
               {waHref && shop ? (
                 <SellerContactConsent
@@ -274,13 +343,19 @@ export default async function ProductDetails({
                   listingUrl={listingUrl}
                   title={product.title}
                 >
-                  <div className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98]">
-                    <WhatsAppIcon className="size-4 shrink-0 text-white" />
-                    WhatsApp
+                  <div
+                    className="dm-btn flex-1 cursor-pointer text-white shadow-sm transition-transform active:scale-[0.98]"
+                    style={{ background: "#25D366" }}
+                  >
+                    <WhatsAppIcon
+                      className="size-4 shrink-0 text-white"
+                      aria-hidden="true"
+                    />
+                    Message on WhatsApp
                   </div>
                 </SellerContactConsent>
               ) : shop ? (
-                <p className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-center text-xs text-muted">
+                <p className="dm-card flex-1 px-4 py-3 text-center text-xs text-muted">
                   WhatsApp not connected
                 </p>
               ) : null}
@@ -296,100 +371,21 @@ export default async function ProductDetails({
               )}
             </div>
 
-            {/* Trust + secondary actions */}
             <div className="flex items-center justify-between pt-1">
-              {verifiedShop ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                  <MaterialSymbol name="verified" className="!text-sm" />
-                  Verified seller
-                </span>
-              ) : (
-                <span className="text-xs text-muted">Seller on Midora</span>
+              <ProductLikeButton
+                productId={product.id}
+                initialLikeCount={product.like_count ?? 0}
+                initialLiked={product.viewer_liked ?? undefined}
+              />
+              {shop && (
+                <Link
+                  href={`/shops/${shop.slug}`}
+                  className="dm-btn dm-btn-secondary dm-btn-sm"
+                >
+                  View shop
+                </Link>
               )}
-              <div className="flex items-center gap-2">
-                <ProductLikeButton
-                  productId={product.id}
-                  initialLikeCount={product.like_count ?? 0}
-                  initialLiked={product.viewer_liked ?? undefined}
-                />
-                {shop && (
-                  <Link
-                    href={`/shops/${shop.slug}`}
-                    className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
-                  >
-                    View shop
-                  </Link>
-                )}
-              </div>
             </div>
-          </div>
-
-          {/* Listing details */}
-          {(product.category || product.location_name || (product.item_type === "product" && product.stock_quantity != null) || product.updated_at) && (
-            <section className="overflow-hidden rounded-xl border border-border bg-surface">
-              <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
-                Listing details
-              </h2>
-              <dl className="divide-y divide-border text-sm">
-                {product.category && (
-                  <div className="flex items-start gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol name="category" className="!text-sm" />
-                      Category
-                    </dt>
-                    <dd className="min-w-0 flex-1">
-                      <CategoryDisplay label={product.category} variant="detail" />
-                    </dd>
-                  </div>
-                )}
-                {product.location_name && (
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol name="location_on" className="!text-sm" />
-                      Location
-                    </dt>
-                    <dd className="font-medium text-foreground">{product.location_name}</dd>
-                  </div>
-                )}
-                {product.item_type === "product" && product.stock_quantity != null && (
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol name="inventory_2" className="!text-sm" />
-                      In stock
-                    </dt>
-                    <dd className="font-medium text-foreground">{product.stock_quantity} units</dd>
-                  </div>
-                )}
-                {product.updated_at && (
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol name="schedule" className="!text-sm" />
-                      Updated
-                    </dt>
-                    <dd className="font-medium text-foreground">
-                      {new Date(product.updated_at).toLocaleDateString()}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </section>
-          )}
-
-          {/* Activity & report */}
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-            {product.view_count != null && (
-              <span className="flex items-center gap-1">
-                <MaterialSymbol name="visibility" className="!text-sm" />
-                {product.view_count} views
-              </span>
-            )}
-            {product.like_count != null && (
-              <span className="flex items-center gap-1">
-                <MaterialSymbol name="favorite" className="!text-sm" />
-                {product.like_count} likes
-              </span>
-            )}
-            <ReportListing productId={product.id} />
           </div>
 
           {/* Owner actions */}
@@ -405,28 +401,163 @@ export default async function ProductDetails({
             />
           )}
 
-          {/* Description */}
+          {/* Description — skill §4.2 #3 */}
           {product.description && (
-            <section className="overflow-hidden rounded-xl border border-border bg-surface">
+            <section className="dm-card overflow-hidden">
               <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
                 Description
               </h2>
-              <p className="px-4 py-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
+              <p className="px-4 py-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
                 {product.description}
               </p>
             </section>
           )}
 
-          {/* Reviews */}
-          <ProductReviews productId={product.id} />
+          {/* Specifications — skill §4.2 #4 */}
+          {(product.category ||
+            product.location_name ||
+            (product.item_type === "product" && product.stock_quantity != null) ||
+            product.updated_at) && (
+            <section className="dm-card overflow-hidden">
+              <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
+                Listing details
+              </h2>
+              <dl className="divide-y divide-border text-sm">
+                {product.category && (
+                  <div className="flex items-start gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol
+                        name="category"
+                        className="!text-sm"
+                        aria-hidden="true"
+                      />
+                      Category
+                    </dt>
+                    <dd className="min-w-0 flex-1">
+                      <CategoryDisplay label={product.category} variant="detail" />
+                    </dd>
+                  </div>
+                )}
+                {product.location_name && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol
+                        name="location_on"
+                        className="!text-sm"
+                        aria-hidden="true"
+                      />
+                      Location
+                    </dt>
+                    <dd className="font-medium text-foreground">{product.location_name}</dd>
+                  </div>
+                )}
+                {product.item_type === "product" && product.stock_quantity != null && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol
+                        name="inventory_2"
+                        className="!text-sm"
+                        aria-hidden="true"
+                      />
+                      In stock
+                    </dt>
+                    <dd className="font-medium text-foreground">
+                      {product.stock_quantity} units
+                    </dd>
+                  </div>
+                )}
+                {product.updated_at && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                      <MaterialSymbol
+                        name="schedule"
+                        className="!text-sm"
+                        aria-hidden="true"
+                      />
+                      Updated
+                    </dt>
+                    <dd className="font-medium text-foreground">
+                      {new Date(product.updated_at).toLocaleDateString()}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
 
-          {/* Comments */}
+          {/* Activity + report */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+            {product.view_count != null && (
+              <span className="inline-flex items-center gap-1">
+                <MaterialSymbol name="visibility" className="!text-sm" aria-hidden="true" />
+                {product.view_count} views
+              </span>
+            )}
+            {product.like_count != null && (
+              <span className="inline-flex items-center gap-1">
+                <MaterialSymbol name="favorite" className="!text-sm" aria-hidden="true" />
+                {product.like_count} likes
+              </span>
+            )}
+            <ReportListing productId={product.id} />
+          </div>
+
+          {/* Reviews — skill §4.2 #5 */}
+          <div id="reviews" className="scroll-mt-24">
+            <ProductReviews productId={product.id} />
+          </div>
+
+          {/* Comments — skill §4.2 #6 */}
           <ProductComments productId={product.id} />
         </div>
       </div>
 
-      {/* Similar products */}
+      {/* Similar products — skill §4.2 #7 */}
       <SimilarProducts productId={product.id} />
+
+      {/* Sticky mobile action bar — skill §4.2 #9 */}
+      {(waHref || (shop && shop.owner_id)) && (
+        <PdpStickyActionBar sentinelId="pdp-buybox-end">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold tabular-nums text-foreground">
+              {formatUGX(price)}
+            </p>
+            {isDiscounted ? (
+              <p className="truncate text-[11px] text-muted line-through">
+                {formatUGX(originalPrice)}
+              </p>
+            ) : (
+              <p className="truncate text-[11px] text-muted">{product.title}</p>
+            )}
+          </div>
+          {waHref && shop ? (
+            <SellerContactConsent
+              shopId={shop.id}
+              productId={product.id}
+              whatsappNumber={shop.whatsapp_number ?? ""}
+              listingUrl={listingUrl}
+              title={product.title}
+            >
+              <div
+                className="dm-btn cursor-pointer text-white shadow-sm active:scale-[0.98]"
+                style={{ background: "#25D366" }}
+              >
+                <WhatsAppIcon
+                  className="size-4 shrink-0 text-white"
+                  aria-hidden="true"
+                />
+                WhatsApp
+              </div>
+            </SellerContactConsent>
+          ) : shop && shop.owner_id ? (
+            <MessageSellerButton
+              sellerId={shop.owner_id}
+              shopId={shop.id}
+              productId={product.id}
+            />
+          ) : null}
+        </PdpStickyActionBar>
+      )}
     </div>
   );
 }

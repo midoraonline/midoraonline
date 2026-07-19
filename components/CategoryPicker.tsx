@@ -16,6 +16,11 @@ type Props = {
   compact?: boolean;
 };
 
+/**
+ * Two sequential dropdowns: pick a category, then (if it has children) pick
+ * a subcategory. Emits the final leaf label via `onChange` — empty string
+ * while the selection is incomplete so parent forms can validate.
+ */
 export default function CategoryPicker({
   value,
   onChange,
@@ -31,12 +36,11 @@ export default function CategoryPicker({
   const [parentSlug, setParentSlug] = useState<string>("");
   const [subcategoryLabel, setSubcategoryLabel] = useState<string>("");
 
-  // Sync from prop when editing an existing value. Do NOT clear local parentSlug
-  // when value is "" — that happens after picking a parent that still needs a
-  // subcategory, and wiping parentSlug would hide the subcategory chips.
+  // Sync from prop when editing an existing value. Do not clear parentSlug
+  // when value is "" — that happens right after picking a parent that still
+  // needs a subcategory, and wiping parentSlug would collapse the second dropdown.
   useEffect(() => {
     if (!value.trim()) return;
-
     if (resolved.parentLabel) {
       const parent = tree.find((g) => g.parent.label === resolved.parentLabel);
       if (parent) {
@@ -52,6 +56,7 @@ export default function CategoryPicker({
   );
   const children = activeGroup?.children ?? [];
   const hasChildren = children.length > 0;
+  const needsSubcategory = Boolean(parentSlug && hasChildren && !subcategoryLabel);
 
   function handleParentChange(slug: string) {
     setParentSlug(slug);
@@ -65,35 +70,30 @@ export default function CategoryPicker({
       onChange("");
       return;
     }
-    // Parents without children are complete; otherwise wait for a subcategory.
+    // Parents without children resolve immediately; otherwise wait for subcategory.
     onChange(group.children.length === 0 ? group.parent.label : "");
   }
 
-  function handleSubcategoryClick(label: string) {
-    if (subcategoryLabel === label) {
-      setSubcategoryLabel("");
-      onChange("");
-    } else {
-      setSubcategoryLabel(label);
-      onChange(label);
-    }
+  function handleSubcategoryChange(label: string) {
+    setSubcategoryLabel(label);
+    onChange(label);
   }
 
   const labelClass = compact
-    ? "text-[11px] font-semibold text-neutral-700"
-    : "text-xs font-semibold text-neutral-800";
+    ? "text-xs font-medium text-foreground"
+    : "text-sm font-medium text-foreground";
 
-  const selectClass = compact
-    ? "h-9 w-full rounded-lg border border-neutral-200 bg-white px-2.5 pr-9 text-xs text-neutral-900 appearance-none focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
-    : "h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 pr-10 text-sm text-neutral-900 appearance-none focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60";
-
-  const needsSubcategory = Boolean(parentSlug && hasChildren && !subcategoryLabel);
+  const selectClass = "dm-input appearance-none pr-9";
 
   return (
     <div className={`space-y-3 ${className}`}>
+      {/* Parent category dropdown */}
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
-          Category {required ? <span className="ml-0.5 text-red-500">*</span> : null}
+          Category{" "}
+          {required ? (
+            <span className="text-[color:var(--error)]">*</span>
+          ) : null}
         </label>
         <div className="relative">
           <select
@@ -112,101 +112,95 @@ export default function CategoryPicker({
               </option>
             ))}
           </select>
-
           {loading ? (
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
-              <span className="block size-4 animate-spin rounded-full border-2 border-neutral-300 border-t-orange-500" />
-            </div>
+            <span
+              className="pointer-events-none absolute right-3 top-1/2 block size-4 -translate-y-1/2 animate-spin rounded-full border-2 border-border"
+              style={{ borderTopColor: "var(--accent)" }}
+              aria-hidden="true"
+            />
           ) : (
             <MaterialSymbol
               name="expand_more"
-              className="pointer-events-none absolute right-2.5 top-1/2 !text-[18px] -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute right-2.5 top-1/2 !text-[18px] -translate-y-1/2 text-muted"
+              aria-hidden="true"
             />
           )}
         </div>
       </div>
 
+      {/* Subcategory dropdown — appears only when the parent has children */}
       {parentSlug && hasChildren ? (
-        <div className="space-y-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-          <div className="flex items-center gap-2">
-            <span className={labelClass}>
-              Subcategory {required ? <span className="text-red-500">*</span> : null}
-            </span>
-            {needsSubcategory ? (
-              <span className="text-[10px] font-semibold text-orange-600">
-                ← pick one to continue
-              </span>
+        <div className="space-y-1.5">
+          <label htmlFor={`${idPrefix}-child`} className={labelClass}>
+            Subcategory{" "}
+            {required ? (
+              <span className="text-[color:var(--error)]">*</span>
             ) : null}
-            {subcategoryLabel ? (
-              <button
-                type="button"
-                onClick={() => handleSubcategoryClick(subcategoryLabel)}
-                className="ml-auto text-[10px] font-semibold text-neutral-500 transition-colors hover:text-red-600"
-              >
-                Clear
-              </button>
-            ) : null}
-          </div>
-
-          <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto sm:max-h-none">
-            {children.map((child) => {
-              const active = subcategoryLabel === child.label;
-              return (
-                <button
-                  key={child.slug}
-                  type="button"
-                  onClick={() => handleSubcategoryClick(child.label)}
-                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all sm:text-xs ${
-                    active
-                      ? "border-primary bg-primary text-white shadow-sm"
-                      : "border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
-                >
-                  {child.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {required ? (
-            <input
-              aria-hidden
-              tabIndex={-1}
-              className="sr-only"
+          </label>
+          <div className="relative">
+            <select
+              id={`${idPrefix}-child`}
+              className={selectClass}
               value={subcategoryLabel}
-              required
-              readOnly
+              onChange={(e) => handleSubcategoryChange(e.target.value)}
+              required={required}
+              aria-invalid={needsSubcategory}
+            >
+              <option value="">Select a subcategory</option>
+              {children.map((child) => (
+                <option key={child.slug} value={child.label}>
+                  {child.label}
+                </option>
+              ))}
+            </select>
+            <MaterialSymbol
+              name="expand_more"
+              className="pointer-events-none absolute right-2.5 top-1/2 !text-[18px] -translate-y-1/2 text-muted"
+              aria-hidden="true"
             />
+          </div>
+          {needsSubcategory ? (
+            <p className="text-xs text-[color:var(--warning)]">
+              Pick a subcategory to complete the category.
+            </p>
           ) : null}
         </div>
       ) : null}
 
+      {/* Selection summary */}
       {parentSlug && activeGroup ? (
         <div
-          className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] leading-snug ${
-            needsSubcategory
-              ? "border-orange-200 bg-orange-50"
-              : "border-accent/20 bg-accent/5"
-          }`}
+          className={
+            "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs leading-snug " +
+            (needsSubcategory
+              ? "dm-pill--warning border-[color:color-mix(in_oklab,var(--warning)_25%,transparent)]"
+              : "border-accent/20 bg-accent/5")
+          }
         >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white shadow-sm">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface shadow-sm">
             <MaterialSymbol
               name={resolveCategoryIcon(activeGroup.parent.label)}
-              className={`!text-sm ${needsSubcategory ? "text-orange-500" : "text-accent"}`}
+              className={`!text-sm ${needsSubcategory ? "text-[color:var(--warning)]" : "text-accent"}`}
               filled
+              aria-hidden="true"
             />
           </span>
           <div className="min-w-0">
-            <span className="font-semibold text-neutral-900">{activeGroup.parent.label}</span>
+            <span className="font-semibold text-foreground">
+              {activeGroup.parent.label}
+            </span>
             {subcategoryLabel ? (
               <>
-                <span className="mx-1 text-neutral-400">›</span>
+                <span className="mx-1 text-muted">›</span>
                 <span className="font-medium text-accent">{subcategoryLabel}</span>
               </>
             ) : hasChildren ? (
-              <p className="text-[10px] text-orange-600">
-                Select a subcategory above to complete the category
-              </p>
+              <span
+                className="ml-1 text-[color:var(--warning)]"
+                style={{ opacity: 0.9 }}
+              >
+                — subcategory required
+              </span>
             ) : null}
           </div>
         </div>

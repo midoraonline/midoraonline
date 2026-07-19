@@ -80,6 +80,15 @@ export type AdminStatsSummary = {
   total_flagged_comments: number;
   total_conversations: number;
   total_messages: number;
+  total_impressions?: number;
+  impressions_last_24h?: number;
+  whatsapp_clicks_window?: number;
+  messages_window?: number;
+  whatsapp_clicks_today?: number;
+  active_boosts?: number;
+  fraud_alerts?: number;
+  boost_revenue_today_ugx?: number;
+  boost_purchases_today?: number;
 };
 
 export type TrendPoint = { day: string; count: number };
@@ -94,6 +103,7 @@ export type TopShop = {
   is_active?: boolean;
   created_at?: string | null;
   view_count: number;
+  impressions?: number;
   product_count: number;
   published_product_count: number;
   like_count: number;
@@ -124,6 +134,9 @@ export type AdminStatsOverview = {
     products: TrendPoint[];
     users: TrendPoint[];
     orders: TrendPoint[];
+    impressions?: TrendPoint[];
+    whatsapp?: TrendPoint[];
+    messages?: TrendPoint[];
   };
   top_shops: TopShop[];
   top_products: TopProduct[];
@@ -133,6 +146,7 @@ export type AdminStatsOverview = {
     product_item_types: DistributionSlice[];
     verification_status: DistributionSlice[];
     order_status: DistributionSlice[];
+    impression_pools?: DistributionSlice[];
   };
 };
 
@@ -346,4 +360,63 @@ export type AdminFeedback = {
 
 export function listFeedback(limit: number = 100) {
   return apiFetch<{ items: AdminFeedback[] }>(`/api/v1/admin/feedback?limit=${limit}`);
+}
+
+// ---------------------------------------------------------------------------
+// Feed scoring config
+// ---------------------------------------------------------------------------
+
+export type FeedConfigResponse = {
+  defaults: Record<string, number>;
+  overrides: Record<string, number>;
+  applied: Record<string, number>;
+  updated_at?: string | null;
+  overridable_keys: string[];
+};
+
+export type FeedConfigTestRow = {
+  id: string;
+  title: string;
+  shop_id: string;
+  components: Record<string, number>;
+  total: number;
+  baseline_total: number;
+  delta: number;
+};
+
+export type FeedConfigTestResponse = {
+  sample_size: number;
+  results: FeedConfigTestRow[];
+  summary: {
+    sample_size: number;
+    avg_score: number;
+    avg_baseline: number;
+    max_delta: number;
+    min_delta: number;
+  };
+};
+
+export function getFeedConfig() {
+  return apiFetch<FeedConfigResponse>("/api/v1/admin/feed/config");
+}
+
+export function putFeedConfig(overrides: Record<string, number>) {
+  return apiFetch<{ ok: boolean; overrides: Record<string, number>; applied: Record<string, number> }>(
+    "/api/v1/admin/feed/config",
+    { method: "PUT", body: { overrides } },
+  );
+}
+
+export function resetFeedConfig() {
+  return apiFetch<{ ok: boolean; applied: Record<string, number> }>(
+    "/api/v1/admin/feed/config/reset",
+    { method: "POST" },
+  );
+}
+
+export function testFeedConfig(overrides: Record<string, number>, sample_size = 25) {
+  return apiFetch<FeedConfigTestResponse>(
+    "/api/v1/admin/feed/config/test",
+    { method: "POST", body: { overrides, sample_size } },
+  );
 }

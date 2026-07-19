@@ -4,6 +4,8 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import AppStateProvider from "@/components/providers/AppStateProvider";
+import AppToaster from "@/components/providers/AppToaster";
+import MerchantPresenceHeartbeat from "@/components/MerchantPresenceHeartbeat";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import "./globals.css";
 
@@ -61,8 +63,12 @@ export default function RootLayout({
       >
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <AppRouterCacheProvider>
-          <AppStateProvider>{children}</AppStateProvider>
+          <AppStateProvider>
+            <MerchantPresenceHeartbeat />
+            {children}
+          </AppStateProvider>
         </AppRouterCacheProvider>
+        <AppToaster />
       </body>
     </html>
   );

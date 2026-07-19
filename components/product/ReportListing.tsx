@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { apiListingEvents } from "@/lib/api";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import FormModal from "@/components/FormModal";
 
 type Props = {
   productId: string;
@@ -21,22 +23,30 @@ const REPORT_REASONS = [
 export default function ReportListing({ productId }: Props) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  function close() {
+    if (submitting) return;
+    setOpen(false);
+    setReason("");
+  }
 
   async function handleSubmit() {
     if (!reason) return;
+    setSubmitting(true);
+    const request = apiListingEvents.reportProduct(productId, reason);
+    toast.promise(request, {
+      loading: "Sending report…",
+      success: "Report submitted — our team will review it.",
+      error: "Couldn't submit report. Try again.",
+    });
     try {
-      await apiListingEvents.reportProduct(productId, reason);
-      setSubmitted(true);
-      setError(null);
-      setTimeout(() => {
-        setOpen(false);
-        setSubmitted(false);
-        setReason("");
-      }, 2000);
+      await request;
+      close();
     } catch {
-      setError("Failed to submit report. Please try again.");
+      /* sonner surfaced */
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -45,76 +55,66 @@ export default function ReportListing({ productId }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="dm-focus inline-flex items-center gap-1 text-[11px] text-muted hover:text-rose-500"
+        className="dm-focus inline-flex items-center gap-1 text-[11px] text-muted transition-colors hover:text-[color:var(--error)]"
       >
-        <MaterialSymbol name="flag" className="!text-sm" />
+        <MaterialSymbol name="flag" className="!text-sm" aria-hidden="true" />
         Report
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="dm-card w-full max-w-sm space-y-4 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between">
-              <h3 className="text-sm font-semibold">Report Listing</h3>
+        <FormModal
+          title="Report listing"
+          onClose={close}
+          maxWidthClass="sm:max-w-sm"
+          footer={
+            <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="text-foreground/50 hover:text-foreground"
+                onClick={close}
+                disabled={submitting}
+                className="dm-btn dm-btn-ghost dm-btn-sm"
               >
-                <MaterialSymbol name="close" className="!text-lg" />
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={!reason || submitting}
+                className="dm-btn dm-btn-primary"
+                style={{ background: "var(--error)" }}
+              >
+                {submitting ? "Sending…" : "Submit report"}
               </button>
             </div>
-
-            {submitted ? (
-              <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs text-emerald-600">
-                <MaterialSymbol name="check_circle" className="!text-base" />
-                Report submitted. Our team will review it.
-              </div>
-            ) : (
-              <>
-                <p className="text-xs text-muted">
-                  Why are you reporting this listing? Your report will be reviewed by our team.
-                </p>
-
-                <div className="space-y-1">
-                  {REPORT_REASONS.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setReason(r)}
-                      className={`w-full rounded-xl px-3 py-2 text-left text-xs transition-colors ${
-                        reason === r
-                          ? "bg-rose-500/10 text-rose-600 font-medium"
-                          : "bg-foreground/[0.03] text-foreground/80 hover:bg-foreground/[0.06]"
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-
-                {error && (
-                  <p className="text-xs text-rose-500">{error}</p>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!reason}
-                  className="dm-pill dm-focus w-full bg-rose-500 px-4 py-2 text-xs font-semibold text-white hover:brightness-95 disabled:opacity-50"
-                >
-                  Submit Report
-                </button>
-              </>
-            )}
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-muted">
+              Why are you reporting this listing? Your report will be reviewed by
+              our team.
+            </p>
+            <div className="space-y-1">
+              {REPORT_REASONS.map((r) => {
+                const selected = reason === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setReason(r)}
+                    aria-pressed={selected}
+                    className={
+                      selected
+                        ? "dm-pill dm-pill--error w-full justify-start px-3 py-2 text-left text-xs font-medium"
+                        : "dm-pill w-full justify-start bg-surface-subtle px-3 py-2 text-left text-xs text-foreground/80 transition-colors hover:bg-foreground/[0.06]"
+                    }
+                  >
+                    {r}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </FormModal>
       )}
     </>
   );

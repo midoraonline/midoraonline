@@ -213,6 +213,81 @@ export function myStats() {
   return apiFetch<MerchantStats>("/api/v1/shops/me/stats");
 }
 
+export type MerchantAnalyticsSummary = {
+  total_shops: number;
+  active_shops: number;
+  total_products: number;
+  published_products: number;
+  total_impressions: number;
+  total_product_views: number;
+  total_whatsapp_clicks: number;
+  total_messages: number;
+  total_shop_views: number;
+  total_followers: number;
+  total_shop_likes: number;
+};
+
+export type MerchantAnalyticsShop = {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  shop_type?: string | null;
+  view_count: number;
+  follower_count: number;
+  like_count: number;
+  impressions: number;
+};
+
+export type MerchantAnalyticsProduct = {
+  id: string;
+  title: string;
+  category?: string | null;
+  shop_id: string;
+  impressions: number;
+  views: number;
+  whatsapp_clicks: number;
+  messages: number;
+  likes: number;
+  ctr: number;
+  price_ugx: number;
+};
+
+export type MerchantAnalyticsTrends = {
+  impressions: Array<{ day: string; count: number }>;
+  views: Array<{ day: string; count: number }>;
+  whatsapp: Array<{ day: string; count: number }>;
+  messages: Array<{ day: string; count: number }>;
+};
+
+export type MerchantAnalyticsFunnel = {
+  impressions: number;
+  views: number;
+  whatsapp_clicks: number;
+  messages: number;
+  view_rate: number;
+  wa_rate: number;
+  msg_rate: number;
+};
+
+export type MerchantAnalytics = {
+  generated_at: string;
+  window_days: number;
+  summary: MerchantAnalyticsSummary;
+  per_shop: MerchantAnalyticsShop[];
+  top_products: MerchantAnalyticsProduct[];
+  trends: MerchantAnalyticsTrends;
+  funnel: MerchantAnalyticsFunnel;
+  pool_mix: Array<{ label: string; value: number }>;
+};
+
+export function myAnalytics(days = 30) {
+  return apiFetch<MerchantAnalytics>(
+    `/api/v1/shops/me/analytics?days=${encodeURIComponent(days)}`,
+  );
+}
+
+
 export type CreateShopRequest = {
   name: string;
   slug: string;
