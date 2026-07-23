@@ -11,6 +11,7 @@ import type { Shop } from "@/lib/api/shops";
 import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import LocationInput from "@/components/LocationInput";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -419,16 +420,11 @@ function DetailsTab({
             >
               WhatsApp number
             </label>
-            <input
+            <PhoneNumberInput
               id="edit-shop-whatsapp"
-              className="dm-input"
-              placeholder="+256700000000"
               value={form.whatsappNumber}
-              onChange={(e) => {
-                let val = e.target.value;
-                if (val.startsWith("0")) val = "+256" + val.slice(1);
-                onChange("whatsappNumber", val);
-              }}
+              onChange={(val) => onChange("whatsappNumber", val)}
+              placeholder="700 000 000"
             />
           </div>
         </div>

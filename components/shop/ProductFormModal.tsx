@@ -306,7 +306,7 @@ export default function ProductFormModal({
             disabled={saving}
             className="dm-btn dm-btn-primary"
           >
-            {saving ? "Saving…" : mode === "add" ? `Add ${itemType}` : "Save changes"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       }

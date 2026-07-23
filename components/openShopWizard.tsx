@@ -5,6 +5,7 @@ import { apiShops } from "@/lib/api";
 import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
@@ -166,17 +167,10 @@ export default function OpenShopWizard() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">WhatsApp (optional)</label>
-              <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
-                placeholder="+256700000000"
+              <PhoneNumberInput
                 value={whatsappNumber}
-                onChange={(e) => {
-                  let val = e.target.value;
-                  if (val.startsWith("0")) {
-                    val = "+256" + val.slice(1);
-                  }
-                  setWhatsappNumber(val);
-                }}
+                onChange={setWhatsappNumber}
+                placeholder="700 000 000"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">

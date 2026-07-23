@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 import CategoryPicker from "@/components/CategoryPicker";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
@@ -250,16 +251,10 @@ export default function MerchantShopSettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground/80">WhatsApp</label>
-              <input
-                className="dm-input dm-focus"
+              <PhoneNumberInput
                 value={whatsappNumber}
-                onChange={(e) => {
-                  let val = e.target.value;
-                  if (val.startsWith("0")) {
-                    val = "+256" + val.slice(1);
-                  }
-                  setWhatsappNumber(val);
-                }}
+                onChange={setWhatsappNumber}
+                placeholder="700 000 000"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">

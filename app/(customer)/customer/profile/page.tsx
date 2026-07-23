@@ -6,6 +6,7 @@ import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
   return (
@@ -121,14 +122,12 @@ export default function CustomerProfilePage() {
 
           <div className="space-y-1.5">
             <label htmlFor="phone" className="block text-sm font-medium text-foreground/80">Phone number</label>
-            <input
+            <PhoneNumberInput
               id="phone"
-              type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+256 700 000 000"
+              onChange={setPhone}
+              placeholder="700 000 000"
               autoComplete="tel"
-              className="min-h-10 w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition focus-visible:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent/10"
             />
           </div>
 
