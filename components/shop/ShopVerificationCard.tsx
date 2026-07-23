@@ -11,6 +11,7 @@ import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import ProductFormModal from "@/components/shop/ProductFormModal";
 import { ImageUpload } from "@/components/image-upload";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 
 // ── Badge metadata ────────────────────────────────────────────────────────────
 const BADGE_META: Record<string, { icon: string; label: string; color: string; desc: string }> = {
@@ -315,14 +316,22 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
 
                   <label className="block space-y-1">
                     <span className="text-xs font-medium text-foreground/80">Phone number *</span>
-                    <input type="tel" className="dm-input" value={s2Phone} onChange={e => setS2Phone(e.target.value)}
-                      placeholder="+256 7XX XXX XXX" required />
+                    <PhoneNumberInput
+                      value={s2Phone}
+                      onChange={setS2Phone}
+                      placeholder="700 000 000"
+                      required
+                    />
                   </label>
 
                   <label className="block space-y-1">
                     <span className="text-xs font-medium text-foreground/80">WhatsApp number *</span>
-                    <input type="tel" className="dm-input" value={s2Whatsapp} onChange={e => setS2Whatsapp(e.target.value)}
-                      placeholder="+256 7XX XXX XXX" required />
+                    <PhoneNumberInput
+                      value={s2Whatsapp}
+                      onChange={setS2Whatsapp}
+                      placeholder="700 000 000"
+                      required
+                    />
                   </label>
 
                   <label className="block space-y-1">

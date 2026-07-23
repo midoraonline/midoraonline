@@ -357,6 +357,61 @@ html.modal-open body {
     box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
   }
 
+  /* ── Phone number input (react-phone-number-input) ───────── */
+  .PhoneInput--midora {
+    --PhoneInput-color--focus: var(--accent);
+    --PhoneInputCountryFlag-height: 1.35em;
+    --PhoneInputCountryFlag-borderColor: var(--border-strong);
+    --PhoneInputCountryFlag-borderColor--focus: var(--accent);
+    --PhoneInputCountrySelectArrow-color: var(--foreground-muted);
+    --PhoneInputCountrySelectArrow-color--focus: var(--accent);
+    --PhoneInputCountrySelectArrow-opacity: 0.7;
+    --PhoneInputCountrySelectArrow-width: 0.4em;
+    --PhoneInputCountrySelectArrow-borderWidth: 1.5px;
+    --PhoneInputCountrySelect-marginRight: 0;
+    @apply w-full min-h-[2.75rem] rounded-xl border-0 pr-3 text-sm text-foreground;
+    background: var(--surface-subtle);
+    box-shadow: inset 0 0 0 1px var(--border);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .PhoneInput--midora.PhoneInput--focus {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+  }
+
+  .PhoneInput--midora .PhoneInputCountry {
+    align-self: stretch;
+    margin: 0;
+    padding: 0 0.75rem 0 0.85rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .PhoneInput--midora .PhoneInputCountryIcon {
+    box-shadow: 0 0 0 1px var(--border-strong);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .PhoneInput--midora .PhoneInputCountrySelectArrow {
+    margin-left: 0.55rem;
+    opacity: 0.75;
+  }
+
+  .PhoneInput--midora .PhoneInputInput {
+    @apply min-h-[2.75rem] border-0 bg-transparent px-3 text-sm text-foreground outline-none;
+  }
+
+  .PhoneInput--midora .PhoneInputInput::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .PhoneInput--midora.PhoneInput--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .dm-textarea {
     @apply w-full min-h-[8rem] rounded-xl border-0 px-4 py-3 text-sm text-foreground outline-none resize-none;
     background: var(--surface-subtle);

@@ -2,15 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-/**
- * Mobile-only sticky action bar shown after the buy-box scrolls off screen.
- *
- * Watches a sentinel (typically placed just below the buy-box) via
- * IntersectionObserver. When the sentinel leaves the viewport, we reveal the
- * bar so the shopper always has price + primary CTA within thumb reach.
- *
- * Design skill \u00a74.2 #9 — mobile only, `z-sticky` layer, `dm-glass-bar` surface.
- */
 export default function PdpStickyActionBar({
   sentinelId,
   children,

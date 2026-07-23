@@ -7,6 +7,7 @@ import CategoryDisplay from "@/components/CategoryDisplay";
 import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 
@@ -465,17 +466,10 @@ export default function CreateShopConcierge({
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
                 WhatsApp
               </label>
-              <input
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+              <PhoneNumberInput
                 value={f.whatsappNumber}
-                onChange={(e) => {
-                  let val = e.target.value;
-                  if (val.startsWith("0")) {
-                    val = "+256" + val.slice(1);
-                  }
-                  field("whatsappNumber", val);
-                }}
-                placeholder="+256700000000"
+                onChange={(val) => field("whatsappNumber", val)}
+                placeholder="700 000 000"
               />
             </div>
 

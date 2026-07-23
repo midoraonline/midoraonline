@@ -5,6 +5,7 @@ import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 import PushNotificationsSection from "@/components/PushNotificationsSection";
 
 // ── Reusable form field ───────────────────────────────────────────────────────
@@ -126,15 +127,18 @@ function ProfileSection() {
           disabled
           hint="Email cannot be changed here. Contact support if needed."
         />
-        <Field
-          label="Phone number"
-          id="phone"
-          type="tel"
-          value={phone}
-          onChange={setPhone}
-          placeholder="+256 700 000 000"
-          autoComplete="tel"
-        />
+        <div className="space-y-1.5">
+          <label htmlFor="phone" className="block text-sm font-medium text-foreground/80">
+            Phone number
+          </label>
+          <PhoneNumberInput
+            id="phone"
+            value={phone}
+            onChange={setPhone}
+            placeholder="700 000 000"
+            autoComplete="tel"
+          />
+        </div>
 
         {status && <Banner type={status.type} message={status.message} />}
 
