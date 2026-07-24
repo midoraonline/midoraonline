@@ -158,10 +158,10 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all dm-focus whitespace-nowrap ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 dm-focus whitespace-nowrap ${
         active
-          ? "bg-accent text-white shadow-sm ring-1 ring-accent/40"
-          : "bg-surface text-muted hover:text-foreground ring-1 ring-border hover:ring-border-strong"
+          ? "bg-accent text-white shadow-md shadow-accent/30 ring-1 ring-accent/40"
+          : "bg-surface/80 text-foreground/70 hover:text-foreground border border-border/70 shadow-sm hover:border-accent/40 hover:bg-surface"
       }`}
     >
       {children}
@@ -183,30 +183,28 @@ function SortDropdown({
   return (
     <div ref={ref} className="relative">
       <Pill active={value !== "relevance"} onClick={() => setOpen((v) => !v)}>
-        <MaterialSymbol name="sort" className="!text-[13px]" />
+        <MaterialSymbol name="sort" className="!text-[12px]" />
         {SORT_LABELS[value]}
         <ChevronDown className={`size-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </Pill>
 
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
-          <div className="p-1">
-            {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => { onChange(key); setOpen(false); }}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                  value === key
-                    ? "bg-accent/10 text-accent"
-                    : "text-foreground/80 hover:bg-surface-subtle"
-                }`}
-              >
-                {value === key && <MaterialSymbol name="check" className="!text-[13px] shrink-0" />}
-                <span className={value === key ? "" : "ml-[17px]"}>{SORT_LABELS[key]}</span>
-              </button>
-            ))}
-          </div>
+        <div className="absolute left-0 top-full z-40 mt-1.5 w-48 overflow-hidden rounded-xl border border-border/80 bg-surface/95 backdrop-blur-md p-1 shadow-xl shadow-black/10">
+          {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => { onChange(key); setOpen(false); }}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                value === key
+                  ? "bg-accent/10 text-accent font-semibold"
+                  : "text-foreground/80 hover:bg-surface-subtle"
+              }`}
+            >
+              {value === key && <MaterialSymbol name="check" className="!text-[12px] shrink-0" />}
+              <span className={value === key ? "" : "ml-[16px]"}>{SORT_LABELS[key]}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -242,24 +240,24 @@ function PriceDropdown({
   return (
     <div ref={ref} className="relative">
       <Pill active={isActive} onClick={() => setOpen((v) => !v)}>
-        <MaterialSymbol name="payments" className="!text-[13px]" />
+        <MaterialSymbol name="payments" className="!text-[12px]" />
         {priceLabel}
         <ChevronDown className={`size-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </Pill>
 
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-2 w-58 rounded-xl border border-border bg-background p-3 shadow-xl" style={{ width: 232 }}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Quick ranges</p>
-          <div className="mb-3 grid grid-cols-2 gap-1.5">
+        <div className="absolute left-0 top-full z-40 mt-1.5 w-56 rounded-xl border border-border/80 bg-surface/95 backdrop-blur-md p-2.5 shadow-xl shadow-black/10">
+          <p className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted">Quick ranges</p>
+          <div className="mb-2.5 grid grid-cols-2 gap-1">
             {PRICE_PRESETS.map((preset) => (
               <button
                 key={preset.label}
                 type="button"
                 onClick={() => { onChange(preset.min, preset.max); setOpen(false); }}
-                className={`rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
                   activePreset?.label === preset.label
-                    ? "bg-accent text-white"
-                    : "bg-surface-subtle text-foreground/80 ring-1 ring-border hover:bg-surface"
+                    ? "bg-accent text-white shadow-xs font-semibold"
+                    : "bg-surface-subtle text-foreground/80 hover:bg-surface border border-border/50"
                 }`}
               >
                 {preset.label}
@@ -267,8 +265,8 @@ function PriceDropdown({
             ))}
           </div>
 
-          <div className="border-t border-border pt-2.5">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">Custom (UGX)</p>
+          <div className="border-t border-border/60 pt-2">
+            <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted">Custom (UGX)</p>
             <div className="flex items-center gap-1.5">
               <input
                 type="text"
@@ -276,16 +274,16 @@ function PriceDropdown({
                 placeholder="Min"
                 value={formatPriceInput(minPrice)}
                 onChange={(e) => onChange(parsePriceInput(e.target.value), maxPrice)}
-                className="dm-input-xs w-full py-1.5 px-2 text-[11px]"
+                className="dm-input-xs w-full py-1 px-1.5 text-[10px]"
               />
-              <span className="shrink-0 text-xs text-muted">–</span>
+              <span className="shrink-0 text-[10px] text-muted">–</span>
               <input
                 type="text"
                 inputMode="numeric"
                 placeholder="Max"
                 value={formatPriceInput(maxPrice)}
                 onChange={(e) => onChange(minPrice, parsePriceInput(e.target.value))}
-                className="dm-input-xs w-full py-1.5 px-2 text-[11px]"
+                className="dm-input-xs w-full py-1 px-1.5 text-[10px]"
               />
             </div>
           </div>
@@ -332,15 +330,15 @@ function LocationDropdown({
     <div ref={ref} className="relative">
       <Pill active={value !== null} onClick={() => setOpen((v) => !v)}>
         <MapPin className="size-3 shrink-0" />
-        <span className="max-w-[96px] truncate">{label}</span>
+        <span className="max-w-[90px] truncate">{label}</span>
         <ChevronDown className={`size-3 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </Pill>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-xl border border-border bg-background shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-1.5 w-60 rounded-xl border border-border/80 bg-surface/95 backdrop-blur-md shadow-xl shadow-black/10 overflow-hidden">
           {locations.length > 5 && (
-            <div className="border-b border-border p-2">
-              <div className="flex items-center gap-2 rounded-lg bg-surface-subtle px-2.5 py-1.5">
+            <div className="border-b border-border/60 p-1.5">
+              <div className="flex items-center gap-1.5 rounded-md bg-surface-subtle px-2 py-1">
                 <Search className="size-3 shrink-0 text-muted" />
                 <input
                   ref={searchRef}
@@ -348,27 +346,27 @@ function LocationDropdown({
                   placeholder="Search locations…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-[11px] text-foreground placeholder:text-muted focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-[10px] text-foreground placeholder:text-muted focus:outline-none"
                 />
               </div>
             </div>
           )}
 
-          <div className="max-h-60 overflow-y-auto p-1">
+          <div className="max-h-52 overflow-y-auto p-1">
             <button
               type="button"
               onClick={() => { onChange(null); setOpen(false); }}
-              className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+              className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                 value === null
-                  ? "bg-accent/10 text-accent"
+                  ? "bg-accent/10 text-accent font-semibold"
                   : "text-foreground/80 hover:bg-surface-subtle"
               }`}
             >
               <span className="flex items-center gap-1.5">
-                <MaterialSymbol name="location_on" className="!text-[13px]" />
+                <MaterialSymbol name="location_on" className="!text-[12px]" />
                 All locations
               </span>
-              <span className={`text-[10px] tabular-nums ${value === null ? "text-accent/70" : "text-muted"}`}>{total}</span>
+              <span className={`text-[9px] tabular-nums ${value === null ? "text-accent/70" : "text-muted"}`}>{total}</span>
             </button>
 
             {filtered.map((loc) => (
@@ -376,21 +374,21 @@ function LocationDropdown({
                 key={loc.name}
                 type="button"
                 onClick={() => { onChange(loc.name); setOpen(false); }}
-                className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                   value === loc.name
-                    ? "bg-accent/10 text-accent"
+                    ? "bg-accent/10 text-accent font-semibold"
                     : "text-foreground/80 hover:bg-surface-subtle"
                 }`}
               >
                 <span className="truncate">{loc.name}</span>
-                <span className={`shrink-0 text-[10px] tabular-nums ${value === loc.name ? "text-accent/70" : "text-muted"}`}>
+                <span className={`shrink-0 text-[9px] tabular-nums ${value === loc.name ? "text-accent/70" : "text-muted"}`}>
                   {loc.count}
                 </span>
               </button>
             ))}
 
             {filtered.length === 0 && (
-              <p className="px-3 py-5 text-center text-[11px] text-muted">No locations found</p>
+              <p className="px-3 py-4 text-center text-[10px] text-muted">No locations found</p>
             )}
           </div>
         </div>
@@ -428,10 +426,10 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
   return (
     <>
       {/* ── Desktop filter bar ── */}
-      <div className="hidden sm:flex items-center gap-2 flex-wrap">
+      <div className="hidden sm:flex items-center gap-1.5 flex-wrap">
         <SortDropdown value={filters.sort} onChange={(v) => update({ sort: v })} />
 
-        <div className="h-5 w-px shrink-0 bg-border" />
+        <div className="h-4 w-px shrink-0 bg-border/60 mx-0.5" />
 
         <PriceDropdown
           minPrice={filters.minPrice}
@@ -440,27 +438,27 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
         />
 
         <Pill active={filters.availableNow} onClick={() => update({ availableNow: !filters.availableNow })}>
-          <MaterialSymbol name="check_circle" className="!text-[13px]" />
+          <MaterialSymbol name="check_circle" className="!text-[12px]" />
           Available
         </Pill>
 
         <Pill active={filters.verifiedOnly} onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}>
-          <MaterialSymbol name="verified" className="!text-[13px]" />
+          <MaterialSymbol name="verified" className="!text-[12px]" />
           Verified
         </Pill>
 
-        {/* Star rating */}
-        <div className="flex items-center gap-0.5">
+        {/* Compact Star rating */}
+        <div className="flex items-center gap-0.5 bg-surface-subtle/80 rounded-full px-1 py-0.5 border border-border/50">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
               type="button"
               title={`${star}+ stars`}
               onClick={() => update({ minRating: filters.minRating === star ? null : star })}
-              className={`grid size-6 place-items-center rounded-full text-[11px] transition-all dm-focus ${
+              className={`grid size-5 place-items-center rounded-full text-[10px] font-bold transition-all dm-focus ${
                 filters.minRating !== null && star <= filters.minRating
-                  ? "bg-amber-400 text-white shadow-sm"
-                  : "bg-surface-subtle text-muted hover:bg-amber-50 hover:text-amber-500"
+                  ? "bg-amber-400 text-white shadow-xs"
+                  : "text-muted/70 hover:text-amber-500"
               }`}
             >
               ★
@@ -480,7 +478,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
           <button
             type="button"
             onClick={clearAll}
-            className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-accent hover:bg-accent/10 transition-colors dm-focus"
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold text-accent hover:bg-accent/10 transition-colors dm-focus ml-auto"
           >
             <X className="size-3" />
             Clear ({count})
