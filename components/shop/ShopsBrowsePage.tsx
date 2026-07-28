@@ -16,9 +16,13 @@ import type { Shop } from "@/lib/api/shops";
 
 export default function ShopsBrowsePage({
   initialShops,
+  initialHasMore = false,
+  initialTotal = null,
   shopProductCategories,
 }: {
   initialShops: Shop[];
+  initialHasMore?: boolean;
+  initialTotal?: number | null;
   shopProductCategories: Record<string, string[]>;
 }) {
   const [query, setQuery] = useState("");
@@ -28,7 +32,10 @@ export default function ShopsBrowsePage({
   const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
   const q = query.trim();
 
-  const totalShops = initialShops.filter((s) => (s as { is_active?: boolean }).is_active !== false).length;
+  const totalShops =
+    initialTotal != null && initialTotal > 0
+      ? initialTotal
+      : initialShops.filter((s) => (s as { is_active?: boolean }).is_active !== false).length;
 
   return (
     <div className="w-full">
@@ -115,6 +122,8 @@ export default function ShopsBrowsePage({
 
         <ShopListRealtime
           initialShops={initialShops}
+          initialHasMore={initialHasMore}
+          initialTotal={initialTotal}
           shopProductCategories={shopProductCategories}
           categoryFilter={categoryFilter}
           searchQuery={query}
