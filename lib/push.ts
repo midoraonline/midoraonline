@@ -6,6 +6,10 @@
  * The VAPID public key is served by the FastAPI backend at
  * `/api/v1/push/public-key` (also mirrored via NEXT_PUBLIC_VAPID_PUBLIC_KEY
  * so the initial subscribe attempt doesn't need a round-trip).
+ *
+ * `applicationServerKey` must be URL-safe base64 of the uncompressed P-256
+ * public point — not PEM. PEM values in NEXT_PUBLIC_ are ignored so we fall
+ * back to the API (which normalizes PEM → applicationServerKey).
  */
 
 import { apiFetch } from "@/lib/api/base";
@@ -33,11 +37,19 @@ export function currentPushPermission(): PushPermission {
   return Notification.permission;
 }
 
+function isApplicationServerKey(value: string): boolean {
+  const v = value.trim();
+  if (!v || v.includes("BEGIN")) return false;
+  // Uncompressed P-256 point is 65 bytes → ~87 chars URL-safe base64 (no pad).
+  return /^[A-Za-z0-9_-]{80,100}$/.test(v);
+}
+
 async function fetchServerPublicKey(): Promise<string> {
   const inlined = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
-  if (inlined) return inlined;
+  if (inlined && isApplicationServerKey(inlined)) return inlined;
   const res = await apiFetch<{ public_key: string }>("/api/v1/push/public-key");
-  return (res.public_key || "").trim();
+  const key = (res.public_key || "").trim();
+  return isApplicationServerKey(key) ? key : "";
 }
 
 /** VAPID keys are URL-safe base64; convert to the Uint8Array PushManager wants. */
@@ -51,16 +63,43 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 }
 
 async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
-  const existing = await navigator.serviceWorker.getRegistration(SW_URL);
-  if (existing) return existing;
+  // Prefer scope-based lookup — getRegistration(scriptURL) is unreliable.
+  const existing =
+    (await navigator.serviceWorker.getRegistration("/")) ||
+    (await navigator.serviceWorker.getRegistration());
+  if (existing?.active || existing?.waiting || existing?.installing) {
+    const scriptURL =
+      existing.active?.scriptURL ||
+      existing.waiting?.scriptURL ||
+      existing.installing?.scriptURL ||
+      "";
+    if (scriptURL.endsWith(SW_URL) || scriptURL.includes(SW_URL)) {
+      return existing;
+    }
+  }
   return navigator.serviceWorker.register(SW_URL, { scope: "/" });
 }
 
 export async function getCurrentPushSubscription(): Promise<PushSubscription | null> {
   if (detectPushSupport() !== "supported") return null;
-  const reg = await navigator.serviceWorker.getRegistration(SW_URL);
+  const reg =
+    (await navigator.serviceWorker.getRegistration("/")) ||
+    (await navigator.serviceWorker.getRegistration());
   if (!reg) return null;
   return reg.pushManager.getSubscription();
+}
+
+/**
+ * If the browser already has a push subscription (permission granted),
+ * re-POST it so the current logged-in user owns the DB row.
+ */
+export async function resyncPushSubscriptionIfGranted(): Promise<boolean> {
+  if (detectPushSupport() !== "supported") return false;
+  if (currentPushPermission() !== "granted") return false;
+  const sub = await getCurrentPushSubscription();
+  if (!sub) return false;
+  await syncSubscriptionToServer(sub);
+  return true;
 }
 
 /**
@@ -76,23 +115,50 @@ export async function enablePushNotifications(): Promise<PushSubscription | null
 
   const publicKey = await fetchServerPublicKey();
   if (!publicKey) {
-    // VAPID keys not configured server-side yet.
+    // VAPID keys not configured server-side yet (or still PEM-only without API).
+    console.error(
+      "[push] No valid VAPID applicationServerKey. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY " +
+        "to URL-safe base64, or VAPID_PUBLIC_KEY on the API (PEM is auto-converted).",
+    );
     return null;
   }
 
   const reg = await registerServiceWorker();
+  await navigator.serviceWorker.ready;
+
+  // Drop any prior subscription. Subscriptions created with a PEM / wrong
+  // applicationServerKey are bound to a key the server cannot sign for —
+  // reusing them silently breaks delivery after a VAPID format fix.
   const existing = await reg.pushManager.getSubscription();
   if (existing) {
-    await syncSubscriptionToServer(existing);
-    return existing;
+    const oldEndpoint = existing.endpoint;
+    try {
+      await existing.unsubscribe();
+    } catch {
+      /* continue to subscribe */
+    }
+    try {
+      await apiFetch("/api/v1/push/unsubscribe", {
+        method: "POST",
+        body: { endpoint: oldEndpoint },
+      });
+    } catch {
+      /* best-effort */
+    }
   }
 
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    // TS DOM types insist on `BufferSource`; the underlying buffer is fine
-    // regardless. Cast keeps us honest without a runtime copy.
-    applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
-  });
+  let sub: PushSubscription;
+  try {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      // TS DOM types insist on `BufferSource`; the underlying buffer is fine
+      // regardless. Cast keeps us honest without a runtime copy.
+      applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
+    });
+  } catch (err) {
+    console.error("[push] PushManager.subscribe failed", err);
+    return null;
+  }
 
   await syncSubscriptionToServer(sub);
   return sub;
@@ -135,8 +201,8 @@ export async function disablePushNotifications(): Promise<void> {
 }
 
 /** Send a test push to yourself. Useful for the settings screen. */
-export function sendTestPush(): Promise<{ delivered: number }> {
-  return apiFetch<{ delivered: number }>("/api/v1/push/test", {
+export function sendTestPush(): Promise<{ delivered: number; reason?: string }> {
+  return apiFetch<{ delivered: number; reason?: string }>("/api/v1/push/test", {
     method: "POST",
     body: "{}",
   });

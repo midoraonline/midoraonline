@@ -7,6 +7,7 @@ import {
   disablePushNotifications,
   enablePushNotifications,
   getCurrentPushSubscription,
+  resyncPushSubscriptionIfGranted,
   type PushPermission,
   type PushSupport,
 } from "@/lib/push";
@@ -16,7 +17,7 @@ export type PushState = {
   permission: PushPermission;
   subscribed: boolean;
   busy: boolean;
-  enable: () => Promise<void>;
+  enable: () => Promise<boolean>;
   disable: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -41,6 +42,14 @@ export function usePushNotifications(): PushState {
     }
     const sub = await getCurrentPushSubscription();
     setSubscribed(!!sub);
+    // Keep the DB row tied to the current session (login / account switch).
+    if (sub && currentPushPermission() === "granted") {
+      try {
+        await resyncPushSubscriptionIfGranted();
+      } catch {
+        /* best-effort — user may not be logged in yet */
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -48,12 +57,13 @@ export function usePushNotifications(): PushState {
   }, [refresh]);
 
   const enable = useCallback(async () => {
-    if (busy) return;
+    if (busy) return false;
     setBusy(true);
     try {
       const sub = await enablePushNotifications();
       setSubscribed(!!sub);
       setPermission(currentPushPermission());
+      return !!sub;
     } finally {
       setBusy(false);
     }

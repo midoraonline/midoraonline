@@ -15,11 +15,18 @@ export default function PushNotificationsSection() {
   const handleTest = async () => {
     try {
       const res = await sendTestPush();
-      toast.success(
-        res.delivered
-          ? `Sent a test push to ${res.delivered} device${res.delivered === 1 ? "" : "s"}.`
-          : "No devices are subscribed yet.",
-      );
+      if (res.delivered) {
+        toast.success(
+          `Sent a test push to ${res.delivered} device${res.delivered === 1 ? "" : "s"}.`,
+        );
+        return;
+      }
+      const reason = res.reason || "no_subscriptions";
+      if (reason === "no_subscriptions") {
+        toast.error("No devices are subscribed yet. Turn notifications off and on again.");
+      } else {
+        toast.error(`Push not configured: ${reason}`);
+      }
     } catch {
       toast.error("Couldn't send a test push. Try again.");
     }
@@ -86,14 +93,25 @@ export default function PushNotificationsSection() {
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={() => void enable()}
-                disabled={busy}
-                className="dm-focus rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-              >
-                {busy ? "Enabling…" : "Enable notifications"}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void (async () => {
+                      const ok = await enable();
+                      if (!ok) {
+                        toast.error(
+                          "Couldn't enable notifications. Check permission, HTTPS, and VAPID keys.",
+                        );
+                      } else {
+                        toast.success("Notifications enabled on this device.");
+                      }
+                    })();
+                  }}
+                  disabled={busy}
+                  className="dm-focus rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                >
+                  {busy ? "Enabling…" : "Enable notifications"}
+                </button>
             )}
           </div>
         </div>

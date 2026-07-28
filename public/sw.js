@@ -10,9 +10,6 @@
  *   { "title": string, "body": string, "url": string?, "tag": string? }
  */
 
-const NOTIFICATION_ICON = "/icons/notification-icon.png";
-const NOTIFICATION_BADGE = "/icons/notification-badge.png";
-
 self.addEventListener("install", (event) => {
   // Activate immediately on install rather than waiting for the next
   // navigation — safe because the SW does nothing but relay pushes.
@@ -38,8 +35,6 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body,
-    icon: NOTIFICATION_ICON,
-    badge: NOTIFICATION_BADGE,
     data: { url },
     tag,
     // Only show one bubble per tag (e.g. per-conversation) so a rapid stream
