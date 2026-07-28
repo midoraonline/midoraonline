@@ -564,7 +564,7 @@ export default function Navbar({
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="z-fab fixed bottom-20 md:bottom-6 left-6 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
+          className="z-fab fixed bottom-28 md:bottom-6 left-6 size-10 rounded-full bg-neutral-900/90 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10"
           title="Back to Top"
         >
           <MaterialSymbol name="arrow_upward" className="!text-lg" />

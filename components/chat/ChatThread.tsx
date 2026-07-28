@@ -340,8 +340,8 @@ export default function ChatThread({ conversation, onBack }: Props) {
         }
         nearBottomRef.current = true;
         setPendingNew(0);
-      } catch {
-        // caller re-populates the composer
+      } catch (err) {
+        throw err;
       } finally {
         setSending(false);
       }
@@ -351,14 +351,15 @@ export default function ChatThread({ conversation, onBack }: Props) {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    const text = input;
+    const text = input.trim();
+    if (!text || sending) return;
     setInput("");
     if (textareaRef.current) autosize(textareaRef.current);
-    const before = text;
     try {
       await doSend(text);
     } catch {
-      setInput(before);
+      setInput(text);
+      if (textareaRef.current) autosize(textareaRef.current);
     }
   };
 

@@ -118,10 +118,9 @@ export function listNativeMessages(conversationId: string, before?: string) {
 }
 
 export function sendNativeMessage(conversationId: string, content: string) {
-  const qs = new URLSearchParams({ content });
   return apiFetch<NativeMessage>(
-    `/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages?${qs}`,
-    { method: "POST" }
+    `/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+    { method: "POST", body: { content } },
   );
 }
 

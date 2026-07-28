@@ -159,52 +159,141 @@ function getPresenceClientKey(): string {
   }
 }
 
+type PresenceListener = (snap: Record<string, PresenceMeta[]>) => void;
+
+type PresenceRoom = {
+  channel: RealtimeChannel;
+  refs: number;
+  listeners: Set<PresenceListener>;
+  snapshot: Record<string, PresenceMeta[]>;
+  lastTracked: string;
+  subscribed: boolean;
+};
+
+/** One Realtime channel per name — navbar + chat share without wiping each other. */
+const presenceRooms = new Map<string, PresenceRoom>();
+
+function notifyPresenceListeners(room: PresenceRoom) {
+  for (const listener of room.listeners) {
+    listener(room.snapshot);
+  }
+}
+
+function trackPresenceState(room: PresenceRoom, state: PresenceMeta | null) {
+  const payload = state ?? ({ role: "guest" } as PresenceMeta);
+  const serialized = JSON.stringify(payload);
+  if (serialized === room.lastTracked && room.subscribed) return;
+  room.lastTracked = serialized;
+  if (!room.subscribed) return;
+  void room.channel.track(payload);
+}
+
+function acquirePresenceRoom(channelName: string): PresenceRoom {
+  const existing = presenceRooms.get(channelName);
+  if (existing) {
+    existing.refs += 1;
+    return existing;
+  }
+
+  const supabase = getSupabaseBrowser();
+  if (!supabase) {
+    throw new Error("Supabase browser client unavailable");
+  }
+
+  const clientKey = getPresenceClientKey();
+  const channel = supabase.channel(channelName, {
+    config: { presence: { key: clientKey } },
+  });
+
+  const room: PresenceRoom = {
+    channel,
+    refs: 1,
+    listeners: new Set(),
+    snapshot: {},
+    lastTracked: "",
+    subscribed: false,
+  };
+
+  channel.on("presence", { event: "sync" }, () => {
+    room.snapshot = channel.presenceState() as Record<string, PresenceMeta[]>;
+    notifyPresenceListeners(room);
+  });
+
+  channel.subscribe((status) => {
+    if (status !== "SUBSCRIBED") return;
+    room.subscribed = true;
+    if (room.lastTracked) {
+      try {
+        void channel.track(JSON.parse(room.lastTracked) as PresenceMeta);
+      } catch {
+        void channel.track({ role: "guest" });
+      }
+    }
+  });
+
+  presenceRooms.set(channelName, room);
+  return room;
+}
+
+function releasePresenceRoom(channelName: string, listener: PresenceListener) {
+  const room = presenceRooms.get(channelName);
+  if (!room) return;
+  room.listeners.delete(listener);
+  room.refs -= 1;
+  if (room.refs > 0) return;
+  presenceRooms.delete(channelName);
+  const supabase = getSupabaseBrowser();
+  if (supabase) void supabase.removeChannel(room.channel);
+}
+
 /**
  * Join a Supabase presence channel and return the current merged state.
  *
- * The returned map is keyed by a stable per-tab UUID; each entry is the
- * array of `state` payloads that key contributed. Anonymous visitors are
- * tracked with `{ role: "guest" }` so they still show up in the count.
- *
- * Passing `enabled: false` leaves the channel entirely.
+ * Sign-in updates only re-`track()` metadata — they do **not** tear down the
+ * channel (that previously zeroed the mobile online count on auth).
  */
 export function usePresence<M extends PresenceMeta>(
   opts: PresenceOptions<M>,
 ): Record<string, M[]> {
   const { channel: channelName, state, enabled = true } = opts;
   const [snapshot, setSnapshot] = useState<Record<string, M[]>>({});
+  const stateKey = JSON.stringify(state ?? { role: "guest" });
 
   useEffect(() => {
     if (!enabled) {
       setSnapshot({});
       return;
     }
-    const supabase = getSupabaseBrowser();
-    if (!supabase) return;
+    if (!getSupabaseBrowser()) return;
 
-    const clientKey = getPresenceClientKey();
-    const ch = supabase.channel(channelName, {
-      config: { presence: { key: clientKey } },
-    });
+    let room: PresenceRoom;
+    try {
+      room = acquirePresenceRoom(channelName);
+    } catch {
+      return;
+    }
 
-    ch.on("presence", { event: "sync" }, () => {
-      setSnapshot(ch.presenceState() as Record<string, M[]>);
-    });
-
-    ch.subscribe((status) => {
-      if (status !== "SUBSCRIBED") return;
-      // Always track — even anonymous visitors count.
-      void ch.track(state ?? ({ role: "guest" } as unknown as M));
-    });
+    const listener: PresenceListener = (snap) => {
+      setSnapshot(snap as Record<string, M[]>);
+    };
+    room.listeners.add(listener);
+    setSnapshot(room.snapshot as Record<string, M[]>);
+    trackPresenceState(room, (state ?? { role: "guest" }) as PresenceMeta);
 
     return () => {
-      setSnapshot({});
-      void supabase.removeChannel(ch);
+      releasePresenceRoom(channelName, listener);
     };
-    // Serialise `state` so referentially-different-but-equal objects don't
-    // re-subscribe on every render.
+    // Channel lifetime is independent of presence metadata.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channelName, enabled, JSON.stringify(state)]);
+  }, [channelName, enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const room = presenceRooms.get(channelName);
+    if (!room) return;
+    trackPresenceState(room, (state ?? { role: "guest" }) as PresenceMeta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channelName, enabled, stateKey]);
 
   return snapshot;
 }
