@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import BottomNav from "@/components/BottomNav";
 import { useAppSession } from "@/lib/state";
 import DashboardHeader from "./DashboardHeader";
 
@@ -270,7 +271,7 @@ export default function DashboardShell({
             screenName={screenName}
             onMenuClick={() => setDrawerOpen(true)}
           />
-          <main className="flex-1 overflow-x-hidden">
+          <main className="flex-1 overflow-x-hidden pb-28 md:pb-0">
             <div
               className={[
                 "w-full px-3 py-5 sm:px-4 sm:py-6 lg:px-6 lg:py-7",
@@ -282,6 +283,9 @@ export default function DashboardShell({
           </main>
         </div>
       </div>
+
+      {/* Same mobile bottom bar as the public site (Products / My shops / Dashboard) */}
+      {role !== "admin" ? <BottomNav /> : null}
     </div>
   );
 }

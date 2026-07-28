@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
-import { useRealtimeTable, usePresenceCount } from "@/lib/realtime/hooks";
+import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
@@ -266,25 +266,6 @@ export default function Navbar({
     },
   );
 
-  // Global online count via Supabase Presence. Every browser tab joins the
-  // same channel — anonymous visitors track as `{ role: "guest" }`, logged-in
-  // users add their id + role, and merchants report their availability.
-  const presenceState = useMemo(() => {
-    if (session.isAuthenticated && session.user) {
-      return {
-        user_id: session.user.id,
-        role: session.user.user_role ?? "customer",
-        available: session.user.user_role === "merchant",
-      };
-    }
-    return { role: "guest" as const };
-  }, [session.isAuthenticated, session.user]);
-  const onlineCount = usePresenceCount(
-    "midora:presence:global",
-    presenceState,
-    true,
-  );
-
   useEffect(() => {
     const timer = setTimeout(() => {
       void fetchUnread();
@@ -381,16 +362,6 @@ export default function Navbar({
 
           {/* Right actions */}
           <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0 md:gap-2" suppressHydrationWarning>
-            {/* Sellers online — always visible in navbar */}
-            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-100 whitespace-nowrap">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-              </span>
-              <span>{onlineCount.toLocaleString()}</span>
-              <span className="hidden sm:inline"> online</span>
-            </div>
-
             {/* Mobile search toggle */}
             <button
               type="button"
@@ -417,10 +388,10 @@ export default function Navbar({
                 >
                   <MaterialSymbol name="favorite" className="!text-lg" />
                 </Link>
-                {/* Chat */}
+                {/* Chat — desktop only; mobile uses bottom Messages tab */}
                 <Link
                   href="/chat"
-                  className={`relative grid size-9 place-items-center rounded-full transition-colors dm-focus ${
+                  className={`relative hidden size-9 place-items-center rounded-full transition-colors dm-focus md:grid ${
                     onChatPage
                       ? "bg-accent text-white shadow-sm"
                       : "text-foreground/60 hover:bg-foreground/[0.06] hover:text-foreground"
@@ -430,7 +401,7 @@ export default function Navbar({
                 >
                   <MaterialSymbol name="chat" className="!text-lg" />
                   {unread > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] px-1 h-[18px] place-items-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white shadow-sm">
+                    <span className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}

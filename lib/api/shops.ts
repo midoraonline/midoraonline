@@ -55,31 +55,54 @@ export type Shop = {
   viewer_following?: boolean | null;
   viewer_liked_shop?: boolean | null;
   trust_badges?: string[];
+  created_at?: string | null;
 };
 
 export type Paginated<T> = {
   items: T[];
-  total?: number;
-  page?: number;
+  total?: number | null;
+  page?: number | null;
   page_size?: number;
+  limit?: number;
+  total_pages?: number | null;
+  has_more?: boolean;
+  next_cursor?: string | null;
 };
+
+export const SHOPS_PAGE_SIZE = 48;
 
 export function listPublic(opts?: {
   search?: string;
   shop_type?: string;
   page?: number;
   limit?: number;
+  exclude_ids?: string[];
 }) {
   const params = new URLSearchParams();
   if (opts?.search) params.set("search", opts.search);
   if (opts?.shop_type) params.set("shop_type", opts.shop_type);
   if (opts?.page != null) params.set("page", String(opts.page));
   if (opts?.limit != null) params.set("limit", String(opts.limit));
+  if (opts?.exclude_ids?.length) {
+    params.set("exclude_ids", opts.exclude_ids.slice(-500).join(","));
+  }
   const qs = params.toString();
   return apiFetch<Paginated<Shop>>(`/api/v1/shops${qs ? `?${qs}` : ""}`);
 }
 
-/** Paginate through all public shops (API max 100 per page). */
+export async function productCategoriesForShops(
+  shopIds: string[],
+): Promise<Record<string, string[]>> {
+  const ids = [...new Set(shopIds.filter(Boolean))].slice(0, 200);
+  if (ids.length === 0) return {};
+  const params = new URLSearchParams({ shop_ids: ids.join(",") });
+  const res = await apiFetch<{ categories?: Record<string, string[]> }>(
+    `/api/v1/shops/product-categories?${params.toString()}`,
+  );
+  return res.categories ?? {};
+}
+
+/** Paginate through all public shops (API max 100 per page). Prefer listPublic + load-more. */
 export async function listAllPublic(opts?: {
   search?: string;
   shop_type?: string;

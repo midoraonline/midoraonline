@@ -140,12 +140,32 @@ export default async function ProductDetails({
       itemUrl: listingUrl,
     });
   const verifiedShop = shop?.is_active !== false;
-  const freshness = timeAgo(product.updated_at || product.created_at);
+  const freshness = timeAgo(product.created_at);
   const inStock =
     product.item_type === "product" &&
     product.stock_quantity != null &&
     product.stock_quantity > 0;
   const lowStock = inStock && (product.stock_quantity ?? 0) <= 3;
+  const discountEndsLabel =
+    isDiscounted && product.discount_expires_at
+      ? (() => {
+          const ends = new Date(product.discount_expires_at).getTime();
+          if (Number.isNaN(ends) || ends < Date.now()) return null;
+          return new Date(product.discount_expires_at).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          });
+        })()
+      : null;
+  const seoTags = (product.ai_seo_tags ?? "")
+    .split(/[,|]/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+  const trustBadges = (shop?.trust_badges ?? []).filter(
+    (b) => b && b !== "shop_listed",
+  );
+  const isNegotiable = product.is_negotiable !== false;
 
   return (
     <div className="w-full space-y-6 sm:space-y-8">
@@ -171,7 +191,6 @@ export default async function ProductDetails({
               <ProductShopLogoOverlay
                 shopName={shop.name}
                 logoUrl={shop.logo_url}
-                shopHref={`/shops/${shop.slug}`}
                 className="!left-3 !top-auto !bottom-3 !right-auto"
               />
             ) : null}
@@ -231,6 +250,16 @@ export default async function ProductDetails({
                   </span>
                 </>
               )}
+              {discountEndsLabel ? (
+                <span className="text-xs font-medium text-muted">
+                  Sale ends {discountEndsLabel}
+                </span>
+              ) : null}
+              {isNegotiable ? (
+                <span className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted">
+                  Negotiable
+                </span>
+              ) : null}
             </div>
 
             <div className="mt-2">
@@ -287,6 +316,10 @@ export default async function ProductDetails({
                   ) : (
                     "Shop on Midora"
                   )}
+                  {trustBadges.includes("identity_verified") ||
+                  trustBadges.includes("business_verified")
+                    ? " · Identity verified"
+                    : null}
                 </p>
               </div>
               <MaterialSymbol
@@ -378,14 +411,6 @@ export default async function ProductDetails({
                 initialLikeCount={product.like_count ?? 0}
                 initialLiked={product.viewer_liked ?? undefined}
               />
-              {shop && (
-                <Link
-                  href={`/shops/${shop.slug}`}
-                  className="dm-btn dm-btn-secondary dm-btn-sm"
-                >
-                  View shop
-                </Link>
-              )}
             </div>
           </div>
 
@@ -411,77 +436,69 @@ export default async function ProductDetails({
               <p className="px-4 py-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
                 {product.description}
               </p>
+              {seoTags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 border-t border-border px-4 py-3">
+                  {seoTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {product.ai_generated_desc ? (
+                <p className="border-t border-border px-4 py-2 text-[11px] text-muted">
+                  Description assisted by Midora AI
+                </p>
+              ) : null}
             </section>
           )}
 
-          {/* Specifications — skill §4.2 #4 */}
-          {(product.category ||
-            product.location_name ||
-            (product.item_type === "product" && product.stock_quantity != null) ||
-            product.updated_at) && (
+          {/* Specifications — avoid repeating category / stock / location from chips & trust bar */}
+          {product.created_at && (
             <section className="dm-card overflow-hidden">
               <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
                 Listing details
               </h2>
               <dl className="divide-y divide-border text-sm">
-                {product.category && (
-                  <div className="flex items-start gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol
-                        name="category"
-                        className="!text-sm"
-                        aria-hidden="true"
-                      />
-                      Category
-                    </dt>
-                    <dd className="min-w-0 flex-1">
-                      <CategoryDisplay label={product.category} variant="detail" />
-                    </dd>
-                  </div>
-                )}
-                {product.location_name && (
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
+                    <MaterialSymbol
+                      name="schedule"
+                      className="!text-sm"
+                      aria-hidden="true"
+                    />
+                    Listed
+                  </dt>
+                  <dd className="font-medium text-foreground">
+                    {new Date(product.created_at).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                    {freshness ? (
+                      <span className="ml-1.5 text-xs font-normal text-muted">
+                        ({freshness})
+                      </span>
+                    ) : null}
+                  </dd>
+                </div>
+                {shop?.location &&
+                shop.location !== product.location_name ? (
                   <div className="flex items-center gap-3 px-4 py-3">
                     <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
                       <MaterialSymbol
-                        name="location_on"
+                        name="storefront"
                         className="!text-sm"
                         aria-hidden="true"
                       />
-                      Location
+                      Shop area
                     </dt>
-                    <dd className="font-medium text-foreground">{product.location_name}</dd>
+                    <dd className="font-medium text-foreground">{shop.location}</dd>
                   </div>
-                )}
-                {product.item_type === "product" && product.stock_quantity != null && (
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol
-                        name="inventory_2"
-                        className="!text-sm"
-                        aria-hidden="true"
-                      />
-                      In stock
-                    </dt>
-                    <dd className="font-medium text-foreground">
-                      {product.stock_quantity} units
-                    </dd>
-                  </div>
-                )}
-                {product.updated_at && (
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol
-                        name="schedule"
-                        className="!text-sm"
-                        aria-hidden="true"
-                      />
-                      Updated
-                    </dt>
-                    <dd className="font-medium text-foreground">
-                      {new Date(product.updated_at).toLocaleDateString()}
-                    </dd>
-                  </div>
-                )}
+                ) : null}
               </dl>
             </section>
           )}

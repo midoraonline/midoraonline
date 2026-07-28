@@ -4,17 +4,23 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
 import ShopsBrowsePage from "@/components/shop/ShopsBrowsePage";
-import { listPublicShops } from "@/lib/api/server";
+import { listPublicShopsPage } from "@/lib/api/server";
 import { loadShopProductCategoryMap } from "@/lib/productFeed";
+import { SHOPS_PAGE_SIZE } from "@/lib/api/shops";
 import Image from "next/image";
 import { Mail, MapPin } from "lucide-react";
 
 export default async function ShopListing() {
-  let shops: Awaited<ReturnType<typeof listPublicShops>> = [];
+  let shops: Awaited<ReturnType<typeof listPublicShopsPage>>["items"] = [];
   let shopProductCategories: Record<string, string[]> = {};
+  let hasMore = false;
+  let total: number | null = null;
 
   try {
-    shops = await listPublicShops();
+    const page = await listPublicShopsPage({ page: 1, limit: SHOPS_PAGE_SIZE });
+    shops = page.items ?? [];
+    hasMore = Boolean(page.has_more ?? shops.length >= SHOPS_PAGE_SIZE);
+    total = page.total ?? null;
     shopProductCategories = await loadShopProductCategoryMap(shops.map((s) => s.id));
   } catch (e) {
     console.error("Failed to load shops browse page", e);
@@ -63,7 +69,12 @@ export default async function ShopListing() {
 
       <main className="flex-1">
         <div className="dm-container py-5 sm:py-8 lg:py-10">
-          <ShopsBrowsePage initialShops={shops} shopProductCategories={shopProductCategories} />
+          <ShopsBrowsePage
+            initialShops={shops}
+            initialHasMore={hasMore}
+            initialTotal={total}
+            shopProductCategories={shopProductCategories}
+          />
         </div>
       </main>
       <Footer />

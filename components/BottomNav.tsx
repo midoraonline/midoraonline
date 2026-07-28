@@ -8,18 +8,22 @@ import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import { usePresenceCount, useRealtimeTable } from "@/lib/realtime/hooks";
 
+type Tab = {
+  label: string;
+  href: string;
+  icon: string;
+  badge?: number;
+  /** Custom active matcher; defaults to pathname.startsWith(href) (exact for "/"). */
+  isActive?: (pathname: string) => boolean;
+};
+
 export default function BottomNav() {
   const pathname = usePathname();
   const session = useAppSession();
   const [unread, setUnread] = useState(0);
 
   const role = session.user?.user_role ?? null;
-  const dashboardHref =
-    role === "admin"
-      ? "/admin"
-      : role === "merchant"
-        ? "/merchant"
-        : "/customer";
+  const isMerchant = role === "merchant" || role === "admin";
 
   const presenceState = useMemo(() => {
     if (session.isAuthenticated && session.user) {
@@ -68,38 +72,71 @@ export default function BottomNav() {
     },
   );
 
-  const tabs = [
-    {
-      label: "Home",
-      href: "/",
-      icon: "home",
-    },
-    {
-      label: "Browse",
-      href: "/products",
-      icon: "grid_view",
-    },
-    {
-      label: "Messages",
-      href: "/chat",
-      icon: "chat",
-      badge: session.isAuthenticated ? unread : 0,
-    },
-    {
-      label: "Shops",
-      href: "/shops",
-      icon: "storefront",
-    },
-    {
-      label: "Account",
-      href: session.isAuthenticated ? dashboardHref : "/login",
-      icon: "account_circle",
-    },
-  ];
+  const tabs: Tab[] = useMemo(() => {
+    const shopsTab: Tab = isMerchant
+      ? {
+          label: "My shops",
+          href: "/merchant/shops",
+          icon: "storefront",
+          isActive: (p) => p.startsWith("/merchant/shops"),
+        }
+      : {
+          label: "Shops",
+          href: "/shops",
+          icon: "storefront",
+        };
+
+    const accountTab: Tab = !session.isAuthenticated
+      ? { label: "Account", href: "/login", icon: "account_circle" }
+      : isMerchant
+        ? {
+            label: "Dashboard",
+            href: "/merchant",
+            icon: "space_dashboard",
+            isActive: (p) =>
+              p === "/merchant" ||
+              (p.startsWith("/merchant/") && !p.startsWith("/merchant/shops")),
+          }
+        : role === "admin"
+          ? {
+              label: "Dashboard",
+              href: "/admin",
+              icon: "admin_panel_settings",
+              isActive: (p) => p.startsWith("/admin"),
+            }
+          : {
+              label: "Account",
+              href: "/customer",
+              icon: "account_circle",
+              isActive: (p) => p.startsWith("/customer"),
+            };
+
+    return [
+      {
+        label: "Home",
+        href: "/",
+        icon: "home",
+        isActive: (p) => p === "/",
+      },
+      {
+        label: "Products",
+        href: "/products",
+        icon: "shopping_bag",
+      },
+      {
+        label: "Messages",
+        href: "/chat",
+        icon: "chat",
+        badge: session.isAuthenticated ? unread : 0,
+      },
+      shopsTab,
+      accountTab,
+    ];
+  }, [isMerchant, role, session.isAuthenticated, unread]);
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-neutral-200/80 bg-white/90 pb-safe shadow-lg backdrop-blur-md md:hidden">
-      {/* Online strip — mirrors top-nav count so mobile always sees presence */}
+      {/* Online strip — mobile-only presence (removed from top navbar) */}
       <div className="flex items-center justify-center gap-1.5 border-b border-emerald-100/80 bg-emerald-50/90 px-3 py-1 text-[10px] font-semibold text-emerald-700">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -110,15 +147,16 @@ export default function BottomNav() {
 
       <div className="flex h-14 items-center justify-around px-2">
         {tabs.map((tab) => {
-          const isActive =
-            tab.href === "/"
+          const isActive = tab.isActive
+            ? tab.isActive(pathname)
+            : tab.href === "/"
               ? pathname === "/"
               : pathname.startsWith(tab.href);
-          const badge = "badge" in tab ? Number(tab.badge ?? 0) : 0;
+          const badge = Number(tab.badge ?? 0);
 
           return (
             <Link
-              key={tab.href}
+              key={`${tab.label}-${tab.href}`}
               href={tab.href}
               className={`dm-focus relative flex h-full flex-1 flex-col items-center justify-center py-1.5 transition-colors ${
                 isActive

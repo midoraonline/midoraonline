@@ -83,8 +83,28 @@ export async function getShopById(shopId: string): Promise<Shop | null> {
 export async function listPublicShops(opts?: {
   search?: string;
   shop_type?: string;
+  page?: number;
+  limit?: number;
 }): Promise<Shop[]> {
-  return apiShops.listAllPublic(opts);
+  const res = await apiShops.listPublic({
+    ...opts,
+    page: opts?.page ?? 1,
+    limit: opts?.limit ?? apiShops.SHOPS_PAGE_SIZE,
+  });
+  return res.items ?? [];
+}
+
+export async function listPublicShopsPage(opts?: {
+  search?: string;
+  shop_type?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return apiShops.listPublic({
+    ...opts,
+    page: opts?.page ?? 1,
+    limit: opts?.limit ?? apiShops.SHOPS_PAGE_SIZE,
+  });
 }
 
 // The listing endpoint omits contact fields (whatsapp_number, shop_email).
@@ -117,8 +137,12 @@ export const publicApi = {
   shopBySlug: (slug: string) => nullIfNotFound(apiShops.bySlug(slug)),
   shopBySlugSoft: (slug: string) => nullIfUnavailable(apiShops.bySlug(slug)),
   shopById: (shopId: string) => nullIfNotFound(apiShops.getShop(shopId)),
-  listShops: (opts?: { search?: string; shop_type?: string }) =>
-    apiShops.listAllPublic(opts),
+  listShops: (opts?: { search?: string; shop_type?: string; page?: number; limit?: number }) =>
+    apiShops.listPublic({
+      ...opts,
+      page: opts?.page ?? 1,
+      limit: opts?.limit ?? apiShops.SHOPS_PAGE_SIZE,
+    }).then((r) => r.items ?? []),
   productById: (productId: string) => nullIfNotFound(apiProducts.getProduct(productId)),
   shopProducts: async (shopId: string): Promise<Product[]> => {
     const res = await safeServerFetch(

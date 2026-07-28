@@ -124,29 +124,19 @@ export async function loadFreshFeed(limit: number = 12): Promise<ProductCardData
 }
 
 export async function loadShopProductCategoryMap(shopIds: string[]): Promise<Record<string, string[]>> {
-  const apiBase = getApiBase();
-  const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort();
-  const headers = await buildAuthHeaders();
-  const entries = await Promise.all(
-    uniqueSorted.map(async (id) => {
-      const set = new Set<string>();
-      try {
-        const res = await fetch(
-          `${apiBase}/api/v1/shops/${encodeURIComponent(id)}/products`,
-          { headers, cache: "no-store" }
-        );
-        if (!res.ok) return [id, [] as string[]] as const;
-        const data = await res.json() as { items?: { is_published?: boolean; category?: string }[] };
-        for (const p of data.items ?? []) {
-          if (p.is_published === false) continue;
-          const c = p.category?.trim();
-          if (c) set.add(c);
-        }
-      } catch {
-        return [id, [] as string[]] as const;
-      }
-      return [id, Array.from(set)] as const;
-    }),
-  );
-  return Object.fromEntries(entries);
+  const uniqueSorted = [...new Set(shopIds.filter(Boolean))].sort().slice(0, 200);
+  if (uniqueSorted.length === 0) return {};
+  try {
+    const headers = await buildAuthHeaders();
+    const params = new URLSearchParams({ shop_ids: uniqueSorted.join(",") });
+    const res = await fetch(
+      `${getApiBase()}/api/v1/shops/product-categories?${params.toString()}`,
+      { headers, cache: "no-store" },
+    );
+    if (!res.ok) return Object.fromEntries(uniqueSorted.map((id) => [id, [] as string[]]));
+    const data = (await res.json()) as { categories?: Record<string, string[]> };
+    return data.categories ?? Object.fromEntries(uniqueSorted.map((id) => [id, [] as string[]]));
+  } catch {
+    return Object.fromEntries(uniqueSorted.map((id) => [id, [] as string[]]));
+  }
 }
