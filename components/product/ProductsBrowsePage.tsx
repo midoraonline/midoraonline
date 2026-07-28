@@ -100,6 +100,7 @@ export default function ProductsBrowsePage({
       <CategoryBrowseSection
         selection={categoryFilter}
         onSelectionChange={setCategoryFilter}
+        showHeader={false}
       />
 
       <div className="space-y-4 sm:space-y-6">

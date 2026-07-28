@@ -72,6 +72,7 @@ export default function ShopsBrowsePage({
       <CategoryBrowseSection
         selection={categoryFilter}
         onSelectionChange={setCategoryFilter}
+        showHeader={false}
       />
 
       <div className="space-y-4">
