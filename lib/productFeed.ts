@@ -6,7 +6,8 @@ import { homeFeedProductToCard } from "@/lib/productCardMap";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import type { HomeFeedProduct, HomeFeedResponse } from "@/lib/api/products";
 
-const MAX_CARDS = 72;
+/** Initial SSR / section loads — keep under one “fast” page of cards. */
+const MAX_CARDS = 36;
 
 function toCard(p: HomeFeedProduct, site: string): ProductCardData {
   return homeFeedProductToCard(p, site);

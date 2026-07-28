@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import CategoryBrowseSection, { HorizontalSubcategoryStrip } from "@/components/browse/CategoryBrowseSection";
+import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
   applyFilters,
   DEFAULT_FILTERS,
@@ -31,6 +31,9 @@ import { apiProducts } from "@/lib/api";
 import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
+
+const FEED_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const FEED_REFRESH_KEY_PREFIX = "midora:feed:last-refresh:";
 
 function SectionHeader({
   title,
@@ -91,29 +94,66 @@ export default function HomeLanding({ initialProducts }: Props) {
   const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const nextCursorRef = useRef<string | null>("p:2");
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
+  const feedViewerKey = session.user?.id ?? "guest";
 
-  // Persistent set of listing IDs already rendered in this browsing session.
-  // Sent as `exclude_ids` so subsequent fetches never repeat content — this
-  // is how "pagination without repeats" survives cross-reload in a
-  // serverless deploy (the server has no per-user in-memory pagination state).
+  // Persistent set of listing IDs already rendered this session.
+  // Sent as `exclude_ids` ONLY on load-more / soft-refresh continuation —
+  // never on the initial SSR personalized page (that must return top ranks).
   const seenIdsRef = useRef<Set<string>>(new Set(initialProducts.map((p) => p.id)));
 
   useEffect(() => {
     setProducts(initialProducts);
     seenIdsRef.current = new Set(initialProducts.map((p) => p.id));
     setHasMore(true);
+    nextCursorRef.current = "p:2";
   }, [initialProducts]);
 
   const buildExcludeParam = useCallback((): string | undefined => {
-    // Cap the URL length to protect edge routing (server also enforces 500 max).
     const ids = [...seenIdsRef.current].slice(-500);
     return ids.length > 0 ? ids.join(",") : undefined;
   }, []);
 
+  const getRefreshStorageKey = useCallback(
+    () => `${FEED_REFRESH_KEY_PREFIX}${feedViewerKey}`,
+    [feedViewerKey],
+  );
+
+  const shouldRefreshFeed = useCallback((): boolean => {
+    try {
+      const raw = localStorage.getItem(getRefreshStorageKey());
+      if (!raw) return true;
+      const last = Number(raw);
+      if (!Number.isFinite(last)) return true;
+      return Date.now() - last >= FEED_REFRESH_INTERVAL_MS;
+    } catch {
+      return true;
+    }
+  }, [getRefreshStorageKey]);
+
+  const markFeedRefreshed = useCallback(() => {
+    try {
+      localStorage.setItem(getRefreshStorageKey(), String(Date.now()));
+    } catch {
+      /* ignore storage restrictions */
+    }
+  }, [getRefreshStorageKey]);
+
   const refreshFeed = useCallback(async () => {
+    if (!shouldRefreshFeed()) return;
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed(72, 1, undefined, buildExcludeParam());
+      // Continuation only: ask for the next unseen batch after current cards.
+      // Do not use page/cursor here — backend treats exclude_ids as "next head".
+      const exclude = buildExcludeParam();
+      const data = await apiProducts.getHomeFeed(
+        36,
+        1,
+        undefined,
+        exclude,
+        undefined,
+      );
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const filtered = cards.filter((c) => !seenIdsRef.current.has(c.id));
       if (filtered.length > 0) {
@@ -121,17 +161,26 @@ export default function HomeLanding({ initialProducts }: Props) {
         setProducts((prev) => [...prev, ...filtered]);
         setHasMore(true);
       }
+      markFeedRefreshed();
     } catch {
       /* keep current feed */
     }
-  }, [buildExcludeParam]);
+  }, [buildExcludeParam, markFeedRefreshed, shouldRefreshFeed]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed(72, 1, undefined, buildExcludeParam());
+      // Load-more: exclude already-shown IDs only. No cursor — combining
+      // exclude + page/cursor double-skipped the next personalized page.
+      const data = await apiProducts.getHomeFeed(
+        36,
+        1,
+        undefined,
+        buildExcludeParam(),
+        undefined,
+      );
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));
       if (fresh.length === 0) {
@@ -139,13 +188,37 @@ export default function HomeLanding({ initialProducts }: Props) {
       } else {
         fresh.forEach((c) => seenIdsRef.current.add(c.id));
         setProducts((prev) => [...prev, ...fresh]);
+        setHasMore(Boolean(data.has_more) || fresh.length >= 36);
       }
+      nextCursorRef.current = data.next_cursor ?? null;
     } catch {
       setHasMore(false);
     } finally {
       setLoadingMore(false);
     }
   }, [buildExcludeParam, hasMore, loadingMore]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const node = loadMoreSentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        void loadMore();
+      },
+      {
+        root: null,
+        rootMargin: "300px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -218,121 +291,110 @@ export default function HomeLanding({ initialProducts }: Props) {
         <HomeHero />
       </div>
 
-      {/* Flexible Layout with Floating Left Category Strip */}
-      <div className="flex gap-4 sm:gap-6">
-        {/* Vertical Category Strip - Floating icons on mobile, icon + title on desktop */}
-        <aside className="shrink-0 w-12 sm:w-14 lg:w-44">
-          <CategoryBrowseSection
-            selection={categoryFilter}
-            onSelectionChange={setCategoryFilter}
-            className="sticky top-20"
-          />
-        </aside>
+      <CategoryBrowseSection
+        selection={categoryFilter}
+        onSelectionChange={setCategoryFilter}
+        browseAllHref="/products"
+      />
 
-        {/* Main Content Area */}
-        <main className="min-w-0 flex-1 space-y-5">
-          <HorizontalSubcategoryStrip
-            selection={categoryFilter}
-            onSelectionChange={setCategoryFilter}
-          />
-
-          <div className="sticky top-[4.25rem] z-20 rounded-xl border border-border/70 bg-surface/90 backdrop-blur-md px-2.5 py-1.5 sm:px-3 shadow-xs">
-            <ProductFilters products={products} filters={filters} onChange={setFilters} />
-          </div>
-
-          <div id="products-feed" className="space-y-6 sm:space-y-8">
-            {anyFiltersActive ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-subtle px-4 py-3 text-sm">
-                <MaterialSymbol name="filter_alt" className="!text-base text-accent" />
-                <span className="text-muted">
-                  {categoryFilterActive ? (
-                    <>
-                      Showing <span className="font-semibold text-primary">{categoryFilterLabel}</span>
-                      {browseProducts.length > 0 ? (
-                        <span className="text-muted/80">
-                          {" "}
-                          · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}
-                        </span>
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold text-primary">{browseProducts.length} results</span>
-                      <span className="text-muted/80"> with filters applied</span>
-                    </>
-                  )}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCategoryFilter(EMPTY_CATEGORY_FILTER);
-                    setFilters(DEFAULT_FILTERS);
-                  }}
-                  className="ml-auto text-xs font-semibold text-accent hover:text-accent-hover"
-                >
-                  Clear all
-                </button>
-              </div>
-            ) : null}
-
-            <section className="space-y-5">
-              <SectionHeader
-                title={`All Products${filterHint}`}
-                subtitle="Browse listings from verified shops on Midora."
-                href="/products"
-                linkLabel="See all"
-              />
-
-              {browseProducts.length === 0 ? (
-                <EmptyState
-                  message={
-                    anyFiltersActive
-                      ? "No products match your filters. Try a different category or clear filters."
-                      : "No products yet — check back soon."
-                  }
-                />
-              ) : (
-                <>
-                  {/* 2 columns on mobile, 4 columns on desktop */}
-                  <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                    {browseProducts.map((p, idx) => (
-                      <div key={p.id} className="h-full">
-                        <ProductCard
-                          product={p}
-                          layout="vertical"
-                          impressionPool={p.boosted ? "boosted" : "organic"}
-                          impressionPosition={idx + 1}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
-                    {hasMore ? (
-                      <button
-                        type="button"
-                        onClick={() => void loadMore()}
-                        disabled={loadingMore}
-                        className="dm-btn dm-btn-secondary inline-flex items-center gap-1.5 px-6 disabled:opacity-60"
-                      >
-                        {loadingMore ? "Loading…" : "Load more"}
-                      </button>
-                    ) : null}
-                    <Link
-                      href="/products"
-                      className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
-                    >
-                      View all products
-                      <ArrowRight className="size-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                </>
-              )}
-            </section>
-          </div>
-        </main>
+      <div className="mb-5 rounded-2xl border border-border bg-surface px-3 py-3 sm:px-4">
+        <ProductFilters products={products} filters={filters} onChange={setFilters} />
       </div>
 
-        <section className="relative mt-8 overflow-hidden rounded-2xl border border-border bg-primary p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
+      {!categoryFilterActive ? (
+        <HomeQuickActions
+          onApplyFilter={(partial) => setFilters((prev) => ({ ...prev, ...partial }))}
+          onScrollToFeed={scrollToFeed}
+        />
+      ) : null}
+
+      <div id="products-feed" className="space-y-8 sm:space-y-10">
+        {anyFiltersActive ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-subtle px-4 py-3 text-sm">
+            <MaterialSymbol name="filter_alt" className="!text-base text-accent" />
+            <span className="text-muted">
+              {categoryFilterActive ? (
+                <>
+                  Showing <span className="font-semibold text-primary">{categoryFilterLabel}</span>
+                  {browseProducts.length > 0 ? (
+                    <span className="text-muted/80">
+                      {" "}
+                      · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-primary">{browseProducts.length} results</span>
+                  <span className="text-muted/80"> with filters applied</span>
+                </>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setCategoryFilter(EMPTY_CATEGORY_FILTER);
+                setFilters(DEFAULT_FILTERS);
+              }}
+              className="ml-auto text-xs font-semibold text-accent hover:text-accent-hover"
+            >
+              Clear all
+            </button>
+          </div>
+        ) : null}
+
+        <section className="space-y-5">
+          <SectionHeader
+            title={`All Products${filterHint}`}
+            subtitle="Browse listings from verified shops on Midora."
+            href="/products"
+            linkLabel="See all"
+          />
+
+          {browseProducts.length === 0 ? (
+            <EmptyState
+              message={
+                anyFiltersActive
+                  ? "No products match your filters. Try a different category or clear filters."
+                  : "No products yet — check back soon."
+              }
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {browseProducts.map((p, idx) => (
+                  <div key={p.id} className="h-full">
+                    <ProductCard
+                      product={p}
+                      layout="vertical"
+                      impressionPool={p.boosted ? "boosted" : "organic"}
+                      impressionPosition={idx + 1}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
+                {hasMore ? (
+                  <div
+                    ref={loadMoreSentinelRef}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-muted"
+                  >
+                    {loadingMore ? "Loading more…" : "Loading more as you scroll…"}
+                  </div>
+                ) : null}
+                <Link
+                  href="/products"
+                  className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
+                >
+                  View all products
+                  <ArrowRight className="size-3.5" aria-hidden />
+                </Link>
+              </div>
+            </>
+          )}
+        </section>
+
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-primary p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
           <div className="pointer-events-none absolute -right-8 -top-8 size-40 rounded-full bg-accent/20 blur-3xl" />
           <div className="relative min-w-0">
             <p className="text-sm font-semibold text-white">New to Midora?</p>
@@ -348,6 +410,7 @@ export default function HomeLanding({ initialProducts }: Props) {
             <ArrowRight className="size-3.5" aria-hidden />
           </Link>
         </section>
+      </div>
 
       <HomeFeedbackWidget />
     </div>

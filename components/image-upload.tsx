@@ -37,16 +37,6 @@ function fileExt(mime: string | undefined): string {
   return "jpg";
 }
 
-/**
- * Image picker with a single-tap upload flow.
- *
- * Contract:
- * - Picking files starts the upload immediately — no intermediate confirmation.
- * - Background removal is opt-in via a toggle (only shown when `allowBackgroundRemoval`).
- *   The AI model is ~40MB and only downloads on first opt-in use.
- * - Watermarking (product logos) is transparent and runs before upload.
- * - Success / failure go through sonner (see AppToaster).
- */
 export function ImageUpload({
   endpoint,
   onUploadComplete,

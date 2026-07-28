@@ -1,21 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api/base";
 import { useAppSession } from "@/lib/state";
 
-/**
- * Lightweight heartbeat for the FastAPI presence tracker so that
- * `shops.available_now` continues to reflect whether the merchant is
- * actively online. Only runs for authenticated merchants and only while
- * the tab is visible.
- *
- * The general "N users online" count is handled entirely by Supabase
- * Presence (see `usePresenceCount` in the navbar) — this component exists
- * solely to keep the merchant availability signal alive.
- */
 
-const HEARTBEAT_MS = 5 * 60_000;
+const HEARTBEAT_MS = 60_000;
 const STORAGE_KEY = "midora:merchant:instance";
 
 function ensureInstanceId(): string {
@@ -54,11 +44,13 @@ function leave(instanceId: string): void {
 
 export default function MerchantPresenceHeartbeat(): null {
   const session = useAppSession();
-  const isMerchant = session.user?.user_role === "merchant";
+  const userId = session.user?.id ?? null;
+  const instanceIdRef = useRef<string | null>(null);
+  const prevUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isMerchant) return;
-    const instanceId = ensureInstanceId();
+    const instanceId = instanceIdRef.current ?? ensureInstanceId();
+    instanceIdRef.current = instanceId;
 
     const beat = () => {
       if (document.visibilityState === "visible") void ping(instanceId);
@@ -68,6 +60,7 @@ export default function MerchantPresenceHeartbeat(): null {
     const interval = window.setInterval(beat, HEARTBEAT_MS);
     const onVisibility = () => {
       if (document.visibilityState === "visible") beat();
+      else leave(instanceId);
     };
     const onPageHide = () => leave(instanceId);
 
@@ -75,11 +68,32 @@ export default function MerchantPresenceHeartbeat(): null {
     window.addEventListener("pagehide", onPageHide);
 
     return () => {
+      // Unmount cleanup only; auth transitions are handled in a separate effect
+      // to avoid race conditions during sign-in.
+      leave(instanceId);
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
     };
-  }, [isMerchant]);
+  }, []);
+
+  useEffect(() => {
+    const instanceId = instanceIdRef.current ?? ensureInstanceId();
+    instanceIdRef.current = instanceId;
+
+    const prevUserId = prevUserIdRef.current;
+    const loggedOut = !!prevUserId && !userId;
+    if (loggedOut) {
+      leave(instanceId);
+    }
+
+    // Always re-ping on auth identity changes so this tab's instance is
+    // immediately re-linked (or detached) server-side.
+    if (document.visibilityState === "visible") {
+      void ping(instanceId);
+    }
+    prevUserIdRef.current = userId;
+  }, [userId]);
 
   return null;
 }

@@ -233,11 +233,16 @@ export function createProduct(
   });
 }
 
-export function listShopProducts(shopId: string, opts?: { category?: string; search?: string; status?: string; token?: string }) {
+export function listShopProducts(
+  shopId: string,
+  opts?: { category?: string; search?: string; status?: string; limit?: number; page?: number; token?: string },
+) {
   const params = new URLSearchParams();
   if (opts?.category) params.set("category", opts.category);
   if (opts?.search) params.set("search", opts.search);
   if (opts?.status) params.set("status", opts.status);
+  if (opts?.limit != null) params.set("limit", String(opts.limit));
+  if (opts?.page != null) params.set("page", String(opts.page));
   const qs = params.toString();
   return apiFetch<Paginated<Product>>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/products${qs ? `?${qs}` : ""}`,
@@ -392,6 +397,8 @@ export type HomeFeedResponse = {
   page: number;
   limit: number;
   total: number;
+  has_more?: boolean;
+  next_cursor?: string | null;
 };
 
 export type SimilarProduct = {
@@ -431,11 +438,13 @@ export function getHomeFeed(
   page?: number,
   token?: string,
   excludeIds?: string,
+  cursor?: string | null,
 ) {
   const params = new URLSearchParams();
   if (limit) params.set("limit", String(limit));
   if (page) params.set("page", String(page));
   if (excludeIds) params.set("exclude_ids", excludeIds);
+  if (cursor) params.set("cursor", cursor);
   const qs = params.toString();
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
     ...(token ? { token } : {}),
