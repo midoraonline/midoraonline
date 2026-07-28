@@ -86,30 +86,33 @@ export default function BottomNav() {
           icon: "storefront",
         };
 
-    const accountTab: Tab = !session.isAuthenticated
-      ? { label: "Account", href: "/login", icon: "account_circle" }
-      : isMerchant
-        ? {
-            label: "Dashboard",
-            href: "/merchant",
-            icon: "space_dashboard",
-            isActive: (p) =>
-              p === "/merchant" ||
-              (p.startsWith("/merchant/") && !p.startsWith("/merchant/shops")),
-          }
-        : role === "admin"
-          ? {
-              label: "Dashboard",
-              href: "/admin",
-              icon: "admin_panel_settings",
-              isActive: (p) => p.startsWith("/admin"),
-            }
-          : {
-              label: "Account",
-              href: "/customer",
-              icon: "account_circle",
-              isActive: (p) => p.startsWith("/customer"),
-            };
+    let accountTab: Tab;
+    if (!session.isAuthenticated) {
+      accountTab = { label: "Account", href: "/login", icon: "account_circle" };
+    } else if (role === "admin") {
+      accountTab = {
+        label: "Dashboard",
+        href: "/admin",
+        icon: "admin_panel_settings",
+        isActive: (p) => p.startsWith("/admin"),
+      };
+    } else if (role === "merchant") {
+      accountTab = {
+        label: "Dashboard",
+        href: "/merchant",
+        icon: "space_dashboard",
+        isActive: (p) =>
+          p === "/merchant" ||
+          (p.startsWith("/merchant/") && !p.startsWith("/merchant/shops")),
+      };
+    } else {
+      accountTab = {
+        label: "Account",
+        href: "/customer",
+        icon: "account_circle",
+        isActive: (p) => p.startsWith("/customer"),
+      };
+    }
 
     return [
       {
