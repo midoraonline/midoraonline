@@ -113,7 +113,10 @@ export default async function ProductDetails({
 }) {
   const { slug } = await params;
   const id = resolveProductIdFromPageSlug(slug);
-  const product = await getProductById(id);
+  const [product, reviewStats] = await Promise.all([
+    getProductById(id),
+    getProductReviewStats(id).catch(() => null),
+  ]);
   if (!product) notFound();
 
   const canonicalSlug = productPageSlug(product);
@@ -122,8 +125,6 @@ export default async function ProductDetails({
   }
 
   const shop = product.shop;
-
-  const reviewStats = await getProductReviewStats(id);
 
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
@@ -233,7 +234,7 @@ export default async function ProductDetails({
             </div>
 
             <div className="mt-2">
-              {reviewStats.total_reviews > 0 ? (
+              {reviewStats && reviewStats.total_reviews > 0 ? (
                 <a href="#reviews" className="inline-block">
                   <StarRating
                     rating={reviewStats.average_rating}

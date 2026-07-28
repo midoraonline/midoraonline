@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { ApiError } from "@/lib/api/base";
 import { apiProducts, apiShops } from "@/lib/api";
 import type { Product, LikedProductsResponse } from "@/lib/api/products";
@@ -40,6 +42,9 @@ import { safeServerFetch, serverApiFetch } from "@/lib/api/serverFetch";
  *
  * Legacy top-level helpers (getShopBySlug, listPublicShops, etc.) are kept for
  * existing SSR pages that already imported them.
+ *
+ * React.cache() dedupes identical calls within a single RSC request so
+ * generateMetadata + layout + page don't triple-hit FastAPI.
  */
 
 // ---------------------------------------------------------------------------
@@ -64,14 +69,13 @@ async function nullIfUnavailable<T>(p: Promise<T>): Promise<T | null> {
   }
 }
 
-export async function getShopBySlug(slug: string): Promise<Shop | null> {
-  return nullIfNotFound(apiShops.bySlug(slug));
-}
-
-export async function getShopBySlugForMetadata(slug: string): Promise<Shop | null> {
+export const getShopBySlug = cache(async (slug: string): Promise<Shop | null> => {
+  // Soft-fail 5xx so layout + metadata + page share one cached result
+  // and a blip upstream doesn't crash the RSC tree thrice.
   return nullIfUnavailable(apiShops.bySlug(slug));
-}
+});
 
+export const getShopBySlugForMetadata = getShopBySlug;
 export async function getShopById(shopId: string): Promise<Shop | null> {
   return nullIfNotFound(apiShops.getShop(shopId));
 }
@@ -96,14 +100,14 @@ export async function listPublicShopsWithContacts(opts?: {
   return full.map((f, i) => (f ? { ...partial[i], ...f } : partial[i]));
 }
 
-export async function getProductById(productId: string): Promise<Product | null> {
+export const getProductById = cache(async (productId: string): Promise<Product | null> => {
   return nullIfNotFound(apiProducts.getProduct(productId));
-}
+});
 
-export async function listShopProducts(shopId: string): Promise<Product[]> {
-  const res = await apiProducts.listShopProducts(shopId);
+export const listShopProducts = cache(async (shopId: string): Promise<Product[]> => {
+  const res = await apiProducts.listShopProducts(shopId, { limit: 100 });
   return res.items ?? [];
-}
+});
 
 // ---------------------------------------------------------------------------
 // Public API (anonymous / anyone).
@@ -117,7 +121,9 @@ export const publicApi = {
     apiShops.listAllPublic(opts),
   productById: (productId: string) => nullIfNotFound(apiProducts.getProduct(productId)),
   shopProducts: async (shopId: string): Promise<Product[]> => {
-    const res = await safeServerFetch(apiProducts.listShopProducts(shopId));
+    const res = await safeServerFetch(
+      apiProducts.listShopProducts(shopId, { limit: 100 }),
+    );
     return res?.items ?? [];
   },
 };

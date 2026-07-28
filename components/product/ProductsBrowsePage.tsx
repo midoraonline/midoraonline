@@ -34,8 +34,16 @@ export default function ProductsBrowsePage({
   const [allItems, setAllItems] = useState(items);
   const { items: categoryItems } = useCategoryItems();
   const [page, setPage] = useState(1);
+  const [nextCursor, setNextCursor] = useState<string | null>("p:2");
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(items.length >= 72);
+  const [hasMore, setHasMore] = useState(items.length >= 36);
+
+  useEffect(() => {
+    setAllItems(items);
+    setPage(1);
+    setNextCursor("p:2");
+    setHasMore(items.length >= 36);
+  }, [items]);
 
   useEffect(() => {
     const urlQ = searchParams.get("q")?.trim() ?? "";
@@ -58,9 +66,7 @@ export default function ProductsBrowsePage({
     setLoadingMore(true);
     try {
       const next = page + 1;
-      // Send already-shown IDs so the server never re-serves them.
-      const excludeIds = allItems.map((p) => p.id).slice(-500).join(",") || undefined;
-      const data = await apiProducts.getHomeFeed(72, next, undefined, excludeIds);
+      const data = await apiProducts.getHomeFeed(36, next, undefined, undefined, nextCursor);
       const existing = new Set(allItems.map((p) => p.id));
       const nextItems = (data.algorithm ?? [])
         .filter((fp) => !existing.has(fp.id))
@@ -70,14 +76,15 @@ export default function ProductsBrowsePage({
       } else {
         setAllItems((prev) => [...prev, ...nextItems]);
         setPage(next);
-        setHasMore(data.total > next * 72);
+        setNextCursor(data.next_cursor ?? null);
+        setHasMore(Boolean(data.has_more && data.next_cursor));
       }
     } catch {
       setHasMore(false);
     } finally {
       setLoadingMore(false);
     }
-  }, [page, allItems]);
+  }, [page, allItems, nextCursor]);
 
   function toCardLocal(fp: HomeFeedProduct): ProductCardData {
     return homeFeedProductToCard(fp, typeof window !== "undefined" ? window.location.origin : "");

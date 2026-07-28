@@ -47,8 +47,17 @@ export default function ProductLikeButton({
   useEffect(() => {
     if (!session.hydrated) return;
     if (!session.isAuthenticated) return;
-    if (initialLiked !== undefined && (initialLikeCount ?? 0) > 0) return;
-    sync();
+    // Feed/SSR already provided like state — do not N+1 /engagement per card.
+    if (initialLikeCount !== undefined) {
+      setLiked(Boolean(initialLiked));
+      setCount(initialLikeCount);
+      return;
+    }
+    if (initialLiked !== undefined) {
+      setLiked(initialLiked);
+      return;
+    }
+    void sync();
   }, [session.hydrated, session.isAuthenticated, sync, initialLiked, initialLikeCount]);
 
   async function toggle() {

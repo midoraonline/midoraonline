@@ -32,6 +32,9 @@ import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 
+const FEED_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const FEED_REFRESH_KEY_PREFIX = "midora:feed:last-refresh:";
+
 function SectionHeader({
   title,
   subtitle,
@@ -91,29 +94,66 @@ export default function HomeLanding({ initialProducts }: Props) {
   const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const nextCursorRef = useRef<string | null>("p:2");
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
+  const feedViewerKey = session.user?.id ?? "guest";
 
-  // Persistent set of listing IDs already rendered in this browsing session.
-  // Sent as `exclude_ids` so subsequent fetches never repeat content — this
-  // is how "pagination without repeats" survives cross-reload in a
-  // serverless deploy (the server has no per-user in-memory pagination state).
+  // Persistent set of listing IDs already rendered this session.
+  // Sent as `exclude_ids` ONLY on load-more / soft-refresh continuation —
+  // never on the initial SSR personalized page (that must return top ranks).
   const seenIdsRef = useRef<Set<string>>(new Set(initialProducts.map((p) => p.id)));
 
   useEffect(() => {
     setProducts(initialProducts);
     seenIdsRef.current = new Set(initialProducts.map((p) => p.id));
     setHasMore(true);
+    nextCursorRef.current = "p:2";
   }, [initialProducts]);
 
   const buildExcludeParam = useCallback((): string | undefined => {
-    // Cap the URL length to protect edge routing (server also enforces 500 max).
     const ids = [...seenIdsRef.current].slice(-500);
     return ids.length > 0 ? ids.join(",") : undefined;
   }, []);
 
+  const getRefreshStorageKey = useCallback(
+    () => `${FEED_REFRESH_KEY_PREFIX}${feedViewerKey}`,
+    [feedViewerKey],
+  );
+
+  const shouldRefreshFeed = useCallback((): boolean => {
+    try {
+      const raw = localStorage.getItem(getRefreshStorageKey());
+      if (!raw) return true;
+      const last = Number(raw);
+      if (!Number.isFinite(last)) return true;
+      return Date.now() - last >= FEED_REFRESH_INTERVAL_MS;
+    } catch {
+      return true;
+    }
+  }, [getRefreshStorageKey]);
+
+  const markFeedRefreshed = useCallback(() => {
+    try {
+      localStorage.setItem(getRefreshStorageKey(), String(Date.now()));
+    } catch {
+      /* ignore storage restrictions */
+    }
+  }, [getRefreshStorageKey]);
+
   const refreshFeed = useCallback(async () => {
+    if (!shouldRefreshFeed()) return;
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed(72, 1, undefined, buildExcludeParam());
+      // Continuation only: ask for the next unseen batch after current cards.
+      // Do not use page/cursor here — backend treats exclude_ids as "next head".
+      const exclude = buildExcludeParam();
+      const data = await apiProducts.getHomeFeed(
+        36,
+        1,
+        undefined,
+        exclude,
+        undefined,
+      );
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const filtered = cards.filter((c) => !seenIdsRef.current.has(c.id));
       if (filtered.length > 0) {
@@ -121,17 +161,26 @@ export default function HomeLanding({ initialProducts }: Props) {
         setProducts((prev) => [...prev, ...filtered]);
         setHasMore(true);
       }
+      markFeedRefreshed();
     } catch {
       /* keep current feed */
     }
-  }, [buildExcludeParam]);
+  }, [buildExcludeParam, markFeedRefreshed, shouldRefreshFeed]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed(72, 1, undefined, buildExcludeParam());
+      // Load-more: exclude already-shown IDs only. No cursor — combining
+      // exclude + page/cursor double-skipped the next personalized page.
+      const data = await apiProducts.getHomeFeed(
+        36,
+        1,
+        undefined,
+        buildExcludeParam(),
+        undefined,
+      );
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));
       if (fresh.length === 0) {
@@ -139,13 +188,37 @@ export default function HomeLanding({ initialProducts }: Props) {
       } else {
         fresh.forEach((c) => seenIdsRef.current.add(c.id));
         setProducts((prev) => [...prev, ...fresh]);
+        setHasMore(Boolean(data.has_more) || fresh.length >= 36);
       }
+      nextCursorRef.current = data.next_cursor ?? null;
     } catch {
       setHasMore(false);
     } finally {
       setLoadingMore(false);
     }
   }, [buildExcludeParam, hasMore, loadingMore]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const node = loadMoreSentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        void loadMore();
+      },
+      {
+        root: null,
+        rootMargin: "300px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -302,14 +375,12 @@ export default function HomeLanding({ initialProducts }: Props) {
               </div>
               <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
                 {hasMore ? (
-                  <button
-                    type="button"
-                    onClick={() => void loadMore()}
-                    disabled={loadingMore}
-                    className="dm-btn dm-btn-secondary inline-flex items-center gap-1.5 px-6 disabled:opacity-60"
+                  <div
+                    ref={loadMoreSentinelRef}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-muted"
                   >
-                    {loadingMore ? "Loading…" : "Load more"}
-                  </button>
+                    {loadingMore ? "Loading more…" : "Loading more as you scroll…"}
+                  </div>
                 ) : null}
                 <Link
                   href="/products"
