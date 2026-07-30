@@ -10,6 +10,8 @@ import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import { buildShopLocationPayload } from "@/components/shop/shopUtils";
+import type { LatLng } from "@/lib/geo";
 
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };
 
@@ -141,6 +143,7 @@ export default function CreateShopConcierge({
 
   const [suggestedShop, setSuggestedShop] = useState<SuggestedShop | null>(null);
   const [confirmForm, setConfirmForm] = useState<ConfirmForm | null>(null);
+  const [locationCoords, setLocationCoords] = useState<LatLng | null>(null);
   const [pendingSuggestions, setPendingSuggestions] = useState<
     Set<keyof ConfirmForm>
   >(new Set());
@@ -204,6 +207,7 @@ export default function CreateShopConcierge({
         setSuggestedShop(s);
         const form = fromSuggestion(s);
         setConfirmForm(form);
+        setLocationCoords(null);
         const suggested: Set<keyof ConfirmForm> = new Set();
         (
           [
@@ -246,9 +250,10 @@ export default function CreateShopConcierge({
         logo_url: confirmForm.logoUrl.trim() || undefined,
         shop_email: confirmForm.shopEmail.trim() || undefined,
         whatsapp_number: confirmForm.whatsappNumber.trim() || undefined,
-        location: confirmForm.locationDisplay.trim() && confirmForm.locationDisplay.trim() !== "Online Shop"
-          ? { display: confirmForm.locationDisplay.trim() }
-          : undefined,
+        location: buildShopLocationPayload(
+          confirmForm.locationDisplay,
+          locationCoords,
+        ) ?? undefined,
         availability: confirmForm.availability.trim()
           ? { hours: confirmForm.availability.trim() }
           : undefined,
@@ -480,6 +485,9 @@ export default function CreateShopConcierge({
               <LocationInput
                 value={f.locationDisplay}
                 onChange={(v) => field("locationDisplay", v)}
+                onResolved={(place) =>
+                  setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)
+                }
                 placeholder="e.g. Kisasi, Kampala"
                 className="pt-1"
               />
@@ -523,6 +531,7 @@ export default function CreateShopConcierge({
               onClick={() => {
                 setSuggestedShop(null);
                 setConfirmForm(null);
+                setLocationCoords(null);
               }}
               className="dm-pill dm-focus border border-border px-4 py-2.5 text-sm font-semibold hover:bg-foreground/[0.04]"
             >

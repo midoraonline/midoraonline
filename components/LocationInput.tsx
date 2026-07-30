@@ -2,10 +2,19 @@
 
 import { useState, useEffect, useRef, useId } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { geocodeSearch, type GeocodeHit } from "@/lib/geo";
+
+export type ResolvedLocation = {
+  display: string;
+  lat: number;
+  lng: number;
+};
 
 type Props = {
   value: string;
   onChange: (val: string) => void;
+  /** Fired when the user picks a Nominatim suggestion (with coords) or clears place. */
+  onResolved?: (place: ResolvedLocation | null) => void;
   placeholder?: string;
   className?: string;
 };
@@ -13,22 +22,22 @@ type Props = {
 export default function LocationInput({
   value,
   onChange,
+  onResolved,
   placeholder = "Search location (e.g. Kisasi)",
   className = "",
 }: Props) {
-  // Stable, unique name for the radio group — prevents hydration mismatch
   const uid = useId();
   const radioName = `location_type_${uid}`;
 
   const isOnline = value === "Online Shop";
   const [query, setQuery] = useState(isOnline ? "" : value);
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<GeocodeHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync incoming value
   useEffect(() => {
     if (value === "Online Shop") {
       setQuery("");
@@ -47,24 +56,29 @@ export default function LocationInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
+
   const searchLocation = async (q: string) => {
     if (q.trim().length < 3) {
       setResults([]);
       return;
     }
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
     setLoading(true);
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          q
-        )}&countrycodes=ug&format=json&limit=5&accept-language=en`
-      );
-      const data = await res.json();
-      setResults(data.map((d: { display_name: string }) => d.display_name));
+      const hits = await geocodeSearch(q, { signal: ac.signal, limit: 5 });
+      if (!ac.signal.aborted) setResults(hits);
     } catch {
-      // Ignore network errors gracefully
+      if (!ac.signal.aborted) setResults([]);
     } finally {
-      setLoading(false);
+      if (!ac.signal.aborted) setLoading(false);
     }
   };
 
@@ -73,6 +87,8 @@ export default function LocationInput({
     setQuery(val);
     setIsOpen(true);
     onChange(val);
+    // Free-typed text has no trusted coords until a suggestion is chosen.
+    onResolved?.(null);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -82,7 +98,6 @@ export default function LocationInput({
 
   return (
     <div className={`space-y-3 ${className}`} ref={containerRef}>
-      {/* Physical / Online toggle — same radio group guaranteed by stable name */}
       <div className="flex items-center gap-5">
         <label className="flex items-center gap-2 text-xs cursor-pointer group">
           <input
@@ -91,6 +106,7 @@ export default function LocationInput({
             checked={!isOnline}
             onChange={() => {
               onChange(query);
+              onResolved?.(null);
             }}
             className="accent-primary"
           />
@@ -106,6 +122,7 @@ export default function LocationInput({
             onChange={() => {
               setIsOpen(false);
               onChange("Online Shop");
+              onResolved?.(null);
             }}
             className="accent-primary"
           />
@@ -142,17 +159,22 @@ export default function LocationInput({
               {!loading &&
                 results.map((res, i) => (
                   <button
-                    key={i}
+                    key={`${res.lat},${res.lng},${i}`}
                     type="button"
                     className="w-full text-left px-3 py-2.5 text-xs hover:bg-foreground/[0.04] transition-colors border-b border-border/50 last:border-0 focus:outline-none focus:bg-foreground/[0.06]"
                     onClick={() => {
-                      setQuery(res);
-                      onChange(res);
+                      setQuery(res.displayName);
+                      onChange(res.displayName);
+                      onResolved?.({
+                        display: res.displayName,
+                        lat: res.lat,
+                        lng: res.lng,
+                      });
                       setIsOpen(false);
                     }}
                   >
                     <MaterialSymbol name="location_on" className="!text-[14px] text-muted mr-1.5 align-middle" />
-                    <span className="align-middle leading-relaxed">{res}</span>
+                    <span className="align-middle leading-relaxed">{res.displayName}</span>
                   </button>
                 ))}
             </div>

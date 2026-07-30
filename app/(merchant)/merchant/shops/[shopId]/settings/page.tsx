@@ -9,6 +9,11 @@ import PhoneNumberInput from "@/components/PhoneNumberInput";
 import CategoryPicker from "@/components/CategoryPicker";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
+import {
+  buildShopLocationPayload,
+  locationCoords as readLocationCoords,
+} from "@/components/shop/shopUtils";
+import type { LatLng } from "@/lib/geo";
 
 function slugFromName(name: string): string {
   return (
@@ -38,6 +43,7 @@ export default function MerchantShopSettingsPage() {
   const [shopEmail, setShopEmail] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [locationDisplay, setLocationDisplay] = useState("");
+  const [locationCoordsState, setLocationCoordsState] = useState<LatLng | null>(null);
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
   const [category, setCategory] = useState("");
 
@@ -78,6 +84,7 @@ export default function MerchantShopSettingsPage() {
             ? String((loc as { display?: string }).display ?? "")
             : "",
         );
+        setLocationCoordsState(readLocationCoords(loc));
         setShopType((shopData.shop_type as apiShops.ShopType) ?? "product");
         setCategory(shopData.category ?? "");
         setContextEntries(contextList);
@@ -107,9 +114,7 @@ export default function MerchantShopSettingsPage() {
         logo_url: logoUrl.trim() || undefined,
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
-        location: locationDisplay.trim() && locationDisplay.trim() !== "Online Shop"
-          ? { display: locationDisplay.trim() }
-          : undefined,
+        location: buildShopLocationPayload(locationDisplay, locationCoordsState) ?? undefined,
         shop_type: shopType,
         category: category.trim() || undefined,
       });
@@ -262,6 +267,9 @@ export default function MerchantShopSettingsPage() {
               <LocationInput
                 value={locationDisplay}
                 onChange={setLocationDisplay}
+                onResolved={(place) =>
+                  setLocationCoordsState(place ? { lat: place.lat, lng: place.lng } : null)
+                }
                 placeholder="e.g. Kisasi, Kampala"
               />
             </div>

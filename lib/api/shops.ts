@@ -23,6 +23,9 @@ export type ShopLocation = {
   display?: string;
   city?: string;
   country?: string;
+  /** WGS84 — set when place is chosen via Nominatim / Near me flows */
+  lat?: number;
+  lng?: number;
 };
 
 export type ThemeConfig = Record<string, unknown>;

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { isVideoUrl } from "@/lib/api/products";
 
 function userMediaUnoptimized(src: string) {
@@ -14,6 +15,7 @@ function isVideoSrc(src: string) {
 
 const AUTO_MS = 5500;
 const PAUSE_AFTER_INTERACTION_MS = 10_000;
+const SWIPE_THRESHOLD = 48;
 
 function capturePoster(video: HTMLVideoElement): string | null {
   try {
@@ -36,19 +38,14 @@ function VideoThumb({ src, className }: { src: string; className?: string }) {
   const [poster, setPoster] = useState<string | null>(null);
 
   useEffect(() => {
-    // Defer setting poster to null to avoid cascading renders
-    Promise.resolve().then(() => {
-      setPoster(null);
-    });
+    Promise.resolve().then(() => setPoster(null));
     const vid = vidRef.current;
     if (!vid) return;
-
     const onSeeked = () => {
       const url = capturePoster(vid);
       if (url) setPoster(url);
     };
     vid.addEventListener("seeked", onSeeked, { once: true });
-    // Seek to 0.1 s — frame 0 is sometimes black in H.264 streams
     vid.currentTime = 0.1;
     return () => vid.removeEventListener("seeked", onSeeked);
   }, [src]);
@@ -70,14 +67,15 @@ function VideoThumb({ src, className }: { src: string; className?: string }) {
   );
 }
 
-type MainVideoProps = {
+function MainVideo({
+  src,
+  visible,
+  onPlayingChange,
+}: {
   src: string;
   visible: boolean;
   onPlayingChange: (playing: boolean) => void;
-  className?: string;
-};
-
-function MainVideo({ src, visible, onPlayingChange, className = "" }: MainVideoProps) {
+}) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -96,10 +94,9 @@ function MainVideo({ src, visible, onPlayingChange, className = "" }: MainVideoP
       playsInline
       preload={visible ? "auto" : "metadata"}
       className={[
-        "absolute inset-0 h-full w-full object-contain bg-black",
-        "transition-[opacity] duration-500 ease-out motion-reduce:transition-none",
+        "absolute inset-0 h-full w-full bg-black object-contain",
+        "transition-opacity duration-400 ease-out motion-reduce:transition-none",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
-        className,
       ].join(" ")}
       aria-hidden={!visible}
       onPlay={() => onPlayingChange(true)}
@@ -119,24 +116,21 @@ export default function ProductImageGallery({
   children?: React.ReactNode;
 }) {
   const [active, setActive] = useState(0);
-  const resumeAtRef = useRef<number>(0);
+  const resumeAtRef = useRef(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
-
+  const touchStartX = useRef<number | null>(null);
   const safeLen = images.length;
 
   useEffect(() => {
-    // Defer state updates to prevent cascading renders
     Promise.resolve().then(() => {
       setActive(0);
       setVideoPlaying(false);
     });
   }, [images]);
 
-  // Auto-advance: skips while a video is actively playing
   useEffect(() => {
     if (safeLen <= 1) return;
     const tick = () => {
-      if (typeof window === "undefined") return;
       if (videoPlaying) return;
       if (Date.now() < resumeAtRef.current) return;
       setActive((i) => (i + 1) % safeLen);
@@ -151,28 +145,47 @@ export default function ProductImageGallery({
     setVideoPlaying(false);
   }, []);
 
+  const step = useCallback(
+    (delta: number) => {
+      if (safeLen <= 1) return;
+      onPick((active + delta + safeLen) % safeLen);
+    },
+    [active, onPick, safeLen],
+  );
+
   const handlePlayingChange = useCallback((playing: boolean) => {
     setVideoPlaying(playing);
-    if (!playing) {
-      resumeAtRef.current = Date.now() + PAUSE_AFTER_INTERACTION_MS;
-    }
+    if (!playing) resumeAtRef.current = Date.now() + PAUSE_AFTER_INTERACTION_MS;
   }, []);
 
   if (safeLen === 0) {
     return (
-      <div className="relative grid aspect-[4/3] place-items-center rounded-3xl border border-dashed border-foreground/[0.12] bg-foreground/[0.03] text-sm text-muted">
-        No image
+      <div className="relative grid aspect-[4/3] place-items-center rounded-2xl border border-dashed border-border bg-surface-subtle text-sm text-muted">
+        No media yet
         {children}
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-foreground/[0.08] bg-foreground/[0.04] shadow-sm">
+    <div className="space-y-2.5">
+      <div
+        className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-surface-subtle shadow-sm sm:aspect-[5/4]"
+        onTouchStart={(e) => {
+          touchStartX.current = e.changedTouches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStartX.current;
+          const end = e.changedTouches[0]?.clientX;
+          touchStartX.current = null;
+          if (start == null || end == null) return;
+          const dx = end - start;
+          if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+          step(dx < 0 ? 1 : -1);
+        }}
+      >
         {images.map((url, i) => {
           const visible = i === active;
-
           if (isVideoSrc(url)) {
             return (
               <MainVideo
@@ -183,70 +196,79 @@ export default function ProductImageGallery({
               />
             );
           }
-
-          const commonCls = [
-            "absolute inset-0 object-cover",
-            "duration-500 ease-out motion-reduce:transition-none",
-            visible ? "opacity-100" : "pointer-events-none opacity-0",
-          ].join(" ");
-
           return (
             <Image
               key={`${url}-${i}`}
               src={url}
               alt={i === 0 ? title : `${title} — image ${i + 1}`}
               fill
-              className={commonCls}
-              style={{ transitionProperty: "opacity, transform" }}
-              sizes="(max-width: 1024px) 100vw, min(896px, 50vw)"
+              className={[
+                "object-cover transition-opacity duration-400 ease-out motion-reduce:transition-none",
+                visible ? "opacity-100" : "pointer-events-none opacity-0",
+              ].join(" ")}
+              sizes="(max-width: 1024px) 100vw, min(640px, 50vw)"
               priority={i === 0}
               unoptimized={userMediaUnoptimized(url)}
               aria-hidden={!visible}
             />
           );
         })}
+
         {children}
+
+        {safeLen > 1 ? (
+          <>
+            <span className="pointer-events-none absolute bottom-3 left-1/2 z-[5] -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-0.5 text-[10px] font-semibold tabular-nums text-white backdrop-blur-sm">
+              {active + 1} / {safeLen}
+            </span>
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              className="absolute left-2 top-1/2 z-[5] hidden size-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-foreground shadow-sm transition hover:bg-white sm:grid"
+              aria-label="Previous media"
+            >
+              <ChevronLeft className="size-4" strokeWidth={2} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              className="absolute right-2 top-1/2 z-[5] hidden size-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-foreground shadow-sm transition hover:bg-white sm:grid"
+              aria-label="Next media"
+            >
+              <ChevronRight className="size-4" strokeWidth={2} aria-hidden />
+            </button>
+          </>
+        ) : null}
       </div>
 
       {safeLen > 1 ? (
         <ul
-          className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 pt-1"
+          className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
           aria-label="Product media"
         >
           {images.map((url, i) => {
             const isVideo = isVideoSrc(url);
             const isActive = i === active;
             return (
-              <li key={`${url}-thumb-${i}`} className="snap-start">
+              <li key={`${url}-thumb-${i}`} className="shrink-0">
                 <button
                   type="button"
                   onClick={() => onPick(i)}
                   className={[
-                    "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border",
-                    "bg-foreground/[0.04] duration-200",
-                    "motion-reduce:transition-none",
+                    "relative size-14 overflow-hidden rounded-lg border transition sm:size-16",
                     isActive
-                      ? "scale-[1.02] ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent"
+                      ? "border-accent ring-2 ring-accent/30"
                       : "border-border opacity-75 hover:opacity-100",
-                    "sm:h-20 sm:w-20",
                   ].join(" ")}
-                  style={{ transitionProperty: "box-shadow, transform" }}
                   aria-label={`View ${isVideo ? "video" : "image"} ${i + 1}`}
                   aria-current={isActive ? "true" : undefined}
                 >
                   {isVideo ? (
                     <>
                       <VideoThumb src={url} className="h-full w-full object-cover" />
-                      <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/20">
-                        <span className="flex size-6 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="size-3.5"
-                            fill="currentColor"
-                            aria-hidden
-                          >
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
+                      <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/25">
+                        <span className="flex size-5 items-center justify-center rounded-full bg-black/70 text-white">
+                          <Play className="size-2.5 fill-current" aria-hidden />
                         </span>
                       </span>
                     </>
@@ -256,7 +278,7 @@ export default function ProductImageGallery({
                       alt=""
                       fill
                       className="object-cover"
-                      sizes="80px"
+                      sizes="64px"
                       unoptimized={userMediaUnoptimized(url)}
                     />
                   )}

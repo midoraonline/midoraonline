@@ -385,6 +385,8 @@ export type HomeFeedProduct = {
     trust_badges?: string[];
     available_now: boolean;
     location?: string | null;
+    location_lat?: number | null;
+    location_lng?: number | null;
   };
   boosted: boolean;
 };

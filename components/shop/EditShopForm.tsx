@@ -15,6 +15,11 @@ import PhoneNumberInput from "@/components/PhoneNumberInput";
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
+import {
+  buildShopLocationPayload,
+  locationCoords as readLocationCoords,
+} from "@/components/shop/shopUtils";
+import type { LatLng } from "@/lib/geo";
 
 type EditTab = "details" | "products" | "services";
 
@@ -28,6 +33,7 @@ type FormState = {
   availabilityDays: string;
   availabilityHours: string;
   location: string;
+  locationCoords: LatLng | null;
   shopType: apiShops.ShopType;
   category: string;
   isActive: boolean;
@@ -50,6 +56,7 @@ function shopToFormState(shop: Shop): FormState {
         : loc && typeof loc === "object" && "display" in loc
           ? String((loc as { display?: string }).display ?? "")
           : "",
+    locationCoords: readLocationCoords(loc),
     shopType: shop.shop_type ?? "product",
     category: shop.category ?? "",
     isActive: shop.is_active ?? true,
@@ -67,6 +74,8 @@ function formsEqual(a: FormState, b: FormState): boolean {
     a.availabilityDays === b.availabilityDays &&
     a.availabilityHours === b.availabilityHours &&
     a.location === b.location &&
+    a.locationCoords?.lat === b.locationCoords?.lat &&
+    a.locationCoords?.lng === b.locationCoords?.lng &&
     a.shopType === b.shopType &&
     a.category === b.category &&
     a.isActive === b.isActive
@@ -254,10 +263,7 @@ function DetailsTab({
             hours: form.availabilityHours.trim() || null,
           }
         : null,
-      location:
-        form.location.trim() && form.location.trim() !== "Online Shop"
-          ? { display: form.location.trim() }
-          : null,
+      location: buildShopLocationPayload(form.location, form.locationCoords),
       shop_type: form.shopType,
       category: form.category.trim() || undefined,
       is_active: form.isActive,
@@ -370,6 +376,12 @@ function DetailsTab({
             <LocationInput
               value={form.location}
               onChange={(val) => onChange("location", val)}
+              onResolved={(place) =>
+                onChange(
+                  "locationCoords",
+                  place ? { lat: place.lat, lng: place.lng } : null,
+                )
+              }
               placeholder="e.g. Kisasi, Kampala"
             />
           </div>

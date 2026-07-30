@@ -44,6 +44,8 @@ export type ProductCardData = {
     trust_score?: number | null;
     available_now?: boolean | null;
     location?: string | null;
+    lat?: number | null;
+    lng?: number | null;
   };
   category?: string | null;
   description?: string | null;

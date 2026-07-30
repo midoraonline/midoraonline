@@ -11,13 +11,22 @@ import {
 import {
   Check,
   ChevronDown,
+  Loader2,
   MapPin,
+  Navigation,
   Search,
   SlidersHorizontal,
   Star,
   X,
 } from "lucide-react";
 import type { ProductCardData } from "@/components/productcard";
+import {
+  GeoLocationError,
+  getBrowserLocation,
+  labelFromReverse,
+  reverseGeocode,
+  type UserGeo,
+} from "@/lib/geo";
 
 export type SortOption =
   | "relevance"
@@ -35,7 +44,11 @@ export type FilterState = {
   availableNow: boolean;
   verifiedOnly: boolean;
   minRating: number | null;
+  /** Exact place-name match (mutually exclusive with nearMe). */
   location: string | null;
+  /** Sort listings by GPS proximity when userGeo is set. */
+  nearMe: boolean;
+  userGeo: UserGeo | null;
 };
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -46,6 +59,8 @@ export const DEFAULT_FILTERS: FilterState = {
   verifiedOnly: false,
   minRating: null,
   location: null,
+  nearMe: false,
+  userGeo: null,
 };
 
 const SORT_LABELS: Record<SortOption, string> = {
@@ -95,13 +110,14 @@ function activeFilterCount(f: FilterState): number {
   if (f.availableNow) n++;
   if (f.verifiedOnly) n++;
   if (f.minRating !== null) n++;
-  if (f.location !== null) n++;
+  if (f.location !== null || f.nearMe) n++;
   return n;
 }
 
 export function applyFilters(
   products: ProductCardData[],
   filters: FilterState,
+  opts?: { distances?: Map<string, number> | null },
 ): ProductCardData[] {
   let list = [...products];
 
@@ -110,7 +126,7 @@ export function applyFilters(
   if (filters.availableNow) list = list.filter((p) => p.shop.available_now !== false);
   if (filters.verifiedOnly) list = list.filter((p) => p.shop.verified === true);
   if (filters.minRating !== null) list = list.filter((p) => (p.rating ?? 0) >= filters.minRating!);
-  if (filters.location !== null) {
+  if (filters.location !== null && !filters.nearMe) {
     list = list.filter(
       (p) =>
         p.location_name?.trim() === filters.location ||
@@ -140,6 +156,17 @@ export function applyFilters(
       break;
     case "trust_score":
       list.sort((a, b) => (b.shop.trust_score ?? 0) - (a.shop.trust_score ?? 0));
+      break;
+    case "relevance":
+    default:
+      if (filters.nearMe && opts?.distances && opts.distances.size > 0) {
+        list.sort((a, b) => {
+          const da = opts.distances!.get(a.id) ?? Number.POSITIVE_INFINITY;
+          const db = opts.distances!.get(b.id) ?? Number.POSITIVE_INFINITY;
+          if (da !== db) return da - db;
+          return 0;
+        });
+      }
       break;
   }
 
@@ -348,15 +375,23 @@ function PriceDropdown({
 
 function LocationDropdown({
   locations,
+  nearMe,
+  userGeo,
   value,
-  onChange,
+  onChangeLocation,
+  onSelectNearMe,
 }: {
   locations: LocationEntry[];
+  nearMe: boolean;
+  userGeo: UserGeo | null;
   value: string | null;
-  onChange: (loc: string | null) => void;
+  onChangeLocation: (loc: string | null) => void;
+  onSelectNearMe: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [nearMeError, setNearMeError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   useClickOutside(ref, () => setOpen(false), open);
@@ -367,6 +402,7 @@ function LocationDropdown({
       return () => clearTimeout(t);
     }
     setSearch("");
+    setNearMeError(null);
   }, [open]);
 
   const total = useMemo(() => locations.reduce((s, l) => s + l.count, 0), [locations]);
@@ -375,12 +411,42 @@ function LocationDropdown({
     return q ? locations.filter((l) => l.name.toLowerCase().includes(q)) : locations;
   }, [locations, search]);
 
+  const chipLabel = nearMe
+    ? userGeo?.label
+      ? `Near · ${userGeo.label}`
+      : "Near me"
+    : (value ?? "Location");
+  const isActive = nearMe || value !== null;
+
+  async function handleNearMe() {
+    setLocating(true);
+    setNearMeError(null);
+    try {
+      await onSelectNearMe();
+      setOpen(false);
+    } catch (err) {
+      const message =
+        err instanceof GeoLocationError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Couldn’t use your location.";
+      setNearMeError(message);
+    } finally {
+      setLocating(false);
+    }
+  }
+
   return (
     <div ref={ref} className="relative">
-      <Chip active={value !== null} onClick={() => setOpen((v) => !v)}>
-        <MapPin className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-        <span className={`max-w-[5.5rem] truncate ${value ? "font-semibold" : "font-medium"}`}>
-          {value ?? "Location"}
+      <Chip active={isActive} onClick={() => setOpen((v) => !v)}>
+        {nearMe ? (
+          <Navigation className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
+        ) : (
+          <MapPin className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
+        )}
+        <span className={`max-w-[6.5rem] truncate ${isActive ? "font-semibold" : "font-medium"}`}>
+          {chipLabel}
         </span>
         <ChevronDown
           className={`size-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
@@ -390,7 +456,7 @@ function LocationDropdown({
       </Chip>
 
       {open && (
-        <MenuPanel className="w-60">
+        <MenuPanel className="w-64">
           {locations.length > 5 && (
             <div className="border-b border-border p-2">
               <div className="flex items-center gap-1.5 rounded-md bg-surface-subtle px-2 py-1.5">
@@ -406,15 +472,15 @@ function LocationDropdown({
               </div>
             </div>
           )}
-          <div className="max-h-52 overflow-y-auto p-1">
+          <div className="max-h-56 overflow-y-auto p-1">
             <button
               type="button"
               onClick={() => {
-                onChange(null);
+                onChangeLocation(null);
                 setOpen(false);
               }}
               className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition-colors ${
-                value === null
+                !nearMe && value === null
                   ? "bg-accent/10 text-accent"
                   : "text-foreground/80 hover:bg-surface-subtle"
               }`}
@@ -422,16 +488,48 @@ function LocationDropdown({
               <span>All locations</span>
               <span className="text-[10px] tabular-nums text-muted">{total}</span>
             </button>
+
+            <button
+              type="button"
+              disabled={locating}
+              onClick={() => void handleNearMe()}
+              className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
+                nearMe
+                  ? "bg-accent/10 text-accent"
+                  : "text-foreground/80 hover:bg-surface-subtle"
+              }`}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {locating ? (
+                  <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <Navigation className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                )}
+                {locating ? "Getting location…" : "Near me"}
+              </span>
+              {nearMe && !locating ? (
+                <Check className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+              ) : null}
+            </button>
+
+            {nearMeError ? (
+              <p className="px-2.5 py-1.5 text-[10px] leading-snug text-rose-600">
+                {nearMeError}
+              </p>
+            ) : null}
+
+            <div className="my-1 border-t border-border/70" role="separator" />
+
             {filtered.map((loc) => (
               <button
                 key={loc.name}
                 type="button"
                 onClick={() => {
-                  onChange(loc.name);
+                  onChangeLocation(loc.name);
                   setOpen(false);
                 }}
                 className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition-colors ${
-                  value === loc.name
+                  !nearMe && value === loc.name
                     ? "bg-accent/10 text-accent"
                     : "text-foreground/80 hover:bg-surface-subtle"
                 }`}
@@ -480,6 +578,8 @@ type Props = {
 
 export default function ProductFilters({ products, filters, onChange }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLocating, setDrawerLocating] = useState(false);
+  const [drawerNearMeError, setDrawerNearMeError] = useState<string | null>(null);
 
   const locations = useMemo(() => collectLocationEntries(products), [products]);
   const count = activeFilterCount(filters);
@@ -491,6 +591,36 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
 
   function clearAll() {
     onChange({ ...DEFAULT_FILTERS });
+  }
+
+  function clearLocationFilter() {
+    update({ location: null, nearMe: false, userGeo: null });
+  }
+
+  function selectNamedLocation(loc: string | null) {
+    if (loc === null) {
+      clearLocationFilter();
+      return;
+    }
+    update({ location: loc, nearMe: false, userGeo: null });
+  }
+
+  async function activateNearMe() {
+    const coords = await getBrowserLocation();
+    let label = "Near me";
+    try {
+      const rev = await reverseGeocode(coords);
+      label = labelFromReverse(rev, "Near me");
+    } catch {
+      /* GPS alone is enough to rank */
+    }
+    onChange({
+      ...filters,
+      location: null,
+      nearMe: true,
+      userGeo: { lat: coords.lat, lng: coords.lng, label },
+      sort: "relevance",
+    });
   }
 
   const activePreset =
@@ -539,17 +669,28 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
       clear: () => update({ minRating: null }),
     });
   }
-  if (filters.location) {
+  if (filters.nearMe) {
+    appliedChips.push({
+      key: "nearMe",
+      label: filters.userGeo?.label
+        ? `Near me · ${filters.userGeo.label}`
+        : "Near me",
+      clear: clearLocationFilter,
+    });
+  } else if (filters.location) {
     appliedChips.push({
       key: "location",
       label: filters.location,
-      clear: () => update({ location: null }),
+      clear: clearLocationFilter,
     });
   }
 
+  const locationFilterActive = filters.nearMe || filters.location !== null;
   const drawerExtrasActive =
-    filters.minRating !== null ||
-    (filters.location !== null && locations.length > 0);
+    filters.minRating !== null || locationFilterActive;
+
+  /** Always show location control so Near me works even before listings load places. */
+  const showLocationControl = true;
 
   return (
     <div className="space-y-1.5">
@@ -590,12 +731,15 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
             </span>
           </Chip>
 
-          {locations.length > 0 && (
+          {showLocationControl && (
             <div className="hidden sm:block">
               <LocationDropdown
                 locations={locations}
+                nearMe={filters.nearMe}
+                userGeo={filters.userGeo}
                 value={filters.location}
-                onChange={(loc) => update({ location: loc })}
+                onChangeLocation={selectNamedLocation}
+                onSelectNearMe={activateNearMe}
               />
             </div>
           )}
@@ -701,56 +845,109 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
                 </div>
               </div>
 
-              {locations.length > 0 && (
-                <div className="sm:hidden">
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                    Location
-                  </p>
-                  <div className="max-h-48 space-y-1 overflow-y-auto">
+              <div className="sm:hidden">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  Location
+                </p>
+                <div className="max-h-52 space-y-1 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearLocationFilter();
+                      setDrawerNearMeError(null);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium ${
+                      !filters.nearMe && filters.location === null
+                        ? "bg-accent/10 text-accent"
+                        : "bg-surface-subtle text-foreground/80"
+                    }`}
+                  >
+                    All locations
+                    {!filters.nearMe && filters.location === null ? (
+                      <Check className="size-4" strokeWidth={2.5} aria-hidden />
+                    ) : null}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={drawerLocating}
+                    onClick={() => {
+                      void (async () => {
+                        setDrawerLocating(true);
+                        setDrawerNearMeError(null);
+                        try {
+                          await activateNearMe();
+                        } catch (err) {
+                          setDrawerNearMeError(
+                            err instanceof GeoLocationError
+                              ? err.message
+                              : err instanceof Error
+                                ? err.message
+                                : "Couldn’t use your location.",
+                          );
+                        } finally {
+                          setDrawerLocating(false);
+                        }
+                      })();
+                    }}
+                    className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-sm font-medium disabled:opacity-60 ${
+                      filters.nearMe
+                        ? "bg-accent/10 text-accent"
+                        : "bg-surface-subtle text-foreground/80"
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {drawerLocating ? (
+                        <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                      ) : (
+                        <Navigation className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+                      )}
+                      {drawerLocating ? "Getting location…" : "Near me"}
+                    </span>
+                    {filters.nearMe && !drawerLocating ? (
+                      <Check className="size-4" strokeWidth={2.5} aria-hidden />
+                    ) : null}
+                  </button>
+
+                  {drawerNearMeError ? (
+                    <p className="px-1 py-1 text-[11px] leading-snug text-rose-600">
+                      {drawerNearMeError}
+                    </p>
+                  ) : null}
+
+                  {locations.map((loc) => (
                     <button
+                      key={loc.name}
                       type="button"
-                      onClick={() => update({ location: null })}
-                      className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium ${
-                        filters.location === null
+                      onClick={() => {
+                        selectNamedLocation(loc.name);
+                        setDrawerNearMeError(null);
+                      }}
+                      className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-sm font-medium ${
+                        !filters.nearMe && filters.location === loc.name
                           ? "bg-accent/10 text-accent"
                           : "bg-surface-subtle text-foreground/80"
                       }`}
                     >
-                      All locations
-                      {filters.location === null && (
-                        <Check className="size-4" strokeWidth={2.5} aria-hidden />
-                      )}
+                      <span className="truncate">{loc.name}</span>
+                      <span className="flex shrink-0 items-center gap-2 text-xs tabular-nums text-muted">
+                        {loc.count}
+                        {!filters.nearMe && filters.location === loc.name ? (
+                          <Check className="size-4 text-accent" strokeWidth={2.5} aria-hidden />
+                        ) : null}
+                      </span>
                     </button>
-                    {locations.map((loc) => (
-                      <button
-                        key={loc.name}
-                        type="button"
-                        onClick={() => update({ location: loc.name })}
-                        className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-sm font-medium ${
-                          filters.location === loc.name
-                            ? "bg-accent/10 text-accent"
-                            : "bg-surface-subtle text-foreground/80"
-                        }`}
-                      >
-                        <span className="truncate">{loc.name}</span>
-                        <span className="flex shrink-0 items-center gap-2 text-xs tabular-nums text-muted">
-                          {loc.count}
-                          {filters.location === loc.name && (
-                            <Check className="size-4 text-accent" strokeWidth={2.5} aria-hidden />
-                          )}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
               <button
                 type="button"
                 onClick={() => {
-                  update({ minRating: null, location: null });
+                  update({ minRating: null, location: null, nearMe: false, userGeo: null });
+                  setDrawerNearMeError(null);
                 }}
                 className="flex-1 rounded-md border border-border px-3 py-2.5 text-sm font-medium text-foreground"
               >

@@ -22,6 +22,7 @@ type ShopContext = {
   whatsappNumber?: string | null;
   category?: string | null;
   ownerId?: string | null;
+  trust_badges?: string[] | null;
 };
 
 type Props = {
@@ -41,6 +42,7 @@ function toCard(product: Product, shop: ShopContext, listingBase: string): Produ
       owner_id: shop.ownerId,
       is_active: shop.verified,
       category: shop.category,
+      trust_badges: shop.trust_badges ?? undefined,
     },
     listingBase,
     { inShopContext: true },
