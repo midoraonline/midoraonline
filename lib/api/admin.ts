@@ -43,6 +43,12 @@ export type VerificationStatus =
   | "verified"
   | "rejected";
 
+export type AdminVerificationDoc = {
+  url: string;
+  type?: string;
+  label?: string;
+};
+
 export type AdminVerification = {
   id: string;
   shop_id: string;
@@ -52,6 +58,15 @@ export type AdminVerification = {
   reviewed_by?: string | null;
   notes?: string | null;
   metadata?: Record<string, unknown> | null;
+  submitted_docs?: AdminVerificationDoc[] | null;
+  submitted_phone?: string | null;
+  submitted_whatsapp?: string | null;
+  submitted_location?: string | null;
+  shop_duration_days?: number | null;
+  current_stage?: number | null;
+  badges?: string[] | null;
+  stage2_status?: VerificationStatus | null;
+  stage3_status?: VerificationStatus | null;
   shops?: {
     name?: string | null;
     slug?: string | null;
@@ -60,6 +75,27 @@ export type AdminVerification = {
     is_active?: boolean | null;
     created_at?: string | null;
   } | null;
+};
+
+export type AdminVerificationStages = {
+  shop_id: string;
+  badges: string[];
+  stage1: { status: string; auto?: boolean };
+  stage2: {
+    status: string;
+    requested_at?: string | null;
+    notes?: string | null;
+    docs?: AdminVerificationDoc[] | null;
+    phone?: string | null;
+    whatsapp?: string | null;
+    location?: string | null;
+  };
+  stage3: {
+    status: string;
+    requested_at?: string | null;
+    notes?: string | null;
+    docs?: AdminVerificationDoc[] | null;
+  };
 };
 
 export type AdminStatsSummary = {
@@ -190,22 +226,26 @@ export function listVerifications(
 export function approveVerification(
   shopId: string,
   notes?: string,
-  adminKey?: string
+  opts?: { stage?: 2 | 3; adminKey?: string },
 ) {
+  const stage = opts?.stage ?? 2;
+  const params = new URLSearchParams({ stage: String(stage) });
   return apiFetch<AdminVerification>(
-    `/api/v1/admin/shops/verifications/${encodeURIComponent(shopId)}/approve`,
-    { method: "POST", body: { notes: notes ?? null }, adminKey }
+    `/api/v1/admin/shops/verifications/${encodeURIComponent(shopId)}/approve?${params}`,
+    { method: "POST", body: { notes: notes ?? null }, adminKey: opts?.adminKey },
   );
 }
 
 export function rejectVerification(
   shopId: string,
   notes?: string,
-  adminKey?: string
+  opts?: { stage?: 2 | 3; adminKey?: string },
 ) {
+  const stage = opts?.stage ?? 2;
+  const params = new URLSearchParams({ stage: String(stage) });
   return apiFetch<AdminVerification>(
-    `/api/v1/admin/shops/verifications/${encodeURIComponent(shopId)}/reject`,
-    { method: "POST", body: { notes: notes ?? null }, adminKey }
+    `/api/v1/admin/shops/verifications/${encodeURIComponent(shopId)}/reject?${params}`,
+    { method: "POST", body: { notes: notes ?? null }, adminKey: opts?.adminKey },
   );
 }
 
@@ -217,6 +257,13 @@ export function queueVerification(
   return apiFetch<AdminVerification>(
     `/api/v1/admin/shops/verifications/${encodeURIComponent(shopId)}/queue`,
     { method: "POST", body: { notes: notes ?? null }, adminKey }
+  );
+}
+
+export function getVerificationStages(shopId: string, adminKey?: string) {
+  return apiFetch<AdminVerificationStages>(
+    `/api/v1/admin/shops/verifications/${encodeURIComponent(shopId)}/stages`,
+    { adminKey },
   );
 }
 

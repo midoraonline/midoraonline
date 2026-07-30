@@ -6,8 +6,6 @@ import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import type { HomeFeedProduct, HomeFeedResponse } from "@/lib/api/products";
 
-// Force per-request rendering — no static caching ever.
-export const dynamic = "force-dynamic";
 
 const EMPTY_FEED = {
   products: [] as ReturnType<typeof homeFeedProductToCard>[],
@@ -37,8 +35,6 @@ async function loadFeed() {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    // First paint: smaller payload (~1 viewport + a bit). Infinite scroll
-    // loads the rest. Target: keep SSR→API under ~600ms when possible.
     const res = await fetch(`${apiBase}/api/v1/feed/home?limit=36`, {
       headers,
       cache: "no-store",
@@ -55,8 +51,6 @@ async function loadFeed() {
       }
     }
 
-    // Fallback: if the personalised home feed is empty or errored, fetch
-    // the latest products so anonymous users always see something.
     const fallbackRes = await fetch(`${apiBase}/api/v1/feed/latest?limit=36`, {
       headers: { Accept: "application/json" },
       cache: "no-store",
@@ -79,12 +73,6 @@ async function loadFeed() {
   }
 }
 
-/**
- * AlgorithmFeed — async Server Component.
- *
- * Wrapped in <Suspense> so the page shell renders immediately and the
- * personalized feed streams in as soon as the API returns.
- */
 async function AlgorithmFeed() {
   const feed = await loadFeed();
   return <HomeLanding initialProducts={feed.products} />;

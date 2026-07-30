@@ -12,6 +12,7 @@ export type SearchProductShop = {
   is_active?: boolean;
   category?: string | null;
   trust_score?: number | null;
+  trust_badges?: string[];
   available_now?: boolean | null;
   location?: string | null;
 };
