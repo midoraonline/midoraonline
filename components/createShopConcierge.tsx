@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Loader2, Send, Sparkles } from "lucide-react";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
-import CategoryDisplay from "@/components/CategoryDisplay";
 import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
@@ -12,6 +12,13 @@ import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
+
+const STARTER_PROMPTS = [
+  "I bake cakes and pastries in Kampala — home delivery available",
+  "Phone accessories and repairs shop in Ntinda",
+  "I offer cleaning and laundry services across Wakiso",
+  "Land and rental listings around Entebbe Road",
+] as const;
 
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };
 
@@ -96,31 +103,36 @@ function AISuggestion({
 
 function ShopPreview({ form }: { form: ConfirmForm }) {
   return (
-    <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-        Preview
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-primary p-5 text-white">
+      <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-accent/25 blur-2xl" />
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">
+        Shop preview
       </p>
-      <p className="mt-2 text-lg font-semibold">{form.name || "—"}</p>
+      <p className="relative mt-2 font-display text-xl font-semibold tracking-tight">
+        {form.name || "Your shop name"}
+      </p>
       {form.description ? (
-        <p className="mt-1 text-sm text-muted">{form.description}</p>
+        <p className="relative mt-1 text-sm text-white/70">{form.description}</p>
       ) : null}
-      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted">
+      <div className="relative mt-3 flex flex-wrap gap-2 text-[11px]">
         {form.shop_type ? (
-          <span className="rounded-full border border-border px-2 py-0.5 capitalize">
+          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 capitalize text-white/85">
             {form.shop_type}
           </span>
         ) : null}
         {form.category ? (
-          <CategoryDisplay label={form.category} variant="chip" />
+          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-white/85">
+            {form.category}
+          </span>
         ) : null}
         {form.locationDisplay ? (
-          <span className="rounded-full border border-border px-2 py-0.5">
-            📍 {form.locationDisplay}
+          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-white/85">
+            {form.locationDisplay}
           </span>
         ) : null}
         {form.availability ? (
-          <span className="rounded-full border border-border px-2 py-0.5">
-            🕐 {form.availability}
+          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-white/85">
+            {form.availability}
           </span>
         ) : null}
       </div>
@@ -176,10 +188,9 @@ export default function CreateShopConcierge({
     };
   }, [appSession.hydrated, appSession.isAuthenticated]);
 
-  async function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    if (!sessionId || !input.trim()) return;
-    const text = input.trim();
+  async function sendMessage(raw: string) {
+    if (!sessionId || !raw.trim() || loading) return;
+    const text = raw.trim();
     const userId = `u-${Date.now()}`;
     const pendingId = `a-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setInput("");
@@ -227,6 +238,11 @@ export default function CreateShopConcierge({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    await sendMessage(input);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -299,7 +315,10 @@ export default function CreateShopConcierge({
 
   if (!sessionId && !error) {
     return (
-      <p className="text-sm text-muted">Starting AI shop assistant…</p>
+      <div className="flex items-center gap-2 py-8 text-sm text-muted">
+        <Loader2 className="size-4 animate-spin text-accent" aria-hidden />
+        Starting AI shop assistant…
+      </div>
     );
   }
   if (error && !sessionId) {
@@ -522,7 +541,7 @@ export default function CreateShopConcierge({
             <button
               type="submit"
               disabled={creating}
-              className="dm-pill dm-focus bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-accent/25 transition-colors hover:bg-accent-hover disabled:opacity-60 sm:flex-none"
             >
               {creating ? "Creating your shop…" : "Create shop"}
             </button>
@@ -533,7 +552,7 @@ export default function CreateShopConcierge({
                 setConfirmForm(null);
                 setLocationCoords(null);
               }}
-              className="dm-pill dm-focus border border-border px-4 py-2.5 text-sm font-semibold hover:bg-foreground/[0.04]"
+              className="rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-foreground/[0.04]"
             >
               Keep chatting
             </button>
@@ -544,55 +563,99 @@ export default function CreateShopConcierge({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="max-h-[320px] min-h-[200px] space-y-2 overflow-y-auto rounded-2xl border border-border bg-background/60 px-3 py-2">
-        {messages.length === 0 ? (
-          <p className="text-xs text-muted">
-            Tell the assistant what kind of shop you want to open — name, what
-            you sell, location. The more detail, the better.
-          </p>
-        ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={
-                m.role === "user" ? "flex justify-end" : "flex justify-start"
-              }
-            >
-              <div
-                className={
-                  "max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed " +
-                  (m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-foreground/[0.05] text-foreground/90")
-                }
-              >
-                {m.content}
+    <div className="space-y-4">
+      <div className="flex min-h-[280px] max-h-[420px] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-inner">
+        <div className="flex items-center gap-2 border-b border-border/80 bg-surface-subtle/50 px-3 py-2.5">
+          <span className="grid size-7 place-items-center rounded-lg bg-accent/15 text-accent">
+            <Sparkles className="size-3.5" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-foreground">Midora assistant</p>
+            <p className="text-[10px] text-muted">Drafts your shop from a short description</p>
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:px-4">
+          {messages.length === 0 ? (
+            <div className="space-y-3 py-2">
+              <p className="text-sm leading-relaxed text-foreground/80">
+                Tell me what you sell or offer, where you are, and any specialty.
+                I&apos;ll propose a shop name, slug, and story you can edit.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {STARTER_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    disabled={loading || !sessionId}
+                    onClick={() => void sendMessage(prompt)}
+                    className="max-w-full rounded-full border border-accent/20 bg-accent/[0.06] px-3 py-1.5 text-left text-[11px] font-medium text-foreground/80 transition-colors hover:border-accent/40 hover:bg-accent/10 hover:text-accent disabled:opacity-50"
+                  >
+                    {prompt}
+                  </button>
+                ))}
               </div>
             </div>
-          ))
-        )}
-        <div ref={chatEndRef} />
-      </div>
-      {error ? (
-        <p className="text-xs text-red-600">{error}</p>
-      ) : null}
-      <form onSubmit={handleSend} className="flex gap-2">
-        <input
-          className="h-9 flex-1 rounded-2xl border border-border bg-background px-3 text-sm dm-focus"
-          placeholder="e.g. I run a bakery in Kampala selling cakes and pastries…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="h-9 px-4 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold dm-focus disabled:opacity-60"
+          ) : (
+            messages.map((m) => (
+              <div
+                key={m.id}
+                className={
+                  m.role === "user" ? "flex justify-end" : "flex justify-start"
+                }
+              >
+                <div
+                  className={
+                    "max-w-[90%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed " +
+                    (m.role === "user"
+                      ? "rounded-br-md bg-accent text-white shadow-sm shadow-accent/20"
+                      : "rounded-bl-md border border-border bg-surface-subtle text-foreground/90")
+                  }
+                >
+                  {m.content === "Thinking…" ? (
+                    <span className="inline-flex items-center gap-2 text-muted">
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                      Thinking…
+                    </span>
+                  ) : (
+                    m.content
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {error ? (
+          <p className="border-t border-border px-3 py-2 text-xs text-red-600">{error}</p>
+        ) : null}
+
+        <form
+          onSubmit={handleSend}
+          className="flex gap-2 border-t border-border bg-surface-subtle/40 p-2.5 sm:p-3"
         >
-          {loading ? "…" : "Send"}
-        </button>
-      </form>
+          <input
+            className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3.5 text-sm dm-focus"
+            placeholder="Describe your business…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            aria-label="Send"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-md shadow-accent/25 transition-colors hover:bg-accent-hover disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Send className="size-4" aria-hidden />
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

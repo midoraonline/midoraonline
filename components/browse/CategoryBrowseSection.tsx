@@ -29,7 +29,7 @@ export default function CategoryBrowseSection({
   showHeader = true,
   browseAllHref,
 }: Props) {
-  const { tree } = useCategoryItems();
+  const { tree, counts } = useCategoryItems();
 
   const activeGroup = useMemo(
     () =>
@@ -52,12 +52,12 @@ export default function CategoryBrowseSection({
   }
 
   return (
-    <section>
+    <section className="rounded-2xl border border-accent/15 bg-gradient-to-br from-accent/[0.06] via-background to-background p-2.5 sm:p-3">
       {showHeader && (
-        <div className="mb-1.5 flex items-baseline justify-between gap-2 px-0.5">
-          <h2 className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted uppercase sm:text-xs sm:normal-case sm:tracking-tight sm:text-foreground">
-            <span className="hidden size-1.5 rounded-full bg-accent sm:inline-block" aria-hidden />
-            Categories
+        <div className="mb-2 flex items-baseline justify-between gap-2 px-0.5">
+          <h2 className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-accent uppercase sm:text-xs sm:normal-case sm:tracking-tight">
+            <span className="size-1.5 rounded-full bg-accent" aria-hidden />
+            Browse categories
           </h2>
           {browseAllHref && (
             <Link
@@ -70,17 +70,17 @@ export default function CategoryBrowseSection({
         </div>
       )}
 
-      {/* Parent category strip */}
+      {/* Parent category strip — icon tiles, ranked by listing volume */}
       <div className="relative">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-background to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-accent/[0.06] to-transparent sm:hidden"
           aria-hidden
         />
         <div
           className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-background to-transparent sm:hidden"
           aria-hidden
         />
-        <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-1.5 sm:overflow-visible">
+        <div className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-2 sm:overflow-visible">
           <CategoryChip
             label="All"
             icon={ALL_CATEGORIES_ICON}
@@ -94,6 +94,7 @@ export default function CategoryBrowseSection({
               key={parent.slug}
               label={parent.label}
               icon={resolveCategoryIcon(parent.label)}
+              count={counts[parent.label]}
               selected={isParentSelected(parent.label)}
               active={isParentActive(parent.label)}
               onClick={() =>
@@ -118,7 +119,7 @@ export default function CategoryBrowseSection({
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="mt-1.5 flex gap-1 overflow-x-auto border-t border-border/60 pt-1.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible">
+            <div className="mt-2 flex gap-1 overflow-x-auto border-t border-accent/15 pt-2 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible">
               <SubcategoryChip
                 label="All"
                 active={
@@ -153,7 +154,7 @@ export default function CategoryBrowseSection({
 
       {/* Active filter summary */}
       {isCategoryFilterActive(selection) && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {selection.parentLabel && (
             <FilterChip
               label={selection.parentLabel}
@@ -191,12 +192,14 @@ function CategoryChip({
   selected,
   active,
   onClick,
+  count,
 }: {
   label: string;
   icon: LucideIcon;
   selected: boolean;
   active: boolean;
   onClick: () => void;
+  count?: number;
 }) {
   const emphasized = active || selected;
   return (
@@ -204,17 +207,17 @@ function CategoryChip({
       type="button"
       onClick={onClick}
       aria-pressed={emphasized}
-      className={`inline-flex h-7 shrink-0 snap-start items-center gap-1 rounded-md px-2 text-[11px] transition-colors sm:h-8 sm:gap-1.5 sm:px-2.5 sm:text-xs ${
+      className={`inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full px-2.5 text-[11px] transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
         active
-          ? "bg-accent text-white shadow-sm shadow-accent/25"
+          ? "bg-accent text-white shadow-md shadow-accent/30"
           : selected
-            ? "bg-accent/15 text-accent ring-1 ring-accent/25"
-            : "bg-accent/[0.06] text-foreground/70 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent hover:ring-accent/20"
+            ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+            : "bg-white/80 text-foreground/75 ring-1 ring-accent/15 hover:bg-accent/10 hover:text-accent hover:ring-accent/25 dark:bg-surface"
       }`}
     >
       <Icon
-        className={`size-3 shrink-0 sm:size-3.5 ${
-          active ? "text-white" : selected ? "text-accent" : "text-accent/75"
+        className={`size-3.5 shrink-0 sm:size-4 ${
+          active ? "text-white" : selected ? "text-accent" : "text-accent/80"
         }`}
         strokeWidth={emphasized ? 2 : 1.75}
         aria-hidden
@@ -222,6 +225,15 @@ function CategoryChip({
       <span className={`whitespace-nowrap ${emphasized ? "font-semibold" : "font-medium"}`}>
         {label}
       </span>
+      {typeof count === "number" && count > 0 ? (
+        <span
+          className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold tabular-nums ${
+            active ? "bg-white/20 text-white" : "bg-accent/10 text-accent"
+          }`}
+        >
+          {count > 999 ? "999+" : count}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -240,10 +252,10 @@ function SubcategoryChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex h-6 shrink-0 snap-start items-center rounded-md px-2 text-[10px] font-medium transition-colors sm:h-7 sm:px-2.5 sm:text-[11px] ${
+      className={`inline-flex h-7 shrink-0 snap-start items-center rounded-full px-2.5 text-[10px] font-medium transition-colors sm:h-8 sm:px-3 sm:text-[11px] ${
         active
           ? "bg-accent text-white shadow-sm shadow-accent/20"
-          : "text-muted hover:bg-accent/10 hover:text-accent"
+          : "bg-accent/[0.06] text-muted hover:bg-accent/10 hover:text-accent"
       }`}
     >
       {label}
@@ -262,7 +274,7 @@ function FilterChip({
 }) {
   return (
     <span
-      className={`inline-flex max-w-[140px] items-center gap-0.5 truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium sm:max-w-none ${
+      className={`inline-flex max-w-[140px] items-center gap-0.5 truncate rounded-full px-2 py-0.5 text-[10px] font-medium sm:max-w-none ${
         accent
           ? "bg-accent text-white"
           : "bg-accent/10 text-accent ring-1 ring-accent/15"

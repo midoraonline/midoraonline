@@ -108,6 +108,33 @@ export const CATEGORY_TREE: ReadonlyArray<{
     ],
   },
   {
+    slug: "property-land",
+    label: "Property & Land",
+    children: [
+      "Land & Plots",
+      "Houses for Sale",
+      "Houses for Rent",
+      "Apartments & Flats",
+      "Rooms & Hostels",
+      "Commercial Property",
+      "Warehouses & Storage",
+      "Short Stay & Airbnb",
+    ],
+  },
+  {
+    slug: "opportunities",
+    label: "Opportunities",
+    children: [
+      "Full-time Jobs",
+      "Part-time Jobs",
+      "Gigs & Freelance",
+      "Internships",
+      "Tenders & Contracts",
+      "Partnerships & Collaborations",
+      "Volunteer & Unpaid",
+    ],
+  },
+  {
     slug: "agriculture",
     label: "Agriculture",
     children: [

@@ -18,6 +18,10 @@ export type CategoryListResponse = {
   items: CategoryItem[];
 };
 
+export type CategoryCountsResponse = {
+  counts: Record<string, number>;
+};
+
 function nestedFallbackItems(): CategoryItem[] {
   return buildCanonicalCategoryItems();
 }
@@ -37,6 +41,16 @@ export async function listCategoryItems(): Promise<CategoryItem[]> {
     /* use nested fallback */
   }
   return nestedFallbackItems();
+}
+
+/** Published listing counts keyed by top-level parent category label. */
+export async function fetchCategoryListingCounts(): Promise<Record<string, number>> {
+  try {
+    const res = await apiFetch<CategoryCountsResponse>("/api/v1/categories/counts");
+    return res.counts ?? {};
+  } catch {
+    return {};
+  }
 }
 
 export async function listCategories(): Promise<CategoryLabel[]> {

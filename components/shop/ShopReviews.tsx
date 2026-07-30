@@ -87,7 +87,6 @@ export default function ShopReviews({ shopId }: Props) {
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [reviews, setReviews] = useState<ShopReview[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(true);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -130,11 +129,9 @@ export default function ShopReviews({ shopId }: Props) {
   }, [shopId, session.isAuthenticated]);
 
   useEffect(() => {
-    if (expanded) {
-      load();
-      loadMyReview();
-    }
-  }, [expanded, load, loadMyReview]);
+    void load();
+    void loadMyReview();
+  }, [load, loadMyReview]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -160,34 +157,37 @@ export default function ShopReviews({ shopId }: Props) {
   const total = stats?.total_reviews ?? 0;
 
   return (
-    <div className="space-y-3">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="dm-focus inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground"
-      >
-        <MaterialSymbol name="star" className="!text-sm" />
-        Reviews{total > 0 ? ` (${total})` : ""}
-      </button>
+    <section className="space-y-3" aria-labelledby="shop-reviews-heading">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2
+            id="shop-reviews-heading"
+            className="text-xs font-semibold uppercase tracking-wide text-muted"
+          >
+            Ratings &amp; reviews
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted">
+            How customers rate this shop.
+          </p>
+        </div>
+        {total > 0 ? (
+          <div className="flex items-center gap-2 rounded-xl bg-foreground/[0.03] px-3 py-1.5">
+            <span className="text-base font-bold tabular-nums text-amber-400">
+              {avg.toFixed(1)}
+            </span>
+            <Stars rating={Math.round(avg)} />
+            <span className="text-[10px] text-muted">
+              ({total} {total === 1 ? "review" : "reviews"})
+            </span>
+          </div>
+        ) : null}
+      </div>
 
-      {expanded && (
-        <div className="space-y-3">
+      <div className="space-y-3">
           {loading ? (
             <p className="text-xs text-muted">Loading reviews…</p>
           ) : (
             <>
-              {total > 0 && (
-                <div className="flex items-center gap-2 rounded-xl bg-foreground/[0.03] px-3 py-2">
-                  <span className="text-lg font-bold tabular-nums text-amber-400">
-                    {avg.toFixed(1)}
-                  </span>
-                  <Stars rating={Math.round(avg)} />
-                  <span className="text-[10px] text-muted">
-                    ({total} {total === 1 ? "review" : "reviews"})
-                  </span>
-                </div>
-              )}
-
               {reviews.length > 0 && (
                 <div className="space-y-2 max-h-56 overflow-y-auto">
                   {reviews.map((r) => (
@@ -258,8 +258,7 @@ export default function ShopReviews({ shopId }: Props) {
               )}
             </>
           )}
-        </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
 }

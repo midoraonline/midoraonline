@@ -66,7 +66,7 @@ export default function ShopContactButtons({
               className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]"
             >
               <WhatsAppIcon className="size-4 shrink-0 text-white" />
-              Chat on WhatsApp
+              WhatsApp
             </button>
           )}
         </TradeDisclaimer>

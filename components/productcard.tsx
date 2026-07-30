@@ -16,6 +16,10 @@ import {
   resolveShopTrustLevel,
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
+import {
+  LISTING_KIND_LABEL,
+  normalizeListingKind,
+} from "@/lib/listingMeta";
 
 export type ProductCardData = {
   id: string;
@@ -53,6 +57,8 @@ export type ProductCardData = {
   boosted?: boolean;
   updated_at?: string | null;
   location_name?: string | null;
+  /** product | service | opportunity (job maps to opportunity) */
+  item_type?: string | null;
   likeCount?: number;
   isLiked?: boolean;
   rating?: number;
@@ -125,7 +131,7 @@ function WhatsAppCta({
   const inner = (
     <>
       <WhatsAppIcon className="size-3.5 shrink-0 text-white sm:size-4" />
-      {compact ? "WhatsApp" : "Chat on WhatsApp"}
+      WhatsApp
     </>
   );
 
@@ -199,10 +205,23 @@ export default function ProductCard({
   const price = isDiscounted ? product.discountPriceUGX! : product.priceUGX;
   const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
   const ratingValue = product.rating ?? 0;
+  const listingKind = normalizeListingKind(product.item_type);
+  const showKindBadge = listingKind !== "product";
 
   const imageBadges = (
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
       <div className="flex max-w-[75%] flex-wrap gap-1">
+        {showKindBadge && (
+          <Badge
+            className={
+              listingKind === "opportunity"
+                ? "bg-sky-600 text-white"
+                : "bg-violet-600 text-white"
+            }
+          >
+            {LISTING_KIND_LABEL[listingKind]}
+          </Badge>
+        )}
         {isBoosted && (
           <Badge className="bg-accent text-white">
             <Zap className="size-2.5" strokeWidth={2.5} aria-hidden />

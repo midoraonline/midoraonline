@@ -31,8 +31,17 @@ import { getProductById } from "@/lib/api/server";
 import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
-import ProductComments from "@/components/product/ProductComments";
 import ProductReviews from "@/components/product/ProductReviews";
+import {
+  LISTING_KIND_LABEL,
+  listingMetaDisplayRows,
+  normalizeListingKind,
+  parseListingMeta,
+} from "@/lib/listingMeta";
+import {
+  buildCanonicalCategoryItems,
+  resolveCategoryParts,
+} from "@/lib/categories";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import { getProductReviewStats } from "@/lib/api/reviews";
@@ -164,6 +173,17 @@ export default async function ProductDetails({
   const lowStock = inStock && (product.stock_quantity ?? 0) <= 3;
   const isNegotiable = product.is_negotiable !== false;
   const shopLive = shop?.available_now === true;
+  const listingKind = normalizeListingKind(product.item_type);
+  const listingMeta = parseListingMeta(product.listing_meta);
+  const categoryParts = resolveCategoryParts(
+    product.category,
+    buildCanonicalCategoryItems(),
+  );
+  const metaRows = listingMetaDisplayRows(
+    listingKind,
+    listingMeta,
+    categoryParts.parentLabel,
+  );
 
   const discountEndsLabel =
     isDiscounted && product.discount_expires_at
@@ -229,9 +249,13 @@ export default async function ProductDetails({
                   {freshness}
                 </span>
               ) : null}
-              {product.item_type === "service" ? (
-                <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
-                  Service
+              {listingKind !== "product" ? (
+                <span
+                  className={`rounded-md px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white ${
+                    listingKind === "opportunity" ? "bg-sky-600" : "bg-violet-600"
+                  }`}
+                >
+                  {LISTING_KIND_LABEL[listingKind]}
                 </span>
               ) : null}
             </div>
@@ -331,7 +355,7 @@ export default async function ProductDetails({
               >
                 <div className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
                   <WhatsAppIcon className="size-4 shrink-0 text-white" />
-                  Chat on WhatsApp
+                  WhatsApp
                 </div>
               </SellerContactConsent>
             ) : shop ? (
@@ -433,6 +457,29 @@ export default async function ProductDetails({
             </section>
           ) : null}
 
+          {metaRows.length > 0 ? (
+            <section className="space-y-2 border-t border-border pt-4">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                More information
+              </h2>
+              <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                {metaRows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="rounded-lg bg-surface-subtle px-3 py-2"
+                  >
+                    <dt className="text-[10px] font-medium uppercase tracking-wide text-muted">
+                      {row.label}
+                    </dt>
+                    <dd className="mt-0.5 whitespace-pre-wrap font-medium text-foreground">
+                      {row.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+
           {/* Listing facts */}
           <section className="space-y-2 border-t border-border pt-4">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -500,10 +547,6 @@ export default async function ProductDetails({
 
           <div id="reviews" className="scroll-mt-24 border-t border-border pt-4">
             <ProductReviews productId={product.id} />
-          </div>
-
-          <div className="border-t border-border pt-4">
-            <ProductComments productId={product.id} />
           </div>
         </div>
       </div>

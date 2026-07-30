@@ -4,7 +4,7 @@ function productBase(productId: string) {
   return `/api/v1/products/${encodeURIComponent(productId)}`;
 }
 
-export type ItemType = "product" | "service" | "property" | "job";
+export type ItemType = "product" | "service" | "property" | "job" | "opportunity";
 
 export type ProductStatus = "draft" | "pending_review" | "active" | "hidden" | "rejected" | "expired" | "sold";
 
@@ -27,6 +27,7 @@ export type Product = {
   status?: ProductStatus | null;
   listing_score?: number | null;
   location_name?: string | null;
+  listing_meta?: Record<string, unknown> | null;
   view_count?: number | null;
   like_count?: number | null;
   viewer_liked?: boolean | null;
@@ -76,6 +77,7 @@ export type CreateProductRequest = {
   is_published?: boolean;
   is_negotiable?: boolean;
   location_name?: string;
+  listing_meta?: Record<string, unknown>;
   status?: ProductStatus;
 };
 
@@ -87,11 +89,14 @@ function normalizeImageUrlsForApi(value: CreateProductRequest["image_urls"]): st
 }
 
 function buildCreatePayload(body: CreateProductRequest): Record<string, unknown> {
-  const o: Record<string, unknown> = { title: body.title };
+  const o: Record<string, unknown> = {
+    title: body.title,
+    price_ugx:
+      body.price_ugx !== undefined && body.price_ugx !== null && !Number.isNaN(body.price_ugx)
+        ? body.price_ugx
+        : 0,
+  };
   if (body.description !== undefined && body.description !== "") o.description = body.description;
-  if (body.price_ugx !== undefined && body.price_ugx !== null && !Number.isNaN(body.price_ugx)) {
-    o.price_ugx = body.price_ugx;
-  }
   if (body.discount_price !== undefined) {
     o.discount_price = body.discount_price;
   }
@@ -106,6 +111,7 @@ function buildCreatePayload(body: CreateProductRequest): Record<string, unknown>
   if (body.is_published !== undefined) o.is_published = body.is_published;
   if (body.is_negotiable !== undefined) o.is_negotiable = body.is_negotiable;
   if (body.location_name !== undefined && body.location_name !== "") o.location_name = body.location_name;
+  if (body.listing_meta !== undefined) o.listing_meta = body.listing_meta;
   const imgs = normalizeImageUrlsForApi(body.image_urls);
   if (imgs?.length) o.image_urls = imgs;
   return o;
@@ -124,6 +130,7 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.is_published !== undefined) o.is_published = body.is_published;
   if (body.is_negotiable !== undefined) o.is_negotiable = body.is_negotiable;
   if (body.location_name !== undefined) o.location_name = body.location_name;
+  if (body.listing_meta !== undefined) o.listing_meta = body.listing_meta;
   if (body.image_urls !== undefined) {
     const imgs = normalizeImageUrlsForApi(body.image_urls);
     if (imgs?.length) o.image_urls = imgs;
@@ -370,6 +377,7 @@ export type HomeFeedProduct = {
   review_count?: number | null;
   is_negotiable?: boolean | null;
   location_name?: string | null;
+  listing_meta?: Record<string, unknown> | null;
   created_at?: string | null;
   updated_at?: string | null;
   shop: {

@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { listCategoryItems, type CategoryItem } from "@/lib/api/categories";
+import {
+  fetchCategoryListingCounts,
+  listCategoryItems,
+  type CategoryItem,
+} from "@/lib/api/categories";
 import {
   buildCanonicalCategoryItems,
   categoryItemsHaveSubcategories,
@@ -10,6 +14,8 @@ import {
 
 let cachedItems: CategoryItem[] | null = null;
 let inflight: Promise<CategoryItem[]> | null = null;
+let cachedCounts: Record<string, number> | null = null;
+let countsInflight: Promise<Record<string, number>> | null = null;
 
 function nestedFallback(): CategoryItem[] {
   return buildCanonicalCategoryItems();
@@ -43,14 +49,46 @@ async function loadCategoryItems(): Promise<CategoryItem[]> {
   return inflight;
 }
 
+async function loadCategoryCounts(): Promise<Record<string, number>> {
+  if (cachedCounts) return cachedCounts;
+  if (!countsInflight) {
+    countsInflight = fetchCategoryListingCounts()
+      .then((counts) => {
+        cachedCounts = counts;
+        return counts;
+      })
+      .catch(() => {
+        cachedCounts = {};
+        return cachedCounts;
+      })
+      .finally(() => {
+        countsInflight = null;
+      });
+  }
+  return countsInflight;
+}
+
 export function useCategoryItems() {
   const [items, setItems] = useState<CategoryItem[]>(
     () => cachedItems ?? nestedFallback(),
   );
+  const [counts, setCounts] = useState<Record<string, number>>(
+    () => cachedCounts ?? {},
+  );
   const [loading, setLoading] = useState(
     !(cachedItems && categoryItemsHaveSubcategories(cachedItems)),
   );
-  const tree = useMemo(() => getCategoriesForFilter(items), [items]);
+  const tree = useMemo(() => {
+    const base = getCategoriesForFilter(items);
+    const hasCounts = Object.keys(counts).length > 0;
+    if (!hasCounts) return base;
+    return [...base].sort((a, b) => {
+      const ca = counts[a.parent.label] ?? 0;
+      const cb = counts[b.parent.label] ?? 0;
+      if (cb !== ca) return cb - ca;
+      return a.parent.sort_order - b.parent.sort_order;
+    });
+  }, [items, counts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,12 +98,15 @@ export function useCategoryItems() {
         setLoading(false);
       }
     });
+    void loadCategoryCounts().then((next) => {
+      if (!cancelled) setCounts(next);
+    });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { items, tree, loading };
+  return { items, tree, counts, loading };
 }
 
 export { loadCategoryItems };
