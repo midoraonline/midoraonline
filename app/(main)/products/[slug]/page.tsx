@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import {
+  ChevronRight,
+  Heart,
+  MapPin,
+  Package,
+  Star,
+  Store,
+} from "lucide-react";
 import {
   productImageUrls,
   productPriceUgx,
@@ -28,9 +35,11 @@ import ProductComments from "@/components/product/ProductComments";
 import ProductReviews from "@/components/product/ProductReviews";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
-import StarRating from "@/components/StarRating";
 import { getProductReviewStats } from "@/lib/api/reviews";
+import {
+  resolveShopTrustLevel,
+  SHOP_TRUST_LABEL,
+} from "@/lib/productCardMap";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -44,9 +53,7 @@ function formatUGX(value: number) {
 
 function timeAgo(iso: string | null | undefined): string | null {
   if (!iso) return null;
-  const now = Date.now();
-  const then = new Date(iso).getTime();
-  const diffMs = now - then;
+  const diffMs = Date.now() - new Date(iso).getTime();
   if (diffMs < 0) return null;
   const mins = Math.floor(diffMs / 60000);
   if (mins < 1) return "Just now";
@@ -125,7 +132,6 @@ export default async function ProductDetails({
   }
 
   const shop = product.shop;
-
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
   const originalPrice = productOriginalPriceUgx(product);
@@ -139,13 +145,26 @@ export default async function ProductDetails({
       itemTitle: product.title,
       itemUrl: listingUrl,
     });
-  const verifiedShop = shop?.is_active !== false;
-  const freshness = timeAgo(product.created_at);
+
+  const freshness = timeAgo(product.updated_at || product.created_at);
+  const location =
+    product.location_name?.trim() || shop?.location?.trim() || null;
+  const trustLevel = resolveShopTrustLevel(shop?.trust_badges);
+  const ratingAvg =
+    reviewStats && reviewStats.total_reviews > 0
+      ? reviewStats.average_rating
+      : product.average_rating ?? 0;
+  const ratingCount =
+    reviewStats?.total_reviews ?? product.review_count ?? 0;
+
   const inStock =
     product.item_type === "product" &&
     product.stock_quantity != null &&
     product.stock_quantity > 0;
   const lowStock = inStock && (product.stock_quantity ?? 0) <= 3;
+  const isNegotiable = product.is_negotiable !== false;
+  const shopLive = shop?.available_now === true;
+
   const discountEndsLabel =
     isDiscounted && product.discount_expires_at
       ? (() => {
@@ -157,135 +176,198 @@ export default async function ProductDetails({
           });
         })()
       : null;
-  const seoTags = (product.ai_seo_tags ?? "")
-    .split(/[,|]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 8);
-  const trustBadges = (shop?.trust_badges ?? []).filter(
-    (b) => b && b !== "shop_listed",
-  );
-  const isNegotiable = product.is_negotiable !== false;
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 pb-24 sm:space-y-8 sm:pb-8">
       <ProductPageEffects productId={product.id} />
 
-      {/* Breadcrumb — skill §4.1 #1 */}
-      <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
-        <Link href="/products" className="dm-link font-medium">
+      <nav className="flex items-center gap-1 text-[11px] sm:text-xs" aria-label="Breadcrumb">
+        <Link href="/products" className="font-medium text-muted transition-colors hover:text-accent">
           Products
         </Link>
-        <ChevronRight
-          className="size-3.5 shrink-0 text-muted/50"
-          aria-hidden="true"
-        />
-        <span className="min-w-0 truncate text-foreground/80">{product.title}</span>
+        <ChevronRight className="size-3 shrink-0 text-muted/40" aria-hidden />
+        {product.category ? (
+          <>
+            <CategoryDisplay label={product.category} variant="inline" className="!text-[11px] sm:!text-xs" />
+            <ChevronRight className="size-3 shrink-0 text-muted/40" aria-hidden />
+          </>
+        ) : null}
+        <span className="min-w-0 truncate text-foreground/70">{product.title}</span>
       </nav>
 
-      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10">
-        {/* Gallery — skill §4.1 #2 */}
-        <div className="min-w-0">
+      <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-8">
+        {/* Gallery */}
+        <div className="min-w-0 lg:sticky lg:top-20">
           <ProductImageGallery images={images} title={product.title}>
             {shop ? (
               <ProductShopLogoOverlay
                 shopName={shop.name}
                 logoUrl={shop.logo_url}
-                className="!left-3 !top-auto !bottom-3 !right-auto"
+                className="!left-3 !top-auto !right-auto !bottom-3"
               />
             ) : null}
           </ProductImageGallery>
         </div>
 
-        {/* Buy box — skill §4.1 #3 */}
-        <div className="min-w-0 space-y-5">
-          {/* Header: chips → title → price → rating */}
-          <div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted">
-                {product.item_type === "service" ? "Service" : "Product"}
-              </span>
-              {product.category ? (
-                <CategoryDisplay label={product.category} variant="chip" />
-              ) : null}
-              {product.boosted && (
-                <span
-                  className="dm-pill px-2.5 py-0.5 text-[10px] font-medium"
-                  style={{
-                    background: "color-mix(in oklab, var(--accent) 12%, transparent)",
-                    color: "var(--accent)",
-                  }}
-                >
-                  Promoted
+        {/* Buy box */}
+        <div className="min-w-0 space-y-4">
+          <header className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-medium">
+              {product.boosted ? (
+                <span className="rounded-md bg-accent px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white">
+                  Hot
                 </span>
-              )}
-              {freshness && (
-                <span className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted">
+              ) : null}
+              {shopLive ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white">
+                  <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden />
+                  Live now
+                </span>
+              ) : null}
+              {freshness ? (
+                <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
                   {freshness}
                 </span>
-              )}
+              ) : null}
+              {product.item_type === "service" ? (
+                <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
+                  Service
+                </span>
+              ) : null}
             </div>
 
-            <h1 className="font-display mt-2 text-xl font-semibold tracking-tight text-pretty sm:text-2xl">
+            <h1 className="font-display text-xl font-semibold tracking-tight text-balance text-foreground sm:text-2xl">
               {product.title}
             </h1>
 
-            <div className="mt-3 flex flex-wrap items-baseline gap-3">
-              <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground sm:text-3xl">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <p className="text-2xl font-extrabold tabular-nums tracking-tight text-accent sm:text-3xl">
                 {formatUGX(price)}
               </p>
-              {isDiscounted && (
+              {isDiscounted ? (
                 <>
-                  <p className="text-base font-medium text-muted line-through">
+                  <p className="text-sm font-medium text-muted line-through tabular-nums">
                     {formatUGX(originalPrice)}
                   </p>
-                  <span
-                    className="dm-pill px-2.5 py-0.5 text-[11px] font-bold"
-                    style={{
-                      background: "var(--error-subtle)",
-                      color: "var(--error)",
-                    }}
-                  >
-                    -{discountPct}% off
+                  <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                    -{discountPct}%
                   </span>
                 </>
-              )}
-              {discountEndsLabel ? (
-                <span className="text-xs font-medium text-muted">
-                  Sale ends {discountEndsLabel}
-                </span>
               ) : null}
               {isNegotiable ? (
-                <span className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted">
-                  Negotiable
+                <span className="text-[11px] font-medium text-muted">· Negotiable</span>
+              ) : null}
+            </div>
+            {discountEndsLabel ? (
+              <p className="text-[11px] text-muted">Sale ends {discountEndsLabel}</p>
+            ) : null}
+
+            {/* Decision meta: rating · location · trust */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
+              <a
+                href="#reviews"
+                className="inline-flex items-center gap-1 font-medium text-foreground transition-colors hover:text-accent"
+              >
+                <Star
+                  className={`size-3.5 ${ratingAvg > 0 ? "fill-amber-400 text-amber-400" : "text-muted"}`}
+                  aria-hidden
+                />
+                <span className="tabular-nums">{Number(ratingAvg || 0).toFixed(1)}</span>
+                {ratingCount > 0 ? (
+                  <span className="font-normal text-muted">({ratingCount})</span>
+                ) : null}
+              </a>
+
+              {location ? (
+                <span className="inline-flex min-w-0 items-center gap-1">
+                  <MapPin className="size-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+                  <span className="truncate font-medium text-foreground/80">{location}</span>
+                </span>
+              ) : null}
+
+              {trustLevel !== "registered" ? (
+                <span
+                  className={`inline-flex items-center gap-1 font-semibold ${
+                    trustLevel === "business" ? "text-accent" : "text-sky-600"
+                  }`}
+                >
+                  <VerifiedIcon
+                    className={
+                      trustLevel === "business"
+                        ? "!text-sm text-accent"
+                        : "!text-sm text-sky-600"
+                    }
+                    size={14}
+                    label={SHOP_TRUST_LABEL[trustLevel]}
+                  />
+                  {trustLevel === "business" ? "Business verified" : "Identity verified"}
+                </span>
+              ) : null}
+
+              {inStock ? (
+                <span
+                  className={`inline-flex items-center gap-1 font-medium ${
+                    lowStock ? "text-[color:var(--warning)]" : "text-[color:var(--success)]"
+                  }`}
+                >
+                  <Package className="size-3.5" strokeWidth={2} aria-hidden />
+                  {lowStock
+                    ? `Only ${product.stock_quantity} left`
+                    : `${product.stock_quantity} in stock`}
                 </span>
               ) : null}
             </div>
+          </header>
 
-            <div className="mt-2">
-              {reviewStats && reviewStats.total_reviews > 0 ? (
-                <a href="#reviews" className="inline-block">
-                  <StarRating
-                    rating={reviewStats.average_rating}
-                    count={reviewStats.total_reviews}
-                    size="sm"
+          {/* Primary CTA — WhatsApp first (marketplace pattern) */}
+          <div id="pdp-buybox-end" className="space-y-2">
+            {waHref && shop ? (
+              <SellerContactConsent
+                shopId={shop.id}
+                productId={product.id}
+                whatsappNumber={shop.whatsapp_number ?? ""}
+                listingUrl={listingUrl}
+                title={product.title}
+              >
+                <div className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
+                  <WhatsAppIcon className="size-4 shrink-0 text-white" />
+                  Chat on WhatsApp
+                </div>
+              </SellerContactConsent>
+            ) : shop ? (
+              <p className="rounded-xl border border-border bg-surface-subtle px-4 py-3 text-center text-xs text-muted">
+                Seller hasn&apos;t connected WhatsApp yet
+              </p>
+            ) : null}
+
+            <div className="flex items-center gap-2">
+              <ProductLikeButton
+                productId={product.id}
+                initialLikeCount={product.like_count ?? 0}
+                initialLiked={product.viewer_liked ?? undefined}
+              />
+              {shop?.owner_id ? (
+                <div className="min-w-0 flex-1">
+                  <MessageSellerButton
+                    sellerId={shop.owner_id}
+                    shopId={shop.id}
+                    productId={product.id}
+                    className="!w-full"
                   />
-                </a>
-              ) : (
-                <StarRating rating={0} size="sm" placeholder />
-              )}
+                </div>
+              ) : null}
             </div>
           </div>
 
-          {/* Seller strip — skill §4.1 #3 */}
-          {shop && (
+          {/* Seller */}
+          {shop ? (
             <Link
               href={`/shops/${shop.slug}`}
-              className="dm-card group flex items-center gap-3 p-3 transition-colors hover:border-border-strong"
+              className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/30 hover:bg-accent/[0.03]"
             >
               <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
                 {shop.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- CDN URLs
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={shop.logo_url}
                     alt=""
@@ -299,123 +381,32 @@ export default async function ProductDetails({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold transition-colors group-hover:text-accent">
-                  {shop.name}
-                  {verifiedShop && (
-                    <VerifiedIcon className="ml-1 inline !text-sm" aria-label="Verified" />
-                  )}
-                </p>
-                <p className="text-xs text-muted">
-                  {shop.available_now ? (
-                    <span
-                      className="font-medium"
-                      style={{ color: "var(--success)" }}
-                    >
-                      Available now
-                    </span>
+                <p className="truncate text-sm font-semibold text-foreground">{shop.name}</p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted">
+                  {shopLive ? (
+                    <span className="font-medium text-[color:var(--success)]">Available now</span>
                   ) : (
-                    "Shop on Midora"
+                    <span className="inline-flex items-center gap-1">
+                      <Store className="size-3" aria-hidden />
+                      View shop
+                    </span>
                   )}
-                  {trustBadges.includes("identity_verified") ||
-                  trustBadges.includes("business_verified")
-                    ? " · Identity verified"
-                    : null}
+                  {trustLevel !== "registered" ? (
+                    <span
+                      className={
+                        trustLevel === "business" ? "font-medium text-accent" : "font-medium text-sky-600"
+                      }
+                    >
+                      · {SHOP_TRUST_LABEL[trustLevel]}
+                    </span>
+                  ) : null}
                 </p>
               </div>
-              <MaterialSymbol
-                name="chevron_right"
-                className="!text-lg shrink-0 text-muted"
-                aria-hidden="true"
-              />
+              <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
             </Link>
-          )}
+          ) : null}
 
-          {/* Trust bar — skill §4.1 #3 */}
-          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
-            {verifiedShop && (
-              <li
-                className="inline-flex items-center gap-1.5 font-medium"
-                style={{ color: "var(--success)" }}
-              >
-                <MaterialSymbol name="verified_user" className="!text-sm" aria-hidden="true" />
-                Verified seller
-              </li>
-            )}
-            {waHref ? (
-              <li className="inline-flex items-center gap-1.5">
-                <MaterialSymbol name="chat" className="!text-sm" aria-hidden="true" />
-                Replies on WhatsApp
-              </li>
-            ) : null}
-            {inStock && (
-              <li
-                className="inline-flex items-center gap-1.5 font-medium"
-                style={{ color: lowStock ? "var(--warning)" : "var(--success)" }}
-              >
-                <MaterialSymbol name="inventory_2" className="!text-sm" aria-hidden="true" />
-                {lowStock
-                  ? `Only ${product.stock_quantity} left`
-                  : `${product.stock_quantity} in stock`}
-              </li>
-            )}
-            {product.location_name && (
-              <li className="inline-flex items-center gap-1.5">
-                <MaterialSymbol name="location_on" className="!text-sm" aria-hidden="true" />
-                {product.location_name}
-              </li>
-            )}
-          </ul>
-
-          {/* Primary + secondary CTAs — skill §4.1 #3 */}
-          <div id="pdp-buybox-end" className="space-y-2">
-            <div className="flex gap-2">
-              {waHref && shop ? (
-                <SellerContactConsent
-                  shopId={shop.id}
-                  productId={product.id}
-                  whatsappNumber={shop.whatsapp_number ?? ""}
-                  listingUrl={listingUrl}
-                  title={product.title}
-                >
-                  <div
-                    className="dm-btn flex-1 cursor-pointer text-white shadow-sm transition-transform active:scale-[0.98]"
-                    style={{ background: "#25D366" }}
-                  >
-                    <WhatsAppIcon
-                      className="size-4 shrink-0 text-white"
-                      aria-hidden="true"
-                    />
-                    Message on WhatsApp
-                  </div>
-                </SellerContactConsent>
-              ) : shop ? (
-                <p className="dm-card flex-1 px-4 py-3 text-center text-xs text-muted">
-                  WhatsApp not connected
-                </p>
-              ) : null}
-
-              {shop && shop.owner_id && (
-                <div className="flex-1">
-                  <MessageSellerButton
-                    sellerId={shop.owner_id}
-                    shopId={shop.id}
-                    productId={product.id}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <ProductLikeButton
-                productId={product.id}
-                initialLikeCount={product.like_count ?? 0}
-                initialLiked={product.viewer_liked ?? undefined}
-              />
-            </div>
-          </div>
-
-          {/* Owner actions */}
-          {shop && (
+          {shop ? (
             <ProductOwnerActions
               shopOwnerId={shop.owner_id ?? undefined}
               shopSlug={shop.slug ?? undefined}
@@ -425,128 +416,107 @@ export default async function ProductDetails({
               productPriceUgx={productPriceUgx(product)}
               productDiscountPrice={product.discount_price}
             />
-          )}
+          ) : null}
 
-          {/* Description — skill §4.2 #3 */}
-          {product.description && (
-            <section className="dm-card overflow-hidden">
-              <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
+          {/* Description */}
+          {product.description ? (
+            <section className="space-y-2 border-t border-border pt-4">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Description
               </h2>
-              <p className="px-4 py-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
                 {product.description}
               </p>
-              {seoTags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 border-t border-border px-4 py-3">
-                  {seoTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="dm-pill bg-surface-subtle px-2.5 py-0.5 text-[10px] font-medium text-muted"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
               {product.ai_generated_desc ? (
-                <p className="border-t border-border px-4 py-2 text-[11px] text-muted">
-                  Description assisted by Midora AI
-                </p>
+                <p className="text-[11px] text-muted">Description assisted by Midora AI</p>
               ) : null}
             </section>
-          )}
+          ) : null}
 
-          {/* Specifications — avoid repeating category / stock / location from chips & trust bar */}
-          {product.created_at && (
-            <section className="dm-card overflow-hidden">
-              <h2 className="border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted">
-                Listing details
-              </h2>
-              <dl className="divide-y divide-border text-sm">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                    <MaterialSymbol
-                      name="schedule"
-                      className="!text-sm"
-                      aria-hidden="true"
-                    />
+          {/* Listing facts */}
+          <section className="space-y-2 border-t border-border pt-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Details
+            </h2>
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+              {product.category ? (
+                <div className="rounded-lg bg-surface-subtle px-3 py-2">
+                  <dt className="text-[10px] font-medium uppercase tracking-wide text-muted">
+                    Category
+                  </dt>
+                  <dd className="mt-0.5 font-medium text-foreground">
+                    <CategoryDisplay label={product.category} variant="inline" />
+                  </dd>
+                </div>
+              ) : null}
+              {product.created_at ? (
+                <div className="rounded-lg bg-surface-subtle px-3 py-2">
+                  <dt className="text-[10px] font-medium uppercase tracking-wide text-muted">
                     Listed
                   </dt>
-                  <dd className="font-medium text-foreground">
+                  <dd className="mt-0.5 font-medium text-foreground">
                     {new Date(product.created_at).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
                     })}
                     {freshness ? (
-                      <span className="ml-1.5 text-xs font-normal text-muted">
-                        ({freshness})
-                      </span>
+                      <span className="ml-1 text-xs font-normal text-muted">({freshness})</span>
                     ) : null}
                   </dd>
                 </div>
-                {shop?.location &&
-                shop.location !== product.location_name ? (
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <dt className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted">
-                      <MaterialSymbol
-                        name="storefront"
-                        className="!text-sm"
-                        aria-hidden="true"
-                      />
-                      Shop area
-                    </dt>
-                    <dd className="font-medium text-foreground">{shop.location}</dd>
-                  </div>
-                ) : null}
-              </dl>
-            </section>
-          )}
+              ) : null}
+              {location ? (
+                <div className="rounded-lg bg-surface-subtle px-3 py-2">
+                  <dt className="text-[10px] font-medium uppercase tracking-wide text-muted">
+                    Location
+                  </dt>
+                  <dd className="mt-0.5 font-medium text-foreground">{location}</dd>
+                </div>
+              ) : null}
+              <div className="rounded-lg bg-surface-subtle px-3 py-2">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-muted">
+                  Price type
+                </dt>
+                <dd className="mt-0.5 font-medium text-foreground">
+                  {isNegotiable ? "Negotiable" : "Fixed"}
+                </dd>
+              </div>
+            </dl>
+          </section>
 
-          {/* Activity + report */}
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-            {product.view_count != null && (
+          <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3 text-[11px] text-muted">
+            {product.view_count != null ? (
+              <span>{product.view_count} views</span>
+            ) : null}
+            {product.like_count != null ? (
               <span className="inline-flex items-center gap-1">
-                <MaterialSymbol name="visibility" className="!text-sm" aria-hidden="true" />
-                {product.view_count} views
+                <Heart className="size-3" aria-hidden />
+                {product.like_count}
               </span>
-            )}
-            {product.like_count != null && (
-              <span className="inline-flex items-center gap-1">
-                <MaterialSymbol name="favorite" className="!text-sm" aria-hidden="true" />
-                {product.like_count} likes
-              </span>
-            )}
+            ) : null}
             <ReportListing productId={product.id} />
           </div>
 
-          {/* Reviews — skill §4.2 #5 */}
-          <div id="reviews" className="scroll-mt-24">
+          <div id="reviews" className="scroll-mt-24 border-t border-border pt-4">
             <ProductReviews productId={product.id} />
           </div>
 
-          {/* Comments — skill §4.2 #6 */}
-          <ProductComments productId={product.id} />
+          <div className="border-t border-border pt-4">
+            <ProductComments productId={product.id} />
+          </div>
         </div>
       </div>
 
-      {/* Similar products — skill §4.2 #7 */}
       <SimilarProducts productId={product.id} />
 
-      {/* Sticky mobile action bar — skill §4.2 #9 */}
       {(waHref || (shop && shop.owner_id)) && (
         <PdpStickyActionBar sentinelId="pdp-buybox-end">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold tabular-nums text-foreground">
+            <p className="truncate text-sm font-bold tabular-nums text-accent">
               {formatUGX(price)}
             </p>
-            {isDiscounted ? (
-              <p className="truncate text-[11px] text-muted line-through">
-                {formatUGX(originalPrice)}
-              </p>
-            ) : (
-              <p className="truncate text-[11px] text-muted">{product.title}</p>
-            )}
+            <p className="truncate text-[11px] text-muted">{product.title}</p>
           </div>
           {waHref && shop ? (
             <SellerContactConsent
@@ -556,22 +526,17 @@ export default async function ProductDetails({
               listingUrl={listingUrl}
               title={product.title}
             >
-              <div
-                className="dm-btn cursor-pointer text-white shadow-sm active:scale-[0.98]"
-                style={{ background: "#25D366" }}
-              >
-                <WhatsAppIcon
-                  className="size-4 shrink-0 text-white"
-                  aria-hidden="true"
-                />
+              <div className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#25D366] px-3.5 py-2.5 text-xs font-bold text-white shadow-sm active:scale-[0.98]">
+                <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
                 WhatsApp
               </div>
             </SellerContactConsent>
-          ) : shop && shop.owner_id ? (
+          ) : shop?.owner_id ? (
             <MessageSellerButton
               sellerId={shop.owner_id}
               shopId={shop.id}
               productId={product.id}
+              compact
             />
           ) : null}
         </PdpStickyActionBar>

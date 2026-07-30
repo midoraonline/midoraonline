@@ -37,7 +37,7 @@ export default function ShopHeroActionBar({
   return (
     <>
       <div className="border-b border-border bg-surface">
-        <div className="dm-container flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:py-4">
+        <div className="dm-container flex flex-col gap-2.5 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:py-3">
           <ShopActions
             shopSlug={shopSlug}
             shopName={shopName}
@@ -49,25 +49,25 @@ export default function ShopHeroActionBar({
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
-                className="dm-btn dm-btn-primary dm-btn-sm"
+                className="dm-btn dm-btn-primary dm-btn-sm min-h-10"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Add product
               </button>
               <Link
                 href={`/shops/${shopSlug}/edit`}
-                className="dm-btn dm-btn-secondary dm-btn-sm"
+                className="dm-btn dm-btn-secondary dm-btn-sm min-h-10"
               >
                 <MaterialSymbol
                   name="edit"
                   className="!text-sm"
                   aria-hidden="true"
                 />
-                Edit shop
+                Edit
               </Link>
               <Link
                 href={`/shops/${shopSlug}/analytics`}
-                className="dm-btn dm-btn-secondary dm-btn-sm"
+                className="dm-btn dm-btn-secondary dm-btn-sm min-h-10"
               >
                 <MaterialSymbol
                   name="insights"
