@@ -38,9 +38,31 @@ export function shopIsVerified(shop: {
   return shop.is_active === true;
 }
 
-function ratingFromAverage(avg?: number | null): number | undefined {
-  if (avg == null || avg <= 0) return undefined;
-  return avg;
+/** Highest verification stage for display on cards. */
+export type ShopTrustLevel = "business" | "identity" | "registered";
+
+export function resolveShopTrustLevel(badges?: string[] | null): ShopTrustLevel {
+  const list = badges ?? [];
+  if (list.includes("business_verified")) return "business";
+  if (list.includes("identity_verified")) return "identity";
+  return "registered";
+}
+
+export const SHOP_TRUST_LABEL: Record<ShopTrustLevel, string> = {
+  business: "Business",
+  identity: "Identity",
+  registered: "Registered",
+};
+
+function ratingFromAverage(avg?: number | null): number {
+  if (avg == null || Number.isNaN(Number(avg))) return 0;
+  return Number(avg);
+}
+
+function normalizeTrustBadges(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return ["shop_listed"];
+  const badges = raw.filter((b): b is string => typeof b === "string" && b.length > 0);
+  return badges.length > 0 ? badges : ["shop_listed"];
 }
 
 function anyVideoInUrls(urls: readonly (string | null | undefined)[] | null | undefined): boolean {
@@ -79,6 +101,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
       name: p.shop.name,
       slug: p.shop.slug,
       verified: shopIsVerified(p.shop),
+      trust_badges: normalizeTrustBadges(p.shop.trust_badges),
       category: p.shop.category ?? null,
       trust_score: p.shop.trust_score ?? null,
       available_now: p.shop.available_now ?? null,
@@ -123,6 +146,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
       name: item.shop.name,
       slug: item.shop.slug,
       verified: shopIsVerified(item.shop),
+      trust_badges: normalizeTrustBadges(item.shop.trust_badges),
       category: item.shop.category ?? null,
       trust_score: item.shop.trust_score ?? null,
       available_now: item.shop.available_now ?? null,
@@ -168,6 +192,7 @@ export function productToCard(
       name: shop.name,
       slug: shop.slug,
       verified: shopIsVerified(shop),
+      trust_badges: normalizeTrustBadges(shop.trust_badges),
       category: shop.category ?? null,
       trust_score: shop.trust_score ?? null,
       available_now: shop.available_now ?? null,
@@ -179,6 +204,7 @@ export function productToCard(
     updated_at: product.updated_at ?? product.created_at ?? null,
     location_name: product.location_name ?? null,
     rating: ratingFromAverage(product.average_rating),
+    reviewCount: product.review_count ?? 0,
     negotiable: product.is_negotiable !== false,
   };
 }
@@ -211,6 +237,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
         is_active: p.shop_is_active,
         trust_badges: p.shop_trust_badges,
       }),
+      trust_badges: normalizeTrustBadges(p.shop_trust_badges),
       category: null,
       trust_score: null,
       available_now: p.shop_available_now ?? null,
@@ -252,6 +279,7 @@ export function likedProductToCard(p: LikedProduct): ProductCardData {
         is_active: p.shop_is_active,
         trust_badges: p.shop_trust_badges,
       }),
+      trust_badges: normalizeTrustBadges(p.shop_trust_badges),
       category: null,
       trust_score: null,
       available_now: p.shop_available_now ?? null,

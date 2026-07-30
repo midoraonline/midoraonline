@@ -1,7 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
-import CategoryDisplay from "@/components/CategoryDisplay";
+import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { apiListingEvents } from "@/lib/api";
@@ -11,6 +12,10 @@ import type { ImpressionPool } from "@/lib/impressions";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
+import {
+  resolveShopTrustLevel,
+  SHOP_TRUST_LABEL,
+} from "@/lib/productCardMap";
 
 export type ProductCardData = {
   id: string;
@@ -34,6 +39,7 @@ export type ProductCardData = {
     name: string;
     slug: string;
     verified?: boolean;
+    trust_badges?: string[];
     category?: string | null;
     trust_score?: number | null;
     available_now?: boolean | null;
@@ -52,39 +58,6 @@ export type ProductCardData = {
   negotiable?: boolean;
 };
 
-function formatRating(value: number): string {
-  return value % 1 === 0 ? value.toFixed(1) : value.toFixed(1);
-}
-
-function VerifiedBadge({ compact = false }: { compact?: boolean }) {
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[9px] font-semibold text-sky-700">
-      <VerifiedIcon className="!text-[10px] text-sky-600" size={10} />
-      {compact ? "Verified" : "Verified seller"}
-    </span>
-  );
-}
-
-function RatingDisplay({ rating, reviewCount }: { rating?: number; reviewCount?: number }) {
-  if (rating == null || rating <= 0) {
-    return (
-      <span className="flex items-center gap-0.5 shrink-0 text-neutral-400">
-        <MaterialSymbol name="star" className="!text-[11px] shrink-0" />
-        <span>No reviews</span>
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-0.5 shrink-0">
-      <MaterialSymbol name="star" className="!text-[11px] text-amber-500 shrink-0" filled />
-      <span className="font-semibold text-foreground">{formatRating(rating)}</span>
-      {reviewCount != null && reviewCount > 0 ? (
-        <span className="text-neutral-400">({reviewCount})</span>
-      ) : null}
-    </span>
-  );
-}
-
 function formatUGX(value: number) {
   return new Intl.NumberFormat("en-UG", {
     style: "currency",
@@ -97,44 +70,87 @@ function userMediaUnoptimized(src: string) {
   return /ufs\.sh|utfs\.io/i.test(src) || /\.svg(\?|$)/i.test(src);
 }
 
-function timeLabel(iso: string | null | undefined): { label: string; className: string } | null {
+/** Freshness / trust cue from listing time. */
+function timeLabel(iso: string | null | undefined): {
+  label: string;
+  tone: "hot" | "fresh" | "muted";
+} | null {
   if (!iso) return null;
-  const now = Date.now();
-  const then = new Date(iso).getTime();
-  const diffMs = now - then;
+  const diffMs = Date.now() - new Date(iso).getTime();
   if (diffMs < 0) return null;
   const mins = Math.floor(diffMs / 60000);
-  if (mins < 5) {
-    return {
-      label: "JUST NOW",
-      className: "bg-red-600 text-white font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm",
-    };
-  }
-  if (mins < 60) {
-    return {
-      label: `HOT · ${mins}M AGO`,
-      className: "bg-orange-500 text-white font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm",
-    };
-  }
+  if (mins < 5) return { label: "Just now", tone: "hot" };
+  if (mins < 60) return { label: `Hot · ${mins}m`, tone: "hot" };
   const hours = Math.floor(mins / 60);
-  if (hours < 24) {
-    return {
-      label: `${hours}h ago`,
-      className: "bg-black/60 text-white text-[9px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm backdrop-blur-xs",
-    };
-  }
+  if (hours < 24) return { label: `${hours}h ago`, tone: "fresh" };
   const days = Math.floor(hours / 24);
-  if (days < 30) {
-    return {
-      label: `${days}d ago`,
-      className: "bg-black/60 text-white text-[9px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm backdrop-blur-xs",
-    };
-  }
+  if (days < 30) return { label: `${days}d ago`, tone: "muted" };
   const months = Math.floor(days / 30);
-  return {
-    label: `${months}mo ago`,
-    className: "bg-black/60 text-white text-[9px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm backdrop-blur-xs",
-  };
+  return { label: `${months}mo ago`, tone: "muted" };
+}
+
+function Badge({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide shadow-sm ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function WhatsAppCta({
+  waHref,
+  productId,
+  productHref,
+  compact = false,
+}: {
+  waHref: string | null;
+  productId: string;
+  productHref: string;
+  compact?: boolean;
+}) {
+  const className = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-xs font-bold text-white transition-colors hover:bg-[#22c35e] active:bg-[#1fae53] ${
+    compact ? "py-2" : "py-2.5"
+  }`;
+
+  const inner = (
+    <>
+      <WhatsAppIcon className="size-3.5 shrink-0 text-white sm:size-4" />
+      {compact ? "WhatsApp" : "Chat on WhatsApp"}
+    </>
+  );
+
+  if (waHref) {
+    return (
+      <TradeDisclaimer
+        type="whatsapp"
+        onConfirm={() => {
+          apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
+          notifyFeedEngagement();
+          window.open(waHref, "_blank", "noopener,noreferrer");
+        }}
+      >
+        {(open) => (
+          <button type="button" onClick={open} className={`${className} cursor-pointer`}>
+            {inner}
+          </button>
+        )}
+      </TradeDisclaimer>
+    );
+  }
+
+  return (
+    <Link href={productHref} className={className}>
+      {inner}
+    </Link>
+  );
 }
 
 export default function ProductCard({
@@ -145,9 +161,7 @@ export default function ProductCard({
 }: {
   product: ProductCardData;
   layout?: "vertical" | "horizontal";
-  /** Which feed layer this card belongs to. Enables per-pool impression reporting. */
   impressionPool?: ImpressionPool;
-  /** 1-based position in the feed; used for exposure analytics. */
   impressionPosition?: number;
 }) {
   const impressionRef = useImpressionTracker<HTMLElement>({
@@ -155,6 +169,7 @@ export default function ProductCard({
     pool: impressionPool ?? (product.boosted ? "boosted" : "organic"),
     position: impressionPosition,
   });
+
   const unopt = product.imageUrl ? userMediaUnoptimized(product.imageUrl) : false;
   const waHref = product.shopWhatsApp?.trim()
     ? productInquiryWhatsAppUrl(product.shopWhatsApp, {
@@ -163,194 +178,195 @@ export default function ProductCard({
       })
     : null;
   const productHref = `/products/${product.slug}`;
-
-  const viewCount = typeof product.viewCount === "number" ? product.viewCount : null;
   const tInfo = timeLabel(product.updated_at || null);
   const isBoosted = product.boosted === true;
+  const shopLive = product.shop.available_now === true;
+  const location =
+    product.location_name?.trim() || product.shop.location?.trim() || null;
+
   const isDiscounted =
     product.discountPriceUGX != null &&
     product.discountPriceUGX > 0 &&
     (product.originalPriceUGX ?? product.priceUGX) > product.discountPriceUGX;
-  
   const discountPct = isDiscounted
-    ? Math.round((1 - product.discountPriceUGX! / (product.originalPriceUGX ?? product.priceUGX)) * 100)
+    ? Math.round(
+        (1 - product.discountPriceUGX! / (product.originalPriceUGX ?? product.priceUGX)) *
+          100,
+      )
     : 0;
-  const shopLive = product.shop.available_now === true;
+  const price = isDiscounted ? product.discountPriceUGX! : product.priceUGX;
+  const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
+  const ratingValue = product.rating ?? 0;
+
+  const imageBadges = (
+    <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
+      <div className="flex max-w-[75%] flex-wrap gap-1">
+        {isBoosted && (
+          <Badge className="bg-accent text-white">
+            <Zap className="size-2.5" strokeWidth={2.5} aria-hidden />
+            Hot
+          </Badge>
+        )}
+        {shopLive && (
+          <Badge className="bg-emerald-600 text-white">
+            <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden />
+            Live now
+          </Badge>
+        )}
+        {tInfo && (
+          <Badge
+            className={
+              tInfo.tone === "hot"
+                ? "bg-accent text-white"
+                : tInfo.tone === "fresh"
+                  ? "bg-primary/80 text-white backdrop-blur-sm"
+                  : "bg-black/55 text-white backdrop-blur-sm"
+            }
+          >
+            {tInfo.label}
+          </Badge>
+        )}
+        {isDiscounted && (
+          <Badge className="bg-amber-400 text-primary">-{discountPct}%</Badge>
+        )}
+      </div>
+    </div>
+  );
+
+  const likeFloating = (
+    <div className="absolute top-2 right-2 z-[7]">
+      <ProductLikeButton
+        productId={product.id}
+        variant="floating"
+        initialLiked={product.isLiked}
+        initialLikeCount={product.likeCount}
+      />
+    </div>
+  );
+
+  const videoBadge = product.hasVideo ? (
+    <span
+      className="pointer-events-none absolute bottom-2 left-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm"
+      title="Video available"
+    >
+      <Play className="size-2.5 fill-current" aria-hidden />
+      Video
+    </span>
+  ) : null;
+
+  const metaRow = (
+    <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
+      <span className="inline-flex min-w-0 flex-1 items-center gap-0.5">
+        <MapPin className="size-3 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+        <span className="truncate font-medium text-foreground/80">
+          {location ?? "Uganda"}
+        </span>
+      </span>
+      {trustLevel !== "registered" ? (
+        <span
+          className={`inline-flex shrink-0 items-center gap-0.5 font-semibold ${
+            trustLevel === "business" ? "text-accent" : "text-sky-600"
+          }`}
+          title={
+            trustLevel === "business" ? "Business verified" : "Identity verified"
+          }
+        >
+          <VerifiedIcon
+            className={
+              trustLevel === "business"
+                ? "!text-[11px] text-accent"
+                : "!text-[11px] text-sky-600"
+            }
+            size={11}
+            label={SHOP_TRUST_LABEL[trustLevel]}
+          />
+          <span>{SHOP_TRUST_LABEL[trustLevel]}</span>
+        </span>
+      ) : null}
+      <span className="inline-flex shrink-0 items-center gap-0.5">
+        <Star
+          className={`size-3 ${ratingValue > 0 ? "fill-amber-400 text-amber-400" : "text-muted"}`}
+          aria-hidden
+        />
+        <span
+          className={`font-semibold tabular-nums ${
+            ratingValue > 0 ? "text-foreground" : "text-muted"
+          }`}
+        >
+          {ratingValue.toFixed(1)}
+        </span>
+      </span>
+    </div>
+  );
 
   if (layout === "horizontal") {
     return (
-      <article ref={impressionRef as React.RefObject<HTMLElement>} className="dm-product-card dm-card-hover flex flex-row h-full overflow-hidden bg-surface min-h-[180px] sm:min-h-[220px] w-full">
-        {/* Image area (Left) */}
-        <div className="relative w-2/5 sm:w-1/2 bg-surface-subtle overflow-hidden group shrink-0">
-          <Link href={productHref} className="dm-focus block w-full h-full outline-none">
+      <article
+        ref={impressionRef as React.RefObject<HTMLElement>}
+        className="dm-product-card dm-card-hover flex h-full min-h-[160px] w-full flex-row overflow-hidden bg-surface sm:min-h-[200px]"
+      >
+        <div className="group relative w-2/5 shrink-0 overflow-hidden bg-surface-subtle sm:w-[42%]">
+          <Link href={productHref} className="dm-focus block h-full w-full outline-none">
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
                 alt={product.title}
                 fill
                 className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                sizes="(max-width: 640px) 40vw, 25vw"
                 unoptimized={unopt}
               />
             ) : (
-              <div className="absolute inset-0 grid place-items-center text-sm text-neutral-400">
-                <div className="flex flex-col items-center gap-2">
-                  <MaterialSymbol name="image" className="!text-2xl text-neutral-300" />
-                  <span className="text-xs">No image</span>
-                </div>
+              <div className="absolute inset-0 grid place-items-center text-muted">
+                <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
               </div>
             )}
           </Link>
-
-          {/* Floating Badges */}
-          <div className="absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2 pointer-events-none">
-            <div className="flex flex-wrap gap-1.5">
-              {isBoosted && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm uppercase tracking-wider">
-                  <MaterialSymbol name="bolt" className="!text-[11px]" />
-                  Popular
-                </span>
-              )}
-              {shopLive && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm uppercase tracking-wider">
-                  <MaterialSymbol name="sensors" className="!text-[11px] animate-pulse" />
-                  Live Now
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Floating Save Button on Image (Upper Right) */}
-          <div className="absolute top-2 right-2 z-[7]">
-            <ProductLikeButton
-              productId={product.id}
-              variant="floating"
-              initialLiked={product.isLiked}
-              initialLikeCount={product.likeCount}
-            />
-          </div>
-
-          {/* Video-available badge — bottom-left corner of the image tile */}
-          {product.hasVideo && (
-            <span
-              className="pointer-events-none absolute left-2 bottom-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
-              title="Video available"
-            >
-              <MaterialSymbol name="play_circle" className="!text-[11px]" filled aria-hidden="true" />
-              Video
-            </span>
-          )}
+          {imageBadges}
+          {likeFloating}
+          {videoBadge}
         </div>
 
-        {/* Card body (Right) */}
-        <div className="flex flex-col gap-1.5 p-3 sm:p-4 flex-1 justify-between min-w-0">
-          <div className="space-y-1">
-            {/* Title & Discount Inline */}
-            <div className="flex items-start gap-1">
-              <Link href={productHref} className="dm-focus block flex-1 outline-none min-w-0">
-                <h3 className="line-clamp-1 sm:line-clamp-2 text-sm sm:text-base font-bold tracking-tight text-foreground leading-snug hover:text-accent transition-colors">
-                  {product.title}
-                </h3>
-              </Link>
-              {isDiscounted && (
-                <span className="inline-flex shrink-0 items-center justify-center rounded bg-amber-400 px-1 py-0.5 text-[9px] font-black text-black leading-none">
-                  -{discountPct}%
-                </span>
-              )}
-            </div>
-
-            {/* Price Row */}
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3 sm:p-3.5">
+          <div className="space-y-1.5">
+            <Link href={productHref} className="dm-focus block outline-none">
+              <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-[15px]">
+                {product.title}
+              </h3>
+            </Link>
             <div className="flex flex-wrap items-baseline gap-1.5">
-              <span className="text-base sm:text-lg font-extrabold tabular-nums text-accent">
-                {formatUGX(isDiscounted ? product.discountPriceUGX! : product.priceUGX)}
+              <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">
+                {formatUGX(price)}
               </span>
               {isDiscounted && (
                 <span className="text-xs font-medium text-muted line-through tabular-nums">
                   {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
                 </span>
               )}
-            </div>
-
-            {/* Status Pills */}
-            <div className="flex flex-wrap gap-1 mt-1">
-              {product.shop.verified ? <VerifiedBadge compact /> : null}
-              {product.negotiable !== false ? (
-                <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
-                  <MaterialSymbol name="handshake" className="!text-[10px]" />
-                  Negotiable
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
-                  <MaterialSymbol name="sell" className="!text-[10px]" />
-                  Fixed price
-                </span>
+              {product.negotiable !== false && (
+                <span className="text-[10px] font-medium text-muted">· Negotiable</span>
               )}
             </div>
+            {metaRow}
           </div>
-
-          <div className="space-y-2">
-            {/* Details Row: Location, Views, Rating */}
-            <div className="flex items-center justify-between text-[10px] text-neutral-500 border-t border-neutral-100 pt-2">
-              <span className="flex items-center gap-0.5 min-w-0 flex-1">
-                <MaterialSymbol name="location_on" className="!text-[11px] shrink-0 text-muted" />
-                <span className="truncate">{product.location_name || product.shop.location || "Kampala"}</span>
-              </span>
-              <span className="flex items-center gap-0.5 shrink-0 px-2">
-                <span className="text-neutral-400">Views: </span>
-                <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "—"}</span>
-              </span>
-              <RatingDisplay rating={product.rating} reviewCount={product.reviewCount} />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-100">
-              {waHref ? (
-                <TradeDisclaimer type="whatsapp" onConfirm={() => {
-                  apiListingEvents.recordListingEvent(product.id, "whatsapp_clicked").catch(() => {});
-                  notifyFeedEngagement();
-                  window.open(waHref, "_blank", "noopener,noreferrer");
-                }}>
-                  {(open) => (
-                    <button
-                      type="button"
-                      onClick={open}
-                      className="dm-focus flex items-center justify-center gap-1.5 rounded-xl bg-accent hover:bg-accent-hover active:opacity-90 py-2 text-xs font-bold text-white transition-colors cursor-pointer"
-                    >
-                      <MaterialSymbol name="chat" className="!text-[14px]" />
-                      Chat
-                    </button>
-                  )}
-                </TradeDisclaimer>
-              ) : (
-                <Link
-                  href={productHref}
-                  className="dm-focus flex items-center justify-center gap-1.5 rounded-xl bg-accent hover:bg-accent-hover active:opacity-90 py-2 text-xs font-bold text-white transition-colors"
-                >
-                  <MaterialSymbol name="chat" className="!text-[14px]" />
-                  Chat
-                </Link>
-              )}
-
-              <ProductLikeButton
-                productId={product.id}
-                variant="outline"
-                initialLiked={product.isLiked}
-                initialLikeCount={product.likeCount}
-                className="!py-2"
-              />
-            </div>
-          </div>
+          <WhatsAppCta
+            waHref={waHref}
+            productId={product.id}
+            productHref={productHref}
+            compact
+          />
         </div>
       </article>
     );
   }
 
-  // Default Vertical Layout
   return (
-    <article ref={impressionRef as React.RefObject<HTMLElement>} className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden">
-      {/* Image area */}
-      <div className="relative aspect-square w-full bg-surface-subtle sm:aspect-[4/3] overflow-hidden group">
-        <Link href={productHref} className="dm-focus block w-full h-full outline-none">
+    <article
+      ref={impressionRef as React.RefObject<HTMLElement>}
+      className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden"
+    >
+      <div className="group relative aspect-square w-full overflow-hidden bg-surface-subtle sm:aspect-[4/3]">
+        <Link href={productHref} className="dm-focus block h-full w-full outline-none">
           {product.imageUrl ? (
             <Image
               src={product.imageUrl}
@@ -361,154 +377,45 @@ export default function ProductCard({
               unoptimized={unopt}
             />
           ) : (
-            <div className="absolute inset-0 grid place-items-center text-sm text-neutral-400">
-              <div className="flex flex-col items-center gap-2">
-                <MaterialSymbol name="image" className="!text-2xl text-neutral-300" />
-                <span className="text-xs">No image</span>
-              </div>
+            <div className="absolute inset-0 grid place-items-center text-muted">
+              <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
             </div>
           )}
         </Link>
-
-        {/* Floating Badges */}
-        <div className="absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2 pointer-events-none">
-          <div className="flex flex-wrap gap-1.5">
-            {isBoosted && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm uppercase tracking-wider">
-                <MaterialSymbol name="bolt" className="!text-[11px]" />
-                Popular
-              </span>
-            )}
-            {tInfo && (
-              <span className={tInfo.className}>
-                <MaterialSymbol name="schedule" className="!text-[11px]" />
-                {tInfo.label}
-              </span>
-            )}
-            {shopLive && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm uppercase tracking-wider">
-                <MaterialSymbol name="sensors" className="!text-[11px] animate-pulse" />
-                Live Now
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Floating Save Button on Image (Upper Right) */}
-        <div className="absolute top-2 right-2 z-[7]">
-          <ProductLikeButton
-            productId={product.id}
-            variant="floating"
-            initialLiked={product.isLiked}
-            initialLikeCount={product.likeCount}
-          />
-        </div>
-
-        {/* Video-available badge — bottom-left corner of the image tile */}
-        {product.hasVideo && (
-          <span
-            className="pointer-events-none absolute left-2 bottom-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
-            title="Video available"
-          >
-            <MaterialSymbol name="play_circle" className="!text-[11px]" filled aria-hidden="true" />
-            Video
-          </span>
-        )}
+        {imageBadges}
+        {likeFloating}
+        {videoBadge}
       </div>
 
-      {/* Card body */}
-      <div className="flex flex-col gap-1.5 p-3 flex-1">
-        {/* Title & Discount Inline */}
-        <div className="flex items-start gap-1">
-          <Link href={productHref} className="dm-focus block flex-1 outline-none min-w-0">
-            <h3 className="line-clamp-1 text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent">
-              {product.title}
-            </h3>
-          </Link>
-          {isDiscounted && (
-            <span className="inline-flex shrink-0 items-center justify-center rounded bg-amber-400 px-1 py-0.5 text-[9px] font-black text-black leading-none">
-              -{discountPct}%
-            </span>
-          )}
-        </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
+        <Link href={productHref} className="dm-focus block outline-none">
+          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm">
+            {product.title}
+          </h3>
+        </Link>
 
-        {(product.category || product.shop.category) ? (
-          <CategoryDisplay
-            label={product.category ?? product.shop.category}
-            variant="compact"
-            className="mt-0.5"
-          />
-        ) : null}
-
-        {/* Price Row */}
         <div className="flex flex-wrap items-baseline gap-1.5">
-          <span className="text-base font-extrabold tabular-nums text-accent">
-            {formatUGX(isDiscounted ? product.discountPriceUGX! : product.priceUGX)}
+          <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
+            {formatUGX(price)}
           </span>
           {isDiscounted && (
-            <span className="text-xs font-medium text-muted line-through tabular-nums">
+            <span className="text-[11px] font-medium text-muted line-through tabular-nums">
               {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
             </span>
           )}
-        </div>
-
-        {/* Status Pills */}
-        <div className="flex flex-wrap gap-1 mt-0.5">
-          {product.shop.verified ? <VerifiedBadge /> : null}
-          {product.negotiable !== false ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
-              <MaterialSymbol name="handshake" className="!text-[10px]" />
-              Price negotiable
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-muted">
-              <MaterialSymbol name="sell" className="!text-[10px]" />
-              Fixed price
-            </span>
+          {product.negotiable !== false && (
+            <span className="text-[10px] font-medium text-muted">· Negotiable</span>
           )}
         </div>
 
-        {/* Details Row: Location, Views, Rating */}
-        <div className="mt-1 flex items-center justify-between border-t border-border pt-2 text-[10px] text-muted">
-          <span className="flex items-center gap-0.5 min-w-0 flex-1">
-            <MaterialSymbol name="location_on" className="!text-[11px] shrink-0 text-muted" />
-            <span className="truncate">{product.location_name || product.shop.location || "Kampala"}</span>
-          </span>
-          <span className="flex items-center gap-0.5 shrink-0 px-2">
-            <span className="text-neutral-400">Views: </span>
-            <span>{viewCount !== null ? (viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount) : "—"}</span>
-          </span>
-          <RatingDisplay rating={product.rating} reviewCount={product.reviewCount} />
-        </div>
+        {metaRow}
 
-        {/* WhatsApp Button */}
-        <div className="mt-2 border-t border-border pt-2">
-          {waHref ? (
-            <TradeDisclaimer type="whatsapp" onConfirm={() => {
-              apiListingEvents.recordListingEvent(product.id, "whatsapp_clicked").catch(() => {});
-              notifyFeedEngagement();
-              window.open(waHref, "_blank", "noopener,noreferrer");
-            }}>
-              {(open) => (
-                <button
-                  type="button"
-                  onClick={open}
-                  className="dm-focus w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] hover:bg-[#22c35e] active:bg-[#1fae53] py-2 text-xs font-bold text-white transition-colors cursor-pointer"
-                >
-                  <WhatsAppIcon className="size-4 shrink-0 text-white" />
-                  Chat on WhatsApp
-                </button>
-              )}
-            </TradeDisclaimer>
-          ) : (
-            <Link
-              href={productHref}
-              className="dm-focus w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] hover:bg-[#22c35e] active:bg-[#1fae53] py-2 text-xs font-bold text-white transition-colors text-center"
-            >
-              <WhatsAppIcon className="size-4 shrink-0 text-white" />
-              Chat on WhatsApp
-            </Link>
-          )}
+        <div className="mt-auto pt-1.5">
+          <WhatsAppCta
+            waHref={waHref}
+            productId={product.id}
+            productHref={productHref}
+          />
         </div>
       </div>
     </article>

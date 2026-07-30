@@ -104,11 +104,13 @@ export default function ProductsBrowsePage({
 
   return (
     <div className="w-full">
-      <CategoryBrowseSection
-        selection={categoryFilter}
-        onSelectionChange={setCategoryFilter}
-        showHeader={false}
-      />
+      <div className="mb-3 sm:mb-4">
+        <CategoryBrowseSection
+          selection={categoryFilter}
+          onSelectionChange={setCategoryFilter}
+          showHeader={false}
+        />
+      </div>
 
       <div className="space-y-4 sm:space-y-6">
         {(isSearching || categoryFilterActive) && (

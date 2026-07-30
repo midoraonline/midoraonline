@@ -17,24 +17,19 @@ export default function HomeFeedSkeleton() {
         <HomeHero />
       </div>
 
-      <CategoryBrowseSectionSkeleton />
-
-      <div className="mb-5 rounded-2xl border border-border bg-surface p-3 sm:p-4">
-        <Skeleton className="mb-2.5 h-3 w-24" rounded="md" />
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-4 space-y-2 sm:mb-5">
+        <CategoryBrowseSectionSkeleton />
+        <div className="flex gap-1 overflow-hidden py-0.5 sm:gap-1.5">
           {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={i} className="h-8 w-24" rounded="full" />
+            <Skeleton key={i} className="h-7 w-[4.25rem] shrink-0 sm:h-8" rounded="md" />
           ))}
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-end justify-between border-b border-border pb-4">
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-40" rounded="lg" />
-            <Skeleton className="h-3.5 w-56" rounded="md" />
-          </div>
-          <Skeleton className="h-8 w-20" rounded="xl" />
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <Skeleton className="h-4 w-28" rounded="sm" />
+          <Skeleton className="h-3 w-14" rounded="sm" />
         </div>
 
         <div className={browseProductGridClass}>

@@ -21,9 +21,8 @@ import {
   type CategoryFilterSelection,
 } from "@/lib/browseCategories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { Package } from "lucide-react";
 import HomeHero from "@/components/home/HomeHero";
-import HomeQuickActions from "@/components/home/HomeQuickActions";
 import HomeOnboardingBanner from "@/components/home/HomeOnboardingBanner";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 import { useAppSession } from "@/lib/state";
@@ -35,46 +34,10 @@ import { publicSiteOrigin } from "@/lib/publicSite";
 const FEED_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 const FEED_REFRESH_KEY_PREFIX = "midora:feed:last-refresh:";
 
-function SectionHeader({
-  title,
-  subtitle,
-  href,
-  linkLabel,
-}: {
-  title: string;
-  subtitle?: string;
-  href?: string;
-  linkLabel?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-2 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        <h2 className="font-display text-lg font-semibold tracking-tight text-primary sm:text-xl lg:text-2xl">
-          {title}
-        </h2>
-        {subtitle ? (
-          <p className="mt-1 text-sm leading-relaxed text-muted">{subtitle}</p>
-        ) : null}
-      </div>
-      {href && linkLabel ? (
-        <Link
-          href={href}
-          className="dm-btn dm-btn-sm inline-flex shrink-0 items-center gap-1.5 bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-hover"
-        >
-          {linkLabel}
-          <ArrowRight className="size-3.5" aria-hidden />
-        </Link>
-      ) : null}
-    </div>
-  );
-}
-
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-surface-subtle p-10 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl bg-primary/5 text-primary">
-        <MaterialSymbol name="inventory_2" className="!text-2xl text-muted" />
-      </span>
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center">
+      <Package className="size-8 text-muted/50" strokeWidth={1.5} aria-hidden />
       <p className="max-w-sm text-sm text-muted">{message}</p>
     </div>
   );
@@ -98,9 +61,6 @@ export default function HomeLanding({ initialProducts }: Props) {
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const feedViewerKey = session.user?.id ?? "guest";
 
-  // Persistent set of listing IDs already rendered this session.
-  // Sent as `exclude_ids` ONLY on load-more / soft-refresh continuation —
-  // never on the initial SSR personalized page (that must return top ranks).
   const seenIdsRef = useRef<Set<string>>(new Set(initialProducts.map((p) => p.id)));
 
   useEffect(() => {
@@ -277,10 +237,6 @@ export default function HomeLanding({ initialProducts }: Props) {
     filters.minRating !== null ||
     filters.location !== null;
 
-  const scrollToFeed = () => {
-    document.getElementById("products-feed")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <div className="relative w-full">
       {showPopup ? (
@@ -291,65 +247,43 @@ export default function HomeLanding({ initialProducts }: Props) {
         <HomeHero />
       </div>
 
-      <CategoryBrowseSection
-        selection={categoryFilter}
-        onSelectionChange={setCategoryFilter}
-        browseAllHref="/products"
-      />
-
-      <div className="mb-5 rounded-2xl border border-border bg-surface px-3 py-3 sm:px-4">
+      <div className="mb-4 space-y-2 sm:mb-5">
+        <CategoryBrowseSection
+          selection={categoryFilter}
+          onSelectionChange={setCategoryFilter}
+          browseAllHref="/products"
+        />
         <ProductFilters products={products} filters={filters} onChange={setFilters} />
       </div>
 
-      {!categoryFilterActive ? (
-        <HomeQuickActions
-          onApplyFilter={(partial) => setFilters((prev) => ({ ...prev, ...partial }))}
-          onScrollToFeed={scrollToFeed}
-        />
-      ) : null}
-
-      <div id="products-feed" className="space-y-8 sm:space-y-10">
-        {anyFiltersActive ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-subtle px-4 py-3 text-sm">
-            <MaterialSymbol name="filter_alt" className="!text-base text-accent" />
-            <span className="text-muted">
-              {categoryFilterActive ? (
-                <>
-                  Showing <span className="font-semibold text-primary">{categoryFilterLabel}</span>
-                  {browseProducts.length > 0 ? (
-                    <span className="text-muted/80">
-                      {" "}
-                      · {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""}
-                    </span>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold text-primary">{browseProducts.length} results</span>
-                  <span className="text-muted/80"> with filters applied</span>
-                </>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setCategoryFilter(EMPTY_CATEGORY_FILTER);
-                setFilters(DEFAULT_FILTERS);
-              }}
-              className="ml-auto text-xs font-semibold text-accent hover:text-accent-hover"
-            >
-              Clear all
-            </button>
+      <div id="products-feed" className="space-y-5 sm:space-y-6">
+        <section className="space-y-3 sm:space-y-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground sm:text-base">
+              Products{filterHint}
+            </h2>
+            <div className="flex shrink-0 items-center gap-3">
+              {anyFiltersActive ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter(EMPTY_CATEGORY_FILTER);
+                    setFilters(DEFAULT_FILTERS);
+                  }}
+                  className="text-[11px] font-medium text-muted transition-colors hover:text-foreground sm:text-xs"
+                >
+                  {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""} · Clear
+                </button>
+              ) : null}
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-accent transition-colors hover:text-accent-hover sm:text-xs"
+              >
+                See all
+                <ArrowRight className="size-3" aria-hidden />
+              </Link>
+            </div>
           </div>
-        ) : null}
-
-        <section className="space-y-5">
-          <SectionHeader
-            title={`All Products${filterHint}`}
-            subtitle="Browse listings from verified shops on Midora."
-            href="/products"
-            linkLabel="See all"
-          />
 
           {browseProducts.length === 0 ? (
             <EmptyState
@@ -373,7 +307,7 @@ export default function HomeLanding({ initialProducts }: Props) {
                   </div>
                 ))}
               </div>
-              <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
+              <div className="flex flex-col items-center gap-3 pt-1 sm:flex-row sm:justify-center">
                 {hasMore ? (
                   <div
                     ref={loadMoreSentinelRef}

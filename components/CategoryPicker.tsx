@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { ChevronDown } from "lucide-react";
 import { resolveCategoryIcon } from "@/lib/homeCategoryIcons";
 
 type Props = {
@@ -57,6 +57,9 @@ export default function CategoryPicker({
   const children = activeGroup?.children ?? [];
   const hasChildren = children.length > 0;
   const needsSubcategory = Boolean(parentSlug && hasChildren && !subcategoryLabel);
+  const SelectedIcon = activeGroup
+    ? resolveCategoryIcon(activeGroup.parent.label)
+    : null;
 
   function handleParentChange(slug: string) {
     setParentSlug(slug);
@@ -119,10 +122,10 @@ export default function CategoryPicker({
               aria-hidden="true"
             />
           ) : (
-            <MaterialSymbol
-              name="expand_more"
-              className="pointer-events-none absolute right-2.5 top-1/2 !text-[18px] -translate-y-1/2 text-muted"
-              aria-hidden="true"
+            <ChevronDown
+              className="pointer-events-none absolute right-2.5 top-1/2 size-[18px] -translate-y-1/2 text-muted"
+              strokeWidth={1.75}
+              aria-hidden
             />
           )}
         </div>
@@ -153,10 +156,10 @@ export default function CategoryPicker({
                 </option>
               ))}
             </select>
-            <MaterialSymbol
-              name="expand_more"
-              className="pointer-events-none absolute right-2.5 top-1/2 !text-[18px] -translate-y-1/2 text-muted"
-              aria-hidden="true"
+            <ChevronDown
+              className="pointer-events-none absolute right-2.5 top-1/2 size-[18px] -translate-y-1/2 text-muted"
+              strokeWidth={1.75}
+              aria-hidden
             />
           </div>
           {needsSubcategory ? (
@@ -178,12 +181,13 @@ export default function CategoryPicker({
           }
         >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface shadow-sm">
-            <MaterialSymbol
-              name={resolveCategoryIcon(activeGroup.parent.label)}
-              className={`!text-sm ${needsSubcategory ? "text-[color:var(--warning)]" : "text-accent"}`}
-              filled
-              aria-hidden="true"
-            />
+            {SelectedIcon ? (
+              <SelectedIcon
+                className={`size-3.5 ${needsSubcategory ? "text-[color:var(--warning)]" : "text-accent"}`}
+                strokeWidth={2}
+                aria-hidden
+              />
+            ) : null}
           </span>
           <div className="min-w-0">
             <span className="font-semibold text-foreground">

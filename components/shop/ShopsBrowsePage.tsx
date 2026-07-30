@@ -76,11 +76,13 @@ export default function ShopsBrowsePage({
       </div>
 
       {/* Category filter bar */}
-      <CategoryBrowseSection
-        selection={categoryFilter}
-        onSelectionChange={setCategoryFilter}
-        showHeader={false}
-      />
+      <div className="mb-3 sm:mb-4">
+        <CategoryBrowseSection
+          selection={categoryFilter}
+          onSelectionChange={setCategoryFilter}
+          showHeader={false}
+        />
+      </div>
 
       <div className="space-y-4">
         {(q.length > 0 || categoryFilterActive) && (
