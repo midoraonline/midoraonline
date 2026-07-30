@@ -8,6 +8,8 @@ import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import { buildShopLocationPayload } from "@/components/shop/shopUtils";
+import type { LatLng } from "@/lib/geo";
 
 import { useRouter } from "next/navigation";
 
@@ -33,6 +35,7 @@ export default function OpenShopWizard() {
   const [shopEmail, setShopEmail] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [locationDisplay, setLocationDisplay] = useState("");
+  const [locationCoords, setLocationCoords] = useState<LatLng | null>(null);
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
   const [category, setCategory] = useState("");
 
@@ -63,7 +66,7 @@ export default function OpenShopWizard() {
         logo_url: logoUrl.trim() || undefined,
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
-        location: locationDisplay.trim() && locationDisplay.trim() !== "Online Shop" ? { display: locationDisplay.trim() } : undefined,
+        location: buildShopLocationPayload(locationDisplay, locationCoords) ?? undefined,
         shop_type: shopType,
         category: category.trim() || undefined,
         contacts: [],
@@ -178,6 +181,9 @@ export default function OpenShopWizard() {
               <LocationInput
                 value={locationDisplay}
                 onChange={setLocationDisplay}
+                onResolved={(place) =>
+                  setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)
+                }
                 placeholder="e.g. Kisasi, Kampala"
               />
             </div>

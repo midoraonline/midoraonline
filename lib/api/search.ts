@@ -15,6 +15,8 @@ export type SearchProductShop = {
   trust_badges?: string[];
   available_now?: boolean | null;
   location?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 };
 
 export type SearchProductItem = {

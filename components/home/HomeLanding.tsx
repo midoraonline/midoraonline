@@ -20,6 +20,7 @@ import {
   productMatchesCategoryFilter,
   type CategoryFilterSelection,
 } from "@/lib/browseCategories";
+import { buildNearMeDistanceMap } from "@/lib/geo";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { Package } from "lucide-react";
 import HomeHero from "@/components/home/HomeHero";
@@ -51,6 +52,10 @@ export default function HomeLanding({ initialProducts }: Props) {
   const [products, setProducts] = useState(initialProducts);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [nearMeDistances, setNearMeDistances] = useState<Map<string, number> | null>(
+    null,
+  );
+  const [nearMeRanking, setNearMeRanking] = useState(false);
   const router = useRouter();
   const { items: categoryItems } = useCategoryItems();
   const session = useAppSession();
@@ -216,13 +221,58 @@ export default function HomeLanding({ initialProducts }: Props) {
     setShowPopup(null);
   };
 
+  useEffect(() => {
+    if (!filters.nearMe || !filters.userGeo) {
+      setNearMeDistances(null);
+      setNearMeRanking(false);
+      return;
+    }
+
+    const userGeo = filters.userGeo;
+    const ac = new AbortController();
+    let cancelled = false;
+
+    async function run() {
+      setNearMeRanking(true);
+      try {
+        // Fast pass: Uganda seed + localStorage cache (no network).
+        const quick = await buildNearMeDistanceMap(products, userGeo, {
+          allowNetwork: false,
+          signal: ac.signal,
+        });
+        if (cancelled) return;
+        setNearMeDistances(new Map(quick.distances));
+
+        // Slow pass: geocode remaining unique places via Nominatim proxy.
+        if (quick.pendingNetwork > 0) {
+          const full = await buildNearMeDistanceMap(products, userGeo, {
+            allowNetwork: true,
+            signal: ac.signal,
+          });
+          if (cancelled) return;
+          setNearMeDistances(new Map(full.distances));
+        }
+      } catch {
+        if (!cancelled) setNearMeDistances((prev) => prev ?? new Map());
+      } finally {
+        if (!cancelled) setNearMeRanking(false);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [filters.nearMe, filters.userGeo, products]);
+
   const browseProducts = useMemo(() => {
     let list = products;
     if (isCategoryFilterActive(categoryFilter)) {
       list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter, categoryItems));
     }
-    return applyFilters(list, filters);
-  }, [products, categoryFilter, categoryItems, filters]);
+    return applyFilters(list, filters, { distances: nearMeDistances });
+  }, [products, categoryFilter, categoryItems, filters, nearMeDistances]);
 
   const categoryFilterActive = isCategoryFilterActive(categoryFilter);
   const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
@@ -235,7 +285,8 @@ export default function HomeLanding({ initialProducts }: Props) {
     filters.availableNow ||
     filters.verifiedOnly ||
     filters.minRating !== null ||
-    filters.location !== null;
+    filters.location !== null ||
+    filters.nearMe;
 
   return (
     <div className="relative w-full">
@@ -260,7 +311,11 @@ export default function HomeLanding({ initialProducts }: Props) {
         <section className="space-y-3 sm:space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground sm:text-base">
-              Products{filterHint}
+              {filters.nearMe
+                ? nearMeRanking
+                  ? "Sorting by distance…"
+                  : "Closest to you"
+                : `Products${filterHint}`}
             </h2>
             <div className="flex shrink-0 items-center gap-3">
               {anyFiltersActive ? (

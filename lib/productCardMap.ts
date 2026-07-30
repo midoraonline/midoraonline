@@ -25,6 +25,8 @@ type ShopLike = {
   trust_badges?: string[];
   available_now?: boolean | null;
   location?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export function shopIsVerified(shop: {
@@ -106,6 +108,8 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
       trust_score: p.shop.trust_score ?? null,
       available_now: p.shop.available_now ?? null,
       location: p.shop.location ?? null,
+      lat: p.shop.location_lat ?? null,
+      lng: p.shop.location_lng ?? null,
     },
     category: p.category ?? null,
     boosted: p.boosted,
@@ -151,6 +155,8 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
       trust_score: item.shop.trust_score ?? null,
       available_now: item.shop.available_now ?? null,
       location: item.shop.location ?? null,
+      lat: item.shop.location_lat ?? null,
+      lng: item.shop.location_lng ?? null,
     },
     category: item.category ?? null,
     boosted: item.boosted,
@@ -197,6 +203,8 @@ export function productToCard(
       trust_score: shop.trust_score ?? null,
       available_now: shop.available_now ?? null,
       location: shop.location ?? null,
+      lat: shop.lat ?? null,
+      lng: shop.lng ?? null,
     },
     category: product.category ?? null,
     description: product.description ?? null,
