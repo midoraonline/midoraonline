@@ -21,16 +21,16 @@ export default function HomeHero() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href="/products"
+            href="/open-shop"
             className="rounded-full bg-accent px-5 py-2 text-xs font-bold text-white shadow-lg transition-all hover:bg-accent-hover active:scale-95"
           >
-            Browse Products
+            Create a Shop
           </Link>
           <Link
-            href="/open-shop"
+            href="/products"
             className="rounded-full border border-white/25 bg-white/10 px-5 py-2 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/15 active:scale-95"
           >
-            Create a Shop
+            Browse Products
           </Link>
         </div>
 

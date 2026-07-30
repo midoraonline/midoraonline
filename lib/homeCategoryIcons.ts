@@ -2,11 +2,13 @@ import type { LucideIcon } from "lucide-react";
 import {
   Baby,
   BookOpen,
+  Briefcase,
   Car,
   Dumbbell,
   Gem,
   Hammer,
   HeartPulse,
+  Home,
   LayoutGrid,
   Palette,
   PawPrint,
@@ -28,6 +30,8 @@ export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   Beauty: Sparkles,
   "Home & Living": Sofa,
   Services: Wrench,
+  "Property & Land": Home,
+  Opportunities: Briefcase,
   Agriculture: Sprout,
   "Health & Wellness": HeartPulse,
   "Sports & Outdoors": Dumbbell,
@@ -59,6 +63,10 @@ export function resolveCategoryIcon(label: string): LucideIcon {
     return CATEGORY_ICON_MAP["Home & Living"]!;
   if (/service|repair|consult|freelance/.test(l))
     return CATEGORY_ICON_MAP["Services"]!;
+  if (/property|land|plot|house|apartment|real.?estate/.test(l))
+    return CATEGORY_ICON_MAP["Property & Land"]!;
+  if (/opportunit|job|gig|career|vacanc|tender/.test(l))
+    return CATEGORY_ICON_MAP["Opportunities"]!;
   if (/farm|agri|crop|grain|plant/.test(l))
     return CATEGORY_ICON_MAP["Agriculture"]!;
   if (/health|medical|pharma|wellness/.test(l))

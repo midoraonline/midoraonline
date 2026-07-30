@@ -21,7 +21,7 @@ import {
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 
-type EditTab = "details" | "products" | "services";
+type EditTab = "details" | "products" | "services" | "opportunities";
 
 type FormState = {
   name: string;
@@ -574,6 +574,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
     { id: "details", label: "Shop details" },
     { id: "products", label: "Products" },
     { id: "services", label: "Services" },
+    { id: "opportunities", label: "Opportunities" },
   ];
 
   function handleTabChange(next: EditTab) {
@@ -687,6 +688,15 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           shopId={shop.id}
           itemType="service"
           heading="Services"
+          shopLogoUrl={shop.logo_url ?? null}
+        />
+      )}
+
+      {tab === "opportunities" && (
+        <ShopCatalogEditor
+          shopId={shop.id}
+          itemType="opportunity"
+          heading="Opportunities"
           shopLogoUrl={shop.logo_url ?? null}
         />
       )}

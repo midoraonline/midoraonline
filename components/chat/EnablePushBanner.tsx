@@ -40,15 +40,14 @@ export default function EnablePushBanner() {
   };
 
   return (
-    <div className="mx-4 mt-3 flex items-start gap-3 rounded-xl border border-accent/25 bg-accent/5 p-3">
+    <div className="flex shrink-0 items-start gap-3 border-b border-accent/20 bg-accent/[0.06] px-4 py-2.5 sm:px-5">
       <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent/15 text-accent">
         <MaterialSymbol name="notifications_active" className="!text-lg" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">Get notified about new messages</p>
         <p className="mt-0.5 text-xs text-muted">
-          We&apos;ll ping your browser when a seller replies — even when this
-          tab is in the background.
+          We&apos;ll ping your browser when someone replies — even in the background.
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1">

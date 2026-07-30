@@ -206,8 +206,8 @@ function Chip({
       aria-pressed={Boolean(active)}
       className={`inline-flex h-7 shrink-0 snap-start items-center gap-1 rounded-md px-2 text-[11px] transition-colors sm:h-8 sm:gap-1.5 sm:px-2.5 sm:text-xs ${
         active
-          ? "bg-accent text-white shadow-sm shadow-accent/25"
-          : "bg-accent/[0.06] text-foreground/70 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent hover:ring-accent/20"
+          ? "bg-primary text-white shadow-sm shadow-primary/20"
+          : "bg-background text-foreground/70 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
       } ${className}`}
     >
       {children}
@@ -268,7 +268,7 @@ function SortDropdown({
               }}
               className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs transition-colors ${
                 value === key
-                  ? "bg-accent/10 font-semibold text-accent"
+                  ? "bg-primary/10 font-semibold text-primary"
                   : "font-medium text-foreground/80 hover:bg-surface-subtle"
               }`}
             >
@@ -693,15 +693,26 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
   const showLocationControl = true;
 
   return (
-    <div className="space-y-1.5">
-      {/* Primary filter strip — same language as category chips */}
+    <div className="space-y-1.5 rounded-xl border border-border bg-surface-subtle/70 p-2 sm:p-2.5">
+      <div className="mb-0.5 flex items-center gap-1.5 px-0.5">
+        <SlidersHorizontal className="size-3 text-muted" strokeWidth={2} aria-hidden />
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted sm:text-xs sm:normal-case sm:tracking-tight">
+          Filters
+        </p>
+        {hasActiveFilters ? (
+          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary">
+            {activeFilterCount(filters)}
+          </span>
+        ) : null}
+      </div>
+      {/* Primary filter strip — neutral chips (distinct from category browse) */}
       <div className="relative">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-background to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-surface-subtle to-transparent sm:hidden"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-background to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-surface-subtle to-transparent sm:hidden"
           aria-hidden
         />
         <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-1.5 sm:overflow-visible">
@@ -772,7 +783,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
             <button
               type="button"
               onClick={clearAll}
-              className="inline-flex h-7 shrink-0 items-center px-1.5 text-[11px] font-medium text-accent transition-colors hover:text-accent-hover sm:h-8 sm:text-xs"
+              className="inline-flex h-7 shrink-0 items-center px-1.5 text-[11px] font-medium text-primary transition-colors hover:text-foreground sm:h-8 sm:text-xs"
             >
               Clear
             </button>

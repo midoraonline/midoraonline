@@ -52,7 +52,7 @@ export default function ShopHeroActionBar({
                 className="dm-btn dm-btn-primary dm-btn-sm min-h-10"
               >
                 <Plus className="size-4" aria-hidden="true" />
-                Add product
+                Add listing
               </button>
               <Link
                 href={`/shops/${shopSlug}/edit`}

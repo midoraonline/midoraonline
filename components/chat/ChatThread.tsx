@@ -387,14 +387,14 @@ export default function ChatThread({ conversation, onBack }: Props) {
   const quickReplies = isBuyer ? BUYER_QUICK_REPLIES : SELLER_QUICK_REPLIES;
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex h-full min-h-0 flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-foreground/[0.06] bg-background/95 px-4 py-3 backdrop-blur">
+      <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-background px-3 sm:px-4">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            className="dm-focus -ml-1 rounded-lg p-1 hover:bg-foreground/[0.06] sm:hidden"
+            className="dm-focus -ml-0.5 rounded-lg p-1.5 hover:bg-foreground/[0.06] sm:hidden"
             aria-label="Back to conversations"
           >
             <MaterialSymbol name="arrow_back" className="!text-lg" />
@@ -435,7 +435,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4"
       >
         {loading && messages.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-sm text-muted">
@@ -542,7 +542,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
       {/* Composer */}
       <form
         onSubmit={handleSend}
-        className="flex items-end gap-2 border-t border-foreground/[0.06] bg-background px-3 py-2.5"
+        className="flex shrink-0 items-end gap-2 border-t border-border bg-background px-3 py-2.5 sm:px-4"
       >
         <textarea
           ref={textareaRef}

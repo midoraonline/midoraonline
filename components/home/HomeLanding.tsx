@@ -298,7 +298,7 @@ export default function HomeLanding({ initialProducts }: Props) {
         <HomeHero />
       </div>
 
-      <div className="mb-4 space-y-2 sm:mb-5">
+      <div className="mb-4 space-y-3 sm:mb-5 sm:space-y-4">
         <CategoryBrowseSection
           selection={categoryFilter}
           onSelectionChange={setCategoryFilter}

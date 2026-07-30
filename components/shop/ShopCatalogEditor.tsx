@@ -21,6 +21,10 @@ import {
   type ItemType,
   type Product,
 } from "@/lib/api/products";
+import {
+  LISTING_KIND_LABEL,
+  normalizeListingKind,
+} from "@/lib/listingMeta";
 import { useAppSession } from "@/lib/state";
 import ProductFormModal from "@/components/shop/ProductFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -115,7 +119,10 @@ export default function ShopCatalogEditor({
     setLoading(true);
     try {
       const { items: all } = await apiProducts.listShopProducts(shopId);
-      setItems(all.filter((p) => (p.item_type ?? "product") === itemType));
+      const want = normalizeListingKind(itemType);
+      setItems(
+        all.filter((p) => normalizeListingKind(p.item_type) === want),
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load catalog");
     } finally {
@@ -218,6 +225,9 @@ export default function ShopCatalogEditor({
     }
   }
 
+  const kindLabel =
+    LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase() + "s";
+
   if (!hydrated) {
     return (
       <div className="dm-card flex items-center gap-3 p-5 text-sm text-muted">
@@ -229,7 +239,7 @@ export default function ShopCatalogEditor({
   if (!isAuthed) {
     return (
       <div className="dm-card p-5 text-sm text-muted">
-        Sign in to manage {itemType === "service" ? "services" : "products"}.
+        Sign in to manage {kindLabel}.
       </div>
     );
   }
@@ -246,14 +256,14 @@ export default function ShopCatalogEditor({
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-foreground/90">
-            Your {itemType === "service" ? "services" : "products"}
+            Your {kindLabel}
           </p>
           <button
             type="button"
             onClick={() => setModal({ mode: "add" })}
             className="dm-btn dm-btn-primary dm-btn-sm"
           >
-            Add {itemType}
+            Add {LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase()}
           </button>
         </div>
         {loading ? (

@@ -17,8 +17,24 @@ import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
+import {
+  categoryMetaFields,
+  cleanListingMeta,
+  COMPENSATION_OPTIONS,
+  CONDITION_OPTIONS,
+  descriptionMeetsStandard,
+  hasRequiredListingImage,
+  LISTING_KIND_LABEL,
+  LISTING_KIND_OPTIONS,
+  listingKindToItemType,
+  normalizeListingKind,
+  OPPORTUNITY_KIND_OPTIONS,
+  parseListingMeta,
+  PRICING_MODEL_OPTIONS,
+  type ListingKind,
+  type ListingMeta,
+} from "@/lib/listingMeta";
 
-// ── Currency helpers ─────────────────────────────────────────────────────────
 const UGX = new Intl.NumberFormat("en-UG", {
   style: "currency",
   currency: "UGX",
@@ -30,7 +46,6 @@ function parseAmount(v: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-// ── Media grid tile ──────────────────────────────────────────────────────────
 function MediaGrid({
   urls,
   onRemove,
@@ -81,21 +96,23 @@ function MediaGrid({
   );
 }
 
-// ── Draft state ──────────────────────────────────────────────────────────────
 type FormDraft = {
+  kind: ListingKind;
   title: string;
   description: string;
   price_ugx: string;
-  sale_price: string; // Final price after discount (never a percentage)
+  sale_price: string;
   stock_quantity: string;
   category: string;
   image_urls: string[];
   is_published: boolean;
   is_negotiable: boolean;
+  meta: ListingMeta;
 };
 
-function emptyDraft(): FormDraft {
+function emptyDraft(kind: ListingKind): FormDraft {
   return {
+    kind,
     title: "",
     description: "",
     price_ugx: "",
@@ -105,11 +122,13 @@ function emptyDraft(): FormDraft {
     image_urls: [],
     is_published: true,
     is_negotiable: true,
+    meta: {},
   };
 }
 
 function productToDraft(p: Product): FormDraft {
   return {
+    kind: normalizeListingKind(p.item_type),
     title: p.title ?? "",
     description: p.description ?? "",
     price_ugx: p.price_ugx != null ? String(p.price_ugx) : "",
@@ -119,11 +138,13 @@ function productToDraft(p: Product): FormDraft {
     image_urls: productImageUrls(p),
     is_published: p.is_published ?? true,
     is_negotiable: p.is_negotiable !== false,
+    meta: parseListingMeta(p.listing_meta),
   };
 }
 
 function draftsEqual(a: FormDraft, b: FormDraft): boolean {
   return (
+    a.kind === b.kind &&
     a.title === b.title &&
     a.description === b.description &&
     a.price_ugx === b.price_ugx &&
@@ -133,11 +154,11 @@ function draftsEqual(a: FormDraft, b: FormDraft): boolean {
     a.is_published === b.is_published &&
     a.is_negotiable === b.is_negotiable &&
     a.image_urls.length === b.image_urls.length &&
-    a.image_urls.every((u, i) => u === b.image_urls[i])
+    a.image_urls.every((u, i) => u === b.image_urls[i]) &&
+    JSON.stringify(a.meta) === JSON.stringify(b.meta)
   );
 }
 
-// ── Sale price helper ────────────────────────────────────────────────────────
 type SalePriceState =
   | { kind: "empty" }
   | { kind: "invalid"; message: string }
@@ -158,7 +179,10 @@ function evaluateSalePrice(priceStr: string, saleStr: string): SalePriceState {
   return { kind: "ok", savings, percent };
 }
 
-// ── Main component ──────────────────────────────────────────────────────────
+type FieldErrors = Partial<
+  Record<"title" | "description" | "category" | "sale_price" | "images" | "meta", string>
+>;
+
 export default function ProductFormModal({
   mode,
   product,
@@ -171,14 +195,18 @@ export default function ProductFormModal({
   mode: "add" | "edit";
   product?: Product;
   shopId: string;
+  /** Initial / locked kind when opened from a catalog tab. */
   itemType: ItemType;
   shopLogoUrl?: string | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const initialKind = normalizeListingKind(
+    mode === "edit" && product ? product.item_type : itemType,
+  );
   const initialDraft = useMemo(
-    () => (mode === "edit" && product ? productToDraft(product) : emptyDraft()),
-    [mode, product],
+    () => (mode === "edit" && product ? productToDraft(product) : emptyDraft(initialKind)),
+    [mode, product, initialKind],
   );
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
@@ -188,14 +216,28 @@ export default function ProductFormModal({
 
   const isDirty = !draftsEqual(draft, initialRef.current);
   const sale = evaluateSalePrice(draft.price_ugx, draft.sale_price);
+  const allowTypePick = mode === "add";
 
-  // Field-level validation surfaced only after a submit attempt.
-  const errors = useMemo(() => {
-    const e: Partial<Record<keyof FormDraft, string>> = {};
+  const categoryParts = useMemo(
+    () => resolveCategoryParts(draft.category, categoryItems),
+    [draft.category, categoryItems],
+  );
+  const catFields = useMemo(
+    () => categoryMetaFields(categoryParts.parentLabel),
+    [categoryParts.parentLabel],
+  );
+
+  const errors = useMemo((): FieldErrors => {
+    const e: FieldErrors = {};
     if (!draft.title.trim()) e.title = "Title is required.";
+    const descCheck = descriptionMeetsStandard(draft.description);
+    if (!descCheck.ok) e.description = descCheck.message;
+    if (!hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
+      e.images = "Upload at least one photo (video alone is not enough).";
+    }
     if (!draft.category.trim()) e.category = "Pick a category.";
     else {
-      const parts = resolveCategoryParts(draft.category, categoryItems);
+      const parts = categoryParts;
       const parentGroup = categoryTree.find(
         (g) => g.parent.label === parts.parentLabel,
       );
@@ -204,8 +246,25 @@ export default function ProductFormModal({
       }
     }
     if (sale.kind === "invalid") e.sale_price = sale.message;
+    if (draft.kind === "product" && !draft.meta.condition) {
+      e.meta = "Select product condition.";
+    }
+    if (draft.kind === "service" && !draft.meta.pricing_model) {
+      e.meta = "Select how you price this service.";
+    }
+    if (draft.kind === "opportunity" && !draft.meta.opportunity_kind) {
+      e.meta = "Select what kind of opportunity this is.";
+    }
+    for (const field of catFields) {
+      if (!field.required) continue;
+      const v = draft.meta[field.key];
+      if (v == null || String(v).trim() === "") {
+        e.meta = `${field.label} is required for this category.`;
+        break;
+      }
+    }
     return e;
-  }, [draft, sale, categoryItems, categoryTree]);
+  }, [draft, sale, categoryParts, categoryTree, catFields]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -224,29 +283,41 @@ export default function ProductFormModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setShowErrors(true);
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      toast.error("Fix the required fields before saving.");
+      return;
+    }
 
     const price = parseAmount(draft.price_ugx);
     const salePrice = sale.kind === "ok" ? parseAmount(draft.sale_price) : null;
+    const meta = cleanListingMeta(
+      draft.kind,
+      draft.meta,
+      categoryParts.parentLabel,
+    );
 
     const body: CreateProductRequest = {
       title: draft.title.trim(),
-      description: draft.description.trim() || undefined,
-      price_ugx: price ?? undefined,
+      description: draft.description.trim(),
+      price_ugx: price ?? 0,
       discount_price: salePrice ?? undefined,
       category: draft.category.trim() || undefined,
-      image_urls: draft.image_urls.length ? [...draft.image_urls] : undefined,
+      image_urls: [...draft.image_urls],
       is_published: draft.is_published,
       is_negotiable: draft.is_negotiable,
+      item_type: listingKindToItemType(draft.kind),
+      listing_meta: meta,
     };
-    if (mode === "add") body.item_type = itemType;
-    if (itemType === "product" && draft.stock_quantity.trim()) {
+    if (draft.kind === "product" && draft.stock_quantity.trim()) {
       body.stock_quantity = Math.max(0, parseInt(draft.stock_quantity, 10) || 0);
     }
 
     setSaving(true);
-    const label = mode === "add" ? `Adding ${itemType}` : "Saving changes";
-    const done = mode === "add" ? `${itemType} added` : "Changes saved";
+    const label = mode === "add" ? `Adding ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}` : "Saving changes";
+    const done =
+      mode === "add"
+        ? `${LISTING_KIND_LABEL[draft.kind]} added`
+        : "Changes saved";
     const request =
       mode === "add"
         ? apiProducts.createProduct(shopId, body)
@@ -264,30 +335,30 @@ export default function ProductFormModal({
       initialRef.current = draft;
       onSaved();
     } catch {
-      // Sonner already surfaced the error.
+      /* toast already */
     } finally {
       setSaving(false);
     }
   }
 
-  // Warn on hard navigation / refresh while dirty.
   useEffect(() => {
     if (!isDirty) return;
-    function onBeforeUnload(e: BeforeUnloadEvent) {
-      e.preventDefault();
-      e.returnValue = "";
+    function onBeforeUnload(ev: BeforeUnloadEvent) {
+      ev.preventDefault();
+      ev.returnValue = "";
     }
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [isDirty]);
 
-  const title = mode === "add" ? `Add ${itemType}` : "Edit listing";
-  const errorId = (field: keyof FormDraft) =>
-    showErrors && errors[field] ? `product-error-${field}` : undefined;
+  const modalTitle =
+    mode === "add"
+      ? `Add ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}`
+      : "Edit listing";
 
   return (
     <FormModal
-      title={title}
+      title={modalTitle}
       onClose={handleClose}
       maxWidthClass="sm:max-w-xl"
       footer={
@@ -317,6 +388,49 @@ export default function ProductFormModal({
         noValidate
         className="space-y-5"
       >
+        {/* Listing type */}
+        {allowTypePick ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              What are you posting? <span className="text-[color:var(--error)]">*</span>
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {LISTING_KIND_OPTIONS.map((opt) => {
+                const active = draft.kind === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        kind: opt.value,
+                        meta: {},
+                      }))
+                    }
+                    className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      active
+                        ? "border-accent bg-accent/10 ring-1 ring-accent/30"
+                        : "border-border bg-surface hover:border-accent/40"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-foreground">
+                      {opt.label}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                      {opt.hint}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs font-medium text-muted">
+            Type: {LISTING_KIND_LABEL[draft.kind]}
+          </p>
+        )}
+
         {/* Title */}
         <div className="space-y-1.5">
           <label htmlFor="product-title" className="text-sm font-medium text-foreground">
@@ -327,15 +441,18 @@ export default function ProductFormModal({
             className="dm-input"
             value={draft.title}
             onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-            placeholder="What are you selling?"
+            placeholder={
+              draft.kind === "opportunity"
+                ? "e.g. Looking for a shop assistant in Kampala"
+                : draft.kind === "service"
+                  ? "e.g. Home cleaning — same-day Kampala"
+                  : "What are you selling?"
+            }
             aria-invalid={showErrors && Boolean(errors.title)}
-            aria-describedby={errorId("title")}
             required
           />
           {showErrors && errors.title ? (
-            <p id={errorId("title")} className="text-xs text-[color:var(--error)]">
-              {errors.title}
-            </p>
+            <p className="text-xs text-[color:var(--error)]">{errors.title}</p>
           ) : null}
         </div>
 
@@ -345,23 +462,30 @@ export default function ProductFormModal({
             htmlFor="product-description"
             className="text-sm font-medium text-foreground"
           >
-            Description
+            Description <span className="text-[color:var(--error)]">*</span>
           </label>
           <textarea
             id="product-description"
             className="dm-textarea"
-            rows={3}
+            rows={4}
             value={draft.description}
             onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-            placeholder="Condition, size, features, what's included…"
+            placeholder="Write at least two clear sentences. Include condition, what’s included, location, or requirements."
+            aria-invalid={showErrors && Boolean(errors.description)}
           />
+          <p className="text-[11px] text-muted">
+            Tip: buyers trust listings with a real written description — not just a title.
+          </p>
+          {showErrors && errors.description ? (
+            <p className="text-xs text-[color:var(--error)]">{errors.description}</p>
+          ) : null}
         </div>
 
-        {/* Price + Sale price */}
+        {/* Price */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label htmlFor="product-price" className="text-sm font-medium text-foreground">
-              Price (UGX)
+              {draft.kind === "opportunity" ? "Budget / pay (UGX)" : "Price (UGX)"}
             </label>
             <input
               id="product-price"
@@ -369,52 +493,40 @@ export default function ProductFormModal({
               inputMode="numeric"
               value={draft.price_ugx}
               onChange={(e) => setDraft((d) => ({ ...d, price_ugx: e.target.value }))}
-              placeholder="50000"
+              placeholder={draft.kind === "opportunity" ? "Optional — 0 if unpaid" : "50000"}
             />
-            <p className="text-xs text-muted">The regular listing price.</p>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="product-sale" className="text-sm font-medium text-foreground">
-              Sale price{" "}
-              <span className="font-normal text-muted">(optional)</span>
-            </label>
-            <input
-              id="product-sale"
-              className="dm-input"
-              inputMode="numeric"
-              value={draft.sale_price}
-              onChange={(e) => setDraft((d) => ({ ...d, sale_price: e.target.value }))}
-              placeholder="e.g. 40000"
-              aria-invalid={showErrors && Boolean(errors.sale_price)}
-              aria-describedby={errorId("sale_price")}
-            />
-            {sale.kind === "ok" ? (
-              <p className="text-xs font-medium text-[color:var(--success)]">
-                Buyer sees {UGX.format(parseAmount(draft.sale_price) ?? 0)} — saves{" "}
-                {UGX.format(sale.savings)} ({sale.percent}% off)
-              </p>
-            ) : sale.kind === "invalid" && (showErrors || draft.sale_price.trim()) ? (
-              <p
-                id={errorId("sale_price")}
-                className="text-xs text-[color:var(--error)]"
-              >
-                {sale.message}
-              </p>
-            ) : (
-              <p className="text-xs text-muted">
-                What the buyer actually pays. Leave blank for no discount.
-              </p>
-            )}
-          </div>
+          {draft.kind !== "opportunity" ? (
+            <div className="space-y-1.5">
+              <label htmlFor="product-sale" className="text-sm font-medium text-foreground">
+                Sale price <span className="font-normal text-muted">(optional)</span>
+              </label>
+              <input
+                id="product-sale"
+                className="dm-input"
+                inputMode="numeric"
+                value={draft.sale_price}
+                onChange={(e) => setDraft((d) => ({ ...d, sale_price: e.target.value }))}
+                placeholder="e.g. 40000"
+              />
+              {sale.kind === "ok" ? (
+                <p className="text-xs font-medium text-[color:var(--success)]">
+                  Buyer sees {UGX.format(parseAmount(draft.sale_price) ?? 0)} — saves{" "}
+                  {UGX.format(sale.savings)} ({sale.percent}% off)
+                </p>
+              ) : sale.kind === "invalid" && (showErrors || draft.sale_price.trim()) ? (
+                <p className="text-xs text-[color:var(--error)]">{sale.message}</p>
+              ) : (
+                <p className="text-xs text-muted">Leave blank for no discount.</p>
+              )}
+            </div>
+          ) : null}
         </div>
 
-        {itemType === "product" ? (
+        {draft.kind === "product" ? (
           <div className="space-y-1.5 sm:max-w-[220px]">
-            <label
-              htmlFor="product-stock"
-              className="text-sm font-medium text-foreground"
-            >
+            <label htmlFor="product-stock" className="text-sm font-medium text-foreground">
               Stock quantity
             </label>
             <input
@@ -428,11 +540,10 @@ export default function ProductFormModal({
           </div>
         ) : null}
 
-        {/* Category */}
+        {/* Category — before meta so category-specific fields can appear */}
         <div className="space-y-1.5">
           <p className="text-sm font-medium text-foreground">
-            Category &amp; subcategory{" "}
-            <span className="text-[color:var(--error)]">*</span>
+            Category &amp; subcategory <span className="text-[color:var(--error)]">*</span>
           </p>
           <div className="dm-card p-3 sm:p-4">
             <CategoryPicker
@@ -448,14 +559,283 @@ export default function ProductFormModal({
           ) : null}
         </div>
 
+        {/* More information — type + category metadata */}
+        <div className="space-y-3 rounded-xl border border-border bg-surface-subtle/50 p-3 sm:p-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">More information</p>
+            <p className="mt-0.5 text-[11px] text-muted">
+              Extra details for this {LISTING_KIND_LABEL[draft.kind].toLowerCase()}
+              {categoryParts.parentLabel
+                ? ` · ${categoryParts.parentLabel}`
+                : ""}{" "}
+              — shown to buyers and used for discovery.
+            </p>
+          </div>
+
+          {draft.kind === "product" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Condition <span className="text-[color:var(--error)]">*</span>
+                </label>
+                <select
+                  className="dm-input"
+                  value={draft.meta.condition ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: {
+                        ...d.meta,
+                        condition: (e.target.value || undefined) as ListingMeta["condition"],
+                      },
+                    }))
+                  }
+                >
+                  <option value="">Select…</option>
+                  {CONDITION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {!catFields.some((f) => f.key === "brand") ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Brand</label>
+                  <input
+                    className="dm-input"
+                    value={draft.meta.brand ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        meta: { ...d.meta, brand: e.target.value },
+                      }))
+                    }
+                    placeholder="Optional"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {draft.kind === "service" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-medium text-foreground">
+                  Pricing model <span className="text-[color:var(--error)]">*</span>
+                </label>
+                <select
+                  className="dm-input"
+                  value={draft.meta.pricing_model ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: {
+                        ...d.meta,
+                        pricing_model: (e.target.value ||
+                          undefined) as ListingMeta["pricing_model"],
+                      },
+                    }))
+                  }
+                >
+                  <option value="">Select…</option>
+                  {PRICING_MODEL_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Availability</label>
+                <input
+                  className="dm-input"
+                  value={draft.meta.availability ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: { ...d.meta, availability: e.target.value },
+                    }))
+                  }
+                  placeholder="e.g. Mon–Sat 9am–6pm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Service area</label>
+                <input
+                  className="dm-input"
+                  value={draft.meta.service_area ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: { ...d.meta, service_area: e.target.value },
+                    }))
+                  }
+                  placeholder="e.g. Kampala & Wakiso"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {draft.kind === "opportunity" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Opportunity type <span className="text-[color:var(--error)]">*</span>
+                </label>
+                <select
+                  className="dm-input"
+                  value={draft.meta.opportunity_kind ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: {
+                        ...d.meta,
+                        opportunity_kind: (e.target.value ||
+                          undefined) as ListingMeta["opportunity_kind"],
+                      },
+                    }))
+                  }
+                >
+                  <option value="">Select…</option>
+                  {OPPORTUNITY_KIND_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Compensation</label>
+                <select
+                  className="dm-input"
+                  value={draft.meta.compensation ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: {
+                        ...d.meta,
+                        compensation: (e.target.value ||
+                          undefined) as ListingMeta["compensation"],
+                      },
+                    }))
+                  }
+                >
+                  <option value="">Select…</option>
+                  {COMPENSATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Deadline</label>
+                <input
+                  type="date"
+                  className="dm-input"
+                  value={draft.meta.deadline ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: { ...d.meta, deadline: e.target.value },
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-medium text-foreground">Requirements</label>
+                <textarea
+                  className="dm-textarea"
+                  rows={2}
+                  value={draft.meta.requirements ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: { ...d.meta, requirements: e.target.value },
+                    }))
+                  }
+                  placeholder="Skills, experience, documents needed…"
+                />
+              </div>
+            </div>
+          ) : null}
+
+
+          {catFields.length > 0 ? (
+            <div className="grid gap-3 border-t border-border/70 pt-3 sm:grid-cols-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted sm:col-span-2">
+                {categoryParts.parentLabel} details
+              </p>
+              {catFields.map((field) => {
+                const value = draft.meta[field.key];
+                const strVal = value == null ? "" : String(value);
+                return (
+                  <div key={field.key} className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">
+                      {field.label}
+                      {field.required ? (
+                        <span className="text-[color:var(--error)]"> *</span>
+                      ) : null}
+                    </label>
+                    {field.kind === "select" ? (
+                      <select
+                        className="dm-input"
+                        value={strVal}
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            meta: {
+                              ...d.meta,
+                              [field.key]: e.target.value || undefined,
+                            },
+                          }))
+                        }
+                      >
+                        <option value="">Select…</option>
+                        {(field.options ?? []).map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="dm-input"
+                        value={strVal}
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            meta: {
+                              ...d.meta,
+                              [field.key]: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={field.placeholder ?? "Optional"}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {showErrors && errors.meta ? (
+            <p className="text-xs text-[color:var(--error)]">{errors.meta}</p>
+          ) : null}
+        </div>
+
         {/* Media */}
         <div className="space-y-2">
-          <div className="flex items-baseline justify-between">
-            <p className="text-sm font-medium text-foreground">Photos &amp; video</p>
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-sm font-medium text-foreground">
+              Photos &amp; video <span className="text-[color:var(--error)]">*</span>
+            </p>
             <p className="text-xs text-muted">
               {draft.image_urls.length
                 ? `${draft.image_urls.length} attached`
-                : "Add at least one photo"}
+                : "At least one photo required"}
             </p>
           </div>
           <div className="dm-card space-y-3 p-3 sm:p-4">
@@ -492,28 +872,33 @@ export default function ProductFormModal({
                 }
               />
             </div>
-            <p className="text-xs text-muted">
-              Photos upload the moment you pick them. Videos are compressed in your
-              browser, then upload automatically.
-            </p>
+            {showErrors && errors.images ? (
+              <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
+            ) : (
+              <p className="text-xs text-muted">
+                Photos upload when you pick them. A cover photo is required to publish.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Toggles */}
         <div className="grid gap-2 sm:grid-cols-2">
-          <label className="dm-card flex cursor-pointer items-center gap-3 px-3 py-2.5">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-border text-accent focus:ring-accent"
-              checked={draft.is_negotiable}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, is_negotiable: e.target.checked }))
-              }
-            />
-            <span className="text-sm font-medium text-foreground">
-              Price is negotiable
-            </span>
-          </label>
+          {draft.kind !== "opportunity" ? (
+            <label className="dm-card flex cursor-pointer items-center gap-3 px-3 py-2.5">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border text-accent focus:ring-accent"
+                checked={draft.is_negotiable}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, is_negotiable: e.target.checked }))
+                }
+              />
+              <span className="text-sm font-medium text-foreground">
+                Price is negotiable
+              </span>
+            </label>
+          ) : null}
           <label className="dm-card flex cursor-pointer items-center gap-3 px-3 py-2.5">
             <input
               type="checkbox"
