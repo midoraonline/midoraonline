@@ -6,6 +6,7 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import AppStateProvider from "@/components/providers/AppStateProvider";
 import AppToaster from "@/components/providers/AppToaster";
 import MerchantPresenceHeartbeat from "@/components/MerchantPresenceHeartbeat";
+import PresenceTracker from "@/components/PresenceTracker";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import "./globals.css";
 
@@ -65,6 +66,7 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <AppStateProvider>
             <MerchantPresenceHeartbeat />
+            <PresenceTracker />
             {children}
           </AppStateProvider>
         </AppRouterCacheProvider>

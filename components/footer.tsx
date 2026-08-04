@@ -6,229 +6,261 @@ import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
-const TikTokIcon = () => (
-  <svg className="size-4 shrink-0 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.08-1.4-1.22-.8-2.15-2.02-2.58-3.41-.02 1.83.01 3.66-.02 5.49 0 2.21-.55 4.45-1.74 6.22-1.19 1.77-3.08 2.94-5.18 3.26-2.1.32-4.38-.07-6.09-1.34C1.045 17.58.125 15.28.175 12.87c.05-2.41 1.09-4.8 2.96-6.32 1.87-1.52 4.44-2.06 6.81-1.47.02 1.41.01 2.82.02 4.23-1.32-.41-2.83-.17-3.92.65-1.09.82-1.63 2.28-1.38 3.65.25 1.37 1.34 2.52 2.69 2.81 1.35.29 2.88-.12 3.73-1.22.85-1.1 1.02-2.61.97-3.98.02-4.07-.01-8.14.02-12.21z"/>
+const TikTokIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg className={`${className} shrink-0 fill-current`} viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.08-1.4-1.22-.8-2.15-2.02-2.58-3.41-.02 1.83.01 3.66-.02 5.49 0 2.21-.55 4.45-1.74 6.22-1.19 1.77-3.08 2.94-5.18 3.26-2.1.32-4.38-.07-6.09-1.34C1.045 17.58.125 15.28.175 12.87c.05-2.41 1.09-4.8 2.96-6.32 1.87-1.52 4.44-2.06 6.81-1.47.02 1.41.01 2.82.02 4.23-1.32-.41-2.83-.17-3.92.65-1.09.82-1.63 2.28-1.38 3.65.25 1.37 1.34 2.52 2.69 2.81 1.35.29 2.88-.12 3.73-1.22.85-1.1 1.02-2.61.97-3.98.02-4.07-.01-8.14.02-12.21z" />
   </svg>
 );
 
+type TrustBadge = {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+};
+
+const TRUST_BADGES: TrustBadge[] = [
+  {
+    icon: <MaterialSymbol name="verified_user" className="!text-[22px]" />,
+    title: "Verified sellers only",
+    desc: "Every shop is checked before it goes live.",
+  },
+  {
+    icon: <WhatsAppIcon className="size-[22px]" />,
+    title: "Chat on WhatsApp",
+    desc: "Message sellers directly — no middlemen.",
+  },
+  {
+    icon: <MaterialSymbol name="location_on" className="!text-[22px]" />,
+    title: "Buy near you",
+    desc: "Find items and shops close to home.",
+  },
+  {
+    icon: <MaterialSymbol name="handshake" className="!text-[22px]" />,
+    title: "Real deals, real people",
+    desc: "No scams, no fake listings — just trade.",
+  },
+];
+
+type LinkGroup = { heading: string; links: { label: string; href: string }[] };
+
+const LINK_GROUPS: LinkGroup[] = [
+  {
+    heading: "Explore",
+    links: [
+      { label: "Shops", href: "/shops" },
+      { label: "Products", href: "/products" },
+      { label: "Categories", href: "/products" },
+      { label: "All deals", href: "/products?q=deals" },
+      { label: "Near me", href: "/products?sort=near_me" },
+    ],
+  },
+  {
+    heading: "Company",
+    links: [
+      { label: "About Midora", href: "/aboutus" },
+      { label: "How it works", href: "/onboarding" },
+      { label: "Open a shop", href: "/open-shop" },
+      { label: "Blog", href: "#" },
+    ],
+  },
+  {
+    heading: "Support",
+    links: [
+      { label: "Contact us", href: "/contactus" },
+      { label: "Help Center", href: "/onboarding" },
+      { label: "Safety tips", href: "/policies" },
+      { label: "Report an issue", href: "/contactus" },
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Terms & Conditions", href: "/termsandconditions" },
+      { label: "Privacy Policy", href: "/policies" },
+      { label: "Cookies Policy", href: "/policies" },
+      { label: "Seller Policy", href: "/policies" },
+    ],
+  },
+];
+
 export default function Footer() {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <footer className="w-full bg-neutral-50/50 border-t border-neutral-200">
-      
-      {/* 1. Feature Cards Grid Section */}
-      <div className="dm-container pt-12 pb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* Feature 1 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-neutral-100 shadow-xs">
-            <span className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-              <MaterialSymbol name="verified_user" className="!text-xl" />
-            </span>
-            <div>
-              <h4 className="font-bold text-neutral-800 text-sm">Verified Sellers Only</h4>
-              <p className="text-xs text-neutral-500 mt-1 leading-normal">All sellers are verified for your safety.</p>
-            </div>
-          </div>
-
-          {/* Feature 2 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-neutral-100 shadow-xs">
-            <span className="p-2.5 rounded-xl bg-orange-50 text-orange-600 shrink-0">
-              <WhatsAppIcon className="size-5 text-orange-600" />
-            </span>
-            <div>
-              <h4 className="font-bold text-neutral-800 text-sm">Chat on WhatsApp</h4>
-              <p className="text-xs text-neutral-500 mt-1 leading-normal">Chat directly with sellers instantly.</p>
-            </div>
-          </div>
-
-          {/* Feature 3 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-neutral-100 shadow-xs">
-            <span className="p-2.5 rounded-xl bg-orange-50 text-orange-600 shrink-0">
-              <MaterialSymbol name="location_on" className="!text-xl" />
-            </span>
-            <div>
-              <h4 className="font-bold text-neutral-800 text-sm">Buy Near You</h4>
-              <p className="text-xs text-neutral-500 mt-1 leading-normal">Find items and shops close to you.</p>
-            </div>
-          </div>
-
-          {/* Feature 4 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-neutral-100 shadow-xs">
-            <span className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-              <MaterialSymbol name="check_circle" className="!text-xl" />
-            </span>
-            <div>
-              <h4 className="font-bold text-neutral-800 text-sm">No Middlemen</h4>
-              <p className="text-xs text-neutral-500 mt-1 leading-normal">No scams. No middlemen. Just real deals.</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* 2. Stay Updated Newsletter Section */}
-      <div className="dm-container py-6">
-        <div className="rounded-2xl p-6 md:p-8 bg-gradient-to-r from-orange-50/70 to-amber-50/40 border border-orange-100 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
-          <div className="flex items-center gap-4">
-            <div className="relative size-12 sm:size-14 rounded-full bg-orange-100/80 text-orange-600 grid place-items-center shrink-0">
-              <MaterialSymbol name="mail" className="!text-2xl" />
-              <span className="absolute -top-0.5 -right-0.5 size-4 bg-orange-600 text-white rounded-full flex items-center justify-center border border-white">
-                <MaterialSymbol name="notifications" className="!text-[10px]" />
-              </span>
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-800 text-base">Stay updated with the latest deals</h3>
-              <p className="text-xs text-neutral-500 mt-0.5">Get the best offers, new arrivals and tips delivered to your inbox.</p>
-            </div>
-          </div>
-          <form 
-            onSubmit={(e) => e.preventDefault()}
-            className="flex items-center gap-2 w-full md:w-auto shrink-0"
-          >
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 md:w-64 bg-white border border-neutral-200 focus:border-orange-500 focus:outline-none rounded-xl px-4 py-2.5 text-xs text-neutral-800"
-              required
-            />
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap shadow-sm hover:shadow-orange-600/10"
+    <footer className="w-full border-t border-border bg-surface-subtle">
+      {/* 1 — Trust badges */}
+      <section
+        aria-label="Why shop on Midora"
+        className="dm-container pt-8 pb-6 sm:pt-10"
+      >
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {TRUST_BADGES.map((b) => (
+            <div
+              key={b.title}
+              className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs transition-shadow hover:shadow-md sm:gap-4 sm:p-5"
             >
-              Subscribe
-            </button>
-          </form>
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent sm:size-11">
+                {b.icon}
+              </span>
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold leading-tight text-foreground sm:text-[15px]">
+                  {b.title}
+                </h4>
+                <p className="mt-1 text-[12px] leading-snug text-muted sm:text-[13px]">
+                  {b.desc}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* 3. Main Footer Links Area */}
-      <div className="dm-container py-10 sm:py-14 border-t border-neutral-200 mt-6 bg-white rounded-t-3xl shadow-xs">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
-          
-          {/* Brand & Address Column */}
-          <div className="lg:col-span-4 space-y-5">
-            <Link href="/" className="inline-block focus:outline-none">
-              <Image
-                src="/logo.png"
-                alt="Midora Online"
-                width={140}
-                height={48}
-                className="h-7 w-auto"
-                priority
+      {/* 2 — Newsletter */}
+      <section aria-label="Newsletter signup" className="dm-container pb-10">
+        <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/10 via-surface to-surface p-5 shadow-xs sm:p-7 lg:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+            <div className="flex items-start gap-4">
+              <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-white shadow-sm sm:size-14">
+                <MaterialSymbol name="mail" className="!text-[26px]" />
+                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full border-2 border-surface bg-foreground">
+                  <span className="size-1.5 rounded-full bg-accent" />
+                </span>
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold leading-tight text-foreground sm:text-lg">
+                  Stay in the loop
+                </h3>
+                <p className="mt-1 text-sm leading-snug text-muted">
+                  Get the best deals, new arrivals and shopping tips — straight
+                  to your inbox.
+                </p>
+              </div>
+            </div>
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:shrink-0"
+            >
+              <label htmlFor="newsletter-email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="newsletter-email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                required
+                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-64 sm:py-2.5"
               />
-            </Link>
-            <p className="text-xs sm:text-sm leading-relaxed text-neutral-500 max-w-xs">
-              The marketplace where African brands and shoppers connect.
-              Discover local shops, products, and services in one place.
-            </p>
-
-            <div className="space-y-2.5">
-              <a
-                href="mailto:midoraonline@gmail.com"
-                className="flex items-center gap-2 text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors"
+              <button
+                type="submit"
+                className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-2 focus:ring-offset-surface sm:py-2.5"
               >
-                <Mail className="size-4 text-orange-500 shrink-0" />
-                midoraonline@gmail.com
-              </a>
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-neutral-500">
-                <MapPin className="size-4 text-orange-500 shrink-0" />
-                Kampala, Uganda
+                Subscribe
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 — Main links */}
+      <div className="border-t border-border bg-surface">
+        <div className="dm-container py-10 sm:py-12 lg:py-14">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
+            {/* Brand column */}
+            <div className="lg:col-span-4">
+              <Link href="/" className="inline-block" aria-label="Midora Online home">
+                <Image
+                  src="/logo.png"
+                  alt="Midora Online"
+                  width={140}
+                  height={48}
+                  className="h-7 w-auto"
+                  priority
+                />
+              </Link>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
+                The marketplace where African brands and shoppers connect —
+                discover local shops, products and services in one place.
+              </p>
+
+              <div className="mt-5 space-y-2.5">
+                <a
+                  href="mailto:midoraonline@gmail.com"
+                  className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-accent"
+                >
+                  <Mail className="size-4 text-accent" aria-hidden />
+                  midoraonline@gmail.com
+                </a>
+                <div className="flex items-center gap-2 text-sm text-muted">
+                  <MapPin className="size-4 text-accent" aria-hidden />
+                  Kampala, Uganda
+                </div>
+              </div>
+
+              {/* Socials */}
+              <div className="mt-5 flex items-center gap-2.5">
+                {[
+                  { href: "#", label: "Facebook", icon: <Facebook className="size-4" /> },
+                  { href: "#", label: "Instagram", icon: <Instagram className="size-4" /> },
+                  { href: "#", label: "TikTok", icon: <TikTokIcon /> },
+                  { href: "#", label: "WhatsApp", icon: <WhatsAppIcon className="size-4" /> },
+                ].map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    aria-label={s.label}
+                    className="grid size-9 place-items-center rounded-full border border-border bg-surface text-muted transition-all hover:border-accent hover:text-accent"
+                  >
+                    {s.icon}
+                  </a>
+                ))}
               </div>
             </div>
 
-            {/* Social Icons Row */}
-            <div className="flex items-center gap-3 pt-2">
-              <a href="#" className="grid size-8 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:text-orange-600 hover:border-orange-500 transition-all bg-white" aria-label="Facebook">
-                <Facebook className="size-4" />
-              </a>
-              <a href="#" className="grid size-8 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:text-orange-600 hover:border-orange-500 transition-all bg-white" aria-label="Instagram">
-                <Instagram className="size-4" />
-              </a>
-              <a href="#" className="grid size-8 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:text-orange-600 hover:border-orange-500 transition-all bg-white" aria-label="TikTok">
-                <TikTokIcon />
-              </a>
-              <a href="#" className="grid size-8 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:text-orange-600 hover:border-orange-500 transition-all bg-white" aria-label="WhatsApp">
-                <WhatsAppIcon className="size-4 text-neutral-500 hover:text-orange-600 shrink-0" />
-              </a>
+            {/* Link groups — 2 cols on mobile, 4 on lg */}
+            <div className="grid grid-cols-2 gap-8 sm:gap-10 lg:col-span-8 lg:grid-cols-4">
+              {LINK_GROUPS.map((group) => (
+                <nav key={group.heading} aria-label={group.heading}>
+                  <p className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    {group.heading}
+                  </p>
+                  <ul className="mt-4 space-y-3">
+                    {group.links.map((l) => (
+                      <li key={l.label}>
+                        <Link
+                          href={l.href}
+                          className="text-sm text-muted transition-colors hover:text-accent"
+                        >
+                          {l.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ))}
             </div>
           </div>
-
-          {/* Column 2: EXPLORE */}
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-700">Explore</p>
-            <ul className="mt-4 space-y-2">
-              <li><Link href="/shops" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Shops</Link></li>
-              <li><Link href="/products" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Products</Link></li>
-              <li><Link href="/products" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Categories</Link></li>
-              <li><Link href="/products?q=deals" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">All deals</Link></li>
-              <li><Link href="/products?sort=near_me" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Near me</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 3: COMPANY */}
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-700">Company</p>
-            <ul className="mt-4 space-y-2">
-              <li><Link href="/aboutus" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">About Midora</Link></li>
-              <li><Link href="/onboarding" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">How it works</Link></li>
-              <li><Link href="/open-shop" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Open a shop</Link></li>
-              <li><Link href="#" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Careers</Link></li>
-              <li><Link href="#" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Blog</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 4: SUPPORT */}
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-700">Support</p>
-            <ul className="mt-4 space-y-2">
-              <li><Link href="/contactus" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Contact us</Link></li>
-              <li><Link href="/onboarding" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Help Center</Link></li>
-              <li><Link href="/policies" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Safety tips</Link></li>
-              <li><Link href="/policies" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Returns</Link></li>
-              <li><Link href="/contactus" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Report issue</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 5: LEGAL */}
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-700">Legal</p>
-            <ul className="mt-4 space-y-2">
-              <li><Link href="/termsandconditions" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Terms & Conditions</Link></li>
-              <li><Link href="/policies" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/policies" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Cookies Policy</Link></li>
-              <li><Link href="/policies" className="text-xs sm:text-sm text-neutral-500 hover:text-orange-600 transition-colors">Seller Policy</Link></li>
-            </ul>
-          </div>
-
         </div>
       </div>
 
-      {/* 4. Bottom Copy bar */}
-      <div className="border-t border-neutral-200 bg-neutral-100/50 py-5">
-        <div className="dm-container flex flex-col items-center justify-between gap-3 sm:flex-row text-xs text-neutral-500">
-          <p>© {new Date().getFullYear()} Midora Online. All rights reserved.</p>
-          <div className="flex items-center gap-2">
-            <Link href="/termsandconditions" className="hover:text-orange-600">Terms</Link>
-            <span>•</span>
-            <Link href="/policies" className="hover:text-orange-600">Privacy</Link>
-            <span>•</span>
-            <Link href="/policies" className="hover:text-orange-600">Cookies</Link>
-          </div>
-          <button 
+      {/* 4 — Bottom bar */}
+      <div className="border-t border-border bg-surface-subtle">
+        <div className="dm-container flex flex-col items-center justify-between gap-3 py-5 sm:flex-row">
+          <p className="text-xs text-muted sm:text-[13px]">
+            © {new Date().getFullYear()} Midora Online. All rights reserved.
+          </p>
+          <p className="text-xs text-muted sm:text-[13px]">
+            Made with <span className="text-accent">♥</span> in Kampala, Uganda
+          </p>
+          <button
             onClick={scrollToTop}
-            className="grid size-8 place-items-center bg-orange-100 hover:bg-orange-200 active:bg-orange-300 text-orange-600 rounded-full transition-all cursor-pointer"
-            title="Scroll to Top"
+            aria-label="Scroll to top"
+            className="grid size-9 place-items-center rounded-full bg-accent/10 text-accent transition-colors hover:bg-accent hover:text-white focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-2 focus:ring-offset-surface-subtle"
           >
             <ChevronUp className="size-4" />
           </button>
         </div>
       </div>
-
     </footer>
   );
 }

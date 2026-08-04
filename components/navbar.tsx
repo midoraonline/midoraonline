@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
+import { usePresenceStore } from "@/lib/state/presence-store";
 import { apiChat, apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
@@ -212,6 +213,7 @@ export default function Navbar({
   }, []);
 
   const session = useAppSession();
+  const onlineCount = usePresenceStore((s) => s.onlineCount);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const activeHref = useMemo(() => {
@@ -362,6 +364,21 @@ export default function Navbar({
 
           {/* Right actions */}
           <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0 md:gap-2" suppressHydrationWarning>
+            {/* Desktop online-presence pill (mobile equivalent lives in BottomNav) */}
+            {onlineCount > 0 ? (
+              <span
+                className="hidden items-center gap-1.5 rounded-full border border-accent/15 bg-accent/5 px-2.5 py-1 text-[11px] font-semibold text-accent md:inline-flex"
+                title={`${onlineCount.toLocaleString()} people browsing Midora right now`}
+                aria-label={`${onlineCount.toLocaleString()} users online now`}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+                </span>
+                <span>{onlineCount.toLocaleString()} online</span>
+              </span>
+            ) : null}
+
             {/* Mobile search toggle */}
             <button
               type="button"

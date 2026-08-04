@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { useAppSession } from "@/lib/state";
+import { useAppSession, usePresenceStore } from "@/lib/state";
 import { apiChat } from "@/lib/api";
-import { usePresenceCount, useRealtimeTable } from "@/lib/realtime/hooks";
+import { useRealtimeTable } from "@/lib/realtime/hooks";
 
 type Tab = {
   label: string;
   href: string;
   icon: string;
   badge?: number;
-  /** Custom active matcher; defaults to pathname.startsWith(href) (exact for "/"). */
   isActive?: (pathname: string) => boolean;
 };
 
@@ -25,22 +24,7 @@ export default function BottomNav() {
   const role = session.user?.user_role ?? null;
   const isMerchant = role === "merchant" || role === "admin";
 
-  const presenceState = useMemo(() => {
-    if (session.isAuthenticated && session.user) {
-      return {
-        user_id: session.user.id,
-        role: session.user.user_role ?? "customer",
-        available: session.user.user_role === "merchant",
-      };
-    }
-    return { role: "guest" as const };
-  }, [session.isAuthenticated, session.user]);
-
-  const onlineCount = usePresenceCount(
-    "midora:presence:global",
-    presenceState,
-    true,
-  );
+  const onlineCount = usePresenceStore((s) => s.onlineCount);
 
   const fetchUnread = useCallback(async () => {
     if (!session.isAuthenticated) {
@@ -138,15 +122,17 @@ export default function BottomNav() {
   }, [isMerchant, role, session.isAuthenticated, unread]);
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-neutral-200/80 bg-white/90 pb-safe shadow-lg backdrop-blur-md md:hidden">
-      {/* Online strip — mobile-only presence (removed from top navbar) */}
-      <div className="flex items-center justify-center gap-1.5 border-b border-emerald-100/80 bg-emerald-50/90 px-3 py-1 text-[10px] font-semibold text-emerald-700">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        </span>
-        <span>{onlineCount.toLocaleString()} online</span>
-      </div>
+    <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-safe shadow-lg backdrop-blur-md md:hidden">
+      {/* Online strip — mobile-only presence (desktop shows it in the top navbar) */}
+      {onlineCount > 0 ? (
+        <div className="flex items-center justify-center gap-1.5 border-b border-accent/15 bg-accent/5 px-3 py-1 text-[10px] font-semibold text-accent">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+          </span>
+          <span>{onlineCount.toLocaleString()} online now</span>
+        </div>
+      ) : null}
 
       <div className="flex h-14 items-center justify-around px-2">
         {tabs.map((tab) => {
@@ -163,14 +149,14 @@ export default function BottomNav() {
               href={tab.href}
               className={`dm-focus relative flex h-full flex-1 flex-col items-center justify-center py-1.5 transition-colors ${
                 isActive
-                  ? "font-bold text-orange-600"
-                  : "text-neutral-500 hover:text-neutral-800"
+                  ? "font-bold text-accent"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               <span className="relative">
                 <MaterialSymbol
                   name={tab.icon}
-                  className={`!text-2xl ${isActive ? "text-orange-600" : "text-neutral-400"}`}
+                  className={`!text-2xl ${isActive ? "text-accent" : "text-muted"}`}
                   filled={isActive}
                 />
                 {badge > 0 ? (
