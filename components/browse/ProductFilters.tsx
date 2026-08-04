@@ -9,12 +9,10 @@ import {
   type ReactNode,
 } from "react";
 import {
-  Check,
   ChevronDown,
   Loader2,
   MapPin,
   Navigation,
-  Search,
   SlidersHorizontal,
   Star,
   X,
@@ -27,6 +25,13 @@ import {
   reverseGeocode,
   type UserGeo,
 } from "@/lib/geo";
+import { ThemedSelect } from "@/components/browse/ThemedSelect";
+import type {
+  GroupBase,
+  OptionProps,
+  SingleValueProps,
+} from "react-select";
+import { components as RSComponents } from "react-select";
 
 export type SortOption =
   | "relevance"
@@ -238,51 +243,27 @@ function SortDropdown({
   value: SortOption;
   onChange: (v: SortOption) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, () => setOpen(false), open);
   const active = value !== "relevance";
+  const options = useMemo(
+    () =>
+      (Object.keys(SORT_LABELS) as SortOption[]).map((key) => ({
+        value: key,
+        label: SORT_LABELS[key],
+      })),
+    [],
+  );
+  const selected = options.find((o) => o.value === value) ?? options[0];
 
   return (
-    <div ref={ref} className="relative">
-      <Chip active={active} onClick={() => setOpen((v) => !v)}>
-        <span className={active ? "font-semibold" : "font-medium"}>
-          {SORT_LABELS[value]}
-        </span>
-        <ChevronDown
-          className={`size-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Chip>
-
-      {open && (
-        <MenuPanel className="w-44 p-1">
-          {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => {
-                onChange(key);
-                setOpen(false);
-              }}
-              className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs transition-colors ${
-                value === key
-                  ? "bg-primary/10 font-semibold text-primary"
-                  : "font-medium text-foreground/80 hover:bg-surface-subtle"
-              }`}
-            >
-              {value === key ? (
-                <Check className="size-3 shrink-0" strokeWidth={2.5} aria-hidden />
-              ) : (
-                <span className="size-3 shrink-0" aria-hidden />
-              )}
-              {SORT_LABELS[key]}
-            </button>
-          ))}
-        </MenuPanel>
-      )}
-    </div>
+    <ThemedSelect<{ value: SortOption; label: string }>
+      instanceId="filter-sort"
+      aria-label="Sort products"
+      active={active}
+      minControlWidth="min-w-[6.25rem] sm:min-w-[7rem]"
+      value={selected}
+      options={options}
+      onChange={(opt) => opt && onChange(opt.value)}
+    />
   );
 }
 
@@ -373,6 +354,61 @@ function PriceDropdown({
   );
 }
 
+type LocationOptionValue = "__all__" | "__near_me__" | string;
+
+type LocationOption = {
+  value: LocationOptionValue;
+  label: string;
+  count?: number;
+  kind: "all" | "near_me" | "location";
+  loading?: boolean;
+};
+
+function LocationOptionRow(
+  props: OptionProps<LocationOption, false, GroupBase<LocationOption>>,
+) {
+  const { data } = props;
+  return (
+    <RSComponents.Option {...props}>
+      <span className="inline-flex min-w-0 items-center gap-1.5">
+        {data.kind === "near_me" ? (
+          data.loading ? (
+            <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+          ) : (
+            <Navigation className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          )
+        ) : data.kind === "all" ? (
+          <MapPin className="size-3.5 shrink-0 opacity-60" strokeWidth={1.75} aria-hidden />
+        ) : null}
+        <span className="truncate">{data.label}</span>
+      </span>
+      {typeof data.count === "number" ? (
+        <span className="shrink-0 text-[10px] tabular-nums text-muted">
+          {data.count}
+        </span>
+      ) : null}
+    </RSComponents.Option>
+  );
+}
+
+function LocationSingleValue(
+  props: SingleValueProps<LocationOption, false, GroupBase<LocationOption>>,
+) {
+  const { data } = props;
+  return (
+    <RSComponents.SingleValue {...props}>
+      <span className="inline-flex min-w-0 items-center gap-1">
+        {data.kind === "near_me" ? (
+          <Navigation className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
+        ) : (
+          <MapPin className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
+        )}
+        <span className="max-w-[7.5rem] truncate">{data.label}</span>
+      </span>
+    </RSComponents.SingleValue>
+  );
+}
+
 function LocationDropdown({
   locations,
   nearMe,
@@ -388,162 +424,89 @@ function LocationDropdown({
   onChangeLocation: (loc: string | null) => void;
   onSelectNearMe: () => Promise<void>;
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const [locating, setLocating] = useState(false);
   const [nearMeError, setNearMeError] = useState<string | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  useClickOutside(ref, () => setOpen(false), open);
+  const totalCount = useMemo(
+    () => locations.reduce((s, l) => s + l.count, 0),
+    [locations],
+  );
 
-  useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => searchRef.current?.focus(), 60);
-      return () => clearTimeout(t);
+  const nearMeLabel = userGeo?.label ? `Near · ${userGeo.label}` : "Near me";
+
+  const options: LocationOption[] = useMemo(() => {
+    const base: LocationOption[] = [
+      { value: "__all__", label: "All locations", kind: "all", count: totalCount },
+      { value: "__near_me__", label: nearMeLabel, kind: "near_me", loading: locating },
+      ...locations.map<LocationOption>((l) => ({
+        value: l.name,
+        label: l.name,
+        count: l.count,
+        kind: "location",
+      })),
+    ];
+    return base;
+  }, [locations, totalCount, nearMeLabel, locating]);
+
+  const selected: LocationOption =
+    nearMe
+      ? { value: "__near_me__", label: nearMeLabel, kind: "near_me" }
+      : value !== null
+        ? { value, label: value, kind: "location" }
+        : { value: "__all__", label: "Location", kind: "all" };
+
+  const active = nearMe || value !== null;
+
+  async function handleChange(opt: LocationOption | null) {
+    if (!opt) return;
+    if (opt.value === "__all__") {
+      onChangeLocation(null);
+      return;
     }
-    setSearch("");
-    setNearMeError(null);
-  }, [open]);
-
-  const total = useMemo(() => locations.reduce((s, l) => s + l.count, 0), [locations]);
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return q ? locations.filter((l) => l.name.toLowerCase().includes(q)) : locations;
-  }, [locations, search]);
-
-  const chipLabel = nearMe
-    ? userGeo?.label
-      ? `Near · ${userGeo.label}`
-      : "Near me"
-    : (value ?? "Location");
-  const isActive = nearMe || value !== null;
-
-  async function handleNearMe() {
-    setLocating(true);
-    setNearMeError(null);
-    try {
-      await onSelectNearMe();
-      setOpen(false);
-    } catch (err) {
-      const message =
-        err instanceof GeoLocationError
-          ? err.message
-          : err instanceof Error
+    if (opt.value === "__near_me__") {
+      setLocating(true);
+      setNearMeError(null);
+      try {
+        await onSelectNearMe();
+      } catch (err) {
+        setNearMeError(
+          err instanceof GeoLocationError
             ? err.message
-            : "Couldn’t use your location.";
-      setNearMeError(message);
-    } finally {
-      setLocating(false);
+            : err instanceof Error
+              ? err.message
+              : "Couldn’t use your location.",
+        );
+      } finally {
+        setLocating(false);
+      }
+      return;
     }
+    onChangeLocation(opt.value);
   }
 
   return (
-    <div ref={ref} className="relative">
-      <Chip active={isActive} onClick={() => setOpen((v) => !v)}>
-        {nearMe ? (
-          <Navigation className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-        ) : (
-          <MapPin className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-        )}
-        <span className={`max-w-[6.5rem] truncate ${isActive ? "font-semibold" : "font-medium"}`}>
-          {chipLabel}
-        </span>
-        <ChevronDown
-          className={`size-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Chip>
-
-      {open && (
-        <MenuPanel className="w-64">
-          {locations.length > 5 && (
-            <div className="border-b border-border p-2">
-              <div className="flex items-center gap-1.5 rounded-md bg-surface-subtle px-2 py-1.5">
-                <Search className="size-3 shrink-0 text-muted" strokeWidth={1.75} aria-hidden />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  placeholder="Search…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-[11px] text-foreground placeholder:text-muted focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-          <div className="max-h-56 overflow-y-auto p-1">
-            <button
-              type="button"
-              onClick={() => {
-                onChangeLocation(null);
-                setOpen(false);
-              }}
-              className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition-colors ${
-                !nearMe && value === null
-                  ? "bg-accent/10 text-accent"
-                  : "text-foreground/80 hover:bg-surface-subtle"
-              }`}
-            >
-              <span>All locations</span>
-              <span className="text-[10px] tabular-nums text-muted">{total}</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={locating}
-              onClick={() => void handleNearMe()}
-              className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
-                nearMe
-                  ? "bg-accent/10 text-accent"
-                  : "text-foreground/80 hover:bg-surface-subtle"
-              }`}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                {locating ? (
-                  <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
-                ) : (
-                  <Navigation className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
-                )}
-                {locating ? "Getting location…" : "Near me"}
-              </span>
-              {nearMe && !locating ? (
-                <Check className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
-              ) : null}
-            </button>
-
-            {nearMeError ? (
-              <p className="px-2.5 py-1.5 text-[10px] leading-snug text-rose-600">
-                {nearMeError}
-              </p>
-            ) : null}
-
-            <div className="my-1 border-t border-border/70" role="separator" />
-
-            {filtered.map((loc) => (
-              <button
-                key={loc.name}
-                type="button"
-                onClick={() => {
-                  onChangeLocation(loc.name);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition-colors ${
-                  !nearMe && value === loc.name
-                    ? "bg-accent/10 text-accent"
-                    : "text-foreground/80 hover:bg-surface-subtle"
-                }`}
-              >
-                <span className="truncate">{loc.name}</span>
-                <span className="shrink-0 text-[10px] tabular-nums text-muted">{loc.count}</span>
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-2.5 py-4 text-center text-[11px] text-muted">No locations found</p>
-            )}
-          </div>
-        </MenuPanel>
-      )}
+    <div className="relative">
+      <ThemedSelect<LocationOption>
+        instanceId="filter-location"
+        aria-label="Filter by location"
+        active={active}
+        isSearchable
+        minControlWidth="min-w-[7rem] sm:min-w-[8.5rem]"
+        placeholder="Location"
+        value={selected}
+        options={options}
+        onChange={(opt) => void handleChange(opt)}
+        isOptionDisabled={(opt) => opt.kind === "near_me" && locating}
+        components={{
+          Option: LocationOptionRow,
+          SingleValue: LocationSingleValue,
+        }}
+        noOptionsMessage={() => "No locations found"}
+      />
+      {nearMeError ? (
+        <p className="absolute left-0 top-full z-10 mt-1 max-w-[14rem] truncate text-[10px] font-medium text-rose-600">
+          {nearMeError}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -578,8 +541,6 @@ type Props = {
 
 export default function ProductFilters({ products, filters, onChange }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerLocating, setDrawerLocating] = useState(false);
-  const [drawerNearMeError, setDrawerNearMeError] = useState<string | null>(null);
 
   const locations = useMemo(() => collectLocationEntries(products), [products]);
   const count = activeFilterCount(filters);
@@ -685,11 +646,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
     });
   }
 
-  const locationFilterActive = filters.nearMe || filters.location !== null;
-  const drawerExtrasActive =
-    filters.minRating !== null || locationFilterActive;
-
-  /** Always show location control so Near me works even before listings load places. */
+  // Always show location control so Near me works even before listings load places.
   const showLocationControl = true;
 
   return (
@@ -743,39 +700,24 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
           </Chip>
 
           {showLocationControl && (
-            <div className="hidden sm:block">
-              <LocationDropdown
-                locations={locations}
-                nearMe={filters.nearMe}
-                userGeo={filters.userGeo}
-                value={filters.location}
-                onChangeLocation={selectNamedLocation}
-                onSelectNearMe={activateNearMe}
-              />
-            </div>
+            <LocationDropdown
+              locations={locations}
+              nearMe={filters.nearMe}
+              userGeo={filters.userGeo}
+              value={filters.location}
+              onChangeLocation={selectNamedLocation}
+              onSelectNearMe={activateNearMe}
+            />
           )}
 
-          {/* Rating + location live in “More” on mobile; rating always in More on desktop to save space */}
-          <Chip
-            active={drawerExtrasActive}
-            onClick={() => setDrawerOpen(true)}
-            className="sm:hidden"
-          >
-            <SlidersHorizontal className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-            <span className={drawerExtrasActive ? "font-semibold" : "font-medium"}>More</span>
-            {drawerExtrasActive ? (
-              <span className="size-1.5 rounded-full bg-current opacity-80" aria-hidden />
-            ) : null}
-          </Chip>
-
+          {/* Rating lives in the drawer on all sizes to keep the strip compact */}
           <Chip
             active={filters.minRating !== null}
             onClick={() => setDrawerOpen(true)}
-            className="hidden sm:inline-flex"
           >
             <Star className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
             <span className={filters.minRating !== null ? "font-semibold" : "font-medium"}>
-              {filters.minRating !== null ? `${filters.minRating}+` : "Rating"}
+              {filters.minRating !== null ? `${filters.minRating}+ ★` : "Rating"}
             </span>
           </Chip>
 
@@ -811,7 +753,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
           />
           <div className="absolute bottom-0 left-0 right-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-surface shadow-2xl sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[min(80vh,28rem)] sm:w-[22rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl">
             <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold text-foreground">More filters</p>
+              <p className="text-sm font-semibold text-foreground">Rating</p>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
@@ -855,111 +797,12 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
                   })}
                 </div>
               </div>
-
-              <div className="sm:hidden">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                  Location
-                </p>
-                <div className="max-h-52 space-y-1 overflow-y-auto">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearLocationFilter();
-                      setDrawerNearMeError(null);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium ${
-                      !filters.nearMe && filters.location === null
-                        ? "bg-accent/10 text-accent"
-                        : "bg-surface-subtle text-foreground/80"
-                    }`}
-                  >
-                    All locations
-                    {!filters.nearMe && filters.location === null ? (
-                      <Check className="size-4" strokeWidth={2.5} aria-hidden />
-                    ) : null}
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={drawerLocating}
-                    onClick={() => {
-                      void (async () => {
-                        setDrawerLocating(true);
-                        setDrawerNearMeError(null);
-                        try {
-                          await activateNearMe();
-                        } catch (err) {
-                          setDrawerNearMeError(
-                            err instanceof GeoLocationError
-                              ? err.message
-                              : err instanceof Error
-                                ? err.message
-                                : "Couldn’t use your location.",
-                          );
-                        } finally {
-                          setDrawerLocating(false);
-                        }
-                      })();
-                    }}
-                    className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-sm font-medium disabled:opacity-60 ${
-                      filters.nearMe
-                        ? "bg-accent/10 text-accent"
-                        : "bg-surface-subtle text-foreground/80"
-                    }`}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      {drawerLocating ? (
-                        <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
-                      ) : (
-                        <Navigation className="size-4 shrink-0" strokeWidth={2} aria-hidden />
-                      )}
-                      {drawerLocating ? "Getting location…" : "Near me"}
-                    </span>
-                    {filters.nearMe && !drawerLocating ? (
-                      <Check className="size-4" strokeWidth={2.5} aria-hidden />
-                    ) : null}
-                  </button>
-
-                  {drawerNearMeError ? (
-                    <p className="px-1 py-1 text-[11px] leading-snug text-rose-600">
-                      {drawerNearMeError}
-                    </p>
-                  ) : null}
-
-                  {locations.map((loc) => (
-                    <button
-                      key={loc.name}
-                      type="button"
-                      onClick={() => {
-                        selectNamedLocation(loc.name);
-                        setDrawerNearMeError(null);
-                      }}
-                      className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-sm font-medium ${
-                        !filters.nearMe && filters.location === loc.name
-                          ? "bg-accent/10 text-accent"
-                          : "bg-surface-subtle text-foreground/80"
-                      }`}
-                    >
-                      <span className="truncate">{loc.name}</span>
-                      <span className="flex shrink-0 items-center gap-2 text-xs tabular-nums text-muted">
-                        {loc.count}
-                        {!filters.nearMe && filters.location === loc.name ? (
-                          <Check className="size-4 text-accent" strokeWidth={2.5} aria-hidden />
-                        ) : null}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
               <button
                 type="button"
-                onClick={() => {
-                  update({ minRating: null, location: null, nearMe: false, userGeo: null });
-                  setDrawerNearMeError(null);
-                }}
+                onClick={() => update({ minRating: null })}
                 className="flex-1 rounded-md border border-border px-3 py-2.5 text-sm font-medium text-foreground"
               >
                 Reset

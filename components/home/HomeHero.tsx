@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import HeroActions from "@/components/home/HeroActions";
 
 export default function HomeHero() {
   return (
@@ -19,20 +19,7 @@ export default function HomeHero() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/open-shop"
-            className="rounded-full bg-accent px-5 py-2 text-xs font-bold text-white shadow-lg transition-all hover:bg-accent-hover active:scale-95"
-          >
-            Create a Shop
-          </Link>
-          <Link
-            href="/products"
-            className="rounded-full border border-white/25 bg-white/10 px-5 py-2 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/15 active:scale-95"
-          >
-            Browse Products
-          </Link>
-        </div>
+        <HeroActions />
 
         <div className="hidden grid-cols-3 gap-3 border-t border-white/10 pt-3 sm:grid">
           {[
