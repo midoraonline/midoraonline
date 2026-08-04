@@ -327,7 +327,7 @@ export default function ProductCard({
         className="dm-product-card dm-card-hover flex h-full min-h-[160px] w-full flex-row overflow-hidden bg-surface sm:min-h-[200px]"
       >
         <div className="group relative w-2/5 shrink-0 overflow-hidden bg-surface-subtle sm:w-[42%]">
-          <Link href={productHref} className="dm-focus block h-full w-full outline-none">
+          <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
@@ -387,7 +387,7 @@ export default function ProductCard({
       className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden"
     >
       <div className="group relative aspect-square w-full overflow-hidden bg-surface-subtle sm:aspect-[4/3]">
-        <Link href={productHref} className="dm-focus block h-full w-full outline-none">
+        <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">
           {product.imageUrl ? (
             <Image
               src={product.imageUrl}

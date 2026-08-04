@@ -56,21 +56,11 @@ export default function CategoryBrowseSection({
       {showHeader && (
         <div className="mb-2 flex items-baseline justify-between gap-2 px-0.5">
           <h2 className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-accent uppercase sm:text-xs sm:normal-case sm:tracking-tight">
-            <span className="size-1.5 rounded-full bg-accent" aria-hidden />
             Browse categories
           </h2>
-          {browseAllHref && (
-            <Link
-              href={browseAllHref}
-              className="text-[11px] font-medium text-accent transition-colors hover:text-accent-hover"
-            >
-              Browse all
-            </Link>
-          )}
         </div>
       )}
 
-      {/* Parent category strip — icon tiles, ranked by listing volume */}
       <div className="relative">
         <div
           className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-accent/[0.06] to-transparent sm:hidden"

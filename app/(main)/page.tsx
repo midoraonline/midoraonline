@@ -11,21 +11,12 @@ const EMPTY_FEED = {
   products: [] as ReturnType<typeof homeFeedProductToCard>[],
 };
 
-/**
- * Call /api/feed (our secure internal Next.js route) which reads the
- * midora_access cookie server-side and forwards it as a Bearer token to
- * FastAPI. This avoids cross-service cookie forwarding issues on Vercel.
- */
 async function loadFeed() {
   try {
     const site = publicSiteOrigin();
     const cookieStore = await cookies();
     const token = cookieStore.get("midora_access")?.value;
 
-    // Build the upstream FastAPI URL with the token as a Bearer header.
-    // We call FastAPI directly from the Next.js server — the key is that
-    // we explicitly pass the Authorization header so FastAPI can identify
-    // the user and return a personalized feed.
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -37,7 +28,6 @@ async function loadFeed() {
 
     const res = await fetch(`${apiBase}/api/v1/feed/home?limit=36`, {
       headers,
-      cache: "no-store",
     });
 
     if (res.ok) {
