@@ -28,8 +28,7 @@ export default function MainLayout({
             </span>
           </div>
           <div className="text-xs text-white/80">
-            Rent a shop for{" "}
-            <span className="font-semibold text-accent">5,000 UGX/month</span>
+            Create your shop space and post your Items
           </div>
         </div>
       </div>
