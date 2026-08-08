@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Video as VideoIcon, X } from "lucide-react";
+import { AlertTriangle, Clock, Video as VideoIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import {
@@ -15,6 +15,7 @@ import CategoryPicker from "@/components/CategoryPicker";
 import FormModal from "@/components/FormModal";
 import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
+import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import {
@@ -211,6 +212,11 @@ export default function ProductFormModal({
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  // Track media the user added *this session* (for cancel-cleanup) and
+  // media they X-ed off the grid (for save-cleanup). UploadThing charges
+  // for storage, so we reap orphaned files as soon as intent is clear.
+  const [sessionUploaded, setSessionUploaded] = useState<string[]>([]);
+  const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
   const { items: categoryItems, tree: categoryTree } = useCategoryItems();
   const initialRef = useRef(initialDraft);
 
@@ -277,6 +283,12 @@ export default function ProductFormModal({
           : window.confirm("Discard your changes?");
       if (!ok) return;
     }
+    // Any media the user uploaded this session but never saved is now
+    // orphaned — drop it from UploadThing. Persisted media (sessionRemoved)
+    // is left alone because the DB row still points at it.
+    if (sessionUploaded.length) {
+      void deleteUploadThingFiles(sessionUploaded);
+    }
     onClose();
   }
 
@@ -332,6 +344,14 @@ export default function ProductFormModal({
     });
     try {
       await request;
+      // Save succeeded → media the user X-ed off is truly gone.
+      // Session-uploaded media that survived the save is now persisted,
+      // so it stops being an orphan candidate.
+      if (sessionRemoved.length) {
+        void deleteUploadThingFiles(sessionRemoved);
+      }
+      setSessionRemoved([]);
+      setSessionUploaded([]);
       initialRef.current = draft;
       onSaved();
     } catch {
@@ -388,6 +408,41 @@ export default function ProductFormModal({
         noValidate
         className="space-y-5"
       >
+        {/* Moderation status banner — merchants need to see WHY a listing
+            was rejected or is still under review. review_notes is populated
+            by the moderation pipeline; if it exists we surface it here. */}
+        {mode === "edit" && product && product.review_notes
+          ? (() => {
+              const rejected = product.status === "rejected";
+              const pending = product.status === "pending_review";
+              if (!rejected && !pending) return null;
+              const tone = rejected
+                ? "border-[color:var(--error)]/40 bg-[color:var(--error)]/10 text-[color:var(--error)]"
+                : "border-amber-400/40 bg-amber-400/10 text-amber-700 dark:text-amber-300";
+              const Icon = rejected ? AlertTriangle : Clock;
+              const heading = rejected
+                ? "This listing was rejected by moderation"
+                : "Under review";
+              return (
+                <div
+                  role="status"
+                  className={`flex gap-3 rounded-xl border px-3 py-2.5 text-sm ${tone}`}
+                >
+                  <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">{heading}</p>
+                    <p className="text-xs leading-snug opacity-90">
+                      {product.review_notes}
+                    </p>
+                    <p className="text-[11px] opacity-70">
+                      Edit the title, description, or photos and save — it will be re-reviewed automatically.
+                    </p>
+                  </div>
+                </div>
+              );
+            })()
+          : null}
+
         {/* Listing type */}
         {allowTypePick ? (
           <div className="space-y-2">
@@ -842,10 +897,18 @@ export default function ProductFormModal({
             <MediaGrid
               urls={draft.image_urls}
               onRemove={(i) =>
-                setDraft((d) => ({
-                  ...d,
-                  image_urls: d.image_urls.filter((_, j) => j !== i),
-                }))
+                setDraft((d) => {
+                  const gone = d.image_urls[i];
+                  if (gone) {
+                    setSessionRemoved((prev) =>
+                      prev.includes(gone) ? prev : [...prev, gone],
+                    );
+                  }
+                  return {
+                    ...d,
+                    image_urls: d.image_urls.filter((_, j) => j !== i),
+                  };
+                })
               }
             />
             <div className="flex flex-wrap items-center gap-3">
@@ -854,22 +917,24 @@ export default function ProductFormModal({
                 multiple
                 label="Add photos"
                 watermarkLogoUrl={shopLogoUrl}
-                onUploadManyComplete={(newUrls) =>
+                onUploadManyComplete={(newUrls) => {
+                  setSessionUploaded((prev) => [...prev, ...newUrls]);
                   setDraft((d) => ({
                     ...d,
                     image_urls: [...d.image_urls, ...newUrls],
-                  }))
-                }
+                  }));
+                }}
               />
               <VideoUpload
                 endpoint="productVideo"
                 label="Add video"
-                onUploadManyComplete={(newUrls) =>
+                onUploadManyComplete={(newUrls) => {
+                  setSessionUploaded((prev) => [...prev, ...newUrls]);
                   setDraft((d) => ({
                     ...d,
                     image_urls: [...d.image_urls, ...newUrls],
-                  }))
-                }
+                  }));
+                }}
               />
             </div>
             {showErrors && errors.images ? (
