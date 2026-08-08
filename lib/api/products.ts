@@ -33,6 +33,8 @@ export type Product = {
   viewer_liked?: boolean | null;
   whatsapp_clicks?: number | null;
   messages?: number | null;
+  review_notes?: string | null;
+  reviewed_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   boosted?: boolean;

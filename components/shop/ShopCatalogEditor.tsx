@@ -28,6 +28,7 @@ import {
 import { useAppSession } from "@/lib/state";
 import ProductFormModal from "@/components/shop/ProductFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { deleteUploadThingFiles } from "@/lib/uploadthing";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -149,6 +150,10 @@ export default function ShopCatalogEditor({
   async function removeProduct(product: Product) {
     if (!isAuthed) return;
     setDeleting(true);
+    // Grab the URLs *before* the delete lands so we can reap the CDN
+    // files. Losing the product row would leave these orphaned in
+    // UploadThing storage forever.
+    const mediaUrls = productImageUrls(product);
     const request = apiProducts.deleteProduct(product.id);
     toast.promise(request, {
       loading: "Removing listing…",
@@ -157,6 +162,10 @@ export default function ShopCatalogEditor({
     });
     try {
       await request;
+      // Fire-and-forget — storage cleanup, not user-critical.
+      if (mediaUrls.length) {
+        void deleteUploadThingFiles(mediaUrls);
+      }
       if (modal?.mode === "edit" && modal.product?.id === product.id) setModal(null);
       setPendingDelete(null);
       await load();
@@ -327,6 +336,25 @@ export default function ShopCatalogEditor({
                         {p.view_count ?? 0} views
                         {mediaCount > 0 && ` · ${mediaCount} media`}
                       </p>
+                      {/* Moderation reason — shown for rejected or under-review
+                          listings when the pipeline stamped review_notes. Lets
+                          the merchant fix the underlying issue without opening
+                          the edit modal first. */}
+                      {(p.status === "rejected" || p.status === "pending_review") && p.review_notes ? (
+                        <p
+                          className={`mt-1 text-[11px] leading-snug ${
+                            p.status === "rejected"
+                              ? "text-[color:var(--error)]"
+                              : "text-[color:var(--warning)]"
+                          }`}
+                          title={p.review_notes}
+                        >
+                          <span className="font-semibold">
+                            {p.status === "rejected" ? "Rejected: " : "Reviewer note: "}
+                          </span>
+                          <span className="opacity-90">{p.review_notes}</span>
+                        </p>
+                      ) : null}
                     </div>
 
                     {/* Actions */}
