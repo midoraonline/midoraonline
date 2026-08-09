@@ -408,21 +408,33 @@ export default function ProductFormModal({
         noValidate
         className="space-y-5"
       >
-        {/* Moderation status banner — merchants need to see WHY a listing
-            was rejected or is still under review. review_notes is populated
-            by the moderation pipeline; if it exists we surface it here. */}
-        {mode === "edit" && product && product.review_notes
+        {/* Moderation status banner — covers three cases:
+            1. rejected + notes  → explain why + how to fix
+            2. pending_review + notes → reviewer flagged something, needs edit
+            3. pending_review (no notes) → fresh submission, set expectation */}
+        {mode === "edit" && product
           ? (() => {
               const rejected = product.status === "rejected";
               const pending = product.status === "pending_review";
               if (!rejected && !pending) return null;
+              const notes = product.review_notes ?? "";
               const tone = rejected
                 ? "border-[color:var(--error)]/40 bg-[color:var(--error)]/10 text-[color:var(--error)]"
                 : "border-amber-400/40 bg-amber-400/10 text-amber-700 dark:text-amber-300";
               const Icon = rejected ? AlertTriangle : Clock;
               const heading = rejected
-                ? "This listing was rejected by moderation"
-                : "Under review";
+                ? "Not approved by moderation"
+                : notes
+                  ? "Under review"
+                  : "Reviewing your listing";
+              const body = notes
+                ? notes
+                : "Automated checks usually finish within a minute. Your listing goes live automatically once approved.";
+              const hint = rejected
+                ? "Fix the flagged content below and save — it re-enters the queue automatically."
+                : notes
+                  ? "Edit the title, description, or photos and save — it will be re-reviewed automatically."
+                  : null;
               return (
                 <div
                   role="status"
@@ -431,12 +443,8 @@ export default function ProductFormModal({
                   <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                   <div className="space-y-1">
                     <p className="font-semibold">{heading}</p>
-                    <p className="text-xs leading-snug opacity-90">
-                      {product.review_notes}
-                    </p>
-                    <p className="text-[11px] opacity-70">
-                      Edit the title, description, or photos and save — it will be re-reviewed automatically.
-                    </p>
+                    <p className="text-xs leading-snug opacity-90">{body}</p>
+                    {hint ? <p className="text-[11px] opacity-70">{hint}</p> : null}
                   </div>
                 </div>
               );

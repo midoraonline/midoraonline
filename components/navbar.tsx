@@ -108,6 +108,14 @@ function ProfileDropdown({
             {isMerchant ? (
               <>
                 <Link
+                  href="/merchant/listings"
+                  onClick={close}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+                >
+                  <MaterialSymbol name="inventory_2" className="!text-base text-muted shrink-0" />
+                  My listings
+                </Link>
+                <Link
                   href="/merchant/shops"
                   onClick={close}
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"

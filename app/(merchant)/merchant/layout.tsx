@@ -6,6 +6,7 @@ import DashboardShell, {
 
 const NAV: DashboardNavItem[] = [
   { href: "/merchant", label: "Overview", icon: <IconHome />, exact: true },
+  { href: "/merchant/listings", label: "My listings", icon: <IconListings /> },
   { href: "/merchant/shops", label: "My shops", icon: <IconStore /> },
   { href: "/merchant/conversations", label: "Conversations", icon: <IconChat /> },
   { href: "/merchant/leads", label: "Leads", icon: <IconTrend /> },
@@ -46,6 +47,16 @@ function IconStore() {
       <path d="M3 9 5 4h14l2 5" />
       <path d="M4 9h16v11H4z" />
       <path d="M10 14h4" />
+    </svg>
+  );
+}
+function IconListings() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M7 13h6" />
+      <path d="M7 17h4" />
     </svg>
   );
 }

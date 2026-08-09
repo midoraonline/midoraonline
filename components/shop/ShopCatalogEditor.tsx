@@ -29,6 +29,7 @@ import { useAppSession } from "@/lib/state";
 import ProductFormModal from "@/components/shop/ProductFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
+import StatusBadge from "@/components/shop/StatusBadge";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -36,28 +37,6 @@ function formatUGX(n: number) {
     currency: "UGX",
     maximumFractionDigits: 0,
   }).format(n);
-}
-
-const STATUS_CONFIG: Record<ProductStatus, { label: string; className: string }> = {
-  active:         { label: "Active",         className: "text-[color:var(--success)]" },
-  pending_review: { label: "Pending review", className: "text-[color:var(--warning)]" },
-  rejected:       { label: "Rejected",       className: "text-[color:var(--error)]" },
-  draft:          { label: "Draft",          className: "text-foreground/60" },
-  hidden:         { label: "Hidden",         className: "text-foreground/60" },
-  expired:        { label: "Expired",        className: "text-foreground/60" },
-  sold:           { label: "Sold",           className: "text-foreground/60" },
-};
-
-function StatusBadge({ status, is_published }: { status?: ProductStatus | null; is_published?: boolean | null }) {
-  const cfg = status ? STATUS_CONFIG[status] : null;
-  if (cfg) {
-    return <span className={cfg.className}>{cfg.label}</span>;
-  }
-  return is_published ? (
-    <span className="text-[color:var(--success)]">Published</span>
-  ) : (
-    <span className="text-foreground/60">Draft</span>
-  );
 }
 
 // ── Inline toggle switch — uses the design-system dm-toggle utility ──────────
@@ -218,21 +197,6 @@ export default function ShopCatalogEditor({
     }
   }
 
-  async function submitForReview(p: Product) {
-    if (!isAuthed) return;
-    const request = apiProducts.updateProduct(p.id, { status: "pending_review" });
-    toast.promise(request, {
-      loading: "Submitting for review…",
-      success: "Submitted for review",
-      error: (e) => (e instanceof Error ? e.message : "Submit failed."),
-    });
-    try {
-      await request;
-      await load();
-    } catch {
-      /* sonner surfaced */
-    }
-  }
 
   const kindLabel =
     LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase() + "s";
@@ -354,6 +318,11 @@ export default function ShopCatalogEditor({
                           </span>
                           <span className="opacity-90">{p.review_notes}</span>
                         </p>
+                      ) : p.status === "pending_review" ? (
+                        <p className="mt-1 text-[11px] leading-snug text-[color:var(--warning)]">
+                          <span className="font-semibold">Reviewing your listing — </span>
+                          <span className="opacity-90">usually done within a minute. It goes live automatically once approved.</span>
+                        </p>
                       ) : null}
                     </div>
 
@@ -407,15 +376,18 @@ export default function ShopCatalogEditor({
                         </button>
                       )}
 
-                      {/* Row 4: Resubmit for review (only when rejected) */}
+                      {/* Row 4: Rejected → open the editor so the merchant can
+                          actually fix what the moderator flagged before
+                          resubmitting. A silent status flip would just get
+                          rejected again for the same reason. */}
                       {p.status === "rejected" && (
                         <button
                           type="button"
                           className="dm-btn dm-btn-primary dm-btn-sm"
-                          title="Submit for admin review"
-                          onClick={() => void submitForReview(p)}
+                          title="Edit the listing and resubmit for review"
+                          onClick={() => setModal({ mode: "edit", product: p })}
                         >
-                          Resubmit for review
+                          Edit & resubmit
                         </button>
                       )}
                     </div>
