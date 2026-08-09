@@ -29,6 +29,7 @@ import { useAppSession } from "@/lib/state";
 import ProductFormModal from "@/components/shop/ProductFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
+import StatusBadge from "@/components/shop/StatusBadge";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -36,76 +37,6 @@ function formatUGX(n: number) {
     currency: "UGX",
     maximumFractionDigits: 0,
   }).format(n);
-}
-
-const STATUS_CONFIG: Record<
-  ProductStatus,
-  { label: string; pillClass: string; dot?: "pulse" | "solid" | "none" }
-> = {
-  active: {
-    label: "Live",
-    pillClass:
-      "bg-[color:var(--success)]/12 text-[color:var(--success)] ring-1 ring-inset ring-[color:var(--success)]/25",
-    dot: "solid",
-  },
-  pending_review: {
-    label: "Reviewing",
-    pillClass:
-      "bg-[color:var(--warning)]/12 text-[color:var(--warning)] ring-1 ring-inset ring-[color:var(--warning)]/25",
-    dot: "pulse",
-  },
-  rejected: {
-    label: "Not approved",
-    pillClass:
-      "bg-[color:var(--error)]/12 text-[color:var(--error)] ring-1 ring-inset ring-[color:var(--error)]/25",
-    dot: "solid",
-  },
-  draft: {
-    label: "Draft",
-    pillClass: "bg-foreground/[0.06] text-foreground/70 ring-1 ring-inset ring-foreground/10",
-  },
-  hidden: {
-    label: "Hidden",
-    pillClass: "bg-foreground/[0.06] text-foreground/70 ring-1 ring-inset ring-foreground/10",
-  },
-  expired: {
-    label: "Expired",
-    pillClass: "bg-foreground/[0.06] text-foreground/60 ring-1 ring-inset ring-foreground/10",
-  },
-  sold: {
-    label: "Sold",
-    pillClass: "bg-foreground/[0.06] text-foreground/60 ring-1 ring-inset ring-foreground/10",
-  },
-};
-
-function StatusBadge({
-  status,
-  is_published,
-}: {
-  status?: ProductStatus | null;
-  is_published?: boolean | null;
-}) {
-  const cfg = status ? STATUS_CONFIG[status] : null;
-  const resolved =
-    cfg ??
-    (is_published
-      ? STATUS_CONFIG.active
-      : STATUS_CONFIG.draft);
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${resolved.pillClass}`}
-    >
-      {resolved.dot === "pulse" ? (
-        <span className="relative inline-flex size-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
-          <span className="relative inline-flex size-1.5 rounded-full bg-current" />
-        </span>
-      ) : resolved.dot === "solid" ? (
-        <span className="inline-flex size-1.5 rounded-full bg-current" />
-      ) : null}
-      {resolved.label}
-    </span>
-  );
 }
 
 // ── Inline toggle switch — uses the design-system dm-toggle utility ──────────
@@ -369,7 +300,30 @@ export default function ShopCatalogEditor({
                         {p.view_count ?? 0} views
                         {mediaCount > 0 && ` · ${mediaCount} media`}
                       </p>
-                      {/* Moderation reason \u2014 shown for rejected or under-review\n                          listings when the pipeline stamped review_notes. Lets\n                          the merchant fix the underlying issue without opening\n                          the edit modal first. */}\n                      {(p.status === \"rejected\" || p.status === \"pending_review\") && p.review_notes ? (\n                        <p\n                          className={`mt-1 text-[11px] leading-snug ${\n                            p.status === \"rejected\"\n                              ? \"text-[color:var(--error)]\"\n                              : \"text-[color:var(--warning)]\"\n                          }`}\n                          title={p.review_notes}\n                        >\n                          <span className=\"font-semibold\">\n                            {p.status === \"rejected\" ? \"Rejected: \" : \"Reviewer note: \"}\n                          </span>\n                          <span className=\"opacity-90\">{p.review_notes}</span>\n                        </p>\n                      ) : p.status === \"pending_review\" ? (\n                        <p className=\"mt-1 text-[11px] leading-snug text-[color:var(--warning)]\">\n                          <span className=\"font-semibold\">Reviewing your listing \u2014 </span>\n                          <span className=\"opacity-90\">usually done within a minute. It goes live automatically once approved.</span>\n                        </p>\n                      ) : null}
+                      {/* Moderation reason — shown for rejected or under-review
+                          listings when the pipeline stamped review_notes. Lets
+                          the merchant fix the underlying issue without opening
+                          the edit modal first. */}
+                      {(p.status === "rejected" || p.status === "pending_review") && p.review_notes ? (
+                        <p
+                          className={`mt-1 text-[11px] leading-snug ${
+                            p.status === "rejected"
+                              ? "text-[color:var(--error)]"
+                              : "text-[color:var(--warning)]"
+                          }`}
+                          title={p.review_notes}
+                        >
+                          <span className="font-semibold">
+                            {p.status === "rejected" ? "Rejected: " : "Reviewer note: "}
+                          </span>
+                          <span className="opacity-90">{p.review_notes}</span>
+                        </p>
+                      ) : p.status === "pending_review" ? (
+                        <p className="mt-1 text-[11px] leading-snug text-[color:var(--warning)]">
+                          <span className="font-semibold">Reviewing your listing — </span>
+                          <span className="opacity-90">usually done within a minute. It goes live automatically once approved.</span>
+                        </p>
+                      ) : null}
                     </div>
 
                     {/* Actions */}
@@ -422,7 +376,20 @@ export default function ShopCatalogEditor({
                         </button>
                       )}
 
-                      {/* Row 4: Rejected \u2192 open the editor so the merchant can\n                          actually fix what the moderator flagged before\n                          resubmitting. A silent status flip would just get\n                          rejected again for the same reason. */}\n                      {p.status === \"rejected\" && (\n                        <button\n                          type=\"button\"\n                          className=\"dm-btn dm-btn-primary dm-btn-sm\"\n                          title=\"Edit the listing and resubmit for review\"\n                          onClick={() => setModal({ mode: \"edit\", product: p })}\n                        >\n                          Edit & resubmit\n                        </button>\n                      )}
+                      {/* Row 4: Rejected → open the editor so the merchant can
+                          actually fix what the moderator flagged before
+                          resubmitting. A silent status flip would just get
+                          rejected again for the same reason. */}
+                      {p.status === "rejected" && (
+                        <button
+                          type="button"
+                          className="dm-btn dm-btn-primary dm-btn-sm"
+                          title="Edit the listing and resubmit for review"
+                          onClick={() => setModal({ mode: "edit", product: p })}
+                        >
+                          Edit & resubmit
+                        </button>
+                      )}
                     </div>
                   </div>
                 </li>

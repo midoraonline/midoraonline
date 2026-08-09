@@ -39,6 +39,7 @@ const ROLE_ACCENT: Record<DashboardRole, { active: string; pill: string }> = {
 // Map route → screen name shown in the header
 const SCREEN_NAMES: Record<string, string> = {
   "/merchant":               "Overview",
+  "/merchant/listings":      "My Listings",
   "/merchant/shops":         "My Shops",
   "/merchant/conversations": "Conversations",
   "/merchant/leads":         "Leads",

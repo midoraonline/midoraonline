@@ -57,12 +57,14 @@ export default function BottomNav() {
   );
 
   const tabs: Tab[] = useMemo(() => {
+    // Merchants see a listings-first tab (their most-used surface: check status,
+    // edit, delete, add new). Customers see a shops-directory tab.
     const shopsTab: Tab = isMerchant
       ? {
-          label: "My shops",
-          href: "/merchant/shops",
-          icon: "storefront",
-          isActive: (p) => p.startsWith("/merchant/shops"),
+          label: "My listings",
+          href: "/merchant/listings",
+          icon: "inventory_2",
+          isActive: (p) => p.startsWith("/merchant/listings"),
         }
       : {
           label: "Shops",
@@ -87,7 +89,9 @@ export default function BottomNav() {
         icon: "space_dashboard",
         isActive: (p) =>
           p === "/merchant" ||
-          (p.startsWith("/merchant/") && !p.startsWith("/merchant/shops")),
+          (p.startsWith("/merchant/") &&
+            !p.startsWith("/merchant/shops") &&
+            !p.startsWith("/merchant/listings")),
       };
     } else {
       accountTab = {
