@@ -176,12 +176,15 @@ export const merchantApi = {
 
   shopProducts: async (
     shopId: string,
-    opts?: { includeUnpublished?: boolean },
+    _opts?: { includeUnpublished?: boolean },
   ): Promise<Product[]> => {
-    const qs = opts?.includeUnpublished ? "?include_unpublished=true" : "";
+    // The FastAPI shop-products route serves both the public catalog and the
+    // owner's queue view off the same URL: when the caller's Bearer token
+    // matches shop.owner_id, unpublished + non-active statuses are returned.
+    // The forwarded `midora_access` cookie handles that.
     const res = await safeServerFetch(
       serverApiFetch<{ items: Product[] }>(
-        `/api/v1/products/shop/${encodeURIComponent(shopId)}${qs}`,
+        `/api/v1/shops/${encodeURIComponent(shopId)}/products?limit=100`,
       ),
     );
     return res?.items ?? [];
