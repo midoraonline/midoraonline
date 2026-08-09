@@ -428,6 +428,8 @@ export type SimilarProduct = {
   created_at?: string | null;
   view_count: number;
   is_negotiable?: boolean | null;
+  stock_quantity?: number | null;
+  listing_meta?: Record<string, unknown> | null;
   average_rating?: number | null;
   review_count?: number | null;
   shop_name?: string | null;
@@ -490,6 +492,8 @@ export type LikedProduct = {
   location_name?: string | null;
   is_published: boolean;
   is_negotiable?: boolean | null;
+  stock_quantity?: number | null;
+  listing_meta?: Record<string, unknown> | null;
   view_count: number;
   created_at?: string | null;
   average_rating?: number | null;
