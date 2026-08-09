@@ -115,11 +115,26 @@ export default function ChatList({ activeId, onSelect }: Props) {
         const active = conv.id === activeId;
         const isOnline = onlineIds.has(otherId);
 
+        const handleClick = () => {
+          // Optimistically zero the badge so the UI reacts instantly. The
+          // realtime UPDATE from mark_read will confirm this shortly after.
+          if (unread > 0) {
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === conv.id
+                  ? { ...c, buyer_unread: isBuyer ? 0 : c.buyer_unread, seller_unread: !isBuyer ? 0 : c.seller_unread }
+                  : c,
+              ),
+            );
+          }
+          onSelect(conv.id);
+        };
+
         return (
           <li key={conv.id}>
             <button
               type="button"
-              onClick={() => onSelect(conv.id)}
+              onClick={handleClick}
               className={[
                 "dm-focus flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors",
                 active

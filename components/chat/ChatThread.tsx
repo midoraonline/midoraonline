@@ -12,6 +12,7 @@ import {
   productPriceUgx,
 } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { useKeyboardInset } from "@/lib/hooks/useKeyboardInset";
 import {
   useBroadcast,
   usePresence,
@@ -140,6 +141,10 @@ export default function ChatThread({ conversation, onBack }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [pendingNew, setPendingNew] = useState(0);
 
+  // Publishes `--kb-inset` on <html> so we can lift the composer above the
+  // on-screen keyboard on iOS (where 100dvh doesn't shrink).
+  useKeyboardInset();
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -195,6 +200,23 @@ export default function ChatThread({ conversation, onBack }: Props) {
     apiChat.markConversationRead(conversation.id).catch(() => {});
   }, [fetchMessages, conversation.id]);
 
+  // Also re-mark the conversation read when the tab / app regains focus.
+  // Fixes the case where the user gets a push, opens the app to an already
+  // active thread, and the badge lingers because no INSERT arrives to
+  // trigger the in-thread mark-read.
+  useEffect(() => {
+    const onFocus = () => {
+      if (document.visibilityState !== "visible") return;
+      apiChat.markConversationRead(conversation.id).catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [conversation.id]);
+
   // After initial history render, jump to bottom instantly (no smooth scroll,
   // no window-level scroll — this fixes the "page scrolls to footer" bug).
   useEffect(() => {
@@ -205,6 +227,23 @@ export default function ChatThread({ conversation, onBack }: Props) {
   useEffect(() => {
     textareaRef.current?.focus({ preventScroll: true });
   }, [conversation.id]);
+
+  // Keep the newest message pinned when the on-screen keyboard opens/closes
+  // (visual viewport resizes). Without this the last message hides behind
+  // the keyboard on iOS.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      if (nearBottomRef.current) {
+        // Defer a frame so the layout has settled after keyboard animation.
+        requestAnimationFrame(() => scrollToBottom("auto"));
+      }
+    };
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, [scrollToBottom]);
 
   // -- product context ----------------------------------------------------
   useEffect(() => {
@@ -539,10 +578,14 @@ export default function ChatThread({ conversation, onBack }: Props) {
         </button>
       ) : null}
 
-      {/* Composer */}
+      {/* Composer — pushed above the OSK on iOS via --kb-inset. */}
       <form
         onSubmit={handleSend}
-        className="flex shrink-0 items-end gap-2 border-t border-border bg-background px-3 py-2.5 sm:px-4"
+        style={{
+          paddingBottom:
+            "calc(env(safe-area-inset-bottom, 0px) + var(--kb-inset, 0px) + 0.625rem)",
+        }}
+        className="flex shrink-0 items-end gap-2 border-t border-border bg-background px-3 pt-2.5 sm:px-4"
       >
         <textarea
           ref={textareaRef}

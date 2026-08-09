@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
@@ -42,6 +42,18 @@ export const metadata: Metadata = {
     description: "Midora Online is a platform for online shopping",
     url: "https://www.midoraonline.com",
   },
+};
+
+// `interactiveWidget: "resizes-content"` tells Chrome on Android to shrink the
+// layout viewport when the on-screen keyboard appears, so `100dvh` chat shells
+// actually reflow and the composer doesn't slide behind the keyboard. iOS
+// Safari resizes only the visual viewport — we handle that with
+// `useKeyboardInset` on the chat surfaces.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

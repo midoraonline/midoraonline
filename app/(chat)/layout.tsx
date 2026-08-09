@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/navbar";
-import BottomNav from "@/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Messages | Midora Online",
@@ -8,8 +7,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * Dedicated messaging shell — no rent banner, footer, or info widget.
- * Keeps mobile BottomNav; chat body pads above it so the composer stays clear.
+ * Dedicated messaging shell — no rent banner, footer, or info widget, and no
+ * bottom nav. The composer needs every pixel above the on-screen keyboard, so
+ * we hand navigation back to the header. `100dvh` shrinks on Android
+ * (`interactive-widget=resizes-content`); iOS Safari doesn't shrink dvh, so
+ * ChatThread supplements it via `useKeyboardInset`.
  */
 export default function ChatLayout({
   children,
@@ -19,8 +21,7 @@ export default function ChatLayout({
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
       <Navbar />
-      <div className="flex min-h-0 flex-1 flex-col pb-24 md:pb-0">{children}</div>
-      <BottomNav />
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }

@@ -224,6 +224,30 @@ export default function ProductFormModal({
   const sale = evaluateSalePrice(draft.price_ugx, draft.sale_price);
   const allowTypePick = mode === "add";
 
+  // Merchant listings summarise products (first image only, no listing_meta
+  // in older API builds). If we edit from that summary, we'd wipe brand /
+  // model / etc. and drop the extra images on save. Re-fetch the full
+  // product on open so the draft (and initial snapshot for isDirty) reflect
+  // what's actually in the database.
+  useEffect(() => {
+    if (mode !== "edit" || !product) return;
+    let cancelled = false;
+    apiProducts
+      .getProduct(product.id)
+      .then((full) => {
+        if (cancelled || !full) return;
+        const fresh = productToDraft(full);
+        setDraft((prev) => (draftsEqual(prev, fresh) ? prev : fresh));
+        initialRef.current = fresh;
+      })
+      .catch(() => {
+        /* keep the summary-based draft */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, product]);
+
   const categoryParts = useMemo(
     () => resolveCategoryParts(draft.category, categoryItems),
     [draft.category, categoryItems],
