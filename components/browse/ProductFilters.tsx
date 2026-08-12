@@ -541,6 +541,8 @@ type Props = {
 
 export default function ProductFilters({ products, filters, onChange }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLocating, setDrawerLocating] = useState(false);
+  const [drawerNearMeError, setDrawerNearMeError] = useState<string | null>(null);
 
   const locations = useMemo(() => collectLocationEntries(products), [products]);
   const count = activeFilterCount(filters);
@@ -582,6 +584,24 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
       userGeo: { lat: coords.lat, lng: coords.lng, label },
       sort: "relevance",
     });
+  }
+
+  async function activateNearMeFromDrawer() {
+    setDrawerLocating(true);
+    setDrawerNearMeError(null);
+    try {
+      await activateNearMe();
+    } catch (err) {
+      setDrawerNearMeError(
+        err instanceof GeoLocationError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Couldn’t use your location.",
+      );
+    } finally {
+      setDrawerLocating(false);
+    }
   }
 
   const activePreset =
@@ -673,13 +693,34 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
           aria-hidden
         />
         <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-1.5 sm:overflow-visible">
-          <SortDropdown value={filters.sort} onChange={(v) => update({ sort: v })} />
+          {/* Mobile: single "Sort & filter" entry — inline dropdowns get
+              clipped by the horizontal scroll strip's overflow. Desktop
+              keeps the individual dropdown chips. */}
+          <Chip
+            active={hasActiveFilters}
+            onClick={() => setDrawerOpen(true)}
+            className="sm:hidden"
+          >
+            <SlidersHorizontal className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+            <span className={hasActiveFilters ? "font-semibold" : "font-medium"}>
+              Sort &amp; filter
+            </span>
+            {hasActiveFilters ? (
+              <span className="ml-0.5 rounded-full bg-white/25 px-1 text-[10px] font-semibold tabular-nums">
+                {count}
+              </span>
+            ) : null}
+          </Chip>
 
-          <PriceDropdown
-            minPrice={filters.minPrice}
-            maxPrice={filters.maxPrice}
-            onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
-          />
+          <div className="hidden sm:contents">
+            <SortDropdown value={filters.sort} onChange={(v) => update({ sort: v })} />
+
+            <PriceDropdown
+              minPrice={filters.minPrice}
+              maxPrice={filters.maxPrice}
+              onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
+            />
+          </div>
 
           <Chip
             active={filters.availableNow}
@@ -699,27 +740,29 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
             </span>
           </Chip>
 
-          {showLocationControl && (
-            <LocationDropdown
-              locations={locations}
-              nearMe={filters.nearMe}
-              userGeo={filters.userGeo}
-              value={filters.location}
-              onChangeLocation={selectNamedLocation}
-              onSelectNearMe={activateNearMe}
-            />
-          )}
+          <div className="hidden sm:contents">
+            {showLocationControl && (
+              <LocationDropdown
+                locations={locations}
+                nearMe={filters.nearMe}
+                userGeo={filters.userGeo}
+                value={filters.location}
+                onChangeLocation={selectNamedLocation}
+                onSelectNearMe={activateNearMe}
+              />
+            )}
 
-          {/* Rating lives in the drawer on all sizes to keep the strip compact */}
-          <Chip
-            active={filters.minRating !== null}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Star className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-            <span className={filters.minRating !== null ? "font-semibold" : "font-medium"}>
-              {filters.minRating !== null ? `${filters.minRating}+ ★` : "Rating"}
-            </span>
-          </Chip>
+            {/* Rating opens the drawer on desktop too */}
+            <Chip
+              active={filters.minRating !== null}
+              onClick={() => setDrawerOpen(true)}
+            >
+              <Star className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
+              <span className={filters.minRating !== null ? "font-semibold" : "font-medium"}>
+                {filters.minRating !== null ? `${filters.minRating}+ ★` : "Rating"}
+              </span>
+            </Chip>
+          </div>
 
           {hasActiveFilters && (
             <button
@@ -742,18 +785,29 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
         </div>
       )}
 
-      {/* Sheet for rating (all) + location (mobile) */}
+      {/* Full filter sheet — sort, price, location, rating in one place.
+          Primary UX on mobile (chip strip dropdowns are clipped by the
+          horizontal scroller); also opens on desktop from the Rating chip. */}
       {drawerOpen && (
         <div className="fixed inset-0 z-modal" role="dialog" aria-modal="true">
           <button
             type="button"
             aria-label="Close filters"
             onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
           />
-          <div className="absolute bottom-0 left-0 right-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-surface shadow-2xl sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[min(80vh,28rem)] sm:w-[22rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl">
+          <div className="absolute bottom-0 left-0 right-0 flex max-h-[88vh] flex-col rounded-t-2xl bg-surface shadow-2xl sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[min(88vh,36rem)] sm:w-[24rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl">
+            <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-foreground/15 sm:hidden" aria-hidden />
             <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold text-foreground">Rating</p>
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="size-4 text-foreground/70" strokeWidth={2} aria-hidden />
+                <p className="text-sm font-semibold text-foreground">Sort &amp; filter</p>
+                {hasActiveFilters ? (
+                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary">
+                    {count}
+                  </span>
+                ) : null}
+              </div>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
@@ -765,10 +819,168 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                  Minimum rating
-                </p>
+              <FilterSection title="Sort by">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => {
+                    const on = filters.sort === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => update({ sort: key })}
+                        className={`rounded-md px-2 py-2 text-xs font-medium transition-colors ${
+                          on
+                            ? "bg-accent text-white shadow-sm shadow-accent/20"
+                            : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                        }`}
+                      >
+                        {SORT_LABELS[key]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </FilterSection>
+
+              <FilterSection title="Price (UGX)">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {PRICE_PRESETS.map((preset) => {
+                    const on = preset.min === filters.minPrice && preset.max === filters.maxPrice;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => update({ minPrice: preset.min, maxPrice: preset.max })}
+                        className={`rounded-md px-2 py-2 text-xs font-medium transition-colors ${
+                          on
+                            ? "bg-accent text-white shadow-sm shadow-accent/20"
+                            : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Min"
+                    value={formatPriceInput(filters.minPrice)}
+                    onChange={(e) =>
+                      update({ minPrice: parsePriceInput(e.target.value) })
+                    }
+                    className="dm-input w-full px-2 py-2 text-sm"
+                    aria-label="Minimum price"
+                  />
+                  <span className="shrink-0 text-xs text-muted">–</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Max"
+                    value={formatPriceInput(filters.maxPrice)}
+                    onChange={(e) =>
+                      update({ maxPrice: parsePriceInput(e.target.value) })
+                    }
+                    className="dm-input w-full px-2 py-2 text-sm"
+                    aria-label="Maximum price"
+                  />
+                </div>
+              </FilterSection>
+
+              <FilterSection title="Location">
+                <button
+                  type="button"
+                  onClick={() => void activateNearMeFromDrawer()}
+                  disabled={drawerLocating}
+                  className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                    filters.nearMe
+                      ? "bg-accent text-white shadow-sm shadow-accent/20"
+                      : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                  } ${drawerLocating ? "opacity-70" : ""}`}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {drawerLocating ? (
+                      <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+                    ) : (
+                      <Navigation className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                    )}
+                    <span className="truncate">
+                      {filters.nearMe && filters.userGeo?.label
+                        ? `Near · ${filters.userGeo.label}`
+                        : drawerLocating
+                          ? "Locating…"
+                          : "Near me"}
+                    </span>
+                  </span>
+                  {filters.nearMe ? (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Turn off Near me"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearLocationFilter();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          clearLocationFilter();
+                        }
+                      }}
+                      className="rounded p-0.5 hover:bg-white/20"
+                    >
+                      <X className="size-3.5" strokeWidth={2.5} aria-hidden />
+                    </span>
+                  ) : null}
+                </button>
+                {drawerNearMeError ? (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    {drawerNearMeError}
+                  </p>
+                ) : null}
+
+                {locations.length > 0 ? (
+                  <div className="mt-2 max-h-40 space-y-0.5 overflow-y-auto rounded-md ring-1 ring-border/60">
+                    <button
+                      type="button"
+                      onClick={() => selectNamedLocation(null)}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
+                        !filters.nearMe && filters.location === null
+                          ? "bg-accent/10 font-semibold text-accent"
+                          : "text-foreground/75 hover:bg-surface-subtle"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="size-3.5 shrink-0 opacity-60" strokeWidth={1.75} aria-hidden />
+                        <span>All locations</span>
+                      </span>
+                    </button>
+                    {locations.slice(0, 24).map((loc) => {
+                      const on = !filters.nearMe && filters.location === loc.name;
+                      return (
+                        <button
+                          key={loc.name}
+                          type="button"
+                          onClick={() => selectNamedLocation(loc.name)}
+                          className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
+                            on
+                              ? "bg-accent/10 font-semibold text-accent"
+                              : "text-foreground/75 hover:bg-surface-subtle"
+                          }`}
+                        >
+                          <span className="truncate">{loc.name}</span>
+                          <span className="ml-2 shrink-0 text-[10px] tabular-nums text-muted">
+                            {loc.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </FilterSection>
+
+              <FilterSection title="Minimum rating">
                 <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((star) => {
                     const on = filters.minRating !== null && star <= filters.minRating;
@@ -796,28 +1008,67 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
                     );
                   })}
                 </div>
-              </div>
+              </FilterSection>
+
+              <FilterSection title="Shop">
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => update({ availableNow: !filters.availableNow })}
+                    className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      filters.availableNow
+                        ? "bg-accent text-white shadow-sm shadow-accent/20"
+                        : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                    }`}
+                  >
+                    Available now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
+                    className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      filters.verifiedOnly
+                        ? "bg-accent text-white shadow-sm shadow-accent/20"
+                        : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                    }`}
+                  >
+                    Verified only
+                  </button>
+                </div>
+              </FilterSection>
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
               <button
                 type="button"
-                onClick={() => update({ minRating: null })}
-                className="flex-1 rounded-md border border-border px-3 py-2.5 text-sm font-medium text-foreground"
+                onClick={clearAll}
+                className="flex-1 rounded-md border border-border px-3 py-2.5 text-sm font-medium text-foreground disabled:opacity-50"
+                disabled={!hasActiveFilters}
               >
                 Reset
               </button>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                className="flex-1 rounded-md bg-accent px-3 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover"
+                className="flex-[1.4] rounded-md bg-accent px-3 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover"
               >
-                Done
+                Show {count > 0 ? `results (${count})` : "results"}
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function FilterSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        {title}
+      </p>
+      {children}
     </div>
   );
 }
