@@ -221,6 +221,34 @@ export default function MerchantListingsClient({
         </div>
       </header>
 
+      {/* Needs-attention strip — surfaces approval states that need action */}
+      {counts.rejected > 0 || counts.reviewing > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-subtle/70 p-2.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+            Needs attention
+          </span>
+          {counts.rejected > 0 ? (
+            <button
+              type="button"
+              onClick={() => setTab("rejected")}
+              className="dm-focus inline-flex items-center gap-1.5 rounded-full border border-[color:var(--error)]/25 bg-[color:var(--error-subtle)] px-3 py-1 text-[11px] font-semibold text-[color:var(--error)]"
+            >
+              {counts.rejected} not approved — fix &amp; resubmit
+            </button>
+          ) : null}
+          {counts.reviewing > 0 ? (
+            <button
+              type="button"
+              onClick={() => setTab("reviewing")}
+              className="dm-focus inline-flex items-center gap-1.5 rounded-full border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10 px-3 py-1 text-[11px] font-semibold text-[color:var(--warning)]"
+            >
+              <Loader2 className="size-3 animate-spin" />
+              {counts.reviewing} in review
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {/* Search */}
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
