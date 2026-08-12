@@ -149,11 +149,13 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                   )}
                 </div>
 
-                {(listing.status === "pending_review" || filter === "all") && (
-                  <div className="shrink-0 space-y-1.5">
-                    {listing.status === "pending_review" && (
-                      <>
-                        <div className="flex gap-1.5">
+                {(() => {
+                  const canApprove = listing.status !== "active";
+                  const canReject = listing.status !== "rejected";
+                  return (
+                    <div className="shrink-0 space-y-1.5">
+                      <div className="flex gap-1.5">
+                        {canApprove && (
                           <button
                             type="button"
                             onClick={() => handleReview(listing.id, "approve")}
@@ -161,10 +163,12 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                             className="dm-focus flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:brightness-95 disabled:opacity-50"
                           >
                             <MaterialSymbol name="check" className="!text-sm" />
-                            Approve
+                            {listing.status === "rejected" ? "Re-approve" : "Approve"}
                           </button>
+                        )}
 
-                          {rejectConfirm === listing.id ? (
+                        {canReject &&
+                          (rejectConfirm === listing.id ? (
                             <div className="flex gap-1.5">
                               <button
                                 type="button"
@@ -191,32 +195,21 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                               <MaterialSymbol name="close" className="!text-sm" />
                               Reject
                             </button>
-                          )}
-                        </div>
+                          ))}
+                      </div>
 
-                        <input
-                          type="text"
-                          placeholder="Review notes..."
-                          value={notesMap[listing.id] ?? ""}
-                          onChange={(e) =>
-                            setNotesMap((prev) => ({ ...prev, [listing.id]: e.target.value }))
-                          }
-                          className="w-full rounded-lg border border-foreground/[0.08] bg-transparent px-2.5 py-1.5 text-[11px] outline-none placeholder:text-foreground/30 focus:border-accent"
-                        />
-                      </>
-                    )}
-
-                    {listing.status !== "pending_review" && (
-                      <button
-                        type="button"
-                        disabled
-                        className="flex items-center gap-1 rounded-lg bg-foreground/[0.06] px-2.5 py-1.5 text-[11px] font-medium text-foreground/30"
-                      >
-                        Already {listing.status}
-                      </button>
-                    )}
-                  </div>
-                )}
+                      <input
+                        type="text"
+                        placeholder="Review notes..."
+                        value={notesMap[listing.id] ?? ""}
+                        onChange={(e) =>
+                          setNotesMap((prev) => ({ ...prev, [listing.id]: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-foreground/[0.08] bg-transparent px-2.5 py-1.5 text-[11px] outline-none placeholder:text-foreground/30 focus:border-accent"
+                      />
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ))}
