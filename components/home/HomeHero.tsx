@@ -1,43 +1,38 @@
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import HeroActions from "@/components/home/HeroActions";
 
+const HIGHLIGHTS = [
+  { icon: "storefront", label: "Browse local shops" },
+  { icon: "forum", label: "Chat with sellers" },
+  { icon: "sell", label: "List your items free" },
+] as const;
+
 export default function HomeHero() {
   return (
-    <section className="relative flex min-h-[190px] items-center overflow-hidden rounded-3xl bg-primary p-4 text-white sm:min-h-[230px] sm:p-6 lg:p-8">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/hero_lady_market.png')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/55 to-primary/10 md:from-primary/90 md:via-primary/45 md:to-transparent" />
-
-      <div className="relative z-10 max-w-xl space-y-3 sm:space-y-4">
-        <div className="space-y-2">
-          <h1 className="font-display text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
-            Find what you <br />
-            need near you – 
-            <span className="text-accent">fast.</span>
+    <section className="rounded-2xl border border-border bg-surface p-3 shadow-sm sm:p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-lg font-bold leading-tight tracking-tight text-foreground sm:text-xl">
+            Find what you need near you — <span className="text-accent">fast.</span>
           </h1>
+          <p className="mt-0.5 text-xs text-muted sm:text-[13px]">
+            Discover verified local shops, message sellers, and list your own items in seconds.
+          </p>
         </div>
 
         <HeroActions />
+      </div>
 
-        <div className="hidden grid-cols-3 gap-3 border-t border-white/10 pt-3 sm:grid">
-          {[
-            { icon: "verified_user", title: "Verified sellers", sub: "Shop with confidence" },
-            { icon: "location_on", title: "Local deals", sub: "Near you in Kampala" },
-            { icon: "bolt", title: "Fast response", sub: "Chat with sellers" },
-          ].map((item) => (
-            <div key={item.icon} className="flex items-center gap-2">
-              <span className="shrink-0 rounded-lg bg-accent/15 p-1.5 text-accent">
-                <MaterialSymbol name={item.icon} className="!text-sm" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold leading-none text-white">{item.title}</p>
-                <p className="mt-0.5 text-[9px] text-white/55">{item.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-2.5">
+        {HIGHLIGHTS.map((item) => (
+          <div
+            key={item.icon}
+            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted"
+          >
+            <MaterialSymbol name={item.icon} className="!text-sm text-accent" />
+            {item.label}
+          </div>
+        ))}
       </div>
     </section>
   );

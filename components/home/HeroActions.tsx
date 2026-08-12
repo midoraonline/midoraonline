@@ -118,10 +118,10 @@ export default function HeroActions() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         <Link
           href={createShopHref}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2 text-xs font-bold text-white shadow-lg transition-all hover:bg-accent-hover active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-95"
         >
           <Store className="size-3.5" strokeWidth={2.5} aria-hidden />
           {createShopLabel}
@@ -132,11 +132,11 @@ export default function HeroActions() {
           onClick={() => void handleAddItemClick()}
           disabled={provisioning}
           aria-label="Add an item to your listings"
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-5 py-2 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/15 active:scale-95 disabled:cursor-progress disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-4 py-2 text-xs font-bold text-accent transition-all hover:bg-accent/15 active:scale-95 disabled:cursor-progress disabled:opacity-70"
         >
           {provisioning ? (
             <span
-              className="size-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              className="size-3.5 animate-spin rounded-full border-2 border-accent/30 border-t-accent"
               aria-hidden
             />
           ) : (

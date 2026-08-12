@@ -294,7 +294,7 @@ export default function HomeLanding({ initialProducts }: Props) {
         <HomeOnboardingBanner variant={showPopup} onDismiss={dismissPopup} />
       ) : null}
 
-      <div className="mb-5 sm:mb-6 lg:mb-8">
+      <div className="mb-3 sm:mb-4">
         <HomeHero />
       </div>
 
