@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ChatList from "@/components/chat/ChatList";
 import ChatThread from "@/components/chat/ChatThread";
 import EnablePushBanner from "@/components/chat/EnablePushBanner";
+import BottomNav from "@/components/BottomNav";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import type { Conversation } from "@/lib/api/chat";
@@ -91,7 +92,7 @@ function ChatPageInner() {
           <div className="flex h-12 shrink-0 items-center border-b border-border px-4">
             <h1 className="text-sm font-semibold tracking-tight">Messages</h1>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-24 md:pb-2">
             <ChatList activeId={convId ?? undefined} onSelect={handleSelect} />
           </div>
         </aside>
@@ -115,6 +116,10 @@ function ChatPageInner() {
           )}
         </section>
       </div>
+
+      {/* Mobile: keep bottom nav on the list view; an open thread hides it so
+          the composer keeps every pixel above the keyboard. */}
+      {showList ? <BottomNav /> : null}
     </div>
   );
 }
