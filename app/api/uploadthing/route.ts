@@ -3,4 +3,8 @@ import { ourFileRouter } from "./core";
 
 export const { GET, POST } = createRouteHandler({
   router: ourFileRouter,
+  config: {
+    isDev: process.env.NODE_ENV === "development",
+  },
 });
+

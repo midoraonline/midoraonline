@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   ImagePlus,
@@ -26,7 +28,6 @@ import {
   normalizeListingKind,
 } from "@/lib/listingMeta";
 import { useAppSession } from "@/lib/state";
-import ProductFormModal from "@/components/shop/ProductFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import StatusBadge from "@/components/shop/StatusBadge";
@@ -74,18 +75,17 @@ export default function ShopCatalogEditor({
   shopId,
   itemType,
   heading,
-  shopLogoUrl,
 }: {
   shopId: string;
   itemType: ItemType;
   heading: string;
   shopLogoUrl?: string | null;
 }) {
+  const router = useRouter();
   const session = useAppSession();
 
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<{ mode: "add" } | { mode: "edit"; product: Product } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
   // Track per-item loading states for optimistic toggle feedback
@@ -118,20 +118,14 @@ export default function ShopCatalogEditor({
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("openAdd") === "true") {
-        setModal({ mode: "add" });
-        // Clean up URL without reloading
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, "", newUrl);
+        router.push(`/merchant/listings/new?shop_id=${shopId}&item_type=${itemType}`);
       }
     }
-  }, []);
+  }, [shopId, itemType, router]);
 
   async function removeProduct(product: Product) {
     if (!isAuthed) return;
     setDeleting(true);
-    // Grab the URLs *before* the delete lands so we can reap the CDN
-    // files. Losing the product row would leave these orphaned in
-    // UploadThing storage forever.
     const mediaUrls = productImageUrls(product);
     const request = apiProducts.deleteProduct(product.id);
     toast.promise(request, {
@@ -141,11 +135,9 @@ export default function ShopCatalogEditor({
     });
     try {
       await request;
-      // Fire-and-forget — storage cleanup, not user-critical.
       if (mediaUrls.length) {
         void deleteUploadThingFiles(mediaUrls);
       }
-      if (modal?.mode === "edit" && modal.product?.id === product.id) setModal(null);
       setPendingDelete(null);
       await load();
     } catch {
@@ -197,7 +189,6 @@ export default function ShopCatalogEditor({
     }
   }
 
-
   const kindLabel =
     LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase() + "s";
 
@@ -231,13 +222,12 @@ export default function ShopCatalogEditor({
           <p className="text-sm font-semibold text-foreground/90">
             Your {kindLabel}
           </p>
-          <button
-            type="button"
-            onClick={() => setModal({ mode: "add" })}
+          <Link
+            href={`/merchant/listings/new?shop_id=${shopId}&item_type=${itemType}`}
             className="dm-btn dm-btn-primary dm-btn-sm"
           >
             Add {LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase()}
-          </button>
+          </Link>
         </div>
         {loading ? (
           <div className="mt-4 flex items-center gap-2 text-sm text-muted">
@@ -255,7 +245,10 @@ export default function ShopCatalogEditor({
                 <li key={p.id} className="dm-card overflow-hidden">
                   <div className="flex items-start gap-3 p-4">
                     {/* Thumbnail */}
-                    <div className="relative mt-0.5 size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:size-16">
+                    <Link
+                      href={`/merchant/listings/${p.id}/edit`}
+                      className="relative mt-0.5 size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:size-16"
+                    >
                       {img ? (
                         <Image
                           src={img}
@@ -270,13 +263,16 @@ export default function ShopCatalogEditor({
                           <ImagePlus className="size-5 text-muted/50" />
                         </div>
                       )}
-                    </div>
+                    </Link>
 
                     {/* Info */}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground/95">
+                      <Link
+                        href={`/merchant/listings/${p.id}/edit`}
+                        className="truncate text-sm font-semibold text-foreground/95 hover:text-accent transition-colors block"
+                      >
                         {p.title}
-                      </p>
+                      </Link>
                       <p className="mt-0.5 text-xs text-muted">
                         {productIsDiscounted(p) ? (
                           <span className="flex items-center gap-1.5">
@@ -300,10 +296,6 @@ export default function ShopCatalogEditor({
                         {p.view_count ?? 0} views
                         {mediaCount > 0 && ` · ${mediaCount} media`}
                       </p>
-                      {/* Moderation reason — shown for rejected or under-review
-                          listings when the pipeline stamped review_notes. Lets
-                          the merchant fix the underlying issue without opening
-                          the edit modal first. */}
                       {(p.status === "rejected" || p.status === "pending_review") && p.review_notes ? (
                         <p
                           className={`mt-1 text-[11px] leading-snug ${
@@ -330,15 +322,14 @@ export default function ShopCatalogEditor({
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       {/* Row 1: Edit + Delete */}
                       <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setModal({ mode: "edit", product: p })}
+                        <Link
+                          href={`/merchant/listings/${p.id}/edit`}
                           className="dm-focus inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-medium text-foreground/65 hover:bg-foreground/[0.06] hover:text-foreground transition-colors"
                           title="Edit listing"
                         >
                           <Pencil className="size-3.5" />
                           <span>Edit</span>
-                        </button>
+                        </Link>
                         <button
                           type="button"
                           className="dm-focus inline-flex size-8 items-center justify-center rounded-xl transition-colors hover:bg-[color:var(--error-subtle)]"
@@ -350,7 +341,7 @@ export default function ShopCatalogEditor({
                         </button>
                       </div>
 
-                      {/* Row 2: Publish toggle with label */}
+                      {/* Row 2: Publish toggle */}
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] text-muted select-none">
                           {p.is_published ? "Published" : "Unpublished"}
@@ -364,7 +355,7 @@ export default function ShopCatalogEditor({
                         />
                       </div>
 
-                      {/* Row 3: Repost (only when published) */}
+                      {/* Row 3: Repost */}
                       {p.is_published && (
                         <button
                           type="button"
@@ -376,19 +367,15 @@ export default function ShopCatalogEditor({
                         </button>
                       )}
 
-                      {/* Row 4: Rejected → open the editor so the merchant can
-                          actually fix what the moderator flagged before
-                          resubmitting. A silent status flip would just get
-                          rejected again for the same reason. */}
+                      {/* Row 4: Rejected → edit & resubmit */}
                       {p.status === "rejected" && (
-                        <button
-                          type="button"
+                        <Link
+                          href={`/merchant/listings/${p.id}/edit`}
                           className="dm-btn dm-btn-primary dm-btn-sm"
                           title="Edit the listing and resubmit for review"
-                          onClick={() => setModal({ mode: "edit", product: p })}
                         >
                           Edit & resubmit
-                        </button>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -398,21 +385,6 @@ export default function ShopCatalogEditor({
           </ul>
         )}
       </div>
-
-      {modal && (
-        <ProductFormModal
-          mode={modal.mode}
-          product={modal.mode === "edit" ? modal.product : undefined}
-          shopId={shopId}
-          itemType={itemType}
-          shopLogoUrl={shopLogoUrl}
-          onClose={() => setModal(null)}
-          onSaved={() => {
-            setModal(null);
-            void load();
-          }}
-        />
-      )}
 
       {pendingDelete && (
         <ConfirmDialog

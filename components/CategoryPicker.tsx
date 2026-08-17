@@ -14,6 +14,12 @@ type Props = {
   idPrefix?: string;
   /** Compact mode used inside modals / narrower containers */
   compact?: boolean;
+  /** Force a specific top-level category (e.g. "services", "opportunities").
+   *  When set, the parent dropdown is hidden and only the subcategory picker shows. */
+  lockedParentSlug?: string;
+  /** Hide these parent slugs from the parent dropdown (e.g. hide services /
+   *  opportunities when the user is posting a product). */
+  excludeParentSlugs?: readonly string[];
 };
 
 /**
@@ -28,12 +34,20 @@ export default function CategoryPicker({
   className = "",
   idPrefix = "category",
   compact = false,
+  lockedParentSlug,
+  excludeParentSlugs,
 }: Props) {
   const { items, tree, loading } = useCategoryItems();
 
   const resolved = useMemo(() => resolveCategoryParts(value, items), [value, items]);
 
-  const [parentSlug, setParentSlug] = useState<string>("");
+  const visibleTree = useMemo(() => {
+    if (!excludeParentSlugs || excludeParentSlugs.length === 0) return tree;
+    const blocked = new Set(excludeParentSlugs);
+    return tree.filter((g) => !blocked.has(g.parent.slug));
+  }, [tree, excludeParentSlugs]);
+
+  const [parentSlug, setParentSlug] = useState<string>(lockedParentSlug ?? "");
   const [subcategoryLabel, setSubcategoryLabel] = useState<string>("");
 
   // Sync from prop when editing an existing value. Do not clear parentSlug
@@ -49,6 +63,22 @@ export default function CategoryPicker({
       }
     }
   }, [value, resolved.parentLabel, resolved.subcategoryLabel, tree]);
+
+  // Force parent to locked slug when it changes (e.g. user switched listing kind).
+  useEffect(() => {
+    if (!lockedParentSlug) return;
+    if (parentSlug === lockedParentSlug) return;
+    setParentSlug(lockedParentSlug);
+    setSubcategoryLabel("");
+    const group = tree.find((g) => g.parent.slug === lockedParentSlug);
+    if (!group) {
+      onChange("");
+      return;
+    }
+    onChange(group.children.length === 0 ? group.parent.label : "");
+    // onChange intentionally excluded — treated as a stable callback by the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedParentSlug, tree]);
 
   const activeGroup = useMemo(
     () => tree.find((g) => g.parent.slug === parentSlug) ?? null,
@@ -90,46 +120,48 @@ export default function CategoryPicker({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      {/* Parent category dropdown */}
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
-          Category{" "}
-          {required ? (
-            <span className="text-[color:var(--error)]">*</span>
-          ) : null}
-        </label>
-        <div className="relative">
-          <select
-            id={`${idPrefix}-parent`}
-            className={selectClass}
-            value={parentSlug}
-            onChange={(e) => handleParentChange(e.target.value)}
-            disabled={loading}
-          >
-            <option value="">
-              {loading ? "Loading categories…" : "Select a category"}
-            </option>
-            {tree.map(({ parent }) => (
-              <option key={parent.slug} value={parent.slug}>
-                {parent.label}
+      {/* Parent category dropdown — hidden when the parent is locked by kind */}
+      {!lockedParentSlug ? (
+        <div className="space-y-1.5">
+          <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
+            Category{" "}
+            {required ? (
+              <span className="text-[color:var(--error)]">*</span>
+            ) : null}
+          </label>
+          <div className="relative">
+            <select
+              id={`${idPrefix}-parent`}
+              className={selectClass}
+              value={parentSlug}
+              onChange={(e) => handleParentChange(e.target.value)}
+              disabled={loading}
+            >
+              <option value="">
+                {loading ? "Loading categories…" : "Select a category"}
               </option>
-            ))}
-          </select>
-          {loading ? (
-            <span
-              className="pointer-events-none absolute right-3 top-1/2 block size-4 -translate-y-1/2 animate-spin rounded-full border-2 border-border"
-              style={{ borderTopColor: "var(--accent)" }}
-              aria-hidden="true"
-            />
-          ) : (
-            <ChevronDown
-              className="pointer-events-none absolute right-2.5 top-1/2 size-[18px] -translate-y-1/2 text-muted"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          )}
+              {visibleTree.map(({ parent }) => (
+                <option key={parent.slug} value={parent.slug}>
+                  {parent.label}
+                </option>
+              ))}
+            </select>
+            {loading ? (
+              <span
+                className="pointer-events-none absolute right-3 top-1/2 block size-4 -translate-y-1/2 animate-spin rounded-full border-2 border-border"
+                style={{ borderTopColor: "var(--accent)" }}
+                aria-hidden="true"
+              />
+            ) : (
+              <ChevronDown
+                className="pointer-events-none absolute right-2.5 top-1/2 size-[18px] -translate-y-1/2 text-muted"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Subcategory dropdown — appears only when the parent has children */}
       {parentSlug && hasChildren ? (

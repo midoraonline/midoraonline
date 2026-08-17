@@ -15,18 +15,19 @@ async function verifyBearer(req: NextRequest): Promise<boolean> {
   const auth = req.headers.get("authorization");
   const token = auth?.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (!token) return false;
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
-  if (!base) return false;
+  const envBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+  const base = envBase || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
   try {
     const r = await fetch(`${base}/api/v1/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
     return r.ok;
   } catch {
     return false;
   }
 }
+
 
 export async function POST(req: NextRequest) {
   if (!(await verifyBearer(req))) {
