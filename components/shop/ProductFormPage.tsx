@@ -267,6 +267,41 @@ export default function ProductFormPage({
       return;
     }
 
+    // Gate: the AI listing quality check must pass before we call the API.
+    // If it hasn't been run for the current draft, run it now. If it comes
+    // back with issues, block submission so bad listings never leave the
+    // client.
+    let verdict = aiCheck;
+    if (verdict === null) {
+      setAiChecking(true);
+      try {
+        verdict = await checkListingQuality({
+          title: draft.title.trim(),
+          description: draft.description.trim(),
+          image_urls: draft.image_urls,
+          category: draft.category || null,
+        });
+        setAiCheck(verdict);
+      } catch (err) {
+        setAiChecking(false);
+        toast.error("AI review failed", {
+          description:
+            err instanceof Error
+              ? err.message
+              : "Try again in a moment.",
+        });
+        return;
+      }
+      setAiChecking(false);
+    }
+
+    if (!verdict.ok) {
+      toast.error("Listing needs edits before it can be posted", {
+        description: verdict.feedback,
+      });
+      return;
+    }
+
     const price = parseAmount(draft.price_ugx);
     const salePrice = sale.kind === "ok" ? parseAmount(draft.sale_price) : null;
     const meta = cleanListingMeta(
@@ -372,11 +407,22 @@ export default function ProductFormPage({
           <button
             type="submit"
             form="product-form-page"
-            disabled={saving}
+            disabled={saving || aiChecking || Boolean(aiCheck && !aiCheck.ok)}
+            title={
+              aiCheck && !aiCheck.ok
+                ? "AI review flagged issues — please edit the listing first."
+                : undefined
+            }
             className="dm-btn dm-btn-primary dm-btn-md gap-2"
           >
             <Check className="size-4" />
-            {saving ? "Saving…" : mode === "add" ? "Publish listing" : "Save changes"}
+            {saving
+              ? "Saving…"
+              : aiChecking
+                ? "Running AI review…"
+                : mode === "add"
+                  ? "Publish listing"
+                  : "Save changes"}
           </button>
         </div>
       </div>
@@ -929,11 +975,22 @@ export default function ProductFormPage({
           <button
             type="submit"
             form="product-form-page"
-            disabled={saving}
+            disabled={saving || aiChecking || Boolean(aiCheck && !aiCheck.ok)}
+            title={
+              aiCheck && !aiCheck.ok
+                ? "AI review flagged issues — please edit the listing first."
+                : undefined
+            }
             className="dm-btn dm-btn-primary dm-btn-md min-w-[160px] gap-2 shadow-md"
           >
             <Check className="size-4" />
-            {saving ? "Saving…" : mode === "add" ? "Publish listing" : "Save changes"}
+            {saving
+              ? "Saving…"
+              : aiChecking
+                ? "Running AI review…"
+                : mode === "add"
+                  ? "Publish listing"
+                  : "Save changes"}
           </button>
         </div>
       </div>
