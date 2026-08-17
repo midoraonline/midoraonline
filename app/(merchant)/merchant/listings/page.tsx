@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Product } from "@/lib/api/products";
 import { merchantApi } from "@/lib/api/server";
 import MerchantListingsClient from "./MerchantListingsClient";
+import MerchantListingsSkeleton from "@/components/skeletons/MerchantListingsSkeleton";
 import type { ListingShopSummary } from "./types";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export default async function MerchantListingsPage() {
   }));
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MerchantListingsSkeleton />}>
       <MerchantListingsClient
         initialListings={listings}
         shops={shopSummaries}
