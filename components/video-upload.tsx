@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Loader2, Video as VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 import { getUploadThingAuthHeaders, useUploadThing } from "@/lib/uploadthing";
@@ -23,6 +29,11 @@ type Props = {
   maxDurationSeconds?: number;
 };
 
+export type VideoUploadHandle = {
+  submitFiles: (files: File[]) => Promise<void>;
+  isBusy: () => boolean;
+};
+
 type Stage = "compressing" | "uploading";
 
 /**
@@ -34,7 +45,7 @@ type Stage = "compressing" | "uploading";
  * - Duration cap enforced before compression.
  * - Success / failure reported via sonner (see AppToaster).
  */
-export function VideoUpload({
+export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUpload({
   endpoint,
   onUploadComplete,
   onUploadManyComplete,
@@ -42,7 +53,7 @@ export function VideoUpload({
   className = "",
   multiple = false,
   maxDurationSeconds = 180,
-}: Props) {
+}, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<Stage | null>(null);
   const [stageMsg, setStageMsg] = useState<string>("");
@@ -111,28 +122,45 @@ export function VideoUpload({
     [startUpload],
   );
 
+  const ingestFiles = useCallback(
+    async (files: File[]) => {
+      const accepted: File[] = [];
+      for (const file of files) {
+        const duration = await probeVideoDuration(file);
+        if (duration !== null && duration > maxDurationSeconds) {
+          toast.error("Video too long", {
+            description: `Trim to under ${Math.round(maxDurationSeconds / 60)} min (${Math.round(duration)}s currently).`,
+          });
+          continue;
+        }
+        accepted.push(file);
+      }
+      if (!accepted.length) return;
+      void compressAndUpload(accepted);
+    },
+    [compressAndUpload, maxDurationSeconds],
+  );
+
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (!files.length) return;
-
-    // Duration gate — reject anything past the cap before compressing.
-    const accepted: File[] = [];
-    for (const file of files) {
-      const duration = await probeVideoDuration(file);
-      if (duration !== null && duration > maxDurationSeconds) {
-        toast.error("Video too long", {
-          description: `Trim to under ${Math.round(maxDurationSeconds / 60)} min (${Math.round(duration)}s currently).`,
-        });
-        continue;
-      }
-      accepted.push(file);
-    }
-    if (!accepted.length) return;
-    void compressAndUpload(accepted);
+    await ingestFiles(files);
   };
 
   const busy = stage !== null;
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      submitFiles: async (files: File[]) => {
+        if (busy || !files.length) return;
+        await ingestFiles(files);
+      },
+      isBusy: () => busy,
+    }),
+    [busy, ingestFiles],
+  );
 
   const buttonLabel = (() => {
     if (stage === "uploading" || isUploading) return `Uploading… ${uploadPct}%`;
@@ -196,4 +224,4 @@ export function VideoUpload({
       ) : null}
     </div>
   );
-}
+});

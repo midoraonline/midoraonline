@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { Plus } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import ProductFormModal from "@/components/shop/ProductFormModal";
 import ShopActions from "@/components/shop/ShopActions";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -23,7 +21,6 @@ export default function ShopHeroActionBar({
   shopId,
   shopSlug,
   shopName,
-  shopLogoUrl,
 }: {
   shopId: string;
   shopSlug: string;
@@ -32,7 +29,6 @@ export default function ShopHeroActionBar({
 }) {
   const session = useAppSession();
   const canManage = canManageShopStorefront(session, shopId);
-  const [addOpen, setAddOpen] = useState(false);
 
   return (
     <>
@@ -46,14 +42,13 @@ export default function ShopHeroActionBar({
 
           {canManage ? (
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
+              <Link
+                href={`/merchant/listings/new?shop_id=${shopId}`}
                 className="dm-btn dm-btn-primary dm-btn-sm min-h-10"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Add listing
-              </button>
+              </Link>
               <Link
                 href={`/shops/${shopSlug}/edit`}
                 className="dm-btn dm-btn-secondary dm-btn-sm min-h-10"
@@ -80,17 +75,6 @@ export default function ShopHeroActionBar({
           ) : null}
         </div>
       </div>
-
-      {addOpen ? (
-        <ProductFormModal
-          mode="add"
-          shopId={shopId}
-          itemType="product"
-          shopLogoUrl={shopLogoUrl}
-          onClose={() => setAddOpen(false)}
-          onSaved={() => setAddOpen(false)}
-        />
-      ) : null}
     </>
   );
 }

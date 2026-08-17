@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +34,11 @@ type ImageUploadProps = {
   watermarkLogoUrl?: string | null;
 };
 
+export type ImageUploadHandle = {
+  submitFiles: (files: File[]) => void;
+  isBusy: () => boolean;
+};
+
 function endpointDefaultsAllowBg(endpoint: Endpoint): boolean {
   return endpoint === "productImage" || endpoint === "shopLogo";
 }
@@ -37,7 +49,7 @@ function fileExt(mime: string | undefined): string {
   return "jpg";
 }
 
-export function ImageUpload({
+export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function ImageUpload({
   endpoint,
   onUploadComplete,
   onUploadManyComplete,
@@ -48,7 +60,7 @@ export function ImageUpload({
   multiple = false,
   allowBackgroundRemoval,
   watermarkLogoUrl,
-}: ImageUploadProps) {
+}, ref) {
   const [uploadPct, setUploadPct] = useState(0);
   const [preparing, setPreparing] = useState<
     { stage: "watermark" | "bg"; current: number; total: number; pct?: number } | null
@@ -178,6 +190,18 @@ export function ImageUpload({
 
   const busy = isUploading || preparing !== null;
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      submitFiles: (files: File[]) => {
+        if (busy || !files.length) return;
+        void uploadFiles(files);
+      },
+      isBusy: () => busy,
+    }),
+    [busy, uploadFiles],
+  );
+
   const buttonLabel = (() => {
     if (isUploading) return `Uploading… ${uploadPct}%`;
     if (preparing?.stage === "watermark") return "Applying logo…";
@@ -273,4 +297,4 @@ export function ImageUpload({
       ) : null}
     </div>
   );
-}
+});

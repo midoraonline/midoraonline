@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ImagePlus,
@@ -24,7 +25,6 @@ import {
   type ProductStatus,
 } from "@/lib/api/products";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
-import ProductFormModal from "@/components/shop/ProductFormModal";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
@@ -77,17 +77,12 @@ export default function MerchantListingsClient({
   initialListings: Product[];
   shops: ListingShopSummary[];
 }) {
+  const router = useRouter();
   const [items, setItems] = useState<Product[]>(initialListings);
   const [tab, setTab] = useState<Tab>("all");
   const [search, setSearch] = useState("");
-  const [modal, setModal] = useState<
-    | { mode: "edit"; product: Product; shopId: string }
-    | { mode: "add"; shopId: string }
-    | null
-  >(null);
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [shopPickerOpen, setShopPickerOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const shopById = useMemo(() => {
@@ -172,11 +167,10 @@ export default function MerchantListingsClient({
   }
 
   function openAdd() {
-    if (shops.length === 0) return;
     if (shops.length === 1) {
-      setModal({ mode: "add", shopId: shops[0].id });
+      router.push(`/merchant/listings/new?shop_id=${shops[0].id}`);
     } else {
-      setShopPickerOpen(true);
+      router.push("/merchant/listings/new");
     }
   }
 
@@ -305,13 +299,10 @@ export default function MerchantListingsClient({
               <li key={p.id} className="dm-card p-3 sm:p-4">
                 <div className="flex gap-3">
                   {/* Thumb */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setModal({ mode: "edit", product: p, shopId: p.shop_id })
-                    }
+                  <Link
+                    href={`/merchant/listings/${p.id}/edit`}
                     className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle sm:size-20"
-                    title="Edit"
+                    title="Edit listing"
                   >
                     {cover ? (
                       // eslint-disable-next-line @next/next/no-img-element -- CDN
@@ -326,15 +317,18 @@ export default function MerchantListingsClient({
                         +{mediaCount - 1}
                       </span>
                     ) : null}
-                  </button>
+                  </Link>
 
                   {/* Body */}
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-foreground">
+                        <Link
+                          href={`/merchant/listings/${p.id}/edit`}
+                          className="truncate text-sm font-semibold text-foreground hover:text-accent transition-colors block"
+                        >
                           {p.title || "Untitled"}
-                        </p>
+                        </Link>
                         <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
                           <StatusBadge status={p.status} is_published={p.is_published} />
                           {showMultipleShops && shopMeta ? (
@@ -405,16 +399,13 @@ export default function MerchantListingsClient({
 
                     {/* Actions */}
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModal({ mode: "edit", product: p, shopId: p.shop_id })
-                        }
+                      <Link
+                        href={`/merchant/listings/${p.id}/edit`}
                         className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-foreground/75 hover:bg-foreground/[0.06]"
                       >
                         <Pencil className="size-3" />
                         Edit
-                      </button>
+                      </Link>
                       <button
                         type="button"
                         onClick={() => setPendingDelete(p)}
@@ -424,15 +415,12 @@ export default function MerchantListingsClient({
                         Delete
                       </button>
                       {rejected ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setModal({ mode: "edit", product: p, shopId: p.shop_id })
-                          }
+                        <Link
+                          href={`/merchant/listings/${p.id}/edit`}
                           className="dm-btn dm-btn-primary dm-btn-sm ml-auto"
                         >
                           Edit & resubmit
-                        </button>
+                        </Link>
                       ) : (
                         <Link
                           href={`/products/${p.id}`}
@@ -452,69 +440,6 @@ export default function MerchantListingsClient({
         </ul>
       )}
 
-      {/* Shop picker for merchants with multiple shops */}
-      {shopPickerOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center"
-          onClick={() => setShopPickerOpen(false)}
-        >
-          <div
-            className="dm-card w-full max-w-sm p-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="mb-2 text-sm font-semibold text-foreground">
-              Add listing to which shop?
-            </p>
-            <div className="flex flex-col gap-1">
-              {shops.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => {
-                    setShopPickerOpen(false);
-                    setModal({ mode: "add", shopId: s.id });
-                  }}
-                  className="dm-focus flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-surface-subtle"
-                >
-                  {s.logo_url ? (
-                    <Image
-                      src={s.logo_url}
-                      alt=""
-                      width={20}
-                      height={20}
-                      className="size-5 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="size-5 rounded-full bg-foreground/[0.08]" />
-                  )}
-                  <span className="truncate">{s.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Edit / add modal */}
-      {modal ? (
-        <ProductFormModal
-          mode={modal.mode}
-          product={modal.mode === "edit" ? modal.product : undefined}
-          shopId={modal.shopId}
-          itemType={
-            modal.mode === "edit"
-              ? ((modal.product.item_type as ItemType) ?? "product")
-              : "product"
-          }
-          shopLogoUrl={shopById.get(modal.shopId)?.logo_url ?? null}
-          onClose={() => setModal(null)}
-          onSaved={() => {
-            setModal(null);
-            void reload();
-          }}
-        />
-      ) : null}
-
       {/* Delete confirmation */}
       {pendingDelete ? (
         <ConfirmDialog
@@ -531,6 +456,7 @@ export default function MerchantListingsClient({
     </div>
   );
 }
+
 
 function EmptyState({
   tab,

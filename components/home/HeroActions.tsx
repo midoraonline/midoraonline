@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Store } from "lucide-react";
 import { toast } from "sonner";
 import FormModal from "@/components/FormModal";
-import ProductFormModal from "@/components/shop/ProductFormModal";
 import { ThemedSelect } from "@/components/browse/ThemedSelect";
 import { useAppSession } from "@/lib/state";
 import {
@@ -15,7 +14,7 @@ import {
   type UserShopSummary,
 } from "@/lib/shop/personalShop";
 
-type Phase = "idle" | "provisioning" | "picking" | "adding";
+type Phase = "idle" | "provisioning" | "picking";
 
 type ShopOption = {
   value: string;
@@ -77,34 +76,33 @@ export default function HeroActions() {
     if (!session.user) return;
 
     if (hasMultipleShops) {
-      setSelectedShopId(session.ownedShopIds[0] ?? null);
-      setPhase("picking");
+      router.push("/merchant/listings/new");
       return;
     }
 
     if (shopCount === 1) {
-      setSelectedShopId(session.ownedShopIds[0]);
-      setPhase("adding");
+      router.push(`/merchant/listings/new?shop_id=${session.ownedShopIds[0]}`);
       return;
     }
 
     setPhase("provisioning");
     try {
       const shopId = await ensureShopForListing();
-      setSelectedShopId(shopId);
-      setPhase("adding");
       toast.success("Personal listings ready — add your first item.");
+      router.push(`/merchant/listings/new?shop_id=${shopId}`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Couldn’t set up your listings.",
       );
+    } finally {
       setPhase("idle");
     }
   }
 
   function confirmPick() {
     if (!selectedShopId) return;
-    setPhase("adding");
+    router.push(`/merchant/listings/new?shop_id=${selectedShopId}`);
+    setPhase("idle");
   }
 
   function closeAll() {
@@ -217,16 +215,6 @@ export default function HeroActions() {
             </div>
           </div>
         </FormModal>
-      ) : null}
-
-      {phase === "adding" && selectedShopId ? (
-        <ProductFormModal
-          mode="add"
-          shopId={selectedShopId}
-          itemType="product"
-          onClose={closeAll}
-          onSaved={closeAll}
-        />
       ) : null}
     </>
   );

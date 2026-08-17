@@ -9,7 +9,6 @@ import { ApiError } from "@/lib/api/base";
 import { useAppSession } from "@/lib/state";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import ProductFormModal from "@/components/shop/ProductFormModal";
 import { ImageUpload } from "@/components/image-upload";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 
@@ -237,14 +236,13 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
         >
           {/* Add Product CTA always shown after Stage 1 */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setShowProductModal(true)}
+            <Link
+              href={`/merchant/listings/new?shop_id=${shopId}`}
               className="dm-btn dm-btn-primary dm-btn-sm gap-1.5"
             >
               <MaterialSymbol name="add_circle" className="!text-base" />
               Add your first product
-            </button>
+            </Link>
             <Link
               href={`/merchant/shops/${shopId}/catalog`}
               className="dm-btn dm-btn-secondary dm-btn-sm"
@@ -536,17 +534,6 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           ))}
         </div>
       </div>
-
-      {/* Add Product modal */}
-      {showProductModal && (
-        <ProductFormModal
-          mode="add"
-          shopId={shopId}
-          itemType="product"
-          onClose={() => setShowProductModal(false)}
-          onSaved={() => setShowProductModal(false)}
-        />
-      )}
     </div>
   );
 }
