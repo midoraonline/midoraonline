@@ -5,11 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  Eye,
   ImagePlus,
   Loader2,
+  Package,
   Pencil,
   Search,
   Trash2,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
@@ -20,7 +26,6 @@ import {
   productIsDiscounted,
   productOriginalPriceUgx,
   productDiscountPercent,
-  type ItemType,
   type Product,
   type ProductStatus,
 } from "@/lib/api/products";
@@ -176,19 +181,26 @@ export default function MerchantListingsClient({
 
   const showMultipleShops = shops.length > 1;
 
+  const totalViews = useMemo(
+    () => items.reduce((sum, p) => sum + (p.view_count ?? 0), 0),
+    [items],
+  );
+
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6">
       {/* Header */}
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground sm:text-xl">My listings</h1>
-          <p className="text-xs text-muted">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            My listings
+          </h1>
+          <p className="mt-0.5 text-xs text-muted">
             Everything you&apos;ve posted across{" "}
-            {shops.length === 1 ? "your shop" : `${shops.length} shops`}. Reviewing
-            listings auto-go-live once approved.
+            {shops.length === 1 ? "your shop" : `${shops.length} shops`}. Approved
+            listings go live automatically.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={() => void reload()}
@@ -215,73 +227,93 @@ export default function MerchantListingsClient({
         </div>
       </header>
 
-      {/* Needs-attention strip — surfaces approval states that need action */}
-      {counts.rejected > 0 || counts.reviewing > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-subtle/70 p-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Needs attention
-          </span>
-          {counts.rejected > 0 ? (
-            <button
-              type="button"
-              onClick={() => setTab("rejected")}
-              className="dm-focus inline-flex items-center gap-1.5 rounded-full border border-[color:var(--error)]/25 bg-[color:var(--error-subtle)] px-3 py-1 text-[11px] font-semibold text-[color:var(--error)]"
-            >
-              {counts.rejected} not approved — fix &amp; resubmit
-            </button>
-          ) : null}
-          {counts.reviewing > 0 ? (
-            <button
-              type="button"
-              onClick={() => setTab("reviewing")}
-              className="dm-focus inline-flex items-center gap-1.5 rounded-full border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10 px-3 py-1 text-[11px] font-semibold text-[color:var(--warning)]"
-            >
-              <Loader2 className="size-3 animate-spin" />
-              {counts.reviewing} in review
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={showMultipleShops ? "Search listings or shop…" : "Search listings…"}
-          className="dm-input w-full pl-9"
+      {/* Stats overview */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <StatCard
+          icon={<Package className="size-4" aria-hidden />}
+          label="Total"
+          value={counts.all}
+          tone="neutral"
+          active={tab === "all"}
+          onClick={() => setTab("all")}
+        />
+        <StatCard
+          icon={<CheckCircle2 className="size-4" aria-hidden />}
+          label="Live"
+          value={counts.live}
+          tone="success"
+          active={tab === "live"}
+          onClick={() => setTab("live")}
+        />
+        <StatCard
+          icon={<Clock className="size-4" aria-hidden />}
+          label="In review"
+          value={counts.reviewing}
+          tone="warning"
+          active={tab === "reviewing"}
+          onClick={() => setTab("reviewing")}
+          pulse={counts.reviewing > 0}
+        />
+        <StatCard
+          icon={<XCircle className="size-4" aria-hidden />}
+          label="Not approved"
+          value={counts.rejected}
+          tone="error"
+          active={tab === "rejected"}
+          onClick={() => setTab("rejected")}
         />
       </div>
 
-      {/* Tabs */}
-      <div className="dm-card flex gap-1 overflow-x-auto p-1">
-        {TAB_META.map((t) => {
-          const active = tab === t.key;
-          const n = counts[t.key];
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                active
-                  ? "bg-accent text-white"
-                  : "text-foreground/70 hover:bg-foreground/[0.06]"
-              }`}
-            >
-              {t.label}
-              <span
-                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                  active ? "bg-white/25" : "bg-foreground/[0.06]"
+      {items.length > 0 ? (
+        <div className="flex items-center gap-1.5 text-[11px] text-muted">
+          <BarChart3 className="size-3.5" aria-hidden />
+          <span>
+            {totalViews.toLocaleString()} total view
+            {totalViews === 1 ? "" : "s"} across your listings
+          </span>
+        </div>
+      ) : null}
+
+      {/* Search + Tabs — sticky so filters stay reachable while scrolling long lists */}
+      <div className="sticky top-0 z-10 -mx-3 space-y-2 border-b border-border/60 bg-background/85 px-3 pt-1 pb-2 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:px-3 sm:pt-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={showMultipleShops ? "Search listings or shop…" : "Search listings…"}
+            className="dm-input w-full pl-9"
+          />
+        </div>
+
+        <div className="flex gap-1 overflow-x-auto">
+          {TAB_META.map((t) => {
+            const active = tab === t.key;
+            const n = counts[t.key];
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active
+                    ? "bg-accent text-white shadow-sm"
+                    : "bg-surface-subtle text-foreground/70 hover:bg-foreground/[0.06]"
                 }`}
               >
-                {n}
-              </span>
-            </button>
-          );
-        })}
+                {t.label}
+                <span
+                  className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                    active ? "bg-white/25" : "bg-foreground/[0.08]"
+                  }`}
+                >
+                  {n}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Listing rows */}
@@ -296,40 +328,47 @@ export default function MerchantListingsClient({
             const reviewing = p.status === "pending_review";
             const rejected = p.status === "rejected";
             return (
-              <li key={p.id} className="dm-card p-3 sm:p-4">
-                <div className="flex gap-3">
+              <li
+                key={p.id}
+                className="dm-card group relative overflow-hidden p-3 transition-all hover:border-accent/40 hover:shadow-md sm:p-4"
+              >
+                <div className="flex gap-3 sm:gap-4">
                   {/* Thumb */}
                   <Link
                     href={`/merchant/listings/${p.id}/edit`}
-                    className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle sm:size-20"
+                    className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle sm:size-24"
                     title="Edit listing"
                   >
                     {cover ? (
                       // eslint-disable-next-line @next/next/no-img-element -- CDN
-                      <img src={cover} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={cover}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[10px] text-muted">
                         No image
                       </div>
                     )}
                     {mediaCount > 1 ? (
-                      <span className="absolute bottom-1 right-1 rounded-md bg-black/65 px-1 py-0.5 text-[9px] font-semibold text-white">
+                      <span className="absolute bottom-1 right-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white">
                         +{mediaCount - 1}
                       </span>
                     ) : null}
                   </Link>
 
                   {/* Body */}
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <Link
                           href={`/merchant/listings/${p.id}/edit`}
-                          className="truncate text-sm font-semibold text-foreground hover:text-accent transition-colors block"
+                          className="block truncate text-sm font-bold text-foreground transition-colors hover:text-accent sm:text-[15px]"
                         >
                           {p.title || "Untitled"}
                         </Link>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
                           <StatusBadge status={p.status} is_published={p.is_published} />
                           {showMultipleShops && shopMeta ? (
                             <Link
@@ -349,8 +388,11 @@ export default function MerchantListingsClient({
                               <span className="truncate">{shopMeta.name}</span>
                             </Link>
                           ) : null}
-                          <span>· {p.view_count ?? 0} views</span>
-                        </p>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-foreground/70">
+                            <Eye className="size-3" aria-hidden />
+                            {p.view_count ?? 0}
+                          </span>
+                        </div>
                       </div>
                       <p className="whitespace-nowrap text-sm font-semibold text-foreground">
                         {productIsDiscounted(p) ? (
@@ -469,8 +511,11 @@ function EmptyState({
 }) {
   if (!hasShops) {
     return (
-      <div className="dm-card flex flex-col items-center gap-3 p-6 text-center">
-        <p className="text-sm font-semibold text-foreground">No shop yet</p>
+      <div className="dm-card flex flex-col items-center gap-3 p-8 text-center">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <ImagePlus className="size-6" aria-hidden />
+        </div>
+        <p className="text-sm font-bold text-foreground">No shop yet</p>
         <p className="max-w-xs text-xs text-muted">
           Open a shop first — that&apos;s where your listings live.
         </p>
@@ -480,36 +525,106 @@ function EmptyState({
       </div>
     );
   }
-  const map: Record<Tab, { title: string; hint: string }> = {
+  const map: Record<Tab, { title: string; hint: string; icon: React.ReactNode }> = {
     all: {
       title: "No listings yet",
       hint: "Post your first product — it goes live after a quick automated check.",
+      icon: <Package className="size-6" aria-hidden />,
     },
     reviewing: {
       title: "Nothing under review",
-      hint: "New listings show here while they wait for the auto-moderator (usually under a minute).",
+      hint: "New listings show here while the auto-moderator scans them (usually under a minute).",
+      icon: <Clock className="size-6" aria-hidden />,
     },
     live: {
       title: "Nothing live yet",
       hint: "Approved listings show here. Post something to get started.",
+      icon: <CheckCircle2 className="size-6" aria-hidden />,
     },
     rejected: {
       title: "No rejections",
       hint: "Listings we couldn't approve show up here with a reason so you can fix and resubmit.",
+      icon: <XCircle className="size-6" aria-hidden />,
     },
     drafts: {
       title: "No drafts or hidden listings",
       hint: "Save drafts or unpublish listings and they'll appear here.",
+      icon: <Package className="size-6" aria-hidden />,
     },
   };
   const meta = map[tab];
   return (
-    <div className="dm-card flex flex-col items-center gap-3 p-6 text-center">
-      <p className="text-sm font-semibold text-foreground">{meta.title}</p>
+    <div className="dm-card flex flex-col items-center gap-3 p-8 text-center">
+      <div className="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+        {meta.icon}
+      </div>
+      <p className="text-sm font-bold text-foreground">{meta.title}</p>
       <p className="max-w-xs text-xs text-muted">{meta.hint}</p>
       <button type="button" onClick={onAdd} className="dm-btn dm-btn-primary dm-btn-sm">
         Add listing
       </button>
     </div>
+  );
+}
+
+type StatTone = "neutral" | "success" | "warning" | "error";
+
+function StatCard({
+  icon,
+  label,
+  value,
+  tone,
+  active,
+  pulse,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  tone: StatTone;
+  active?: boolean;
+  pulse?: boolean;
+  onClick?: () => void;
+}) {
+  const toneStyles: Record<StatTone, string> = {
+    neutral: "text-foreground",
+    success: "text-[color:var(--success)]",
+    warning: "text-[color:var(--warning)]",
+    error: "text-[color:var(--error)]",
+  };
+  const toneBg: Record<StatTone, string> = {
+    neutral: "bg-foreground/5",
+    success: "bg-[color:var(--success)]/10",
+    warning: "bg-[color:var(--warning)]/10",
+    error: "bg-[color:var(--error)]/10",
+  };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`dm-focus relative flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition-all sm:gap-1.5 sm:p-4 ${
+        active
+          ? "border-accent bg-accent/5 shadow-sm"
+          : "border-border bg-surface hover:border-accent/30 hover:shadow-xs"
+      }`}
+    >
+      <span
+        className={`inline-flex size-8 items-center justify-center rounded-lg ${toneBg[tone]} ${toneStyles[tone]}`}
+      >
+        {icon}
+      </span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+        {label}
+      </span>
+      <span className={`text-xl font-bold tabular-nums ${toneStyles[tone]}`}>
+        {value}
+      </span>
+      {pulse ? (
+        <span className="absolute right-3 top-3 flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--warning)] opacity-70" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-[color:var(--warning)]" />
+        </span>
+      ) : null}
+    </button>
   );
 }
