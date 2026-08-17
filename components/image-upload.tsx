@@ -18,6 +18,7 @@ import {
   removeBackground,
   type BgRemovalProgress,
 } from "@/lib/bgRemoval";
+import { inspectImageMetadata } from "@/lib/imageMetadata";
 
 type Endpoint = "shopLogo" | "productImage" | "imageUploader";
 
@@ -136,9 +137,23 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
     async (files: File[]) => {
       if (!files.length) return;
       try {
-        let processed = files;
+        // Metadata gate: reject stock/AI/watermarked images before we touch
+        // the network. Mirrors the server-side moderation stage so a merchant
+        // who passes here also passes there.
+        const cleared: File[] = [];
+        for (const file of files) {
+          const verdict = await inspectImageMetadata(file);
+          if (verdict.ok) {
+            cleared.push(file);
+          } else {
+            toast.error("Image rejected", { description: verdict.reason });
+          }
+        }
+        if (!cleared.length) return;
+
+        let processed = cleared;
         if (bgEnabled && autoRemoveBg) {
-          processed = await removeBackgrounds(files);
+          processed = await removeBackgrounds(cleared);
         }
         if (shouldWatermark) {
           setPreparing({ stage: "watermark", current: 0, total: processed.length });

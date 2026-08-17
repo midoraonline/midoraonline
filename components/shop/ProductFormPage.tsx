@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Clock, Check } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
+import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
   type CreateProductRequest,
@@ -67,6 +68,20 @@ function MediaGridWrapper({
       onImageUploaded={onImageUploaded}
       onVideoUploaded={onVideoUploaded}
     />
+  );
+}
+
+function QualityPill({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+        ok
+          ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
+          : "bg-[color:var(--warning)]/15 text-[color:var(--warning)]"
+      }`}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -145,6 +160,8 @@ export default function ProductFormPage({
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [aiCheck, setAiCheck] = useState<ListingQualityResponse | null>(null);
+  const [aiChecking, setAiChecking] = useState(false);
 
   const [sessionUploaded, setSessionUploaded] = useState<string[]>([]);
   const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
@@ -193,6 +210,42 @@ export default function ProductFormPage({
   }, [draft, categoryParts, categoryTree]);
 
   const canSubmit = Object.keys(errors).length === 0;
+
+  // Reset the cached AI verdict whenever the user edits any relevant field —
+  // the merchant should never see stale feedback about text they've since
+  // rewritten.
+  useEffect(() => {
+    setAiCheck(null);
+  }, [draft.title, draft.description, draft.category, draft.image_urls.length]);
+
+  async function runQualityCheck() {
+    if (aiChecking) return;
+    if (!draft.title.trim() || !draft.description.trim()) {
+      toast.error("Add a title and description before running the AI check.");
+      return;
+    }
+    setAiChecking(true);
+    try {
+      const result = await checkListingQuality({
+        title: draft.title.trim(),
+        description: draft.description.trim(),
+        image_urls: draft.image_urls,
+        category: draft.category || null,
+      });
+      setAiCheck(result);
+      if (result.ok) {
+        toast.success("AI review passed", { description: result.feedback });
+      } else {
+        toast.warning("AI review found issues", { description: result.feedback });
+      }
+    } catch (err) {
+      toast.error("AI review failed", {
+        description: err instanceof Error ? err.message : "Try again in a moment.",
+      });
+    } finally {
+      setAiChecking(false);
+    }
+  }
 
   function handleCancel() {
     if (saving) return;
@@ -469,11 +522,74 @@ export default function ProductFormPage({
               placeholder="Write at least two clear sentences. Include condition, what’s included, location, or requirements."
               aria-invalid={showErrors && Boolean(errors.description)}
             />
-            <p className="text-xs text-muted">
-              Tip: Detailed descriptions receive 3x more buyer inquiries and higher search ranking.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted">
+                Tip: Detailed descriptions receive 3x more buyer inquiries and higher search ranking.
+              </p>
+              <button
+                type="button"
+                onClick={() => void runQualityCheck()}
+                disabled={aiChecking}
+                className="dm-btn dm-btn-ghost dm-btn-sm gap-1.5 border border-accent/25 text-accent hover:bg-accent/5 disabled:opacity-60"
+              >
+                <Sparkles className="size-3.5" aria-hidden />
+                {aiChecking ? "Running AI review…" : "Check quality with AI"}
+              </button>
+            </div>
             {showErrors && errors.description ? (
               <p className="text-xs text-[color:var(--error)]">{errors.description}</p>
+            ) : null}
+
+            {aiCheck ? (
+              <div
+                className={`mt-2 rounded-2xl border p-3 sm:p-4 ${
+                  aiCheck.ok
+                    ? "border-[color:var(--success)]/30 bg-[color:var(--success)]/10"
+                    : "border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10"
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <Sparkles
+                    className={`mt-0.5 size-4 shrink-0 ${
+                      aiCheck.ok
+                        ? "text-[color:var(--success)]"
+                        : "text-[color:var(--warning)]"
+                    }`}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-bold text-foreground">
+                        AI review — {aiCheck.score}/100
+                      </p>
+                      <QualityPill
+                        label="Title vs images"
+                        ok={aiCheck.title_matches && aiCheck.images_match}
+                      />
+                      <QualityPill
+                        label={`Description: ${aiCheck.description_quality}`}
+                        ok={aiCheck.description_quality !== "poor"}
+                      />
+                    </div>
+                    <p className="text-xs leading-relaxed text-foreground/80">
+                      {aiCheck.feedback}
+                    </p>
+                    {aiCheck.suggestions.length > 0 ? (
+                      <ul className="space-y-1 pt-1 text-xs text-foreground/80">
+                        {aiCheck.suggestions.map((s, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <Lightbulb
+                              className="mt-0.5 size-3 shrink-0 text-accent"
+                              aria-hidden
+                            />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             ) : null}
           </div>
         </section>
