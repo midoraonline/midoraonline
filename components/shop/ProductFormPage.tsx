@@ -267,10 +267,11 @@ export default function ProductFormPage({
       return;
     }
 
-    // Gate: the AI listing quality check must pass before we call the API.
-    // If it hasn't been run for the current draft, run it now. If it comes
-    // back with issues, block submission so bad listings never leave the
-    // client.
+    // The AI listing quality check runs before we call the API so a bad
+    // title/image/description mismatch never leaves the client. If the
+    // check itself fails (network, AI outage, timeout) we don't block the
+    // merchant — skip it and let the server-side moderation pipeline be
+    // the source of truth instead.
     let verdict = aiCheck;
     if (verdict === null) {
       setAiChecking(true);
@@ -282,20 +283,18 @@ export default function ProductFormPage({
           category: draft.category || null,
         });
         setAiCheck(verdict);
-      } catch (err) {
-        setAiChecking(false);
-        toast.error("AI review failed", {
-          description:
-            err instanceof Error
-              ? err.message
-              : "Try again in a moment.",
+      } catch {
+        // AI review unavailable — proceed without blocking; moderation
+        // still runs server-side after submit.
+        toast.message("AI review skipped", {
+          description: "Couldn't reach the AI checker — continuing without it.",
         });
-        return;
+        verdict = null;
       }
       setAiChecking(false);
     }
 
-    if (!verdict.ok) {
+    if (verdict && !verdict.ok) {
       toast.error("Listing needs edits before it can be posted", {
         description: verdict.feedback,
       });
