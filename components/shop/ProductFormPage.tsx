@@ -85,6 +85,55 @@ function QualityPill({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
+/** AI-authored replacement for a single field — merchant explicitly accepts or dismisses it. */
+function SuggestionRow({
+  label,
+  value,
+  multiline = false,
+  onUse,
+  onDismiss,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+  onUse: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-accent/25 bg-accent/5 p-2.5">
+      <Sparkles className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-accent">
+          {label}
+        </p>
+        <p
+          className={`text-xs text-foreground/85 ${
+            multiline ? "leading-relaxed" : "truncate"
+          }`}
+        >
+          {value}
+        </p>
+        <div className="flex items-center gap-2 pt-0.5">
+          <button
+            type="button"
+            onClick={onUse}
+            className="dm-btn dm-btn-primary dm-btn-sm !py-1 !text-[11px]"
+          >
+            Use this
+          </button>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="text-[11px] font-semibold text-muted hover:text-foreground"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type FormDraft = ListingDraft;
 
 function emptyDraft(kind: ListingKind): FormDraft {
@@ -162,6 +211,11 @@ export default function ProductFormPage({
   const [showErrors, setShowErrors] = useState(false);
   const [aiCheck, setAiCheck] = useState<ListingQualityResponse | null>(null);
   const [aiChecking, setAiChecking] = useState(false);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<{
+    title?: boolean;
+    description?: boolean;
+    category?: boolean;
+  }>({});
 
   const [sessionUploaded, setSessionUploaded] = useState<string[]>([]);
   const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
@@ -216,6 +270,7 @@ export default function ProductFormPage({
   // rewritten.
   useEffect(() => {
     setAiCheck(null);
+    setDismissedSuggestions({});
   }, [draft.title, draft.description, draft.category, draft.image_urls.length]);
 
   async function runQualityCheck() {
@@ -245,6 +300,25 @@ export default function ProductFormPage({
     } finally {
       setAiChecking(false);
     }
+  }
+
+  function applyTitleSuggestion() {
+    if (!aiCheck?.suggested_title) return;
+    setDraft((d) => ({ ...d, title: aiCheck.suggested_title! }));
+    setDismissedSuggestions((s) => ({ ...s, title: true }));
+  }
+
+  function applyDescriptionSuggestion() {
+    if (!aiCheck?.suggested_description) return;
+    setDraft((d) => ({ ...d, description: aiCheck.suggested_description! }));
+    setDismissedSuggestions((s) => ({ ...s, description: true }));
+  }
+
+  function applyCategorySuggestion() {
+    if (!aiCheck?.suggested_category) return;
+    const value = aiCheck.suggested_subcategory || aiCheck.suggested_category;
+    setDraft((d) => ({ ...d, category: value }));
+    setDismissedSuggestions((s) => ({ ...s, category: true }));
   }
 
   function handleCancel() {
@@ -548,6 +622,16 @@ export default function ProductFormPage({
             {showErrors && errors.title ? (
               <p className="text-xs text-[color:var(--error)]">{errors.title}</p>
             ) : null}
+            {aiCheck?.suggested_title && !dismissedSuggestions.title ? (
+              <SuggestionRow
+                label="AI suggests"
+                value={aiCheck.suggested_title}
+                onUse={applyTitleSuggestion}
+                onDismiss={() =>
+                  setDismissedSuggestions((s) => ({ ...s, title: true }))
+                }
+              />
+            ) : null}
           </div>
 
           {/* Description */}
@@ -583,6 +667,17 @@ export default function ProductFormPage({
             </div>
             {showErrors && errors.description ? (
               <p className="text-xs text-[color:var(--error)]">{errors.description}</p>
+            ) : null}
+            {aiCheck?.suggested_description && !dismissedSuggestions.description ? (
+              <SuggestionRow
+                label="AI suggests"
+                value={aiCheck.suggested_description}
+                multiline
+                onUse={applyDescriptionSuggestion}
+                onDismiss={() =>
+                  setDismissedSuggestions((s) => ({ ...s, description: true }))
+                }
+              />
             ) : null}
 
             {aiCheck ? (
@@ -779,6 +874,24 @@ export default function ProductFormPage({
             />
             {showErrors && errors.category ? (
               <p className="text-xs text-[color:var(--error)]">{errors.category}</p>
+            ) : null}
+            {draft.kind === "product" &&
+            aiCheck?.suggested_category &&
+            !dismissedSuggestions.category &&
+            (aiCheck.suggested_subcategory || aiCheck.suggested_category) !==
+              (categoryParts.subcategoryLabel || categoryParts.parentLabel) ? (
+              <SuggestionRow
+                label="AI suggests"
+                value={
+                  aiCheck.suggested_subcategory
+                    ? `${aiCheck.suggested_category} › ${aiCheck.suggested_subcategory}`
+                    : aiCheck.suggested_category
+                }
+                onUse={applyCategorySuggestion}
+                onDismiss={() =>
+                  setDismissedSuggestions((s) => ({ ...s, category: true }))
+                }
+              />
             ) : null}
           </div>
         </section>

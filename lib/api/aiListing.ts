@@ -15,6 +15,10 @@ export type ListingQualityResponse = {
   images_match: boolean;
   feedback: string;
   suggestions: string[];
+  suggested_title?: string | null;
+  suggested_description?: string | null;
+  suggested_category?: string | null;
+  suggested_subcategory?: string | null;
 };
 
 export function checkListingQuality(
