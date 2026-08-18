@@ -265,10 +265,17 @@ export default function ProductFormPage({
 
   const canSubmit = Object.keys(errors).length === 0;
 
-  // Reset the cached AI verdict whenever the user edits any relevant field —
-  // the merchant should never see stale feedback about text they've since
-  // rewritten.
+  // Reset the cached AI verdict when the user manually edits a relevant
+  // field — stale feedback about text they've since rewritten shouldn't
+  // linger. Applying an individual suggestion (see apply*Suggestion below)
+  // sets this ref first so that one "Use this" click doesn't wipe out the
+  // other pending suggestions the merchant hasn't reviewed yet.
+  const applyingSuggestionRef = useRef(false);
   useEffect(() => {
+    if (applyingSuggestionRef.current) {
+      applyingSuggestionRef.current = false;
+      return;
+    }
     setAiCheck(null);
     setDismissedSuggestions({});
   }, [draft.title, draft.description, draft.category, draft.image_urls.length]);
@@ -304,12 +311,14 @@ export default function ProductFormPage({
 
   function applyTitleSuggestion() {
     if (!aiCheck?.suggested_title) return;
+    applyingSuggestionRef.current = true;
     setDraft((d) => ({ ...d, title: aiCheck.suggested_title! }));
     setDismissedSuggestions((s) => ({ ...s, title: true }));
   }
 
   function applyDescriptionSuggestion() {
     if (!aiCheck?.suggested_description) return;
+    applyingSuggestionRef.current = true;
     setDraft((d) => ({ ...d, description: aiCheck.suggested_description! }));
     setDismissedSuggestions((s) => ({ ...s, description: true }));
   }
@@ -317,6 +326,7 @@ export default function ProductFormPage({
   function applyCategorySuggestion() {
     if (!aiCheck?.suggested_category) return;
     const value = aiCheck.suggested_subcategory || aiCheck.suggested_category;
+    applyingSuggestionRef.current = true;
     setDraft((d) => ({ ...d, category: value }));
     setDismissedSuggestions((s) => ({ ...s, category: true }));
   }
