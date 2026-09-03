@@ -76,12 +76,12 @@ export default function HeroActions() {
     if (!session.user) return;
 
     if (hasMultipleShops) {
-      router.push("/merchant/listings/new");
+      router.push("/post-item");
       return;
     }
 
     if (shopCount === 1) {
-      router.push(`/merchant/listings/new?shop_id=${session.ownedShopIds[0]}`);
+      router.push(`/post-item?shop_id=${session.ownedShopIds[0]}`);
       return;
     }
 
@@ -89,7 +89,7 @@ export default function HeroActions() {
     try {
       const shopId = await ensureShopForListing();
       toast.success("Personal listings ready — add your first item.");
-      router.push(`/merchant/listings/new?shop_id=${shopId}`);
+      router.push(`/post-item?shop_id=${shopId}`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Couldn’t set up your listings.",
@@ -101,7 +101,7 @@ export default function HeroActions() {
 
   function confirmPick() {
     if (!selectedShopId) return;
-    router.push(`/merchant/listings/new?shop_id=${selectedShopId}`);
+    router.push(`/post-item?shop_id=${selectedShopId}`);
     setPhase("idle");
   }
 
@@ -119,7 +119,7 @@ export default function HeroActions() {
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <Link
           href={createShopHref}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95"
         >
           <Store className="size-3.5" strokeWidth={2.5} aria-hidden />
           {createShopLabel}

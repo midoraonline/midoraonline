@@ -34,10 +34,7 @@ export default function AdminChatClient({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Chat Monitoring</h1>
-        <p className="mt-1 text-sm text-muted">Overview of all buyer-seller conversations.</p>
-      </div>
+      <p className="text-sm text-muted">Overview of all buyer-seller conversations.</p>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className="dm-card p-4">

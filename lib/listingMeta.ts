@@ -1,14 +1,5 @@
-/**
- * Listing kinds + type- and category-specific "more information" (listing_meta).
- *
- * Pattern (FB Marketplace / Etsy): pick a listing type first, then collect
- * attributes that only make sense for that type / category. Stored as JSONB
- * so we can tweak fields without schema churn.
- */
-
 export type ListingKind = "product" | "service" | "opportunity";
 
-/** DB / API item_type values Midora already had. */
 export type ItemType =
   | "product"
   | "service"
@@ -17,22 +8,17 @@ export type ItemType =
   | "opportunity";
 
 export type ListingMeta = {
-  /** Product (general) */
   condition?: "new" | "like_new" | "used" | "refurbished";
   brand?: string;
-  /** Electronics */
   model?: string;
   storage?: string;
   warranty?: string;
-  /** Fashion / jewelry / beauty */
   size?: string;
   color?: string;
   material?: string;
-  /** Automotive */
   year?: string;
   make_model?: string;
   mileage_km?: string;
-  /** Property & Land */
   property_type?:
     | "land"
     | "house"
@@ -46,13 +32,10 @@ export type ListingMeta = {
   bathrooms?: string;
   title_status?: "titled" | "mailo" | "leasehold" | "customary" | "other";
   furnished?: "yes" | "no" | "partial";
-  /** Food / agriculture */
   unit?: string;
-  /** Service */
   pricing_model?: "fixed" | "hourly" | "starting_at" | "quote";
   availability?: string;
   service_area?: string;
-  /** Opportunity (jobs, gigs, collabs) */
   opportunity_kind?: "job" | "gig" | "collaboration" | "internship" | "other";
   compensation?: "paid" | "unpaid" | "commission" | "negotiable";
   deadline?: string;

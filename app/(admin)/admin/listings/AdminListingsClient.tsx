@@ -71,12 +71,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Listings Review</h1>
-          <p className="mt-1 text-sm text-muted">Review, approve, or reject all product listings across the platform.</p>
-        </div>
-      </div>
+      <p className="text-sm text-muted">Review, approve, or reject all product listings across the platform.</p>
 
       <div className="flex gap-2">
         {FILTERS.map((f) => (

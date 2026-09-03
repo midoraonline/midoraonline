@@ -103,35 +103,35 @@ function AISuggestion({
 
 function ShopPreview({ form }: { form: ConfirmForm }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-primary p-5 text-white">
+    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground">
       <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-accent/25 blur-2xl" />
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary-foreground/60">
         Shop preview
       </p>
       <p className="relative mt-2 font-display text-xl font-semibold tracking-tight">
         {form.name || "Your shop name"}
       </p>
       {form.description ? (
-        <p className="relative mt-1 text-sm text-white/70">{form.description}</p>
+        <p className="relative mt-1 text-sm text-primary-foreground/70">{form.description}</p>
       ) : null}
       <div className="relative mt-3 flex flex-wrap gap-2 text-[11px]">
         {form.shop_type ? (
-          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 capitalize text-white/85">
+          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 capitalize text-primary-foreground/85">
             {form.shop_type}
           </span>
         ) : null}
         {form.category ? (
-          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-white/85">
+          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-primary-foreground/85">
             {form.category}
           </span>
         ) : null}
         {form.locationDisplay ? (
-          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-white/85">
+          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-primary-foreground/85">
             {form.locationDisplay}
           </span>
         ) : null}
         {form.availability ? (
-          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-white/85">
+          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-primary-foreground/85">
             {form.availability}
           </span>
         ) : null}

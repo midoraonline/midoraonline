@@ -211,7 +211,7 @@ function Chip({
       aria-pressed={Boolean(active)}
       className={`inline-flex h-7 shrink-0 snap-start items-center gap-1 rounded-md px-2 text-[11px] transition-colors sm:h-8 sm:gap-1.5 sm:px-2.5 sm:text-xs ${
         active
-          ? "bg-primary text-white shadow-sm shadow-primary/20"
+          ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
           : "bg-background text-foreground/70 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
       } ${className}`}
     >

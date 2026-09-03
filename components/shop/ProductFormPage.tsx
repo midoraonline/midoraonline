@@ -459,7 +459,7 @@ export default function ProductFormPage({
       : "Edit listing";
 
   return (
-    <div className="mx-auto w-full space-y-6 px-3 pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6 sm:pt-6 md:pb-32 md:max-w-none lg:px-8 xl:px-12">
+    <div className="mx-auto w-full max-w-5xl space-y-6 pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-2 md:pb-32">
       {/* Top Breadcrumb Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
@@ -1085,7 +1085,7 @@ export default function ProductFormPage({
       {/* Sticky action bar. On mobile it sits above the mobile BottomNav
           (h-14 + safe area). On md+ it hugs the bottom of the viewport. */}
       <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-modal border-t border-border bg-surface/95 p-3 shadow-lg backdrop-blur-md md:bottom-0">
-        <div className="mx-auto flex w-full items-center justify-between gap-3 px-2 md:max-w-none lg:px-8 xl:px-12">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4">
           <button
             type="button"
             onClick={handleCancel}

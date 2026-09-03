@@ -1,14 +1,3 @@
-/**
- * Client-side impression batcher.
- *
- * Buffers viewport-visible listing IDs and flushes them to the API in
- * batches so we don't fire one XHR per card. Also assigns/persists an
- * anonymous session id used for fatigue tracking of logged-out visitors.
- *
- * Serverless-friendly by design: the server treats this endpoint as an
- * append-only sink and applies a 10-minute cooldown to prevent duplicate
- * rows from a busy viewport.
- */
 
 import { apiFetch } from "@/lib/api/base";
 
@@ -37,10 +26,6 @@ let queue: QueueEntry[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let unloadWired = false;
 
-/**
- * Stable anonymous session id, persisted in sessionStorage so it survives
- * navigation but resets when the tab closes.
- */
 export function getSessionId(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -63,10 +48,6 @@ function scheduleFlush() {
   }, FLUSH_INTERVAL_MS);
 }
 
-/**
- * Fire-and-forget: enqueue an impression to be flushed with the next batch.
- * Deduplicates by listing_id within the current queue.
- */
 export function trackImpression(record: ImpressionRecord): void {
   if (typeof window === "undefined") return;
   if (!record.listing_id) return;
@@ -78,7 +59,6 @@ export function trackImpression(record: ImpressionRecord): void {
 
   if (!unloadWired) {
     unloadWired = true;
-    // Flush pending on tab close / navigation so we don't lose the tail.
     window.addEventListener("pagehide", () => void flushImpressions(true));
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") void flushImpressions(true);
@@ -92,11 +72,6 @@ export function trackImpression(record: ImpressionRecord): void {
   }
 }
 
-/**
- * Flush all queued impressions. Called automatically on timer / batch size
- * / page unload. Also exported so callers can force-flush before a
- * navigation that unmounts the tracked components.
- */
 export async function flushImpressions(useBeacon = false): Promise<void> {
   if (queue.length === 0) return;
   const batch = queue.slice(0, MAX_BATCH_SIZE);
@@ -120,7 +95,7 @@ export async function flushImpressions(useBeacon = false): Promise<void> {
       navigator.sendBeacon(url, blob);
       return;
     } catch {
-      /* fall through to fetch */
+
     }
   }
 
@@ -131,7 +106,6 @@ export async function flushImpressions(useBeacon = false): Promise<void> {
       headers: { "X-Midora-Session": getSessionId() },
     });
   } catch {
-    // Silent — impressions are best-effort. Losing a batch degrades the
-    // exposure multiplier but never breaks the UX.
+
   }
 }

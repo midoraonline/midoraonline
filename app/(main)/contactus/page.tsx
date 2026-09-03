@@ -58,9 +58,9 @@ export default function ContactUs() {
       <div className="mx-auto w-full max-w-5xl space-y-8 pt-8 sm:space-y-10 sm:pt-10">
       <section className="dm-card p-6 sm:p-8 lg:p-10">
         <p className="text-sm font-semibold text-muted">Contact</p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
           Talk to the Midora Online team
-        </h1>
+        </h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
           Questions about opening a shop, subscriptions, or partnerships? Send us a message and we&apos;ll get back to you.
         </p>

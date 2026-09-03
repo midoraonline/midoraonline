@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import Logo from "@/components/Logo";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
@@ -325,14 +326,23 @@ export default function Navbar({
             className="inline-flex shrink-0 items-center gap-2 rounded-lg py-1 dm-focus"
             onClick={() => setOpen(false)}
           >
-            <Image
-              src={shopLogoUrl || "/logo.png"}
-              alt={shopLogoUrl ? shopName || "Shop" : "Midora Online"}
-              width={100}
-              height={34}
-              className={`${shopLogoUrl ? "size-7 rounded-full object-cover sm:size-8" : "h-7 w-auto sm:h-8"}`}
-              priority
-            />
+            {shopLogoUrl ? (
+              <Image
+                src={shopLogoUrl}
+                alt={shopName || "Shop"}
+                width={100}
+                height={34}
+                className="size-7 rounded-full object-cover sm:size-8"
+                priority
+              />
+            ) : (
+              <Logo
+                width={100}
+                height={34}
+                className="h-7 w-auto sm:h-8"
+                priority
+              />
+            )}
           </Link>
 
           {/* Desktop Nav */}

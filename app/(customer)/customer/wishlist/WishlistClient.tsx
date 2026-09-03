@@ -35,12 +35,9 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
   return (
     <div className="dm-container py-6 sm:py-8">
       <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Wishlist</h1>
-          <p className="mt-1 text-sm text-muted">
-            {total} saved {total === 1 ? "item" : "items"}
-          </p>
-        </div>
+        <p className="text-sm text-muted">
+          {total} saved {total === 1 ? "item" : "items"}
+        </p>
         <Link
           href="/products"
           className="dm-focus inline-flex items-center gap-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold text-foreground transition hover:border-accent/30 hover:text-accent"

@@ -118,7 +118,7 @@ export default function ShopCatalogEditor({
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("openAdd") === "true") {
-        router.push(`/merchant/listings/new?shop_id=${shopId}&item_type=${itemType}`);
+        router.push(`/post-item?shop_id=${shopId}&item_type=${itemType}`);
       }
     }
   }, [shopId, itemType, router]);
@@ -223,7 +223,7 @@ export default function ShopCatalogEditor({
             Your {kindLabel}
           </p>
           <Link
-            href={`/merchant/listings/new?shop_id=${shopId}&item_type=${itemType}`}
+            href={`/post-item?shop_id=${shopId}&item_type=${itemType}`}
             className="dm-btn dm-btn-primary dm-btn-sm"
           >
             Add {LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase()}

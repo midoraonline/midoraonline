@@ -240,7 +240,7 @@ export default function ProductCard({
               tInfo.tone === "hot"
                 ? "bg-accent text-white"
                 : tInfo.tone === "fresh"
-                  ? "bg-primary/80 text-white backdrop-blur-sm"
+                  ? "bg-primary/80 text-primary-foreground backdrop-blur-sm"
                   : "bg-black/55 text-white backdrop-blur-sm"
             }
           >

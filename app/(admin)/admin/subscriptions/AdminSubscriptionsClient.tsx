@@ -28,14 +28,7 @@ export default function AdminSubscriptionsClient({ initialItems }: Props) {
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            Admin · Subscriptions
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            Pesapal subscriptions
-          </h1>
-        </div>
+        <div />
         <button
           onClick={load}
           className="rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-foreground/[0.04]"

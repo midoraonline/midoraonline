@@ -55,7 +55,7 @@ export function ThemedSelect<
         controlH,
         textCls,
         active
-          ? "bg-primary text-white shadow-sm shadow-primary/20"
+          ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
           : "bg-background text-foreground/70 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground",
         isFocused && !active ? "ring-2 ring-primary/30" : "",
       ].join(" "),

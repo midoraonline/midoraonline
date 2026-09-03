@@ -200,11 +200,7 @@ export default function FeedConfigClient() {
     <div className="space-y-6 sm:space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Admin</p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            Feed scoring & placement
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted">
+          <p className="max-w-2xl text-sm text-muted">
             Tune every score bonus, penalty, freshness curve, and vendor-diversity
             constraint used by the ranking engine. Changes take effect within a
             minute and can be dry-run first with the tester below.

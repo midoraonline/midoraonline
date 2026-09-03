@@ -71,24 +71,24 @@ export default function FormModal({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
         aria-label="Close dialog"
         onClick={onClose}
       />
       <div
-        className={`relative flex w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom,0px)))] flex-col overflow-hidden rounded-t-2xl border border-neutral-200 bg-white shadow-2xl sm:max-h-[min(90dvh,720px)] sm:rounded-2xl ${maxWidthClass}`}
+        className={`relative flex w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom,0px)))] flex-col overflow-hidden rounded-t-2xl border border-border bg-surface shadow-2xl sm:max-h-[min(90dvh,720px)] sm:rounded-2xl ${maxWidthClass}`}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
           <h2
             id="form-modal-title"
-            className="pr-2 text-base font-semibold text-neutral-900 sm:text-lg"
+            className="pr-2 text-base font-semibold text-foreground sm:text-lg"
           >
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800"
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
             aria-label="Close"
           >
             <X className="size-5" />
@@ -100,7 +100,7 @@ export default function FormModal({
         </div>
 
         {footer ? (
-          <div className="shrink-0 border-t border-neutral-100 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
+          <div className="shrink-0 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
             {footer}
           </div>
         ) : null}

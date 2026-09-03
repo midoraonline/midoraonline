@@ -43,7 +43,7 @@ export default function ShopHeroActionBar({
           {canManage ? (
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                href={`/merchant/listings/new?shop_id=${shopId}`}
+                href={`/post-item?shop_id=${shopId}`}
                 className="dm-btn dm-btn-primary dm-btn-sm min-h-10"
               >
                 <Plus className="size-4" aria-hidden="true" />

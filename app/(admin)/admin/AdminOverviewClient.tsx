@@ -785,13 +785,7 @@ function Header({
   return (
     <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-          Admin
-        </p>
-        <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-          Platform overview
-        </h1>
-        <p className="mt-2 text-sm text-muted">
+        <p className="text-sm text-muted">
           Live snapshot of shops, products, engagement, and revenue.
           {generated ? (
             <>

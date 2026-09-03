@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Logo from "@/components/Logo";
 import Link from "next/link";
 import type { Shop } from "@/lib/api/shops";
 import { recordShopEvent } from "@/lib/api/shops";
@@ -129,8 +130,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
             href="/"
             className="inline-block text-muted outline-none ring-0 shadow-none transition-colors hover:text-foreground focus:outline-none focus-visible:outline-none"
           >
-            <Image
-              src="/logo.png"
+            <Logo
               alt="Midora Online"
               width={120}
               height={41}

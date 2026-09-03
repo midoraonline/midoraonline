@@ -5,15 +5,17 @@ import { apiAuth } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import PushNotificationsSection from "@/components/PushNotificationsSection";
+import ThemeSelector from "@/components/ThemeSelector";
 
 // ── Status banner ─────────────────────────────────────────────────────────────
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
   return (
-    <div className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm ${
-      type === "success"
-        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-        : "border-rose-500/30 bg-rose-500/10 text-rose-700"
-    }`}>
+    <div
+      className={[
+        "dm-alert flex items-center gap-2.5 px-4 py-3 text-sm",
+        type === "success" ? "dm-alert--success" : "dm-alert--error",
+      ].join(" ")}
+    >
       <MaterialSymbol
         name={type === "success" ? "check_circle" : "error"}
         className="!text-base shrink-0"
@@ -218,9 +220,22 @@ function AccountInfoSection() {
 export default function CustomerSettingsPage() {
   return (
     <div className="space-y-5">
+      <AppearanceSection />
       <PasswordSection />
       <PushNotificationsSection />
       <AccountInfoSection />
     </div>
+  );
+}
+
+function AppearanceSection() {
+  return (
+    <section className="dm-card space-y-4 p-5 sm:p-6">
+      <div>
+        <h2 className="text-base font-semibold text-foreground">Appearance</h2>
+        <p className="mt-0.5 text-xs text-muted">Choose how Midora looks on this device.</p>
+      </div>
+      <ThemeSelector />
+    </section>
   );
 }

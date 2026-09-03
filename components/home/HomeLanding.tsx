@@ -383,11 +383,11 @@ export default function HomeLanding({ initialProducts }: Props) {
           )}
         </section>
 
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-primary p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
+        <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
           <div className="pointer-events-none absolute -right-8 -top-8 size-40 rounded-full bg-accent/20 blur-3xl" />
           <div className="relative min-w-0">
-            <p className="text-sm font-semibold text-white">New to Midora?</p>
-            <p className="mt-1 text-sm text-white/70">
+            <p className="text-sm font-semibold text-primary-foreground">New to Midora?</p>
+            <p className="mt-1 text-sm text-primary-foreground/70">
               Learn how the platform works — for shoppers and merchants alike.
             </p>
           </div>
