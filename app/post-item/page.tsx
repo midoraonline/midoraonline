@@ -1,19 +1,25 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Store } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import ProductFormPage from "@/components/shop/ProductFormPage";
 import { useAppSession } from "@/lib/state";
-import { fetchMyShopSummaries, type UserShopSummary } from "@/lib/shop/personalShop";
+import {
+  ensureShopForListing,
+  fetchMyShopSummaries,
+  type UserShopSummary,
+} from "@/lib/shop/personalShop";
 import type { ItemType } from "@/lib/api/products";
 
 function NewListingContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const session = useAppSession();
 
   const paramShopId = searchParams.get("shop_id") || searchParams.get("shopId");
@@ -22,6 +28,8 @@ function NewListingContent() {
   const [shops, setShops] = useState<UserShopSummary[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(paramShopId);
+  const [provisioning, setProvisioning] = useState(false);
+  const provisionAttempted = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -42,31 +50,41 @@ function NewListingContent() {
     };
   }, [paramShopId]);
 
-  if (!session.hydrated || loadingShops) {
+  // No shop yet → auto-provision a personal listings shop so the user can
+  // post without setting up a storefront first. Runs once per mount when
+  // hydration + shop load has settled.
+  useEffect(() => {
+    if (!session.hydrated || !session.isAuthenticated) return;
+    if (loadingShops) return;
+    if (shops.length > 0 || selectedShopId) return;
+    if (provisionAttempted.current) return;
+    provisionAttempted.current = true;
+
+    // Kicking off an async provision on mount is exactly the use-case the
+    // rule can't distinguish from a cascading render loop — silence it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProvisioning(true);
+    ensureShopForListing()
+      .then((shopId) => {
+        setSelectedShopId(shopId);
+      })
+      .catch((err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Couldn't set up your listings.",
+        );
+        // Give the user a way back so they aren't stuck on a blank screen.
+        router.push("/");
+      })
+      .finally(() => setProvisioning(false));
+  }, [session.hydrated, session.isAuthenticated, loadingShops, shops.length, selectedShopId, router]);
+
+  if (!session.hydrated || loadingShops || provisioning) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
         <Loader2 className="size-6 animate-spin text-accent" />
-        <p className="text-sm font-medium">Loading your shop details…</p>
-      </div>
-    );
-  }
-
-  // No shop yet — nudge to open one first.
-  if (shops.length === 0) {
-    return (
-      <div className="mx-auto max-w-md space-y-5 py-20 text-center">
-        <div className="mx-auto grid size-14 place-items-center rounded-full bg-accent/10 text-accent">
-          <Store className="size-7" />
-        </div>
-        <div className="space-y-1.5">
-          <h1 className="font-display text-xl font-bold text-foreground">Open a shop first</h1>
-          <p className="text-sm text-muted leading-relaxed">
-            Listings belong to a shop storefront. Create your free shop, then come back to post.
-          </p>
-        </div>
-        <Link href="/open-shop" className="dm-btn dm-btn-primary">
-          Create a shop
-        </Link>
+        <p className="text-sm font-medium">
+          {provisioning ? "Preparing your listing space…" : "Loading page…"}
+        </p>
       </div>
     );
   }
@@ -127,6 +145,9 @@ function NewListingContent() {
   }
 
   const activeShopId = selectedShopId || shops[0]?.id;
+  // Users without a pre-existing shop shouldn't be dumped into /merchant/listings
+  // on cancel — send them home instead.
+  const backUrl = shops.length > 0 ? "/merchant/listings" : "/";
 
   return (
     <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
@@ -134,7 +155,8 @@ function NewListingContent() {
         mode="add"
         shopId={activeShopId}
         itemType={paramItemType}
-        backUrl="/merchant/listings"
+        backUrl={backUrl}
+        hasBottomNav={false}
       />
     </div>
   );
@@ -142,7 +164,7 @@ function NewListingContent() {
 
 export default function PostItemPage() {
   return (
-    <StandaloneShell eyebrow="Post an item" closeHref="/merchant/listings">
+    <StandaloneShell eyebrow="Post an item" closeHref="/">
       <Suspense
         fallback={
           <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">

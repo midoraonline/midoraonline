@@ -2,22 +2,40 @@
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { apiListingEvents } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 
 type Props = {
   waHref: string;
   productId: string;
+  shopId?: string;
+  category?: string;
+  hasDiscount?: boolean;
+  clickSource?: "product_detail" | "shop_page" | "search_result";
   className?: string;
 };
 
 export default function ProductWhatsAppButton({
   waHref,
   productId,
+  shopId,
+  category,
+  hasDiscount,
+  clickSource = "product_detail",
   className = "",
 }: Props) {
   const doOpen = () => {
     apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
+    if (shopId) {
+      track("conversion:whatsapp_click", {
+        productId,
+        shopId,
+        category,
+        hasDiscount,
+        clickSource,
+      });
+    }
     notifyFeedEngagement();
     window.open(waHref, "_blank", "noopener,noreferrer");
   };

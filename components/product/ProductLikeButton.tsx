@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiProducts } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 
@@ -17,6 +18,8 @@ export default function ProductLikeButton({
   variant = "default",
   initialLiked,
   initialLikeCount,
+  shopId,
+  category,
 }: {
   productId: string;
   className?: string;
@@ -24,6 +27,8 @@ export default function ProductLikeButton({
   variant?: "default" | "floating" | "outline";
   initialLiked?: boolean;
   initialLikeCount?: number;
+  shopId?: string;
+  category?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -89,6 +94,17 @@ export default function ProductLikeButton({
         await apiProducts.likeProduct(productId);
       } else {
         await apiProducts.unlikeProduct(productId);
+      }
+      if (shopId) {
+        if (next) {
+          track("listing:favorited", {
+            productId,
+            shopId,
+            category: category ?? "",
+          });
+        } else {
+          track("listing:unfavorited", { productId, shopId });
+        }
       }
       notifyFeedEngagement();
       void sync();

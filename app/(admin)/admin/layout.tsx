@@ -6,6 +6,7 @@ import DashboardShell, {
 
 const NAV: DashboardNavItem[] = [
   { href: "/admin", label: "Overview", icon: <IconChart />, exact: true },
+  { href: "/admin/insights", label: "Insights", icon: <IconChart /> },
   { href: "/admin/verifications", label: "Verifications", icon: <IconShield /> },
   { href: "/admin/shops", label: "Shops", icon: <IconStore /> },
   { href: "/admin/reports", label: "Reports", icon: <IconFlag /> },

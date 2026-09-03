@@ -139,7 +139,7 @@ function LoginPageInner() {
           type="button"
           disabled={googleLoading || loading}
           onClick={handleGoogleSignIn}
-          className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-white px-4 text-sm font-medium text-foreground/80 shadow-sm transition-all hover:bg-primary/[0.02] hover:shadow active:scale-[0.99] disabled:opacity-60"
+          className="group flex min-h-11 w-full items-center justify-center gap-2.5 rounded-xl border-2 border-accent/40 bg-white px-4 text-sm font-semibold text-accent shadow-[0_2px_8px_-2px_rgba(212,101,60,0.25)] transition-all hover:border-accent hover:bg-accent hover:text-white hover:shadow-[0_4px_14px_-2px_rgba(212,101,60,0.45)] active:scale-[0.99] disabled:opacity-60"
         >
           <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>

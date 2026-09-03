@@ -209,9 +209,10 @@ export default function HomeLanding({ initialProducts }: Props) {
 
   useEffect(() => {
     if (!session.hydrated) return;
+    if (!session.isAuthenticated) return;
     if (localStorage.getItem("midora_popup_dismissed") === "true") return;
     const timer = setTimeout(() => {
-      setShowPopup(session.isAuthenticated ? "signed-in" : "unsigned");
+      setShowPopup("signed-in");
     }, 100);
     return () => clearTimeout(timer);
   }, [session.hydrated, session.isAuthenticated]);

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 
@@ -91,6 +92,7 @@ export default function ShopActions({
         setFollowed(next);
         await syncEngagement();
         notifyFeedEngagement();
+        track(next ? "shop:followed" : "shop:unfollowed", { shopId });
         router.refresh();
       } catch {
         /* keep prior */

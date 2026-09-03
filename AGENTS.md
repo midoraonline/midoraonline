@@ -127,6 +127,21 @@ Rules:
 - For complex client state, prefer **Zustand/Jotai** (this repo already uses Zustand in `stores/`) so subscribers can select a slice and skip broad re-renders.
 
 
+### 6.1 The one allowed Context around auth: a thin action surface
+
+
+The rule above bans **storing** session in Context. It does not ban a Context that **wraps** the already-canonical Zustand store to expose a stable action surface (`login`, `register`, `logout`, `refresh`, plus derived flags like `isAdmin` / `isMerchant`). This repo does exactly that in `lib/auth/AuthContext.tsx`:
+
+
+- Zustand (`useSessionStore`) stays the single source of truth. Hydration and cross-tab sync still happen in `AppStateProvider` — the Context never fetches.
+- `<AuthProvider>` reads a shallow slice with `useShallow` and memoizes the `value` object, so consumers that only use actions don't re-render when unrelated store keys change.
+- Call sites choose the shape they want:
+  - `useAppSession()` — pure state, unchanged, still preferred for read-only components.
+  - `useAuth()` — state + login/register/logout/refresh + `isAdmin` / `isMerchant`. Preferred anywhere that also triggers an auth mutation, so the mutation and the analytics emit stay in one place.
+- Do **not** introduce a second Context that also owns session state. Extend `AuthContext` instead.
+- Do **not** put high-frequency state (typing, scroll) into `AuthContext`; it re-renders every consumer.
+
+
 ## 7. Performance / Re-renders
 
 

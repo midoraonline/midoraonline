@@ -70,6 +70,22 @@ export function useProductSearch({
         });
         if (id !== requestId.current) return;
 
+        // Fire analytics event so admin fill-rate/discovery metrics can
+        // score how often searches surface enough real listings.
+        try {
+          const { track } = await import("@/lib/analytics");
+          track("marketplace:search", {
+            query: q,
+            category: category ?? undefined,
+            resultCount: res.total,
+            // Every published listing is verified on Midora, so total ≈ verified.
+            // If we ever add unverified inventory, split this out.
+            verifiedCount: res.total,
+          });
+        } catch {
+          /* analytics never breaks search */
+        }
+
         const site = typeof window !== "undefined" ? window.location.origin : undefined;
         setState({
           items: res.items.map((item) => searchItemToCard(item, site)),
