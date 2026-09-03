@@ -13,13 +13,6 @@ function toCard(p: HomeFeedProduct, site: string): ProductCardData {
   return homeFeedProductToCard(p, site);
 }
 
-/**
- * Build headers for server-to-FastAPI calls.
- *
- * Reads the midora_access cookie from next/headers and injects it as a
- * Bearer token. This is required on Vercel where server components cannot
- * rely on cookies being transparently forwarded to external API calls.
- */
 async function buildAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies();
   const token = cookieStore.get("midora_access")?.value;

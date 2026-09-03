@@ -155,7 +155,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
           <p className="mt-1 text-sm text-muted">Here's how your shops are performing.</p>
         </div>
         <Link
-          href="/merchant/new"
+          href="/open-shop"
           className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
         >
           + New shop
@@ -526,7 +526,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
                 View all →
               </Link>
               <Link
-                href="/merchant/new"
+                href="/open-shop"
                 className="rounded-xl bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
               >
                 + New
@@ -537,7 +537,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
           {shops.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-8 text-center">
               <p className="text-sm text-muted">You haven't opened a shop yet.</p>
-              <Link href="/merchant/new" className="mt-4 inline-flex rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:opacity-90">
+              <Link href="/open-shop" className="mt-4 inline-flex rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:opacity-90">
                 Open your first shop
               </Link>
             </div>

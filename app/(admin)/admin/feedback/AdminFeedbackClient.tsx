@@ -22,12 +22,7 @@ export default function AdminFeedbackClient({ initialItems }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Platform Feedback</h1>
-          <p className="mt-1 text-sm text-muted">Review feedback submitted by users.</p>
-        </div>
-      </div>
+      <p className="text-sm text-muted">Review feedback submitted by users.</p>
 
       {feedbackList.length === 0 ? (
         <div className="dm-card p-8 text-center text-sm text-muted">No feedback found.</div>

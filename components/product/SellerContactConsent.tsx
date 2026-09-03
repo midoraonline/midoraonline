@@ -50,44 +50,48 @@ export default function SellerContactConsent({
 
       {showConsent && (
         <div
-          className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          className="z-modal fixed inset-0 flex items-end justify-center bg-foreground/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="seller-contact-title"
           onClick={() => setShowConsent(false)}
         >
           <div
-            className="dm-card w-full max-w-sm space-y-4 p-6"
+            className="w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-lg sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <MaterialSymbol name="security" className="!text-xl text-accent" />
-                <h3 className="text-sm font-semibold">Contact Seller</h3>
+            <div className="flex items-start gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+                <MaterialSymbol name="security" className="!text-lg" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 id="seller-contact-title" className="text-sm font-semibold text-foreground">
+                  Contact seller
+                </h3>
+                <p className="mt-0.5 text-xs text-muted">
+                  Opening WhatsApp for <strong className="text-foreground">{title}</strong>.
+                  Your inquiry is logged so the seller can follow up.
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowConsent(false)}
-                className="text-foreground/50 hover:text-foreground"
+                aria-label="Close"
+                className="grid size-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
               >
-                <MaterialSymbol name="close" className="!text-lg" />
+                <MaterialSymbol name="close" className="!text-base" />
               </button>
             </div>
 
-            <p className="text-xs leading-relaxed text-muted">
-              You are about to contact the seller of <strong>{title}</strong> via WhatsApp.
-              Your inquiry will be recorded so the seller can respond. Do you want to proceed?
+            <p className="mt-4 text-[11px] leading-relaxed text-muted">
+              Only genuine inquiries please — spam or fraud may suspend your account.
             </p>
 
-            <div className="dm-alert dm-alert--warning flex items-center gap-3 px-3 py-2 text-[11px]">
-              <MaterialSymbol name="info" className="!text-base shrink-0" aria-hidden="true" />
-              <span>
-                Only contact sellers for genuine inquiries. Fraudulent or spam messages may result in account suspension.
-              </span>
-            </div>
-
-            <div className="flex gap-2">
+            <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => setShowConsent(false)}
-                className="dm-pill dm-focus flex-1 border border-foreground/[0.12] px-4 py-2 text-xs font-semibold hover:bg-foreground/[0.04]"
+                className="dm-btn dm-btn-ghost dm-btn-sm flex-1"
               >
                 Cancel
               </button>
@@ -97,26 +101,13 @@ export default function SellerContactConsent({
                   setConsented(true);
                   handleOpenWhatsApp();
                 }}
-                className="dm-pill dm-focus flex-1 bg-[#25D366] px-4 py-2 text-xs font-semibold text-white hover:brightness-95"
+                className="dm-btn dm-btn-sm flex-1 gap-1.5 text-white shadow-sm hover:brightness-95"
+                style={{ background: "#25D366" }}
               >
-                <span className="flex items-center justify-center gap-1.5">
-                  <WhatsAppIcon className="size-3.5" />
-                  Proceed to WhatsApp
-                </span>
+                <WhatsAppIcon className="size-3.5" />
+                Continue
               </button>
             </div>
-
-            <label className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={consented}
-                onChange={(e) => setConsented(e.target.checked)}
-                className="mt-0.5 size-3.5"
-              />
-              <span className="text-[10px] text-muted leading-relaxed">
-                I understand that my inquiry will be recorded and I agree to the Terms of Service.
-              </span>
-            </label>
           </div>
         </div>
       )}

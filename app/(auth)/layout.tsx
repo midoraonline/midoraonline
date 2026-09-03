@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Logo from "@/components/Logo";
 
 const HERO_IMAGE = "/hero_lady_market.png";
 
@@ -10,8 +11,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       {/* Left — form */}
       <div className="flex w-full flex-col items-center justify-center px-4 py-5 sm:px-6 lg:w-1/2 lg:px-8 xl:px-10">
         <Link href="/" className="mb-5 self-center sm:mb-6">
-          <Image
-            src="/logo.png"
+          <Logo
             alt="Midora Online"
             width={160}
             height={54}

@@ -237,7 +237,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           {/* Add Product CTA always shown after Stage 1 */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link
-              href={`/merchant/listings/new?shop_id=${shopId}`}
+              href={`/post-item?shop_id=${shopId}`}
               className="dm-btn dm-btn-primary dm-btn-sm gap-1.5"
             >
               <MaterialSymbol name="add_circle" className="!text-base" />

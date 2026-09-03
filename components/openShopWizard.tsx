@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Store, Loader2, ArrowRight, AlertCircle } from "lucide-react";
+
 import { apiShops } from "@/lib/api";
 import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
@@ -10,8 +13,6 @@ import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
-
-import { useRouter } from "next/navigation";
 
 function slugFromName(name: string): string {
   return name
@@ -74,7 +75,7 @@ export default function OpenShopWizard() {
       });
       // Refresh session so the navbar reflects the new merchant role.
       notifyAuthChanged();
-      // Immediately redirect to verification — do not block on optional AI context setup.
+      // Immediately redirect to verification
       router.push(`/merchant/shops/${shop.id}/verification`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your shop. Please try again.");
@@ -83,122 +84,186 @@ export default function OpenShopWizard() {
     }
   }
 
-
   return (
-    <div className="dm-card p-6 sm:p-8 space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">Set up manually</h2>
-        <p className="mt-1 text-sm text-muted">
-          Fill in your shop details and logo. You'll be taken straight to verification after.
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 border-b border-border/80 pb-5">
+        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
+          <Store className="size-6" />
+        </span>
+        <div>
+          <h2 className="font-display text-xl font-bold tracking-tight">Manual Storefront Setup</h2>
+          <p className="mt-0.5 text-xs sm:text-sm text-muted">
+            Enter your business information below. You will be taken straight to verification after publishing.
+          </p>
+        </div>
       </div>
 
       {error && (
-        <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-2xl px-3 py-2">{error}</p>
+        <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--error)]/30 bg-[color:var(--error)]/10 px-4 py-3 text-xs font-medium text-[color:var(--error)]">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
 
-      <form onSubmit={handleCreateShop} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Shop name *</label>
-              <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
-                placeholder="e.g. My Coffee Shop"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Description (optional)</label>
-              <input
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
-                placeholder="Short tagline"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">About (optional)</label>
-              <textarea
-                className="min-h-[80px] w-full rounded-2xl border border-border bg-surface px-3 py-2 text-xs dm-focus"
-                placeholder="Longer description"
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Logo (optional)</label>
-              <ImageUpload
-                endpoint="shopLogo"
-                onUploadComplete={setLogoUrl}
-                label="Upload logo"
-                previewUrl={logoUrl || undefined}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Shop category</label>
-              <div className="rounded-2xl border border-border bg-surface p-3">
-                <CategoryPicker
-                  value={category}
-                  onChange={setCategory}
-                  compact
-                  idPrefix="open-shop-category"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Shop type</label>
-              <select
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
-                value={shopType}
-                onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
-              >
-                <option value="product">Product</option>
-                <option value="service">Service</option>
-                <option value="both">Both</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Shop email (optional)</label>
-              <input
-                type="email"
-                className="h-9 w-full rounded-2xl border border-border bg-surface px-3 text-xs dm-focus"
-                placeholder="hello@shop.com"
-                value={shopEmail}
-                onChange={(e) => setShopEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">WhatsApp (optional)</label>
-              <PhoneNumberInput
-                value={whatsappNumber}
-                onChange={setWhatsappNumber}
-                placeholder="700 000 000"
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Location (optional)</label>
-              <LocationInput
-                value={locationDisplay}
-                onChange={setLocationDisplay}
-                onResolved={(place) =>
-                  setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)
-                }
-                placeholder="e.g. Kisasi, Kampala"
-              />
-            </div>
+      <form onSubmit={handleCreateShop} className="space-y-6">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {/* Shop Name */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label htmlFor="wizard-shop-name" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Shop Name <span className="text-[color:var(--error)]">*</span>
+            </label>
+            <input
+              id="wizard-shop-name"
+              className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm font-medium dm-focus transition-all"
+              placeholder="e.g. Kampala Gourmet Bakery"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            {name.trim() && (
+              <p className="text-[11px] text-muted">
+                Public URL: <span className="font-mono font-medium text-foreground">midora.co/shops/{slugFromName(name)}</span>
+              </p>
+            )}
           </div>
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={creating}
-              className="dm-pill dm-focus bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
-            >
-              {creating ? "Creating…" : "Create shop"}
-            </button>
-          </div>
-        </form>
 
+          {/* Tagline */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label htmlFor="wizard-shop-desc" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Short Description / Tagline
+            </label>
+            <input
+              id="wizard-shop-desc"
+              className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm dm-focus transition-all"
+              placeholder="e.g. Freshly baked cakes, pastries & custom treats delivered daily"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={160}
+            />
+          </div>
+
+          {/* About */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label htmlFor="wizard-shop-about" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              About Business
+            </label>
+            <textarea
+              id="wizard-shop-about"
+              className="min-h-[100px] w-full rounded-2xl border border-border bg-background p-4 text-sm dm-focus transition-all"
+              placeholder="Tell buyers your business story, specialty products, opening hours, or delivery policies…"
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+            />
+          </div>
+
+          {/* Shop Type */}
+          <div className="space-y-1.5">
+            <label htmlFor="wizard-shop-type" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Offering Type
+            </label>
+            <select
+              id="wizard-shop-type"
+              className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm dm-focus transition-all"
+              value={shopType}
+              onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
+            >
+              <option value="product">Products</option>
+              <option value="service">Services</option>
+              <option value="both">Both Products & Services</option>
+            </select>
+          </div>
+
+          {/* Shop Category */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Primary Business Category
+            </label>
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <CategoryPicker
+                value={category}
+                onChange={setCategory}
+                compact
+                idPrefix="open-shop-wizard-category"
+              />
+            </div>
+          </div>
+
+          {/* Logo Upload */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Storefront Logo
+            </label>
+            <ImageUpload
+              endpoint="shopLogo"
+              onUploadComplete={setLogoUrl}
+              label="Upload logo image"
+              previewUrl={logoUrl || undefined}
+            />
+          </div>
+
+          {/* Contact Details */}
+          <div className="space-y-1.5">
+            <label htmlFor="wizard-shop-email" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Business Email
+            </label>
+            <input
+              id="wizard-shop-email"
+              type="email"
+              className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm dm-focus transition-all"
+              placeholder="hello@yourshop.com"
+              value={shopEmail}
+              onChange={(e) => setShopEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+              WhatsApp Contact Number
+            </label>
+            <PhoneNumberInput
+              value={whatsappNumber}
+              onChange={setWhatsappNumber}
+              placeholder="700 000 000"
+            />
+          </div>
+
+          {/* Location */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Physical Location / Town
+            </label>
+            <LocationInput
+              value={locationDisplay}
+              onChange={setLocationDisplay}
+              onResolved={(place) =>
+                setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)
+              }
+              placeholder="e.g. Ntinda Shopping Centre, Kampala"
+            />
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex justify-end pt-4 border-t border-border/80">
+          <button
+            type="submit"
+            disabled={creating || !name.trim()}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-accent/25 transition-all hover:bg-accent-hover hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {creating ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Creating Shop…</span>
+              </>
+            ) : (
+              <>
+                <span>Publish Shop</span>
+                <ArrowRight className="size-4" />
+              </>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

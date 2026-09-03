@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import BottomNav from "@/components/BottomNav";
+import Logo from "@/components/Logo";
 import { useAppSession } from "@/lib/state";
 import DashboardHeader from "./DashboardHeader";
 
@@ -30,10 +31,13 @@ type Props = {
   children: React.ReactNode;
 };
 
-const ROLE_ACCENT: Record<DashboardRole, { active: string; pill: string }> = {
-  admin:    { active: "bg-rose-500/10 text-rose-600",    pill: "bg-rose-500/10 text-rose-600"    },
-  merchant: { active: "bg-accent/10 text-accent",        pill: "bg-accent/10 text-accent"        },
-  customer: { active: "bg-emerald-500/10 text-emerald-600", pill: "bg-emerald-500/10 text-emerald-600" },
+const ROLE_ACCENT: Record<
+  DashboardRole,
+  { active: string; border: string; pill: string }
+> = {
+  admin:    { active: "bg-rose-500/10 text-rose-600",       border: "border-l-rose-500",    pill: "bg-rose-500/10 text-rose-600"       },
+  merchant: { active: "bg-accent/10 text-accent",           border: "border-l-accent",      pill: "bg-accent/10 text-accent"           },
+  customer: { active: "bg-emerald-500/10 text-emerald-600", border: "border-l-emerald-500", pill: "bg-emerald-500/10 text-emerald-600" },
 };
 
 // Map route → screen name shown in the header
@@ -44,7 +48,6 @@ const SCREEN_NAMES: Record<string, string> = {
   "/merchant/conversations": "Conversations",
   "/merchant/leads":         "Leads",
   "/merchant/orders":        "Orders",
-  "/merchant/new":           "Open a Shop",
   "/merchant/settings":      "Settings",
   // customer
   "/customer":               "Overview",
@@ -53,6 +56,17 @@ const SCREEN_NAMES: Record<string, string> = {
   "/customer/saved":         "Saved Shops",
   "/customer/wishlist":      "Wishlist",
   "/customer/settings":      "Settings",
+  // admin
+  "/admin":                  "Platform overview",
+  "/admin/verifications":    "Verifications",
+  "/admin/shops":            "All shops",
+  "/admin/reports":          "Product reports",
+  "/admin/listings":         "Listings review",
+  "/admin/comments":         "Comments moderation",
+  "/admin/feed-config":      "Feed scoring & placement",
+  "/admin/chat":             "Chat monitoring",
+  "/admin/subscriptions":    "Pesapal subscriptions",
+  "/admin/feedback":         "Platform feedback",
 };
 
 function resolveScreenName(pathname: string): string {
@@ -80,7 +94,7 @@ function NavLink({
 }: {
   item: DashboardNavItem;
   pathname: string;
-  accent: { active: string };
+  accent: { active: string; border: string };
   onClick?: () => void;
 }) {
   const active = isActivePath(pathname, item.href, item.exact);
@@ -88,11 +102,15 @@ function NavLink({
     <Link
       href={item.href}
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={[
-        "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+        // 3px left border always reserved so active state doesn't shift layout.
+        // Active fill (~10% role color) + 3px role-colored left border satisfies
+        // AGENTS.UI.md §2 "not color alone".
+        "group flex items-center gap-2.5 rounded-xl border-l-[3px] pl-[calc(0.75rem-3px)] pr-3 py-2 text-sm font-medium transition-colors",
         active
-          ? accent.active
-          : "text-foreground/60 hover:bg-surface-subtle hover:text-foreground",
+          ? `${accent.active} ${accent.border}`
+          : "border-l-transparent text-foreground/60 hover:bg-surface-subtle hover:text-foreground",
       ].join(" ")}
     >
       {item.icon && (
@@ -121,7 +139,7 @@ function Sidebar({
   navItems: DashboardNavItem[];
   secondaryNavItems?: DashboardNavItem[];
   pathname: string;
-  accent: { active: string; pill: string };
+  accent: { active: string; border: string; pill: string };
   roleLabel: string;
   onItemClick?: () => void;
 }) {
@@ -130,8 +148,7 @@ function Sidebar({
       {/* Logo + role badge */}
       <div className="flex items-center gap-2.5 px-4 py-5">
         <Link href="/" className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Midora" className="h-7 w-auto rounded-lg" />
+          <Logo alt="Midora" width={100} height={28} className="h-7 w-auto rounded-lg" />
         </Link>
         <span className={`ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${accent.pill}`}>
           {roleLabel}
@@ -230,12 +247,14 @@ export default function DashboardShell({
     );
   }
 
+
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
       {/* Desktop layout */}
       <div className="flex min-h-[100dvh]">
         {/* Sidebar */}
-        <aside className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col border-r border-border bg-surface lg:flex">
+        <aside className="sticky top-0 hidden h-[100dvh] w-64 shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out lg:flex">
           <Sidebar
             navItems={navItems}
             secondaryNavItems={secondaryNavItems}
@@ -273,10 +292,13 @@ export default function DashboardShell({
             onMenuClick={() => setDrawerOpen(true)}
           />
           <main className="flex-1 overflow-x-hidden pb-28 md:pb-0">
+            {/* Dashboards fill the full content column; max-w-7xl only guards
+             * ultrawide monitors from silly line lengths (AGENTS.md §1.2).
+             * `contentWidth="wide"` opts out of even that cap. */}
             <div
               className={[
                 "w-full px-3 py-5 sm:px-4 sm:py-6 lg:px-6 lg:py-7",
-                contentWidth === "wide" ? "" : "mx-auto max-w-6xl",
+                contentWidth === "wide" ? "" : "mx-auto max-w-7xl",
               ].join(" ")}
             >
               {children}

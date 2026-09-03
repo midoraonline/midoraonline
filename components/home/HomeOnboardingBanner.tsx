@@ -44,14 +44,14 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
   }
 
   return (
-    <div className="mb-6 flex animate-fadeIn flex-col items-start justify-between gap-4 rounded-2xl border border-primary/20 bg-primary p-4 shadow-md sm:flex-row sm:items-center">
+    <div className="mb-6 flex animate-fadeIn flex-col items-start justify-between gap-4 rounded-2xl border border-border bg-surface-subtle p-4 shadow-sm sm:flex-row sm:items-center">
       <div className="flex items-center gap-3">
-        <span className="shrink-0 rounded-xl bg-white/10 p-2 text-accent">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
           <MaterialSymbol name="auto_awesome" className="!text-xl" filled />
         </span>
         <div>
-          <h4 className="text-sm font-bold text-accent">Welcome to Midora</h4>
-          <p className="mt-0.5 text-xs text-white/75">
+          <h4 className="text-sm font-bold text-foreground">Welcome to Midora</h4>
+          <p className="mt-0.5 text-xs text-muted">
             Pick a category, browse listings, then chat with verified shops instantly.
           </p>
         </div>
@@ -60,15 +60,16 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-all hover:bg-white/20"
+          className="dm-btn dm-btn-primary dm-btn-sm"
         >
           Got it
         </button>
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded-full p-1 text-white/60 transition-colors hover:bg-white/10"
+          className="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
           title="Dismiss"
+          aria-label="Dismiss"
         >
           <MaterialSymbol name="close" className="!text-lg" />
         </button>

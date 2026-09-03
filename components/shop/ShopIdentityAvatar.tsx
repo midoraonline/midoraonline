@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Logo from "@/components/Logo";
 
 /**
  * Circular shop avatar with an optional floating verified checkmark badge
@@ -33,8 +34,7 @@ export default function ShopIdentityAvatar({
             sizes="112px"
           />
         ) : (
-          <Image
-            src="/logo.png"
+          <Logo
             alt="Midora Online"
             fill
             className="object-contain p-3"

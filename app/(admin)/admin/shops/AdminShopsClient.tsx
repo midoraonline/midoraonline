@@ -241,13 +241,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            Admin · Shops
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            All shops
-          </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-sm text-muted">
             {counts.total} total · {counts.active} active · {counts.verified}{" "}
             verified · {counts.pending} pending · {counts.unverified} not
             submitted · {counts.rejected} rejected

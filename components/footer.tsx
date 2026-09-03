@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import Logo from "@/components/Logo";
 import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -169,8 +170,7 @@ export default function Footer() {
             {/* Brand column */}
             <div className="lg:col-span-4">
               <Link href="/" className="inline-block" aria-label="Midora Online home">
-                <Image
-                  src="/logo.png"
+                <Logo
                   alt="Midora Online"
                   width={140}
                   height={48}

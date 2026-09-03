@@ -36,12 +36,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Product Reports</h1>
-          <p className="mt-1 text-sm text-muted">Review and resolve listing reports from users.</p>
-        </div>
-      </div>
+      <p className="text-sm text-muted">Review and resolve listing reports from users.</p>
 
       <div className="flex gap-2">
         {(["open", "resolved", "all"] as const).map((f) => (

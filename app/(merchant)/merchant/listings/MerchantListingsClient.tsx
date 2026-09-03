@@ -173,9 +173,9 @@ export default function MerchantListingsClient({
 
   function openAdd() {
     if (shops.length === 1) {
-      router.push(`/merchant/listings/new?shop_id=${shops[0].id}`);
+      router.push(`/post-item?shop_id=${shops[0].id}`);
     } else {
-      router.push("/merchant/listings/new");
+      router.push("/post-item");
     }
   }
 
@@ -187,13 +187,10 @@ export default function MerchantListingsClient({
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6">
+    <div className="flex w-full flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6">
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            My listings
-          </h1>
           <p className="mt-0.5 text-xs text-muted">
             Everything you&apos;ve posted across{" "}
             {shops.length === 1 ? "your shop" : `${shops.length} shops`}. Approved

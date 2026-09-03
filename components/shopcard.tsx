@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CategoryDisplay from "@/components/CategoryDisplay";
+import Logo from "@/components/Logo";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import StarRating from "@/components/StarRating";
@@ -46,11 +47,11 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
                 loading="lazy"
               />
             ) : (
-              <img
-                src="/logo.png"
+              <Logo
                 alt="Midora Online"
-                className="size-full object-contain p-1.5"
-                loading="lazy"
+                fill
+                className="object-contain p-1.5"
+                sizes="64px"
               />
             )}
           </div>
