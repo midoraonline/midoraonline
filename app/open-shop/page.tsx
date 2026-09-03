@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Sparkles, PenLine, Store, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Sparkles, PenLine, Store, CheckCircle2, ShieldCheck } from "lucide-react";
 
+import StandaloneShell from "@/components/StandaloneShell";
 import CreateShopConcierge from "@/components/createShopConcierge";
 import OpenShopWizard from "@/components/openShopWizard";
-import Logo from "@/components/Logo";
 import { useAppSession } from "@/lib/state";
 import type { apiShops } from "@/lib/api";
 
@@ -31,175 +31,191 @@ export default function OpenShopPage() {
 
   if (stillResolving) {
     return (
-      <div className="grid min-h-[100dvh] place-items-center bg-background p-6">
-        <div className="flex flex-col items-center gap-3 text-muted">
-          <div className="dm-skeleton h-5 w-48 rounded-lg" />
-          <p className="text-sm font-medium">Opening shop builder…</p>
+      <StandaloneShell eyebrow="Merchant Studio">
+        <div className="grid min-h-[calc(100dvh-64px)] place-items-center p-6">
+          <div className="flex flex-col items-center gap-3 text-muted">
+            <div className="dm-skeleton h-5 w-48 rounded-lg" />
+            <p className="text-sm font-medium">Opening shop builder…</p>
+          </div>
         </div>
-      </div>
+      </StandaloneShell>
     );
   }
 
   if (!session.isAuthenticated) return null;
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      {/* Standalone Header */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/80 bg-surface/80 px-4 sm:px-8 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 group">
-            <Logo alt="Midora" width={100} height={32} className="h-8 w-auto rounded-xl transition-transform group-hover:scale-105" />
-          </Link>
-          <div className="h-4 w-px bg-border hidden sm:block" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted hidden sm:inline-block">
-            Merchant Studio
+    <StandaloneShell eyebrow="Merchant Studio">
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        {createdShop ? (
+          <CreatedSuccessCard shop={createdShop} onCreateAnother={() => setCreatedShop(null)} />
+        ) : (
+          <div className="space-y-8">
+            <IntroHeader />
+            <ModeSwitcher mode={mode} onChange={setMode} />
+            <ActiveModeSection mode={mode} onShopCreated={setCreatedShop} />
+          </div>
+        )}
+      </div>
+    </StandaloneShell>
+  );
+}
+
+function IntroHeader() {
+  return (
+    <div className="space-y-3">
+      <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+        <Store className="size-3.5" />
+        Open your shop
+      </div>
+      <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        Start selling on Midora
+      </h1>
+      <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+        Describe your business once — our AI assistant drafts the store name, story, and details for you. Prefer full control? Switch to manual.
+      </p>
+    </div>
+  );
+}
+
+function ModeSwitcher({
+  mode,
+  onChange,
+}: {
+  mode: CreationMode;
+  onChange: (m: CreationMode) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Shop creation mode"
+      className="grid max-w-lg grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-subtle p-1"
+    >
+      {(
+        [
+          { key: "quick" as const, label: "Create with AI", icon: Sparkles },
+          { key: "manual" as const, label: "Manual setup", icon: PenLine },
+        ]
+      ).map(({ key, label, icon: Icon }) => {
+        const active = mode === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(key)}
+            className={[
+              "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-colors sm:text-sm",
+              active
+                ? "bg-surface text-foreground shadow-sm"
+                : "text-muted hover:text-foreground",
+            ].join(" ")}
+          >
+            <Icon className="size-4 shrink-0" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ActiveModeSection({
+  mode,
+  onShopCreated,
+}: {
+  mode: CreationMode;
+  onShopCreated: (s: apiShops.Shop) => void;
+}) {
+  if (mode === "quick") {
+    return (
+      <section className="dm-card overflow-hidden p-6 sm:p-8">
+        <div className="flex items-start gap-4 border-b border-border pb-5">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-white shadow-sm">
+            <Sparkles className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+              AI Shop Concierge
+            </h2>
+            <p className="mt-0.5 text-xs text-muted sm:text-sm">
+              Chat in plain English, Swahili, or Luganda. Review the draft, then launch.
+            </p>
+          </div>
+        </div>
+        <div className="mt-6">
+          <CreateShopConcierge onShopCreated={onShopCreated} />
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="dm-card p-6 sm:p-8">
+      <OpenShopWizard />
+    </section>
+  );
+}
+
+function CreatedSuccessCard({
+  shop,
+  onCreateAnother,
+}: {
+  shop: apiShops.Shop;
+  onCreateAnother: () => void;
+}) {
+  return (
+    <div className="mx-auto max-w-xl space-y-6">
+      <div className="dm-card relative overflow-hidden p-6 sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-accent/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-2 text-accent">
+          <CheckCircle2 className="size-5" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
+            Shop published
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <h1 className="relative mt-3 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          {shop.name}
+        </h1>
+        <p className="relative mt-2 text-sm leading-relaxed text-muted">
+          Your storefront is live. Complete verification next to unlock trust badges and boost your placement in feeds.
+        </p>
+
+        <div className="relative mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link
-            href="/merchant"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-semibold text-muted hover:border-border-strong hover:text-foreground transition-all"
+            href={`/merchant/shops/${shop.id}/verification`}
+            className="dm-btn dm-btn-primary inline-flex gap-2"
           >
-            <ArrowLeft className="size-3.5" />
-            Back to dashboard
+            <ShieldCheck className="size-4" />
+            Verify shop
+            <ArrowRight className="size-4" />
+          </Link>
+          <Link
+            href={`/merchant/shops/${shop.id}`}
+            className="dm-btn dm-btn-secondary"
+          >
+            Manage shop
+          </Link>
+          <Link
+            href={`/shops/${encodeURIComponent(shop.slug)}`}
+            className="dm-btn dm-btn-ghost"
+          >
+            View public page
           </Link>
         </div>
-      </header>
+      </div>
 
-      {/* Main Full-Width Content Container */}
-      <main className="flex-1 w-full max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-        {createdShop ? (
-          /* Created Success Screen */
-          <div className="mx-auto max-w-xl space-y-6 pt-4">
-            <div className="relative overflow-hidden rounded-3xl border border-accent/30 bg-gradient-to-br from-primary via-primary/95 to-slate-900 p-8 text-white shadow-2xl">
-              <div className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-accent/30 blur-3xl" />
-              <div className="flex items-center gap-2 text-accent-light">
-                <CheckCircle2 className="size-5 text-accent" />
-                <span className="text-xs font-bold uppercase tracking-[0.2em]">Shop Published</span>
-              </div>
-
-              <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                {createdShop.name}
-              </h1>
-              <p className="mt-2 text-sm leading-relaxed text-white/80">
-                Your storefront is live! Complete your verification to unlock trust badges.
-              </p>
-
-              <div className="relative mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href={`/merchant/shops/${createdShop.id}/verification`}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-3 text-sm font-bold text-white shadow-lg shadow-accent/30 transition-all hover:bg-accent-hover hover:scale-[1.02]"
-                >
-                  <ShieldCheck className="size-4" />
-                  Verify shop
-                  <ArrowRight className="size-4" />
-                </Link>
-                <Link
-                  href={`/merchant/shops/${createdShop.id}`}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20 transition-all"
-                >
-                  Manage shop
-                </Link>
-                <Link
-                  href={`/shops/${encodeURIComponent(createdShop.slug)}`}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 px-5 py-3 text-sm font-medium text-white/70 hover:text-white hover:border-white/30 transition-all"
-                >
-                  View public page
-                </Link>
-              </div>
-            </div>
-
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => setCreatedShop(null)}
-                className="text-xs font-semibold text-muted hover:text-foreground transition-colors"
-              >
-                + Create another shop
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Shop Builder Form View */
-          <>
-            {/* Header / Intro */}
-            <div className="space-y-3 text-center sm:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-accent">
-                <Store className="size-3.5" />
-                <span>Open Your Shop</span>
-              </div>
-              <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                Start selling on Midora
-              </h1>
-              <p className="max-w-2xl text-sm sm:text-base text-muted leading-relaxed">
-                Describe your business once — our AI assistant will draft the store name, story, and details for you. Or customize everything manually.
-              </p>
-            </div>
-
-            {/* Mode Switcher Tabs */}
-            <div
-              role="tablist"
-              aria-label="Shop Creation Mode"
-              className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface-subtle/80 p-1.5 max-w-lg shadow-sm"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === "quick"}
-                onClick={() => setMode("quick")}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs sm:text-sm font-bold transition-all ${mode === "quick"
-                    ? "bg-accent text-white shadow-md shadow-accent/25"
-                    : "text-foreground/70 hover:bg-background hover:text-foreground"
-                  }`}
-              >
-                <Sparkles className="size-4 shrink-0" />
-                Create with AI
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === "manual"}
-                onClick={() => setMode("manual")}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs sm:text-sm font-bold transition-all ${mode === "manual"
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    : "text-foreground/70 hover:bg-background hover:text-foreground"
-                  }`}
-              >
-                <PenLine className="size-4 shrink-0" />
-                Manual setup
-              </button>
-            </div>
-
-            {/* Active Mode Form Container */}
-            <div className="w-full">
-              {mode === "quick" ? (
-                <section className="overflow-hidden rounded-3xl border border-accent/25 bg-gradient-to-b from-accent/[0.05] via-surface to-surface p-6 sm:p-8 shadow-sm space-y-6">
-                  <div className="flex items-start gap-4 border-b border-border/60 pb-5">
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-white shadow-lg shadow-accent/30">
-                      <Sparkles className="size-6" />
-                    </span>
-                    <div>
-                      <h2 className="font-display text-xl font-bold tracking-tight">
-                        AI Shop Concierge
-                      </h2>
-                      <p className="mt-0.5 text-xs sm:text-sm text-muted">
-                        Chat in plain English or Swahili/Luganda. Review your generated draft, then launch.
-                      </p>
-                    </div>
-                  </div>
-
-                  <CreateShopConcierge onShopCreated={setCreatedShop} />
-                </section>
-              ) : (
-                <section className="rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-sm">
-                  <OpenShopWizard />
-                </section>
-              )}
-            </div>
-          </>
-        )}
-      </main>
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={onCreateAnother}
+          className="text-xs font-semibold text-muted transition-colors hover:text-foreground"
+        >
+          + Create another shop
+        </button>
+      </div>
     </div>
   );
 }
