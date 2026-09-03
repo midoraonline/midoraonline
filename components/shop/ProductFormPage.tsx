@@ -191,12 +191,16 @@ export default function ProductFormPage({
   shopId,
   itemType = "product",
   backUrl = "/merchant/listings",
+  hasBottomNav = true,
 }: {
   mode: "add" | "edit";
   product?: Product;
   shopId: string;
   itemType?: ItemType;
   backUrl?: string;
+  // Post-item / standalone flows don't render the mobile BottomNav, so the
+  // sticky action bar shouldn't leave a gap where the nav would be.
+  hasBottomNav?: boolean;
 }) {
   const router = useRouter();
   const initialKind = normalizeListingKind(
@@ -314,6 +318,9 @@ export default function ProductFormPage({
     applyingSuggestionRef.current = true;
     setDraft((d) => ({ ...d, title: aiCheck.suggested_title! }));
     setDismissedSuggestions((s) => ({ ...s, title: true }));
+    // Clearing the stale verdict is what lets the next save re-check the
+    // now-edited copy — otherwise submit would still see ok=false and block.
+    setAiCheck(null);
   }
 
   function applyDescriptionSuggestion() {
@@ -321,6 +328,7 @@ export default function ProductFormPage({
     applyingSuggestionRef.current = true;
     setDraft((d) => ({ ...d, description: aiCheck.suggested_description! }));
     setDismissedSuggestions((s) => ({ ...s, description: true }));
+    setAiCheck(null);
   }
 
   function applyCategorySuggestion() {
@@ -329,6 +337,7 @@ export default function ProductFormPage({
     applyingSuggestionRef.current = true;
     setDraft((d) => ({ ...d, category: value }));
     setDismissedSuggestions((s) => ({ ...s, category: true }));
+    setAiCheck(null);
   }
 
   function handleCancel() {
@@ -459,7 +468,13 @@ export default function ProductFormPage({
       : "Edit listing";
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-2 md:pb-32">
+    <div
+      className={`mx-auto w-full max-w-5xl space-y-6 pt-2 ${
+        hasBottomNav
+          ? "pb-[calc(9rem+env(safe-area-inset-bottom,0px))] md:pb-32"
+          : "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      }`}
+    >
       {/* Top Breadcrumb Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
@@ -490,13 +505,17 @@ export default function ProductFormPage({
           <button
             type="submit"
             form="product-form-page"
-            disabled={saving || aiChecking || Boolean(aiCheck && !aiCheck.ok)}
+            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck && !aiCheck.ok)}
             title={
-              aiCheck && !aiCheck.ok
-                ? "AI review flagged issues — please edit the listing first."
-                : undefined
+              !isDirty
+                ? "No changes to save."
+                : aiCheck && !aiCheck.ok
+                  ? "AI review flagged issues — please edit the listing first."
+                  : undefined
             }
-            className="dm-btn dm-btn-primary dm-btn-md gap-2"
+            className={`dm-btn dm-btn-md gap-2 ${
+              isDirty ? "dm-btn-primary" : "dm-btn-secondary"
+            }`}
           >
             <Check className="size-4" />
             {saving
@@ -1082,9 +1101,15 @@ export default function ProductFormPage({
         </section>
       </form>
 
-      {/* Sticky action bar. On mobile it sits above the mobile BottomNav
-          (h-14 + safe area). On md+ it hugs the bottom of the viewport. */}
-      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-modal border-t border-border bg-surface/95 p-3 shadow-lg backdrop-blur-md md:bottom-0">
+      {/* Sticky action bar. When the mobile BottomNav is present (dashboard
+          flows) sit above it; otherwise (StandaloneShell) hug the viewport. */}
+      <div
+        className={`fixed inset-x-0 z-modal border-t border-border bg-surface/95 p-3 shadow-lg backdrop-blur-md ${
+          hasBottomNav
+            ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:bottom-0"
+            : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
+        }`}
+      >
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4">
           <button
             type="button"
@@ -1097,13 +1122,17 @@ export default function ProductFormPage({
           <button
             type="submit"
             form="product-form-page"
-            disabled={saving || aiChecking || Boolean(aiCheck && !aiCheck.ok)}
+            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck && !aiCheck.ok)}
             title={
-              aiCheck && !aiCheck.ok
-                ? "AI review flagged issues — please edit the listing first."
-                : undefined
+              !isDirty
+                ? "No changes to save."
+                : aiCheck && !aiCheck.ok
+                  ? "AI review flagged issues — please edit the listing first."
+                  : undefined
             }
-            className="dm-btn dm-btn-primary dm-btn-md min-w-[160px] gap-2 shadow-md"
+            className={`dm-btn dm-btn-md min-w-[160px] gap-2 shadow-md ${
+              isDirty ? "dm-btn-primary" : "dm-btn-secondary"
+            }`}
           >
             <Check className="size-4" />
             {saving

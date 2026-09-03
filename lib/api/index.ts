@@ -19,3 +19,4 @@ export * as apiNotifications from "./notificationsClient";
 export * as apiBoostPlans from "./boostPlans";
 export * as apiContactus from "./contactus";
 export * as apiSearch from "./search";
+export * as apiAnalytics from "./analytics";

@@ -6,6 +6,7 @@ import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { apiListingEvents } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useImpressionTracker } from "@/lib/hooks/useImpressionTracker";
 import type { ImpressionPool } from "@/lib/impressions";
@@ -117,11 +118,17 @@ function WhatsAppCta({
   waHref,
   productId,
   productHref,
+  shopId,
+  category,
+  hasDiscount,
   compact = false,
 }: {
   waHref: string | null;
   productId: string;
   productHref: string;
+  shopId?: string;
+  category?: string;
+  hasDiscount?: boolean;
   compact?: boolean;
 }) {
   const className = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-xs font-bold text-white transition-colors hover:bg-[#22c35e] active:bg-[#1fae53] ${
@@ -141,6 +148,15 @@ function WhatsAppCta({
         type="whatsapp"
         onConfirm={() => {
           apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
+          if (shopId) {
+            track("conversion:whatsapp_click", {
+              productId,
+              shopId,
+              category,
+              hasDiscount,
+              clickSource: "search_result",
+            });
+          }
           notifyFeedEngagement();
           window.open(waHref, "_blank", "noopener,noreferrer");
         }}
@@ -374,6 +390,9 @@ export default function ProductCard({
             waHref={waHref}
             productId={product.id}
             productHref={productHref}
+            shopId={product.shop.id}
+            category={product.category ?? undefined}
+            hasDiscount={isDiscounted}
             compact
           />
         </div>
@@ -436,6 +455,9 @@ export default function ProductCard({
             waHref={waHref}
             productId={product.id}
             productHref={productHref}
+            shopId={product.shop.id}
+            category={product.category ?? undefined}
+            hasDiscount={isDiscounted}
           />
         </div>
       </div>

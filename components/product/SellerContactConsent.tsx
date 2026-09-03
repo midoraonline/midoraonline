@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiLeads, apiListingEvents } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { whatsappDigits } from "@/lib/whatsappProduct";
 
@@ -34,6 +35,11 @@ export default function SellerContactConsent({
 
     apiLeads.createLead(shopId, productId, "whatsapp").catch(() => {});
     apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
+    track("conversion:whatsapp_click", {
+      productId,
+      shopId,
+      clickSource: "product_detail",
+    });
     notifyFeedEngagement();
 
     window.open(waUrl, "_blank", "noopener,noreferrer");

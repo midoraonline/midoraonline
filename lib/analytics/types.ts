@@ -64,6 +64,12 @@ export type AnalyticsEvents = {
     shopId: string;
   };
 
+  'merchant:verification_started': SystemMetadata & {
+    merchantId?: string;
+    shopId?: string;
+    stage?: number;
+  };
+
   'merchant:verification_submitted': SystemMetadata & {
     merchantId: string;
     shopId: string;
@@ -92,7 +98,7 @@ export type AnalyticsEvents = {
   'trust:rating_submitted': SystemMetadata & {
     shopId: string;
     productId?: string;
-    rating: number; // 1 to 5 stars
+    rating: number;
     reviewText?: string;
   };
 
@@ -105,7 +111,50 @@ export type AnalyticsEvents = {
   };
 };
 
-
 export type EventKey = keyof AnalyticsEvents;
 
-export type EventListener<K extends EventKey> = (payload: AnalyticsEvents[K]) => void | Promise<void>;
+export type EventListener<K extends EventKey> = (
+  payload: AnalyticsEvents[K],
+) => void | Promise<void>;
+
+// How each event maps onto the generic {target_type, target_id, properties}
+// wire shape ingested by POST /api/v1/analytics/events. `properties` is
+// whatever's left after sessionId/actorId/target fields are extracted.
+export const EVENT_TARGET_MAP: {
+  [K in EventKey]: {
+    targetType: string | null;
+    getTargetId: (p: AnalyticsEvents[K]) => string | null;
+  };
+} = {
+  'marketplace:search': { targetType: null, getTargetId: () => null },
+  'listing:published': { targetType: 'product', getTargetId: (p) => p.productId },
+  'listing:viewed': { targetType: 'product', getTargetId: (p) => p.productId },
+  'conversion:whatsapp_click': {
+    targetType: 'product',
+    getTargetId: (p) => p.productId ?? p.shopId,
+  },
+  'listing:favorited': { targetType: 'product', getTargetId: (p) => p.productId },
+  'listing:unfavorited': { targetType: 'product', getTargetId: (p) => p.productId },
+  'shop:viewed': { targetType: 'shop', getTargetId: (p) => p.shopId },
+  'shop:followed': { targetType: 'shop', getTargetId: (p) => p.shopId },
+  'shop:unfollowed': { targetType: 'shop', getTargetId: (p) => p.shopId },
+  'merchant:verification_started': {
+    targetType: 'shop',
+    getTargetId: (p) => p.shopId ?? null,
+  },
+  'merchant:verification_submitted': {
+    targetType: 'shop',
+    getTargetId: (p) => p.shopId,
+  },
+  'merchant:verification_completed': {
+    targetType: 'shop',
+    getTargetId: (p) => p.shopId,
+  },
+  'merchant:chat_response_logged': {
+    targetType: 'shop',
+    getTargetId: (p) => p.shopId,
+  },
+  'trust:rating_prompted': { targetType: 'shop', getTargetId: (p) => p.shopId },
+  'trust:rating_submitted': { targetType: 'shop', getTargetId: (p) => p.shopId },
+  'trust:report_submitted': { targetType: 'target', getTargetId: (p) => p.targetId },
+};
