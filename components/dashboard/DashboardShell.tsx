@@ -48,6 +48,7 @@ const SCREEN_NAMES: Record<string, string> = {
   "/merchant/conversations": "Conversations",
   "/merchant/leads":         "Leads",
   "/merchant/orders":        "Orders",
+  "/merchant/billing":       "Billing & Plans",
   "/merchant/settings":      "Settings",
   // customer
   "/customer":               "Overview",

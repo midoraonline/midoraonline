@@ -11,6 +11,7 @@ type Props = {
   shopId: string;
   ownerId: string | null | undefined;
   whatsappNumber?: string | null | undefined;
+  whatsappVerified?: boolean | null;
   waHref: string | null;
   /** When true, secondary Message CTA uses light-on-dark hero styles. */
   immersive?: boolean;
@@ -21,6 +22,7 @@ export default function ShopContactButtons({
   shopId,
   ownerId,
   waHref,
+  whatsappVerified,
   immersive = false,
 }: Props) {
   const router = useRouter();
@@ -54,6 +56,7 @@ export default function ShopContactButtons({
       {waHref ? (
         <TradeDisclaimer
           type="whatsapp"
+          whatsappVerified={whatsappVerified ?? undefined}
           onConfirm={() => {
             recordWhatsAppClick();
             window.open(waHref, "_blank", "noopener,noreferrer");

@@ -7,6 +7,7 @@ import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
+import VerifyContactButton from "@/components/VerifyContactButton";
 
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
   return (
@@ -28,6 +29,7 @@ export default function CustomerProfilePage() {
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -35,6 +37,7 @@ export default function CustomerProfilePage() {
     if (user) {
       setFullName(user.full_name ?? "");
       setPhone(user.phone_number ?? "");
+      setPhoneVerified(Boolean(user.phone_verified));
     }
   }, [user]);
 
@@ -129,6 +132,18 @@ export default function CustomerProfilePage() {
               onChange={setPhone}
               placeholder="700 000 000"
               autoComplete="tel"
+            />
+            <VerifyContactButton
+              value={phone}
+              verified={phoneVerified}
+              label="phone number"
+              sendCode={() => apiAuth.sendPhoneVerificationCode({ phone_number: phone.trim() })}
+              confirmCode={async (code) => {
+                const updated = await apiAuth.confirmPhoneVerificationCode(code);
+                setPhone(updated.phone_number ?? phone);
+                setPhoneVerified(Boolean(updated.phone_verified));
+              }}
+              onSuccess={() => notifyAuthChanged()}
             />
           </div>
 

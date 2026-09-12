@@ -6,6 +6,7 @@ import ShopProductGridRealtime from "@/components/shop/ShopProductGridRealtime";
 import ShopTabs from "@/components/shop/ShopTabs";
 import ShopReviews from "@/components/shop/ShopReviews";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { locationDisplay } from "@/components/shop/shopUtils";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
@@ -118,6 +119,9 @@ export default async function ShopDetails({
             </span>
             <span className="min-w-0 break-words text-foreground">
               {shop.whatsapp_number}
+              {shop.whatsapp_verified ? (
+                <VerifiedIcon className="ml-1.5 inline align-text-bottom !text-sm text-accent" label="Verified" />
+              ) : null}
             </span>
           </li>
         ) : null}

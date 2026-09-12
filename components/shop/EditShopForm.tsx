@@ -12,6 +12,7 @@ import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
+import VerifyContactButton from "@/components/VerifyContactButton";
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -202,6 +203,8 @@ function DetailsTab({
   onLogoStaged,
   onLogoRemove,
   onSaved,
+  whatsappVerified,
+  onWhatsappVerifiedChange,
 }: {
   shop: Shop;
   form: FormState;
@@ -211,6 +214,8 @@ function DetailsTab({
   onLogoStaged: (url: string) => void;
   onLogoRemove: () => void;
   onSaved: (savedForm: FormState) => void;
+  whatsappVerified: boolean;
+  onWhatsappVerifiedChange: (verified: boolean) => void;
 }) {
   const router = useRouter();
   const session = useAppSession();
@@ -438,6 +443,18 @@ function DetailsTab({
               onChange={(val) => onChange("whatsappNumber", val)}
               placeholder="700 000 000"
             />
+            <VerifyContactButton
+              value={form.whatsappNumber}
+              verified={whatsappVerified}
+              label="WhatsApp number"
+              sendCode={() => apiShops.sendShopWhatsAppCode(shop.id, form.whatsappNumber.trim())}
+              confirmCode={async (code) => {
+                const updated = await apiShops.confirmShopWhatsAppCode(shop.id, code);
+                const nextNumber = updated.whatsapp_number ?? form.whatsappNumber;
+                onSaved({ ...form, whatsappNumber: nextNumber });
+                onWhatsappVerifiedChange(Boolean(updated.whatsapp_verified));
+              }}
+            />
           </div>
         </div>
       </section>
@@ -527,6 +544,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
   );
   const [form, setForm] = useState<FormState>(initialForm);
   const [stagedLogo, setStagedLogo] = useState("");
+  const [whatsappVerified, setWhatsappVerified] = useState(Boolean(shop.whatsapp_verified));
 
   const isDirty = !formsEqual(form, initialForm);
 
@@ -671,6 +689,8 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           onLogoStaged={(url) => setStagedLogo(url)}
           onLogoRemove={() => setStagedLogo("")}
           onSaved={onSaved}
+          whatsappVerified={whatsappVerified}
+          onWhatsappVerifiedChange={setWhatsappVerified}
         />
       )}
 
