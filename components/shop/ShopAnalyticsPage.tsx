@@ -15,6 +15,7 @@ import {
   Cell,
 } from "recharts";
 import { apiShops } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -37,18 +38,24 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   const [shopProfile, setShopProfile] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [planLocked, setPlanLocked] = useState(false);
 
   const load = useCallback(async () => {
     if (!session.isAuthenticated) return;
     setLoading(true);
     setError(null);
+    setPlanLocked(false);
     try {
       const dash = await apiShops.getShopDashboard(shop.id);
       setEngagement(dash.engagement);
       setProducts(dash.products ?? []);
       setShopProfile(dash.shop as Shop);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load analytics");
+      if (err instanceof ApiError && err.status === 403) {
+        setPlanLocked(true);
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to load analytics");
+      }
     } finally {
       setLoading(false);
     }
@@ -127,6 +134,27 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
         >
           <MaterialSymbol name="arrow_back" className="!text-[18px] leading-none" />
           Back to shop
+        </Link>
+      </div>
+    );
+  }
+
+  if (planLocked) {
+    return (
+      <div className="dm-card p-8 text-center sm:p-10">
+        <MaterialSymbol
+          name="workspace_premium"
+          className="mx-auto !text-[40px] leading-none text-muted"
+        />
+        <p className="mt-4 text-base font-semibold tracking-tight">Shop analytics locked</p>
+        <p className="mt-2 text-sm text-muted">
+          Upgrade to the Standard plan or above to see this shop&apos;s analytics.
+        </p>
+        <Link
+          href="/merchant/billing"
+          className="dm-pill dm-focus mt-6 inline-flex items-center gap-2 bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:opacity-95"
+        >
+          Upgrade plan
         </Link>
       </div>
     );

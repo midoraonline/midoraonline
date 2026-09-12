@@ -10,6 +10,7 @@ import {
 } from "recharts";
 
 import { apiShops } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import type { MerchantAnalytics, MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { useAppSession } from "@/lib/state";
@@ -80,6 +81,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [shops, setShops] = useState<Shop[]>(initialShops);
   const [stats, setStats] = useState<MerchantStats | null>(initialStats);
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
+  const [analyticsLocked, setAnalyticsLocked] = useState(false);
   const [windowDays, setWindowDays] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,11 +91,17 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       const [shopsRes, statsRes, analyticsRes] = await Promise.all([
         apiShops.myShops(),
         apiShops.myStats().catch(() => null),
-        apiShops.myAnalytics(windowDays).catch(() => null),
+        apiShops.myAnalytics(windowDays).catch((err) => {
+          setAnalyticsLocked(err instanceof ApiError && err.status === 403);
+          return null;
+        }),
       ]);
       setShops(shopsRes.items ?? []);
       if (statsRes) setStats(statsRes);
-      if (analyticsRes) setAnalytics(analyticsRes);
+      if (analyticsRes) {
+        setAnalyticsLocked(false);
+        setAnalytics(analyticsRes);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load your shops");
     }
@@ -272,6 +280,22 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       </section>
 
       {/* ── Analytics: impressions, trends, funnel, per-shop, top products ── */}
+      {analyticsLocked && (
+        <section className="dm-card flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
+          <div>
+            <h2 className="font-display text-base font-semibold">Shop analytics locked</h2>
+            <p className="mt-0.5 text-xs text-muted">
+              Upgrade to the Standard plan or above to see impressions, trends and conversion funnels.
+            </p>
+          </div>
+          <Link
+            href="/merchant/billing"
+            className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+          >
+            Upgrade plan
+          </Link>
+        </section>
+      )}
       {analytics && (
         <>
           <section className="dm-card p-5 sm:p-6">

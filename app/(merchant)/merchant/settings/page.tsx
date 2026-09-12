@@ -6,6 +6,7 @@ import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
+import VerifyContactButton from "@/components/VerifyContactButton";
 import PushNotificationsSection from "@/components/PushNotificationsSection";
 import ThemeSelector from "@/components/ThemeSelector";
 
@@ -74,6 +75,7 @@ function ProfileSection() {
   const session = useAppSession();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -81,6 +83,7 @@ function ProfileSection() {
     if (session.user) {
       setFullName(session.user.full_name ?? "");
       setPhone(session.user.phone_number ?? "");
+      setPhoneVerified(Boolean(session.user.phone_verified));
     }
   }, [session.user]);
 
@@ -139,6 +142,18 @@ function ProfileSection() {
             onChange={setPhone}
             placeholder="700 000 000"
             autoComplete="tel"
+          />
+          <VerifyContactButton
+            value={phone}
+            verified={phoneVerified}
+            label="phone number"
+            sendCode={() => apiAuth.sendPhoneVerificationCode({ phone_number: phone.trim() })}
+            confirmCode={async (code) => {
+              const updated = await apiAuth.confirmPhoneVerificationCode(code);
+              setPhone(updated.phone_number ?? phone);
+              setPhoneVerified(Boolean(updated.phone_verified));
+            }}
+            onSuccess={() => notifyAuthChanged()}
           />
         </div>
 

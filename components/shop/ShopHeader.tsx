@@ -220,6 +220,7 @@ export default async function ShopHeader({
             shopId={shop.id}
             ownerId={shop.owner_id}
             whatsappNumber={shop.whatsapp_number}
+            whatsappVerified={shop.whatsapp_verified}
             waHref={waHref}
             immersive={immersive}
           />

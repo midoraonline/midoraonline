@@ -43,6 +43,7 @@ export type Shop = {
   about?: string | null;
   shop_email?: string | null;
   whatsapp_number?: string | null;
+  whatsapp_verified?: boolean | null;
   contacts?: Contact[] | null;
   social_links?: SocialLink[] | null;
   availability?: Availability | null;
@@ -376,6 +377,20 @@ export function generateLogo(shopId: string, token?: string | null) {
   return apiFetch<{ logo_url?: string | null }>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/logo/generate`,
     { method: "POST", token }
+  );
+}
+
+export function sendShopWhatsAppCode(shopId: string, whatsappNumber: string) {
+  return apiFetch<{ message: string }>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/send-code`,
+    { method: "POST", body: { whatsapp_number: whatsappNumber } },
+  );
+}
+
+export function confirmShopWhatsAppCode(shopId: string, code: string) {
+  return apiFetch<Shop>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/verify`,
+    { method: "POST", body: { code } },
   );
 }
 

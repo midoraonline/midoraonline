@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
+import VerifyContactButton from "@/components/VerifyContactButton";
 import CategoryPicker from "@/components/CategoryPicker";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
@@ -42,6 +43,7 @@ export default function MerchantShopSettingsPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [shopEmail, setShopEmail] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappVerified, setWhatsappVerified] = useState(false);
   const [locationDisplay, setLocationDisplay] = useState("");
   const [locationCoordsState, setLocationCoordsState] = useState<LatLng | null>(null);
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
@@ -76,6 +78,7 @@ export default function MerchantShopSettingsPage() {
         setLogoUrl(shopData.logo_url ?? "");
         setShopEmail(shopData.shop_email ?? "");
         setWhatsappNumber(shopData.whatsapp_number ?? "");
+        setWhatsappVerified(Boolean(shopData.whatsapp_verified));
         const loc = shopData.location;
         setLocationDisplay(
           typeof loc === "string"
@@ -260,6 +263,18 @@ export default function MerchantShopSettingsPage() {
                 value={whatsappNumber}
                 onChange={setWhatsappNumber}
                 placeholder="700 000 000"
+              />
+              <VerifyContactButton
+                value={whatsappNumber}
+                verified={whatsappVerified}
+                label="WhatsApp number"
+                sendCode={() => apiShops.sendShopWhatsAppCode(shopId, whatsappNumber.trim())}
+                confirmCode={async (code) => {
+                  const updated = await apiShops.confirmShopWhatsAppCode(shopId, code);
+                  setShop(updated);
+                  setWhatsappNumber(updated.whatsapp_number ?? whatsappNumber);
+                  setWhatsappVerified(Boolean(updated.whatsapp_verified));
+                }}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">

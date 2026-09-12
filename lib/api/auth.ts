@@ -24,8 +24,11 @@ export type MeResponse = {
   full_name?: string | null;
   avatar_url?: string | null;
   phone_number?: string | null;
+  phone_verified?: boolean | null;
   user_role?: "customer" | "merchant" | "admin" | "staff" | null;
   email_verified?: boolean | null;
+  plan_tier?: "basic" | "standard" | "premium" | null;
+  plan_expires_at?: string | null;
   /**
    * Short-lived JWT (role="authenticated") for Supabase Realtime subscriptions.
    * Passed to `supabase.realtime.setAuth()` so RLS policies bind to `auth.uid()`.
@@ -125,6 +128,24 @@ export function changePassword(body: ChangePasswordRequest) {
   return apiFetch<{ message: string }>("/api/v1/auth/change-password", {
     method: "POST",
     body,
+  });
+}
+
+export type SendPhoneCodeRequest = {
+  phone_number: string;
+};
+
+export function sendPhoneVerificationCode(body: SendPhoneCodeRequest) {
+  return apiFetch<{ message: string }>("/api/v1/auth/phone/send-code", {
+    method: "POST",
+    body,
+  });
+}
+
+export function confirmPhoneVerificationCode(code: string) {
+  return apiFetch<MeResponse>("/api/v1/auth/phone/verify", {
+    method: "POST",
+    body: { code },
   });
 }
 

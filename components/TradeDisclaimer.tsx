@@ -8,6 +8,8 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 type Props = {
   onConfirm: () => void;
   type: "whatsapp" | "message";
+  /** Only meaningful for type="whatsapp" — shows a verified/unverified badge. */
+  whatsappVerified?: boolean;
   children: (open: () => void) => React.ReactNode;
 };
 
@@ -18,7 +20,7 @@ const TIPS = [
   "Report anything suspicious",
 ];
 
-export default function TradeDisclaimer({ onConfirm, type, children }: Props) {
+export default function TradeDisclaimer({ onConfirm, type, whatsappVerified, children }: Props) {
   const [open, setOpen] = useState(false);
   const isWhatsApp = type === "whatsapp";
 
@@ -59,6 +61,24 @@ export default function TradeDisclaimer({ onConfirm, type, children }: Props) {
               You&apos;re heading to {isWhatsApp ? "WhatsApp" : "in-app messages"} to
               contact the seller.
             </p>
+            {isWhatsApp && whatsappVerified !== undefined ? (
+              <p
+                className={[
+                  "mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  whatsappVerified
+                    ? "bg-emerald-500/10 text-emerald-700"
+                    : "bg-amber-500/10 text-amber-700",
+                ].join(" ")}
+              >
+                <MaterialSymbol
+                  name={whatsappVerified ? "verified" : "info"}
+                  className="!text-sm"
+                />
+                {whatsappVerified
+                  ? "This WhatsApp number is verified"
+                  : "This WhatsApp number isn't verified yet"}
+              </p>
+            ) : null}
           </div>
           <button
             type="button"
