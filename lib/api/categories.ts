@@ -6,12 +6,14 @@ import {
   type CategoryLabel,
   type CategoryTreeGroup,
 } from "@/lib/categories";
+import type { CategoryMetaField } from "@/lib/listingMeta";
 
 export type CategoryItem = {
   slug: string;
   label: string;
   sort_order: number;
   parent_slug?: string | null;
+  metadata?: CategoryMetaField[];
 };
 
 export type CategoryListResponse = {

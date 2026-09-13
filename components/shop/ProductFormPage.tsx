@@ -19,15 +19,15 @@ import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import {
-  categoryMetaFields,
+  categoryMetaFieldsFromItems,
   cleanListingMeta,
   COMPENSATION_OPTIONS,
   CONDITION_OPTIONS,
+  deriveOpportunityKindFromSubcategory,
   LISTING_KIND_LABEL,
   LISTING_KIND_OPTIONS,
   listingKindToItemType,
   normalizeListingKind,
-  OPPORTUNITY_KIND_OPTIONS,
   parseListingMeta,
   PRICING_MODEL_OPTIONS,
   type ListingKind,
@@ -67,6 +67,7 @@ function MediaGridWrapper({
       onRemove={onRemove}
       onImageUploaded={onImageUploaded}
       onVideoUploaded={onVideoUploaded}
+      maxItems={3}
     />
   );
 }
@@ -252,8 +253,13 @@ export default function ProductFormPage({
     [draft.category, categoryItems],
   );
   const catFields = useMemo(
-    () => categoryMetaFields(categoryParts.parentLabel),
-    [categoryParts.parentLabel],
+    () =>
+      categoryMetaFieldsFromItems(
+        categoryParts.parentLabel,
+        categoryItems,
+        categoryParts.subcategoryLabel,
+      ),
+    [categoryParts.parentLabel, categoryParts.subcategoryLabel, categoryItems],
   );
 
   const errors = useMemo(() => {
@@ -264,8 +270,9 @@ export default function ProductFormPage({
       parentCategoryLabel: categoryParts.parentLabel,
       subcategoryLabel: categoryParts.subcategoryLabel,
       parentHasChildren: !!parentGroup && parentGroup.children.length > 0,
+      metaFields: catFields,
     });
-  }, [draft, categoryParts, categoryTree]);
+  }, [draft, categoryParts, categoryTree, catFields]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -768,7 +775,7 @@ export default function ProductFormPage({
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">3. Photos & Video</h2>
             <p className="text-xs text-muted">
-              Drag and drop up to 10 photos or short videos. At least 1 photo is required.
+              Up to 3 photos or short videos. At least 1 photo is required — the first one is used as the cover photo on your listing card.
             </p>
           </div>
 
@@ -887,7 +894,19 @@ export default function ProductFormPage({
           <div className="space-y-1.5">
             <CategoryPicker
               value={draft.category}
-              onChange={(category) => setDraft((d) => ({ ...d, category }))}
+              onChange={(category) =>
+                setDraft((d) => ({
+                  ...d,
+                  category,
+                  meta:
+                    d.kind === "opportunity"
+                      ? {
+                          ...d.meta,
+                          opportunity_kind: deriveOpportunityKindFromSubcategory(category),
+                        }
+                      : d.meta,
+                }))
+              }
               required
               idPrefix="product-category-page"
               lockedParentSlug={
@@ -1041,57 +1060,78 @@ export default function ProductFormPage({
           ) : null}
 
           {draft.kind === "opportunity" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Opportunity type <span className="text-[color:var(--error)]">*</span>
-                </label>
-                <select
-                  className="dm-input"
-                  value={draft.meta.opportunity_kind ?? ""}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      meta: {
-                        ...d.meta,
-                        opportunity_kind: (e.target.value ||
-                          undefined) as ListingMeta["opportunity_kind"],
-                      },
-                    }))
-                  }
-                >
-                  <option value="">Select type…</option>
-                  {OPPORTUNITY_KIND_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Compensation</label>
-                <select
-                  className="dm-input"
-                  value={draft.meta.compensation ?? ""}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      meta: {
-                        ...d.meta,
-                        compensation: (e.target.value ||
-                          undefined) as ListingMeta["compensation"],
-                      },
-                    }))
-                  }
-                >
-                  <option value="">Select compensation…</option>
-                  {COMPENSATION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="space-y-1.5 sm:max-w-xs">
+              <label className="text-xs font-semibold text-foreground">Compensation</label>
+              <select
+                className="dm-input"
+                value={draft.meta.compensation ?? ""}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    meta: {
+                      ...d.meta,
+                      compensation: (e.target.value ||
+                        undefined) as ListingMeta["compensation"],
+                    },
+                  }))
+                }
+              >
+                <option value="">Select compensation…</option>
+                {COMPENSATION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          {catFields.length > 0 ? (
+            <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
+              {catFields.map((field) => (
+                <div key={field.key} className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    {field.label}
+                    {field.required ? (
+                      <span className="text-[color:var(--error)]"> *</span>
+                    ) : null}
+                  </label>
+                  {field.kind === "select" ? (
+                    <select
+                      className="dm-input"
+                      value={String(draft.meta[field.key] ?? "")}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          meta: {
+                            ...d.meta,
+                            [field.key]: e.target.value || undefined,
+                          } as ListingMeta,
+                        }))
+                      }
+                    >
+                      <option value="">Select…</option>
+                      {(field.options ?? []).map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      className="dm-input"
+                      value={String(draft.meta[field.key] ?? "")}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          meta: { ...d.meta, [field.key]: e.target.value } as ListingMeta,
+                        }))
+                      }
+                      placeholder={field.placeholder}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
           ) : null}
 

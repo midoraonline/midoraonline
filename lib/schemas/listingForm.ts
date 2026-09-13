@@ -129,6 +129,9 @@ export type ListingValidationContext = {
   parentCategoryLabel: string | null | undefined;
   subcategoryLabel: string | null | undefined;
   parentHasChildren: boolean;
+  /** Resolved category metadata fields (DB-configured or fallback). Falls
+   *  back to `categoryMetaFields(parentCategoryLabel)` when omitted. */
+  metaFields?: ReturnType<typeof categoryMetaFields>;
 };
 
 function parseAmount(v: string): number | null {
@@ -207,11 +210,8 @@ export function validateListingDraft(
   if (draft.kind === "service" && !draft.meta.pricing_model) {
     errors.meta = "Select how you price this service.";
   }
-  if (draft.kind === "opportunity" && !draft.meta.opportunity_kind) {
-    errors.meta = "Select what kind of opportunity this is.";
-  }
 
-  for (const field of categoryMetaFields(ctx.parentCategoryLabel)) {
+  for (const field of ctx.metaFields ?? categoryMetaFields(ctx.parentCategoryLabel)) {
     if (!field.required) continue;
     const v = draft.meta[field.key];
     if (v == null || String(v).trim() === "") {

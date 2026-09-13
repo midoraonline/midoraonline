@@ -36,14 +36,15 @@ export type ListingMeta = {
   pricing_model?: "fixed" | "hourly" | "starting_at" | "quote";
   availability?: string;
   service_area?: string;
-  opportunity_kind?: "job" | "gig" | "collaboration" | "internship" | "other";
+  opportunity_kind?: "job" | "gig" | "collaboration" | "internship" | "maids" | "other";
   compensation?: "paid" | "unpaid" | "commission" | "negotiable";
   deadline?: string;
   requirements?: string;
+  [key: string]: string | undefined;
 };
 
 export type CategoryMetaField = {
-  key: keyof ListingMeta;
+  key: string;
   label: string;
   kind: "text" | "select";
   required?: boolean;
@@ -112,8 +113,29 @@ export const OPPORTUNITY_KIND_OPTIONS = [
   { value: "gig", label: "Gig" },
   { value: "collaboration", label: "Collaboration" },
   { value: "internship", label: "Internship" },
+  { value: "maids", label: "Maids / Domestic Help" },
   { value: "other", label: "Other" },
 ] as const;
+
+/** Opportunities subcategory label (from CATEGORY_TREE) → opportunity_kind.
+ *  Keeps the post-item form from asking the same classification twice. */
+const SUBCATEGORY_TO_OPPORTUNITY_KIND: Record<string, ListingMeta["opportunity_kind"]> = {
+  "Full-time Jobs": "job",
+  "Part-time Jobs": "job",
+  "Gigs & Freelance": "gig",
+  "Internships": "internship",
+  "Partnerships & Collaborations": "collaboration",
+  "Maids & Domestic Work": "maids",
+  "Tenders & Contracts": "other",
+  "Volunteer & Unpaid": "other",
+};
+
+export function deriveOpportunityKindFromSubcategory(
+  subcategoryLabel: string | null | undefined,
+): ListingMeta["opportunity_kind"] | undefined {
+  if (!subcategoryLabel) return undefined;
+  return SUBCATEGORY_TO_OPPORTUNITY_KIND[subcategoryLabel];
+}
 
 export const COMPENSATION_OPTIONS = [
   { value: "paid", label: "Paid" },
@@ -230,6 +252,68 @@ export function categoryMetaFields(
   }
 
   return [];
+}
+
+/** Suggested keys for the admin category-metadata editor (autocomplete only —
+ *  admins can type any new key that doesn't already exist). */
+export const CATEGORY_META_FIELD_KEY_OPTIONS: { value: string; label: string }[] = [
+  { value: "brand", label: "Brand" },
+  { value: "model", label: "Model" },
+  { value: "storage", label: "Storage / capacity" },
+  { value: "warranty", label: "Warranty" },
+  { value: "size", label: "Size" },
+  { value: "color", label: "Color" },
+  { value: "material", label: "Material" },
+  { value: "year", label: "Year" },
+  { value: "make_model", label: "Make & model" },
+  { value: "mileage_km", label: "Mileage (km)" },
+  { value: "property_type", label: "Property type" },
+  { value: "size_sqm", label: "Size (sqm)" },
+  { value: "size_acres", label: "Size (acres)" },
+  { value: "bedrooms", label: "Bedrooms" },
+  { value: "bathrooms", label: "Bathrooms" },
+  { value: "title_status", label: "Title / tenure" },
+  { value: "furnished", label: "Furnished" },
+  { value: "unit", label: "Unit / quantity" },
+];
+
+/** Category metadata: merges admin-configured DB metadata for the top-level
+ *  category (or the in-code defaults, when none is configured) with any
+ *  extra fields configured on the specific subcategory. Subcategory fields
+ *  win on key collisions so a subcategory can override a shared field. */
+export function categoryMetaFieldsFromItems(
+  parentLabel: string | null | undefined,
+  items: {
+    slug: string;
+    label: string;
+    parent_slug?: string | null;
+    metadata?: CategoryMetaField[];
+  }[],
+  subcategoryLabel?: string | null,
+): CategoryMetaField[] {
+  const p = (parentLabel ?? "").trim();
+  if (!p) return [];
+  const parentItem = items.find((i) => !i.parent_slug && i.label === p);
+  const parentFields =
+    parentItem?.metadata && parentItem.metadata.length > 0
+      ? parentItem.metadata
+      : categoryMetaFields(parentLabel);
+
+  const sub = (subcategoryLabel ?? "").trim();
+  if (!sub) return parentFields;
+  const childItem = items.find(
+    (i) => i.label === sub && (!parentItem || i.parent_slug === parentItem.slug),
+  );
+  const childFields = childItem?.metadata ?? [];
+  if (childFields.length === 0) return parentFields;
+
+  const merged = [...parentFields];
+  for (const field of childFields) {
+    const idx = merged.findIndex((f) => f.key === field.key);
+    if (idx >= 0) merged[idx] = field;
+    else merged.push(field);
+  }
+  return merged;
 }
 
 /** Require a real written description: length + at least two sentences. */
