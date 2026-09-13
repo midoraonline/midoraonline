@@ -123,10 +123,15 @@ export function MediaDropzone({
                 Video
               </span>
             ) : null}
+            {i === 0 ? (
+              <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-xs">
+                Cover
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => onRemove(i)}
-              className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-all hover:bg-black/90 group-hover:opacity-100 focus-visible:opacity-100"
+              className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-black/70 text-white transition-all hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
               aria-label={`Remove ${video ? "video" : "photo"}`}
             >
               <X className="size-4" strokeWidth={2.5} aria-hidden />

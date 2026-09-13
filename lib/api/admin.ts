@@ -1,4 +1,5 @@
 import { apiFetch } from "./base";
+import type { CategoryMetaField } from "@/lib/listingMeta";
 
 export type Paginated<T> = {
   items: T[];
@@ -465,5 +466,47 @@ export function testFeedConfig(overrides: Record<string, number>, sample_size = 
   return apiFetch<FeedConfigTestResponse>(
     "/api/v1/admin/feed/config/test",
     { method: "POST", body: { overrides, sample_size } },
+  );
+}
+
+export type AdminCategory = {
+  slug: string;
+  label: string;
+  sort_order: number;
+  parent_slug?: string | null;
+  metadata?: CategoryMetaField[];
+};
+
+export function adminListCategories() {
+  return apiFetch<AdminCategory[]>("/api/v1/admin/settings/categories");
+}
+
+export function adminCreateCategory(body: {
+  slug: string;
+  label: string;
+  parent_slug?: string | null;
+  sort_order?: number;
+  metadata?: CategoryMetaField[];
+}) {
+  return apiFetch<AdminCategory>("/api/v1/admin/settings/categories", {
+    method: "POST",
+    body,
+  });
+}
+
+export function adminUpdateCategory(
+  slug: string,
+  body: Partial<Pick<AdminCategory, "label" | "parent_slug" | "sort_order" | "metadata">>,
+) {
+  return apiFetch<AdminCategory>(
+    `/api/v1/admin/settings/categories/${encodeURIComponent(slug)}`,
+    { method: "PATCH", body },
+  );
+}
+
+export function adminDeleteCategory(slug: string) {
+  return apiFetch<{ status: string; slug: string }>(
+    `/api/v1/admin/settings/categories/${encodeURIComponent(slug)}`,
+    { method: "DELETE" },
   );
 }

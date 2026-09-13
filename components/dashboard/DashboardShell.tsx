@@ -65,6 +65,7 @@ const SCREEN_NAMES: Record<string, string> = {
   "/admin/listings":         "Listings review",
   "/admin/comments":         "Comments moderation",
   "/admin/feed-config":      "Feed scoring & placement",
+  "/admin/categories":       "Categories",
   "/admin/chat":             "Chat monitoring",
   "/admin/subscriptions":    "Pesapal subscriptions",
   "/admin/feedback":         "Platform feedback",

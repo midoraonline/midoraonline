@@ -13,6 +13,7 @@ const NAV: DashboardNavItem[] = [
   { href: "/admin/listings", label: "Listings", icon: <IconPackage /> },
   { href: "/admin/comments", label: "Comments", icon: <IconMessage /> },
   { href: "/admin/feed-config", label: "Feed tuning", icon: <IconTune /> },
+  { href: "/admin/categories", label: "Categories", icon: <IconStore /> },
 ];
 
 const SECONDARY: DashboardNavItem[] = [

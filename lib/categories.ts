@@ -129,6 +129,7 @@ export const CATEGORY_TREE: ReadonlyArray<{
       "Part-time Jobs",
       "Gigs & Freelance",
       "Internships",
+      "Maids & Domestic Work",
       "Tenders & Contracts",
       "Partnerships & Collaborations",
       "Volunteer & Unpaid",
