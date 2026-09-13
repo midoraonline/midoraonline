@@ -262,160 +262,161 @@ export default function AdminCategoriesClient() {
     return <p className="text-sm text-muted">Loading categories…</p>;
   }
 
-  return (
-    
+    return (
+    <>
       <datalist id="category-meta-field-keys">
         {CATEGORY_META_FIELD_KEY_OPTIONS.map((o) => (
           <option key={o.value} value={o.value} />
         ))}
       </datalist>
       <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
-          Categories
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Manage the categories, subcategories, and extra listing fields buyers and sellers see across Midora.
-        </p>
-      </div>
+        <div>
+          <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+            Categories
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Manage the categories, subcategories, and extra listing fields buyers and sellers see across Midora.
+          </p>
+        </div>
 
-      {error ? (
-        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">{error}</p>
-      ) : null}
+        {error ? (
+          <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">{error}</p>
+        ) : null}
 
-      <div className="dm-card flex flex-wrap items-center gap-2 p-4">
-        <input
-          className="dm-input flex-1 min-w-[200px]"
-          value={newParentLabel}
-          onChange={(e) => setNewParentLabel(e.target.value)}
-          placeholder="New top-level category name"
-        />
-        <button type="button" onClick={() => void addParent()} className="dm-btn dm-btn-primary dm-btn-sm">
-          + Add category
-        </button>
-      </div>
+        <div className="dm-card flex flex-wrap items-center gap-2 p-4">
+          <input
+            className="dm-input flex-1 min-w-[200px]"
+            value={newParentLabel}
+            onChange={(e) => setNewParentLabel(e.target.value)}
+            placeholder="New top-level category name"
+          />
+          <button type="button" onClick={() => void addParent()} className="dm-btn dm-btn-primary dm-btn-sm">
+            + Add category
+          </button>
+        </div>
 
-      <div className="space-y-3">
-        {parents.map((parent) => {
-          const children = childrenByParent[parent.slug] ?? [];
-          const isOpen = expanded[parent.slug] ?? false;
-          return (
-            <div key={parent.slug} className="dm-card p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setExpanded((s) => ({ ...s, [parent.slug]: !isOpen }))}
-                  className="text-xs font-semibold text-muted hover:text-foreground"
-                >
-                  {isOpen ? "▾" : "▸"}
-                </button>
-                <input
-                  className="dm-input flex-1 min-w-[160px] font-semibold"
-                  defaultValue={parent.label}
-                  key={parent.label}
-                  onBlur={(e) => {
-                    if (e.target.value.trim() !== parent.label) {
-                      void renameCategory(parent.slug, e.target.value);
-                    }
-                  }}
-                />
-                <span className="text-xs text-muted">
-                  {children.length} subcategor{children.length === 1 ? "y" : "ies"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void removeCategory(parent.slug)}
-                  disabled={children.length > 0}
-                  title={children.length > 0 ? "Remove subcategories first" : undefined}
-                  className="text-xs font-semibold text-rose-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Delete
-                </button>
-              </div>
-
-              {isOpen ? (
-                <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
-                  <div className="space-y-2">
-                    {children.map((child) => {
-                      const childFieldsOpen = expandedChildFields[child.slug] ?? false;
-                      return (
-                        <div key={child.slug} className="space-y-2">
-                          <div className="flex items-center gap-2 pl-6">
-                            <input
-                              className="dm-input flex-1"
-                              defaultValue={child.label}
-                              key={child.label}
-                              onBlur={(e) => {
-                                if (e.target.value.trim() !== child.label) {
-                                  void renameCategory(child.slug, e.target.value);
-                                }
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedChildFields((s) => ({
-                                  ...s,
-                                  [child.slug]: !childFieldsOpen,
-                                }))
-                              }
-                              className="text-xs font-semibold text-accent hover:underline"
-                            >
-                              {childFieldsOpen ? "Hide fields" : "Fields"}
-                              {child.metadata && child.metadata.length > 0 ? ` (${child.metadata.length})` : ""}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void removeCategory(child.slug)}
-                              className="text-xs font-semibold text-rose-600 hover:underline"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                          {childFieldsOpen ? (
-                            <div className="pl-6">
-                              <FieldsEditor
-                                slug={child.slug}
-                                initial={child.metadata ?? []}
-                                onSaved={load}
-                                scopeLabel="this subcategory only (overrides the category field with the same key)"
-                              />
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                    <div className="flex items-center gap-2 pl-6">
-                      <input
-                        className="dm-input flex-1"
-                        value={newChildLabel[parent.slug] ?? ""}
-                        onChange={(e) =>
-                          setNewChildLabel((s) => ({ ...s, [parent.slug]: e.target.value }))
-                        }
-                        placeholder="New subcategory name"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void addChild(parent.slug)}
-                        className="dm-btn dm-btn-ghost dm-btn-sm"
-                      >
-                        + Add
-                      </button>
-                    </div>
-                  </div>
-
-                  <FieldsEditor
-                    slug={parent.slug}
-                    initial={parent.metadata ?? []}
-                    onSaved={load}
-                    scopeLabel="every subcategory under this category (unless a subcategory overrides a field below)"
+        <div className="space-y-3">
+          {parents.map((parent) => {
+            const children = childrenByParent[parent.slug] ?? [];
+            const isOpen = expanded[parent.slug] ?? false;
+            return (
+              <div key={parent.slug} className="dm-card p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((s) => ({ ...s, [parent.slug]: !isOpen }))}
+                    className="text-xs font-semibold text-muted hover:text-foreground"
+                  >
+                    {isOpen ? "▾" : "▸"}
+                  </button>
+                  <input
+                    className="dm-input flex-1 min-w-[160px] font-semibold"
+                    defaultValue={parent.label}
+                    key={parent.label}
+                    onBlur={(e) => {
+                      if (e.target.value.trim() !== parent.label) {
+                        void renameCategory(parent.slug, e.target.value);
+                      }
+                    }}
                   />
+                  <span className="text-xs text-muted">
+                    {children.length} subcategor{children.length === 1 ? "y" : "ies"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void removeCategory(parent.slug)}
+                    disabled={children.length > 0}
+                    title={children.length > 0 ? "Remove subcategories first" : undefined}
+                    className="text-xs font-semibold text-rose-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Delete
+                  </button>
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
+
+                {isOpen ? (
+                  <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
+                    <div className="space-y-2">
+                      {children.map((child) => {
+                        const childFieldsOpen = expandedChildFields[child.slug] ?? false;
+                        return (
+                          <div key={child.slug} className="space-y-2">
+                            <div className="flex items-center gap-2 pl-6">
+                              <input
+                                className="dm-input flex-1"
+                                defaultValue={child.label}
+                                key={child.label}
+                                onBlur={(e) => {
+                                  if (e.target.value.trim() !== child.label) {
+                                    void renameCategory(child.slug, e.target.value);
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedChildFields((s) => ({
+                                    ...s,
+                                    [child.slug]: !childFieldsOpen,
+                                  }))
+                                }
+                                className="text-xs font-semibold text-accent hover:underline"
+                              >
+                                {childFieldsOpen ? "Hide fields" : "Fields"}
+                                {child.metadata && child.metadata.length > 0 ? ` (${child.metadata.length})` : ""}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void removeCategory(child.slug)}
+                                className="text-xs font-semibold text-rose-600 hover:underline"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                            {childFieldsOpen ? (
+                              <div className="pl-6">
+                                <FieldsEditor
+                                  slug={child.slug}
+                                  initial={child.metadata ?? []}
+                                  onSaved={load}
+                                  scopeLabel="this subcategory only (overrides the category field with the same key)"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center gap-2 pl-6">
+                        <input
+                          className="dm-input flex-1"
+                          value={newChildLabel[parent.slug] ?? ""}
+                          onChange={(e) =>
+                            setNewChildLabel((s) => ({ ...s, [parent.slug]: e.target.value }))
+                          }
+                          placeholder="New subcategory name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void addChild(parent.slug)}
+                          className="dm-btn dm-btn-ghost dm-btn-sm"
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <FieldsEditor
+                      slug={parent.slug}
+                      initial={parent.metadata ?? []}
+                      onSaved={load}
+                      scopeLabel="every subcategory under this category (unless a subcategory overrides a field below)"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
