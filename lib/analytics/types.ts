@@ -33,6 +33,18 @@ export type AnalyticsEvents = {
     publishedAt: number;
   };
 
+  'listing:impressed': SystemMetadata & {
+    productId: string;
+    shopId?: string;
+    pool?: string;
+    position?: number;
+  };
+
+  'listing:messaged': SystemMetadata & {
+    productId?: string;
+    shopId: string;
+  };
+
   'conversion:whatsapp_click': SystemMetadata & {
     productId?: string;
     shopId: string;
@@ -129,6 +141,11 @@ export const EVENT_TARGET_MAP: {
   'marketplace:search': { targetType: null, getTargetId: () => null },
   'listing:published': { targetType: 'product', getTargetId: (p) => p.productId },
   'listing:viewed': { targetType: 'product', getTargetId: (p) => p.productId },
+  'listing:impressed': { targetType: 'product', getTargetId: (p) => p.productId },
+  'listing:messaged': {
+    targetType: 'product',
+    getTargetId: (p) => p.productId ?? p.shopId,
+  },
   'conversion:whatsapp_click': {
     targetType: 'product',
     getTargetId: (p) => p.productId ?? p.shopId,

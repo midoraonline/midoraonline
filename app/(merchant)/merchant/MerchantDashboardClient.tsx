@@ -11,6 +11,7 @@ import {
 
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { planHasAnalytics } from "@/lib/api/payments";
 import type { MerchantAnalytics, MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { useAppSession } from "@/lib/state";
@@ -84,17 +85,32 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [analyticsLocked, setAnalyticsLocked] = useState(false);
   const [windowDays, setWindowDays] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
+  const canAnalytics = planHasAnalytics(session.user?.plan_tier);
 
   const load = useCallback(async () => {
+    if (!session.hydrated) return;
     setError(null);
+    if (!canAnalytics) {
+      setAnalyticsLocked(true);
+      setAnalytics(null);
+    }
     try {
       const [shopsRes, statsRes, analyticsRes] = await Promise.all([
         apiShops.myShops(),
         apiShops.myStats().catch(() => null),
-        apiShops.myAnalytics(windowDays).catch((err) => {
-          setAnalyticsLocked(err instanceof ApiError && err.status === 403);
-          return null;
-        }),
+        canAnalytics
+          ? apiShops.myAnalytics(windowDays).catch((err) => {
+              if (err instanceof ApiError && (err.status === 403 || err.code === "plan_upgrade_required")) {
+                setAnalyticsLocked(true);
+                return null;
+              }
+              if (err instanceof ApiError && (err.code === "timeout" || err.code === "network_error")) {
+                setError("Analytics took too long to load. Try 7 days, or retry.");
+                return null;
+              }
+              return null;
+            })
+          : Promise.resolve(null),
       ]);
       setShops(shopsRes.items ?? []);
       if (statsRes) setStats(statsRes);
@@ -103,9 +119,13 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         setAnalytics(analyticsRes);
       }
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError("Your session expired. Sign in again to load analytics.");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Failed to load your shops");
     }
-  }, [windowDays]);
+  }, [windowDays, session.hydrated, canAnalytics]);
 
   useEffect(() => { void load(); }, [load]);
   useRealtimeTable({ table: "shops", channel: "merchant-shops-overview" }, () => { void load(); });

@@ -33,15 +33,15 @@ export default function ProductsBrowsePage({
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
   const [allItems, setAllItems] = useState(items);
   const { items: categoryItems } = useCategoryItems();
-  const [page, setPage] = useState(1);
-  const [nextCursor, setNextCursor] = useState<string | null>("p:2");
+  const [nextCursor, setNextCursor] = useState<string | null>(
+    items.length >= 36 ? "p:2" : null,
+  );
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(items.length >= 36);
 
   useEffect(() => {
     setAllItems(items);
-    setPage(1);
-    setNextCursor("p:2");
+    setNextCursor(items.length >= 36 ? "p:2" : null);
     setHasMore(items.length >= 36);
   }, [items]);
 
@@ -63,19 +63,22 @@ export default function ProductsBrowsePage({
   });
 
   const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !nextCursor) return;
     setLoadingMore(true);
     try {
-      const next = page + 1;
-      const data = await apiProducts.getHomeFeed(36, next, undefined, undefined, nextCursor);
+      const data = await apiProducts.getHomeFeed({
+        limit: 36,
+        cursor: nextCursor,
+      });
       const existing = new Set(allItems.map((p) => p.id));
       const nextItems = (data.algorithm ?? [])
         .filter((fp) => !existing.has(fp.id))
         .map(toCardLocal);
       if (nextItems.length === 0) {
         setHasMore(false);
+        setNextCursor(null);
       } else {
         setAllItems((prev) => [...prev, ...nextItems]);
-        setPage(next);
         setNextCursor(data.next_cursor ?? null);
         setHasMore(Boolean(data.has_more && data.next_cursor));
       }
@@ -84,7 +87,7 @@ export default function ProductsBrowsePage({
     } finally {
       setLoadingMore(false);
     }
-  }, [page, allItems, nextCursor]);
+  }, [loadingMore, hasMore, nextCursor, allItems]);
 
   function toCardLocal(fp: HomeFeedProduct): ProductCardData {
     return homeFeedProductToCard(fp, typeof window !== "undefined" ? window.location.origin : "");

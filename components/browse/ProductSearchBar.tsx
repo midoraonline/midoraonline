@@ -1,15 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Clock, Search, TrendingUp, X } from "lucide-react";
+import useSWR from "swr";
 
 import { apiSearch } from "@/lib/api";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
+import { searchItemToCard } from "@/lib/searchMap";
 
 type Suggestion = {
   query: string;
   kind: "trending" | "recent";
+};
+
+type ProductHit = {
+  id: string;
+  title: string;
+  priceUGX: number;
+  imageUrl?: string;
+  listingUrl: string;
 };
 
 export default function ProductSearchBar({
@@ -33,19 +44,33 @@ export default function ProductSearchBar({
 }) {
   const session = useAppSession();
   const [focused, setFocused] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const emptyQuery = !value.trim();
+  const q = value.trim();
+  const [debouncedHitQ, setDebouncedHitQ] = useState("");
 
-  const loadSuggestions = useCallback(async () => {
-    if (!showSuggestions) return;
-    try {
+  useEffect(() => {
+    if (!showSuggestions || !focused || q.length < 2) {
+      setDebouncedHitQ("");
+      return;
+    }
+    const timer = setTimeout(() => setDebouncedHitQ(q), 220);
+    return () => clearTimeout(timer);
+  }, [q, focused, showSuggestions]);
+
+  const suggestKey =
+    showSuggestions && focused && emptyQuery
+      ? (["search:suggest", session.isAuthenticated] as const)
+      : null;
+  const { data: suggestions = [] } = useSWR(
+    suggestKey,
+    async ([, authed]) => {
       const [trendingRes, recentRes] = await Promise.all([
         apiSearch.getTrendingSearches().catch(() => ({ items: [] })),
-        session.isAuthenticated
+        authed
           ? apiSearch.getRecentSearches().catch(() => ({ items: [] }))
           : Promise.resolve({ items: [] }),
       ]);
-
       const recent: Suggestion[] = (recentRes.items ?? []).slice(0, 5).map((r) => ({
         query: r.query,
         kind: "recent" as const,
@@ -55,18 +80,34 @@ export default function ProductSearchBar({
         .filter((t) => !recentQueries.has(t.query.toLowerCase()))
         .slice(0, 5)
         .map((t) => ({ query: t.query, kind: "trending" as const }));
+      return [...recent, ...trending];
+    },
+    { revalidateOnFocus: false, dedupingInterval: 30_000 },
+  );
 
-      setSuggestions([...recent, ...trending]);
-    } catch {
-      setSuggestions([]);
-    }
-  }, [showSuggestions, session.isAuthenticated]);
-
-  useEffect(() => {
-    if (focused && !value.trim()) {
-      void loadSuggestions();
-    }
-  }, [focused, value, loadSuggestions]);
+  const hitsKey =
+    showSuggestions && focused && debouncedHitQ.length >= 2
+      ? (["search:hits", debouncedHitQ] as const)
+      : null;
+  const { data: hits = [], isLoading: hitsFetching } = useSWR(
+    hitsKey,
+    async ([, searchQ]) => {
+      const res = await apiSearch.searchProducts(searchQ, { limit: 6, log: false });
+      const site = window.location.origin;
+      return res.items.map((item): ProductHit => {
+        const card = searchItemToCard(item, site);
+        return {
+          id: card.id,
+          title: card.title,
+          priceUGX: card.priceUGX,
+          imageUrl: card.imageUrl,
+          listingUrl: `/products/${card.slug}`,
+        };
+      });
+    },
+    { revalidateOnFocus: false, dedupingInterval: 8_000 },
+  );
+  const hitsLoading = Boolean(hitsKey) && (debouncedHitQ !== q || hitsFetching);
 
   useEffect(() => {
     if (!focused) return;
@@ -82,7 +123,6 @@ export default function ProductSearchBar({
   function handleSuggestionTap(query: string) {
     onChange(query);
     setFocused(false);
-    apiSearch.logSearchQuery(query).catch(() => {});
     notifyFeedEngagement();
     onSubmit?.(query);
   }
@@ -92,7 +132,6 @@ export default function ProductSearchBar({
       const q = value.trim();
       if (q) {
         setFocused(false);
-        apiSearch.logSearchQuery(q).catch(() => {});
         notifyFeedEngagement();
         onSubmit?.(q);
       }
@@ -103,7 +142,9 @@ export default function ProductSearchBar({
     }
   }
 
-  const showPanel = showSuggestions && focused && !value.trim() && suggestions.length > 0;
+  const showEmptyPanel = showSuggestions && focused && emptyQuery && suggestions.length > 0;
+  const showHitsPanel = showSuggestions && focused && !emptyQuery && (hitsLoading || hits.length > 0);
+  const showPanel = showEmptyPanel || showHitsPanel;
   const hasValue = value.trim().length > 0;
 
   const shellClass =
@@ -154,28 +195,79 @@ export default function ProductSearchBar({
         <ul
           id="search-suggestions"
           role="listbox"
-          className="absolute left-0 right-0 top-[calc(100%+0.375rem)] z-30 overflow-hidden rounded-2xl border border-border bg-background shadow-xl"
+          className="absolute left-0 right-0 top-[calc(100%+0.375rem)] z-30 max-h-80 overflow-y-auto overflow-x-hidden rounded-2xl border border-border bg-background shadow-xl"
         >
-          {suggestions.map((s) => (
-            <li key={`${s.kind}-${s.query}`} role="option">
+          {showHitsPanel
+            ? hitsLoading && hits.length === 0
+              ? (
+                <li className="px-4 py-3 text-sm text-muted">Searching…</li>
+              )
+              : hits.map((hit) => (
+                <li key={hit.id} role="option">
+                  <Link
+                    href={hit.listingUrl}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setFocused(false)}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-surface-subtle"
+                  >
+                    {hit.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={hit.imageUrl}
+                        alt=""
+                        className="size-10 shrink-0 rounded-lg bg-surface-subtle object-cover"
+                      />
+                    ) : (
+                      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-surface-subtle text-muted">
+                        <Search className="size-3.5" aria-hidden />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">{hit.title}</span>
+                      <span className="text-[11px] text-muted">
+                        {new Intl.NumberFormat("en-UG", {
+                          style: "currency",
+                          currency: "UGX",
+                          maximumFractionDigits: 0,
+                        }).format(hit.priceUGX)}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))
+            : suggestions.map((s) => (
+              <li key={`${s.kind}-${s.query}`} role="option">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSuggestionTap(s.query)}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-subtle"
+                >
+                  {s.kind === "recent" ? (
+                    <Clock className="size-3.5 shrink-0 text-muted" aria-hidden />
+                  ) : (
+                    <TrendingUp className="size-3.5 shrink-0 text-accent" aria-hidden />
+                  )}
+                  <span className="truncate text-foreground">{s.query}</span>
+                  <span className="ml-auto shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted">
+                    {s.kind === "recent" ? "Recent" : "Trending"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          {showHitsPanel && hasValue ? (
+            <li>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleSuggestionTap(s.query)}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-subtle"
+                onClick={() => handleSuggestionTap(value.trim())}
+                className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-left text-sm font-medium text-accent hover:bg-surface-subtle"
               >
-                {s.kind === "recent" ? (
-                  <Clock className="size-3.5 shrink-0 text-muted" aria-hidden />
-                ) : (
-                  <TrendingUp className="size-3.5 shrink-0 text-accent" aria-hidden />
-                )}
-                <span className="truncate text-foreground">{s.query}</span>
-                <span className="ml-auto shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted">
-                  {s.kind === "recent" ? "Recent" : "Trending"}
-                </span>
+                <Search className="size-3.5 shrink-0" aria-hidden />
+                Search for “{value.trim()}”
               </button>
             </li>
-          ))}
+          ) : null}
         </ul>
       ) : null}
     </div>

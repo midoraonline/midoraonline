@@ -5,11 +5,9 @@ import Link from "next/link";
 import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
-import { apiListingEvents } from "@/lib/api";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
-import { useImpressionTracker } from "@/lib/hooks/useImpressionTracker";
-import type { ImpressionPool } from "@/lib/impressions";
+import { useImpressionTracker, type ImpressionPool } from "@/lib/hooks/useImpressionTracker";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
@@ -147,7 +145,6 @@ function WhatsAppCta({
       <TradeDisclaimer
         type="whatsapp"
         onConfirm={() => {
-          apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
           if (shopId) {
             track("conversion:whatsapp_click", {
               productId,
@@ -190,6 +187,7 @@ export default function ProductCard({
 }) {
   const impressionRef = useImpressionTracker<HTMLElement>({
     listingId: product.id,
+    shopId: product.shop.id,
     pool: impressionPool ?? (product.boosted ? "boosted" : "organic"),
     position: impressionPosition,
   });

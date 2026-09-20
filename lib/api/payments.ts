@@ -2,6 +2,10 @@ import { apiFetch } from "./base";
 
 export type PlanTier = "basic" | "standard" | "premium";
 
+export function planHasAnalytics(tier?: string | null): boolean {
+  return tier === "standard" || tier === "premium";
+}
+
 export type Plan = {
   key: PlanTier;
   name: string;

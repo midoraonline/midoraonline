@@ -4,7 +4,7 @@ export default function MerchantListingsSkeleton() {
   return (
     <SkeletonRegion
       label="Loading your listings"
-      className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6"
+      className="flex w-full flex-col gap-4 pb-24 pt-1 sm:pt-2"
     >
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

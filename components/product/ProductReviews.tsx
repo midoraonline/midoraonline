@@ -24,6 +24,7 @@ type ReviewStats = {
 
 type Props = {
   productId: string;
+  initialStats?: ReviewStats;
 };
 
 function StarInput({
@@ -84,9 +85,9 @@ function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) 
   );
 }
 
-export default function ProductReviews({ productId }: Props) {
+export default function ProductReviews({ productId, initialStats }: Props) {
   const session = useAppSession();
-  const [stats, setStats] = useState<ReviewStats | null>(null);
+  const [stats, setStats] = useState<ReviewStats | null>(initialStats ?? null);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
@@ -96,25 +97,28 @@ export default function ProductReviews({ productId }: Props) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (refreshStats = false) => {
     try {
-      const [statsRes, reviewsRes] = await Promise.all([
-        apiFetch<ReviewStats>(
-          `/api/v1/products/${encodeURIComponent(productId)}/reviews/stats`,
-        ),
+      const shouldFetchStats = !initialStats || refreshStats;
+      const [reviewsRes, statsRes] = await Promise.all([
         apiFetch<{ items: ProductReview[] }>(
           `/api/v1/products/${encodeURIComponent(productId)}/reviews?limit=50`,
         ),
+        shouldFetchStats
+          ? apiFetch<ReviewStats>(
+              `/api/v1/products/${encodeURIComponent(productId)}/reviews/stats`,
+            )
+          : Promise.resolve(null),
       ]);
-      setStats(statsRes);
+      if (statsRes) setStats(statsRes);
       setReviews(Array.isArray(reviewsRes.items) ? reviewsRes.items : []);
     } catch {
-      setStats(null);
+      if (!initialStats) setStats(null);
       setReviews([]);
     } finally {
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, initialStats]);
 
   const loadMyReview = useCallback(async () => {
     if (!session.isAuthenticated) return;
@@ -158,7 +162,7 @@ export default function ProductReviews({ productId }: Props) {
         created_at: new Date().toISOString(),
       });
       setEditing(false);
-      await load();
+      await load(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save your review.");
     } finally {

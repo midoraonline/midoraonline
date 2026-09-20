@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { UTApi } from "uploadthing/server";
+import { verifyUploadBearer } from "@/lib/auth/verifyUploadBearer";
 
 // Reused across invocations on Vercel (module scope is cached per container).
 const utapi = new UTApi();
@@ -35,8 +36,8 @@ function extractFileKey(url: string): string | null {
  * error out just because one entry isn't ours.
  */
 export async function POST(req: Request) {
-  const auth = req.headers.get("authorization");
-  if (!auth?.toLowerCase().startsWith("bearer ") || !auth.slice(7).trim()) {
+  const auth = await verifyUploadBearer(req);
+  if (!auth) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

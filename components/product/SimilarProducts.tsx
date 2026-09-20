@@ -3,19 +3,24 @@
 import { useEffect, useState } from "react";
 import { apiProducts } from "@/lib/api";
 import type { SimilarProduct } from "@/lib/api/products";
-import type { ProductCardData } from "@/components/productcard";
 import ProductCard from "@/components/productcard";
 import { similarProductToCard } from "@/lib/productCardMap";
 
 type Props = {
   productId: string;
+  initialItems?: SimilarProduct[];
 };
 
-export default function SimilarProducts({ productId }: Props) {
-  const [items, setItems] = useState<SimilarProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function SimilarProducts({ productId, initialItems }: Props) {
+  const [items, setItems] = useState<SimilarProduct[]>(initialItems ?? []);
+  const [loading, setLoading] = useState(!initialItems);
 
   useEffect(() => {
+    if (initialItems !== undefined) {
+      setItems(initialItems);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     apiProducts.getSimilarProducts(productId, 12).then((data) => {
@@ -27,7 +32,7 @@ export default function SimilarProducts({ productId }: Props) {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [productId]);
+  }, [productId, initialItems]);
 
   if (loading || items.length === 0) return null;
 

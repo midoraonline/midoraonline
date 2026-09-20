@@ -1,8 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Logo from "@/components/Logo";
 import Link from "next/link";
 import type { Shop } from "@/lib/api/shops";
-import { recordShopEvent } from "@/lib/api/shops";
+import { track } from "@/lib/analytics";
 import { whatsappDigits } from "@/lib/whatsappProduct";
 import { locationDisplay, platformLabel } from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -63,7 +65,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   className={footerIcon}
                   title={shop.shop_email}
                   aria-label={`Email ${shop.shop_email}`}
-                  onClick={() => { recordShopEvent(shop.id, "messaged").catch(() => {}); }}
+                  onClick={() => { track("listing:messaged", { shopId: shop.id }); }}
                 >
                   <MaterialSymbol name="mail" className="!text-[22px] leading-none" />
                 </a>
@@ -76,7 +78,12 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   className={footerIcon}
                   title={`WhatsApp ${shop.whatsapp_number}`}
                   aria-label={`WhatsApp ${shop.whatsapp_number}`}
-                  onClick={() => { recordShopEvent(shop.id, "whatsapp_clicked").catch(() => {}); }}
+                  onClick={() => {
+                    track("conversion:whatsapp_click", {
+                      shopId: shop.id,
+                      clickSource: "shop_page",
+                    });
+                  }}
                 >
                   <WhatsAppIcon className="size-5" />
                 </a>

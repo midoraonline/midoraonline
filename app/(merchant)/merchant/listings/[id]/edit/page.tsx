@@ -82,6 +82,7 @@ export default function EditListingPage({
       shopId={product.shop_id}
       itemType={product.item_type ?? "product"}
       backUrl="/merchant/listings"
+      flush
     />
   );
 }

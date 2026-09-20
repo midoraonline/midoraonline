@@ -1,6 +1,5 @@
 "use client";
 
-import HomeHero from "@/components/home/HomeHero";
 import CategoryBrowseSectionSkeleton from "@/components/browse/CategoryBrowseSectionSkeleton";
 import {
   ProductCardSkeleton,
@@ -9,15 +8,15 @@ import {
 } from "@/components/skeletons/Skeleton";
 import { browseProductGridClass } from "@/lib/browseCategories";
 
-/** Home feed loading — hero stays real; only dynamic feed content shimmers. */
+/** Home feed loading — compact chrome; product grid shimmers. */
 export default function HomeFeedSkeleton() {
   return (
     <SkeletonRegion label="Loading home feed" className="w-full">
-      <div className="mb-5 sm:mb-6 lg:mb-8">
-        <HomeHero />
+      <div className="mb-3 md:hidden">
+        <Skeleton className="h-10 w-full" rounded="full" />
       </div>
 
-      <div className="mb-4 space-y-2 sm:mb-5">
+      <div className="mb-3 space-y-2 sm:mb-4">
         <CategoryBrowseSectionSkeleton />
         <div className="flex gap-1 overflow-hidden py-0.5 sm:gap-1.5">
           {Array.from({ length: 5 }, (_, i) => (
@@ -26,7 +25,7 @@ export default function HomeFeedSkeleton() {
         </div>
       </div>
 
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-2">
           <Skeleton className="h-4 w-28" rounded="sm" />
           <Skeleton className="h-3 w-14" rounded="sm" />

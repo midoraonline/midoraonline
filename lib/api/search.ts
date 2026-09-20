@@ -104,11 +104,3 @@ export function getRecentSearches(token?: string | null) {
     token,
   });
 }
-
-export function logSearchQuery(query: string, token?: string | null) {
-  return apiFetch<{ status: string }>("/api/v1/search/log", {
-    method: "POST",
-    token,
-    body: { query: query.trim() },
-  });
-}

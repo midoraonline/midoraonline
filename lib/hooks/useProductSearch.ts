@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import useSWR from "swr";
 
 import { apiSearch } from "@/lib/api";
-import type { SearchMode } from "@/lib/api/search";
+import type { SearchMode, SearchProductsResponse } from "@/lib/api/search";
 import { searchItemToCard } from "@/lib/searchMap";
 import type { ProductCardData } from "@/components/productcard";
 
@@ -15,30 +16,6 @@ type UseProductSearchOptions = {
   limit?: number;
 };
 
-type SearchState = {
-  items: ProductCardData[];
-  loading: boolean;
-  loadingMore: boolean;
-  error: string | null;
-  mode: SearchMode | null;
-  total: number;
-  page: number;
-  totalPages: number;
-  hasMore: boolean;
-};
-
-const EMPTY: SearchState = {
-  items: [],
-  loading: false,
-  loadingMore: false,
-  error: null,
-  mode: null,
-  total: 0,
-  page: 0,
-  totalPages: 0,
-  hasMore: false,
-};
-
 export function useProductSearch({
   query,
   category,
@@ -46,104 +23,117 @@ export function useProductSearch({
   debounceMs = 350,
   limit = 20,
 }: UseProductSearchOptions) {
-  const [state, setState] = useState<SearchState>(EMPTY);
-  const requestId = useRef(0);
-
   const q = query.trim();
   const active = enabled && q.length > 0;
+  const [debouncedQ, setDebouncedQ] = useState(q);
+  const [extra, setExtra] = useState<ProductCardData[]>([]);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const trackedQuery = useRef<string | null>(null);
 
   useEffect(() => {
     if (!active) {
-      setState(EMPTY);
+      setDebouncedQ("");
       return;
     }
-
-    const id = ++requestId.current;
-    const timer = setTimeout(async () => {
-      setState((s) => ({ ...s, loading: true, error: null }));
-
-      try {
-        const res = await apiSearch.searchProducts(q, {
-          page: 1,
-          limit,
-          category: category ?? undefined,
-        });
-        if (id !== requestId.current) return;
-
-        // Fire analytics event so admin fill-rate/discovery metrics can
-        // score how often searches surface enough real listings.
-        try {
-          const { track } = await import("@/lib/analytics");
-          track("marketplace:search", {
-            query: q,
-            category: category ?? undefined,
-            resultCount: res.total,
-            // Every published listing is verified on Midora, so total ≈ verified.
-            // If we ever add unverified inventory, split this out.
-            verifiedCount: res.total,
-          });
-        } catch {
-          /* analytics never breaks search */
-        }
-
-        const site = typeof window !== "undefined" ? window.location.origin : undefined;
-        setState({
-          items: res.items.map((item) => searchItemToCard(item, site)),
-          loading: false,
-          loadingMore: false,
-          error: null,
-          mode: res.mode,
-          total: res.total,
-          page: res.page,
-          totalPages: res.total_pages,
-          hasMore: res.page < res.total_pages,
-        });
-      } catch (e) {
-        if (id !== requestId.current) return;
-        setState({
-          ...EMPTY,
-          error: e instanceof Error ? e.message : "Search failed",
-        });
-      }
-    }, debounceMs);
-
+    const timer = setTimeout(() => setDebouncedQ(q), debounceMs);
     return () => clearTimeout(timer);
-  }, [q, category, active, debounceMs, limit]);
+  }, [q, active, debounceMs]);
+
+  const key =
+    active && debouncedQ
+      ? (["search:products", debouncedQ, category ?? "", limit] as const)
+      : null;
+
+  const { data, error, isLoading } = useSWR(
+    key,
+    ([, searchQ, cat, lim]) =>
+      apiSearch.searchProducts(searchQ, {
+        page: 1,
+        limit: lim,
+        category: cat || undefined,
+      }),
+    { revalidateOnFocus: false, dedupingInterval: 8_000 },
+  );
+
+  useEffect(() => {
+    setExtra([]);
+    setPage(1);
+    trackedQuery.current = null;
+  }, [debouncedQ, category, limit]);
+
+  useEffect(() => {
+    if (!data || !debouncedQ) return;
+    if (trackedQuery.current === debouncedQ) return;
+    trackedQuery.current = debouncedQ;
+    void import("@/lib/analytics")
+      .then(({ track }) => {
+        track("marketplace:search", {
+          query: debouncedQ,
+          category: category ?? undefined,
+          resultCount: data.total,
+          verifiedCount: data.total,
+        });
+      })
+      .catch(() => {
+        /* analytics never breaks search */
+      });
+  }, [data, debouncedQ, category]);
+
+  const firstItems = useMemo(() => {
+    const site = typeof window !== "undefined" ? window.location.origin : undefined;
+    return (data?.items ?? []).map((item) => searchItemToCard(item, site));
+  }, [data]);
+
+  const items = extra.length ? [...firstItems, ...extra] : firstItems;
+  const totalPages = data?.total_pages ?? 0;
+  const hasMore = page < totalPages;
 
   const loadMore = useCallback(async () => {
-    if (!active || state.loading || state.loadingMore || !state.hasMore) return;
-
-    const id = ++requestId.current;
-    const nextPage = state.page + 1;
-    setState((s) => ({ ...s, loadingMore: true }));
-
+    if (!active || !debouncedQ || isLoading || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
     try {
-      const res = await apiSearch.searchProducts(q, {
+      const res: SearchProductsResponse = await apiSearch.searchProducts(debouncedQ, {
         page: nextPage,
         limit,
         category: category ?? undefined,
       });
-      if (id !== requestId.current) return;
-
       const site = typeof window !== "undefined" ? window.location.origin : undefined;
-      const existing = new Set(state.items.map((p) => p.id));
+      const seen = new Set(items.map((p) => p.id));
       const nextItems = res.items
         .map((item) => searchItemToCard(item, site))
-        .filter((p) => !existing.has(p.id));
-
-      setState((s) => ({
-        ...s,
-        items: [...s.items, ...nextItems],
-        loadingMore: false,
-        page: res.page,
-        totalPages: res.total_pages,
-        hasMore: res.page < res.total_pages,
-      }));
+        .filter((p) => !seen.has(p.id));
+      setExtra((prev) => [...prev, ...nextItems]);
+      setPage(res.page);
     } catch {
-      if (id !== requestId.current) return;
-      setState((s) => ({ ...s, loadingMore: false }));
+      /* keep current results */
+    } finally {
+      setLoadingMore(false);
     }
-  }, [active, q, category, limit, state.loading, state.loadingMore, state.hasMore, state.page, state.items]);
+  }, [
+    active,
+    debouncedQ,
+    isLoading,
+    loadingMore,
+    hasMore,
+    page,
+    limit,
+    category,
+    items,
+  ]);
 
-  return { ...state, active, loadMore };
+  return {
+    items: active ? items : [],
+    loading: active && (debouncedQ !== q || isLoading),
+    loadingMore,
+    error: error instanceof Error ? error.message : error ? "Search failed" : null,
+    mode: (data?.mode ?? null) as SearchMode | null,
+    total: data?.total ?? 0,
+    page,
+    totalPages,
+    hasMore: active && hasMore,
+    active,
+    loadMore,
+  };
 }

@@ -76,11 +76,13 @@ function ProfileDropdown({
   displayName,
   email,
   initials,
+  settingsHref,
   onLogout,
 }: {
   displayName: string;
   email: string | null;
   initials: string;
+  settingsHref: string;
   onLogout: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -131,7 +133,7 @@ function ProfileDropdown({
           <div className="p-1">
             <button
               type="button"
-              onClick={() => { setOpen(false); router.push("/merchant/settings"); }}
+              onClick={() => { setOpen(false); router.push(settingsHref); }}
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
             >
               <MaterialSymbol name="settings" className="!text-base text-muted" />
@@ -164,10 +166,10 @@ function ProfileDropdown({
 // ── Main header ──────────────────────────────────────────────────────────────
 export default function DashboardHeader({
   screenName,
-  onMenuClick,
+  role,
 }: {
   screenName: string;
-  onMenuClick?: () => void;
+  role: "admin" | "merchant" | "customer";
 }) {
   const router = useRouter();
   const session = useAppSession();
@@ -199,44 +201,40 @@ export default function DashboardHeader({
     }
   }
 
+  const settingsHref =
+    role === "admin" ? "/admin" : role === "customer" ? "/customer/settings" : "/merchant/settings";
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-border bg-background/95 px-4 backdrop-blur-xl sm:px-6">
-        {/* Left: hamburger (mobile) + screen name */}
         <div className="flex items-center gap-3">
-          {onMenuClick && (
-            <button
-              type="button"
-              aria-label="Open menu"
-              onClick={onMenuClick}
-              className="grid size-9 shrink-0 place-items-center rounded-xl text-foreground/70 transition-colors hover:bg-surface-subtle lg:hidden"
-            >
-              <MaterialSymbol name="menu" className="!text-xl" />
-            </button>
-          )}
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => window.dispatchEvent(new Event("toggle-sidebar"))}
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-foreground/70 transition-colors hover:bg-surface-subtle lg:hidden"
+          >
+            <MaterialSymbol name="menu" className="!text-xl" />
+          </button>
           <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
             {screenName}
           </h1>
         </div>
 
-        {/* Right: notifications + profile */}
         <div className="flex items-center gap-1">
-          {/* Notification bell — placeholder */}
           <button
             type="button"
             aria-label="Notifications"
             className="relative grid size-9 place-items-center rounded-xl text-foreground/70 transition-colors hover:bg-surface-subtle"
           >
             <MaterialSymbol name="notifications" className="!text-xl" />
-            {/* Uncomment when real notifications exist:
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-rose-500" />
-            */}
           </button>
 
           <ProfileDropdown
             displayName={displayName}
             email={email}
             initials={initials}
+            settingsHref={settingsHref}
             onLogout={() => setShowLogout(true)}
           />
         </div>

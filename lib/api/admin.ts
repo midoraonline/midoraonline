@@ -105,8 +105,6 @@ export type AdminStatsSummary = {
   inactive_shops: number;
   total_products: number;
   total_users: number;
-  total_orders: number;
-  total_revenue_ugx: number;
   total_subscription_revenue_ugx: number;
   total_shop_views: number;
   total_product_views: number;
@@ -170,7 +168,6 @@ export type AdminStatsOverview = {
     shops: TrendPoint[];
     products: TrendPoint[];
     users: TrendPoint[];
-    orders: TrendPoint[];
     impressions?: TrendPoint[];
     whatsapp?: TrendPoint[];
     messages?: TrendPoint[];
@@ -182,7 +179,6 @@ export type AdminStatsOverview = {
     product_categories: DistributionSlice[];
     product_item_types: DistributionSlice[];
     verification_status: DistributionSlice[];
-    order_status: DistributionSlice[];
     impression_pools?: DistributionSlice[];
   };
 };

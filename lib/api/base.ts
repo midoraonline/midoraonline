@@ -84,6 +84,18 @@ function isMultipartOrBinary(body: unknown): boolean {
   return false;
 }
 
+function messageFromPayload(payload: ApiErrorPayload, status: number): string {
+  if (typeof payload.detail === "string" && payload.detail.trim()) {
+    return payload.detail;
+  }
+  const errors = payload.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    const first = errors[0] as { msg?: unknown };
+    if (typeof first?.msg === "string" && first.msg.trim()) return first.msg;
+  }
+  return `Request failed with status ${status}`;
+}
+
 async function parseErrorBody(res: Response): Promise<ApiErrorPayload> {
   const text = await res.text().catch(() => "");
   if (!text) return { detail: res.statusText };
@@ -97,41 +109,37 @@ async function parseErrorBody(res: Response): Promise<ApiErrorPayload> {
 }
 
 let inflightRefresh: Promise<boolean> | null = null;
+let refreshEpoch = 0;
+
+if (typeof window !== "undefined") {
+  window.addEventListener(AUTH_CHANGED_EVENT, () => {
+    refreshEpoch += 1;
+    inflightRefresh = null;
+  });
+}
 
 async function tryRefreshCookie(): Promise<boolean> {
   if (typeof window === "undefined") return false;
+  const epoch = refreshEpoch;
   if (!inflightRefresh) {
     inflightRefresh = (async () => {
       try {
-        const res = await fetch(`${getBaseUrl()}/api/v1/auth/refresh`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
-        });
-        if (!res.ok) {
-          return false;
-        }
-        // Mirror refreshed tokens to Next.js domain so proxy calls (and SSR)
-        // can read the cookie on subsequent requests.
-        try {
-          const body: Record<string, unknown> = await res.clone().json();
-          const access_token = body.access_token as string | undefined;
-          if (access_token) {
-            await fetch("/api/auth/set-cookies", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-          }
-        } catch {
-          // Non-fatal — tokens are still refreshed on the FastAPI domain.
-        }
-        return true;
+        const res = await doFetch(
+          "/api/dev-proxy/api/v1/auth/refresh",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          },
+          8_000,
+        );
+        if (epoch !== refreshEpoch) return false;
+        return res.ok;
       } catch {
         return false;
       } finally {
-        inflightRefresh = null;
+        if (epoch === refreshEpoch) inflightRefresh = null;
       }
     })();
   }
@@ -178,6 +186,7 @@ export async function apiFetch<T>(
     ...(!hasContentType && !isMultipartOrBinary(body) ? { "Content-Type": "application/json" } : {}),
     ...(explicitToken ? { Authorization: `Bearer ${explicitToken}` } : {}),
     ...(adminKey ? { "X-Admin-Key": adminKey } : {}),
+    "X-Correlation-Id": callerHeaders["X-Correlation-Id"] || crypto.randomUUID(),
     ...callerHeaders,
   };
 
@@ -220,10 +229,7 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const payload = await parseErrorBody(res);
-    const message =
-      (typeof payload.detail === "string" && payload.detail) ||
-      `Request failed with status ${res.status}`;
-    throw new ApiError(message, res.status, payload);
+    throw new ApiError(messageFromPayload(payload, res.status), res.status, payload);
   }
 
   if (res.status === 204) return undefined as T;

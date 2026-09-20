@@ -148,18 +148,6 @@ function ProfileDropdown({
               </>
             ) : null}
 
-            {/* Show Orders only for customers, or maybe merchants who buy, but primarily customers */}
-            {role !== "admin" && (
-              <Link
-                href="/customer/orders"
-                onClick={close}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
-              >
-                <MaterialSymbol name="receipt_long" className="!text-base text-muted shrink-0" />
-                My Orders
-              </Link>
-            )}
-
             <Link
               href={role === "merchant" ? "/merchant/settings" : role === "admin" ? "/admin" : "/customer/settings"}
               onClick={close}
@@ -304,15 +292,20 @@ export default function Navbar({
       ? "/merchant"
       : "/customer";
 
-
-
   const onChatPage = pathname === "/chat";
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+    const urlQ = new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+    if (urlQ) setSearchQuery(urlQ);
+  }, [pathname]);
 
   function submitNavbarSearch(q?: string) {
     const term = (q ?? searchQuery).trim();
     if (!term) return;
     setSearchOpen(false);
-    router.push(`/products?q=${encodeURIComponent(term)}`);
+    const path = pathname === "/" ? `/?q=${encodeURIComponent(term)}` : `/products?q=${encodeURIComponent(term)}`;
+    router.push(path);
   }
 
   return (
@@ -367,8 +360,8 @@ export default function Navbar({
           </nav>
 
           {/* Search — desktop only */}
-          <div className="ml-auto hidden w-full md:flex md:items-center md:max-w-md lg:max-w-lg">
-            <div className="flex-1">
+          <div className="ml-auto hidden min-w-[14rem] flex-1 md:flex md:max-w-sm lg:min-w-[18rem] lg:max-w-md">
+            <div className="w-full">
               <ProductSearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}

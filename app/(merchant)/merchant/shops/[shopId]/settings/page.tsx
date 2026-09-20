@@ -161,7 +161,7 @@ export default function MerchantShopSettingsPage() {
   if (!shop) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <section className="dm-card p-5 sm:p-6">
         {error ? (
           <p className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">

@@ -1,28 +1,23 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
+import { forbidCrossOrigin } from "@/lib/http/sameOrigin";
+
+export async function POST(req: Request) {
+  const blocked = forbidCrossOrigin(req);
+  if (blocked) return blocked;
+
   const isProduction = process.env.NODE_ENV === "production";
-
   const res = NextResponse.json({ status: "ok" });
-
-  // Clear the Next.js-domain cookies that /api/auth/set-cookies created.
-  // Use matching attributes (path, secure, sameSite) so the browser
-  // recognises them as the same cookie and removes them.
-  res.cookies.set("midora_access", "", {
+  const base = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-    path: "/",
+    sameSite: "lax" as const,
     maxAge: 0,
-  });
+  };
 
-  res.cookies.set("midora_refresh", "", {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-    path: "/api/v1/auth",
-    maxAge: 0,
-  });
-
+  res.cookies.set("midora_access", "", { ...base, path: "/" });
+  for (const path of ["/", "/api/v1/auth", "/api/dev-proxy/api/v1/auth"]) {
+    res.cookies.set("midora_refresh", "", { ...base, path });
+  }
   return res;
 }

@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  async redirects() {
+    return [
+      { source: "/customer/orders", destination: "/customer", permanent: false },
+      { source: "/merchant/orders", destination: "/merchant", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -20,16 +20,20 @@ export default function ShopActions({
   shopSlug,
   shopName,
   shopId,
+  initialLiked,
+  initialFollowed,
 }: {
   shopSlug: string;
   shopName: string;
   shopId: string;
+  initialLiked?: boolean | null;
+  initialFollowed?: boolean | null;
 }) {
   const session = useAppSession();
   const router = useRouter();
 
-  const [liked, setLiked] = useState(false);
-  const [followed, setFollowed] = useState(false);
+  const [liked, setLiked] = useState(Boolean(initialLiked));
+  const [followed, setFollowed] = useState(Boolean(initialFollowed));
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
   const loadLocalFlags = useCallback(() => {
@@ -57,12 +61,29 @@ export default function ShopActions({
     }
   }, [shopId, session.isAuthenticated, loadLocalFlags]);
 
+  const hasSsrFlags = initialLiked != null || initialFollowed != null;
+
   useEffect(() => {
     if (!session.hydrated) return;
-    Promise.resolve().then(() => {
-      syncEngagement();
-    });
-  }, [session.hydrated, syncEngagement]);
+    if (session.isAuthenticated) {
+      if (hasSsrFlags) {
+        setLiked(Boolean(initialLiked));
+        setFollowed(Boolean(initialFollowed));
+        return;
+      }
+      void syncEngagement();
+      return;
+    }
+    loadLocalFlags();
+  }, [
+    session.hydrated,
+    session.isAuthenticated,
+    hasSsrFlags,
+    initialLiked,
+    initialFollowed,
+    syncEngagement,
+    loadLocalFlags,
+  ]);
 
   async function toggleLike() {
     const next = !liked;
@@ -71,7 +92,6 @@ export default function ShopActions({
         if (next) await apiShops.likeShop(shopId);
         else await apiShops.unlikeShop(shopId);
         setLiked(next);
-        await syncEngagement();
         notifyFeedEngagement();
         router.refresh();
       } catch {
@@ -90,7 +110,6 @@ export default function ShopActions({
         if (next) await apiShops.followShop(shopId);
         else await apiShops.unfollowShop(shopId);
         setFollowed(next);
-        await syncEngagement();
         notifyFeedEngagement();
         track(next ? "shop:followed" : "shop:unfollowed", { shopId });
         router.refresh();

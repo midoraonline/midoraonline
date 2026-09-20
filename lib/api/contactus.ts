@@ -6,9 +6,8 @@ export function submitContactForm(data: {
   subject: string;
   message: string;
 }) {
-  const qs = new URLSearchParams(data);
-  return apiFetch<{ status: string; message: string }>(
-    `/api/v1/contactus?${qs.toString()}`,
-    { method: "POST" }
-  );
+  return apiFetch<{ status: string; message: string }>("/api/v1/contactus", {
+    method: "POST",
+    body: data,
+  });
 }

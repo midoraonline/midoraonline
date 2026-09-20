@@ -241,22 +241,23 @@ export default function MerchantShopsListClient({ initialShops }: Props) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            {newProductMode ? "Pick a shop" : "Merchant · My shops"}
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            {newProductMode
-              ? "Where should this product live?"
-              : "Your shops"}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {newProductMode
-              ? "Choose the shop this product belongs to and we'll open its catalog."
-              : `Manage every storefront you own. ${counts.all} ${counts.all === 1 ? "shop" : "shops"} total.`}
-          </p>
+          {newProductMode ? (
+            <>
+              <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+                Where should this product live?
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                Choose the shop this product belongs to and we&apos;ll open its catalog.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted">
+              Manage every storefront you own. {counts.all}{" "}
+              {counts.all === 1 ? "shop" : "shops"} total.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link

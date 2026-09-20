@@ -111,9 +111,9 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
 
   const trendData = useMemo(() => {
     if (!data) return [];
-    const byDay = new Map<string, { day: string; shops: number; products: number; users: number; orders: number }>();
+    const byDay = new Map<string, { day: string; shops: number; products: number; users: number }>();
     const put = (
-      key: "shops" | "products" | "users" | "orders",
+      key: "shops" | "products" | "users",
       series: AdminStatsOverview["trends"]["shops"] | undefined,
     ) => {
       for (const point of series ?? []) {
@@ -122,7 +122,6 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
           shops: 0,
           products: 0,
           users: 0,
-          orders: 0,
         };
         row[key] = point.count;
         byDay.set(point.day, row);
@@ -131,7 +130,6 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
     put("shops", data.trends.shops);
     put("products", data.trends.products);
     put("users", data.trends.users);
-    put("orders", data.trends.orders);
     return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
   }, [data]);
 
@@ -252,17 +250,11 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
           tone="warn"
         />
         <KpiCard
-          label="Orders"
-          value={fmt(s.total_orders)}
-          sub={fmtCurrency(s.total_revenue_ugx)}
-          accent={PALETTE[4]}
-        />
-        <KpiCard
           label="Subscription revenue"
           value={fmtCurrency(s.total_subscription_revenue_ugx)}
           sub="Completed payments"
           href="/admin/subscriptions"
-          accent={PALETTE[5]}
+          accent={PALETTE[4]}
         />
         <KpiCard
           label="Reports"
@@ -330,7 +322,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
               Growth trend
             </h2>
             <p className="mt-1 text-xs text-muted sm:text-sm">
-              Daily new shops, products, signups, and orders over the last{" "}
+              Daily new shops, products, and signups over the last{" "}
               {data.window_days} days.
             </p>
           </div>
@@ -339,7 +331,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
               <defs>
-                {(["shops", "products", "users", "orders"] as const).map((k, i) => (
+                {(["shops", "products", "users"] as const).map((k, i) => (
                   <linearGradient key={k} id={`grad-${k}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={PALETTE[i]} stopOpacity={0.35} />
                     <stop offset="100%" stopColor={PALETTE[i]} stopOpacity={0.02} />
@@ -365,7 +357,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-              {(["shops", "products", "users", "orders"] as const).map((k, i) => (
+              {(["shops", "products", "users"] as const).map((k, i) => (
                 <Area
                   key={k}
                   type="monotone"
@@ -601,8 +593,8 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
         </section>
       </div>
 
-      {/* Categories + order status + item types */}
-      <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
+      {/* Categories + item types */}
+      <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
         <section className="dm-card p-5 sm:p-6">
           <h2 className="font-display text-lg font-semibold tracking-tight">
             Product categories
@@ -627,21 +619,9 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
             emptyLabel="No items yet"
           />
         </section>
-        <section className="dm-card p-5 sm:p-6">
-          <h2 className="font-display text-lg font-semibold tracking-tight">
-            Order status
-          </h2>
-          <p className="mt-1 text-xs text-muted sm:text-sm">
-            Current distribution of order outcomes.
-          </p>
-          <DistributionChart
-            slices={data.distributions.order_status}
-            emptyLabel="No orders yet"
-          />
-        </section>
       </div>
 
-      {/* User roles + orders trend simplified */}
+      {/* User roles */}
       <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
         <section className="dm-card p-5 sm:p-6">
           <h2 className="font-display text-lg font-semibold tracking-tight">

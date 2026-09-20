@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect } from "react";
+import { SWRConfig } from "swr";
 import { apiAuth, apiShops } from "@/lib/api";
 import { AUTH_CHANGED_EVENT } from "@/lib/auth/token-storage";
 import { setRealtimeAuth } from "@/lib/realtime/supabase";
@@ -66,5 +67,15 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
     return () => window.clearInterval(id);
   }, [runHydrate]);
 
-  return <>{children}</>;
+  return (
+    <SWRConfig
+      value={{
+        revalidateOnFocus: false,
+        shouldRetryOnError: false,
+        dedupingInterval: 4_000,
+      }}
+    >
+      {children}
+    </SWRConfig>
+  );
 }

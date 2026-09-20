@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import Logo from "@/components/Logo";
 import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -92,7 +91,7 @@ export default function Footer() {
       {/* 1 — Trust badges */}
       <section
         aria-label="Why shop on Midora"
-        className="dm-container pt-8 pb-6 sm:pt-10"
+        className="dm-container pt-8 pb-10 sm:pt-10"
       >
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {TRUST_BADGES.map((b) => (
@@ -116,54 +115,7 @@ export default function Footer() {
         </div>
       </section>
 
-      {/* 2 — Newsletter */}
-      <section aria-label="Newsletter signup" className="dm-container pb-10">
-        <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/10 via-surface to-surface p-5 shadow-xs sm:p-7 lg:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-            <div className="flex items-start gap-4">
-              <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-white shadow-sm sm:size-14">
-                <MaterialSymbol name="mail" className="!text-[26px]" />
-                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full border-2 border-surface bg-foreground">
-                  <span className="size-1.5 rounded-full bg-accent" />
-                </span>
-              </span>
-              <div className="min-w-0">
-                <h3 className="text-base font-bold leading-tight text-foreground sm:text-lg">
-                  Stay in the loop
-                </h3>
-                <p className="mt-1 text-sm leading-snug text-muted">
-                  Get the best deals, new arrivals and shopping tips — straight
-                  to your inbox.
-                </p>
-              </div>
-            </div>
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:shrink-0"
-            >
-              <label htmlFor="newsletter-email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="newsletter-email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                required
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-64 sm:py-2.5"
-              />
-              <button
-                type="submit"
-                className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-2 focus:ring-offset-surface sm:py-2.5"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* 3 — Main links */}
+      {/* Main links */}
       <div className="border-t border-border bg-surface">
         <div className="dm-container py-10 sm:py-12 lg:py-14">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">

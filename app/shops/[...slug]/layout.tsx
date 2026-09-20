@@ -130,6 +130,8 @@ export default async function ShopLayout({
             shopSlug={shop.slug}
             shopName={shop.name}
             shopLogoUrl={shop.logo_url}
+            initialLiked={shop.viewer_liked_shop}
+            initialFollowed={shop.viewer_following}
           />
         </>
       ) : null}

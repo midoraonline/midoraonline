@@ -34,7 +34,7 @@ export default function MainLayout({
       </div>
       <Navbar />
       <main className="flex-1 pb-24 md:pb-0">
-        <div className="dm-container pt-6 pb-2 sm:pt-8 sm:pb-3 lg:pt-10 lg:pb-4">{children}</div>
+        <div className="dm-container pt-4 pb-2 sm:pt-5 sm:pb-3 lg:pt-6 lg:pb-4">{children}</div>
       </main>
       <Footer />
       <BottomNav />

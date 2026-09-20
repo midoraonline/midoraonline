@@ -10,7 +10,6 @@ const NAV: DashboardNavItem[] = [
   { href: "/merchant/shops", label: "My shops", icon: <IconStore /> },
   { href: "/merchant/conversations", label: "Conversations", icon: <IconChat /> },
   { href: "/merchant/leads", label: "Leads", icon: <IconTrend /> },
-  { href: "/merchant/orders", label: "Orders", icon: <IconBag /> },
 ];
 
 const SECONDARY: DashboardNavItem[] = [
@@ -23,11 +22,12 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
     <DashboardShell
       role="merchant"
       roleLabel="Merchant"
-      requiredRoles={["merchant", "admin", "customer"]}
+      requiredRoles={["merchant", "admin"]}
       navItems={NAV}
       secondaryNavItems={SECONDARY}
       returnHref="/"
       returnLabel="Back to site"
+      contentWidth="wide"
     >
       {children}
     </DashboardShell>
@@ -61,14 +61,6 @@ function IconListings() {
     </svg>
   );
 }
-function IconBag() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M6 7h12l-1 14H7L6 7Z" />
-      <path d="M9 7a3 3 0 0 1 6 0" />
-    </svg>
-  );
-}
 function IconChat() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -82,14 +74,6 @@ function IconTrend() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M22 7 13.5 15.5 8.5 10.5 2 17" />
       <path d="M16 7h6v6" />
-    </svg>
-  );
-}
-function IconPlus() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 }

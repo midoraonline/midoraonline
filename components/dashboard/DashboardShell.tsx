@@ -47,13 +47,11 @@ const SCREEN_NAMES: Record<string, string> = {
   "/merchant/shops":         "My Shops",
   "/merchant/conversations": "Conversations",
   "/merchant/leads":         "Leads",
-  "/merchant/orders":        "Orders",
   "/merchant/billing":       "Billing & Plans",
   "/merchant/settings":      "Settings",
   // customer
   "/customer":               "Overview",
   "/customer/profile":       "My Profile",
-  "/customer/orders":        "My Orders",
   "/customer/saved":         "Saved Shops",
   "/customer/wishlist":      "Wishlist",
   "/customer/settings":      "Settings",
@@ -76,6 +74,9 @@ function resolveScreenName(pathname: string): string {
   // merchant shop sub-pages
   if (pathname.includes("/analytics"))    return "Analytics";
   if (pathname.includes("/catalog"))      return "Catalog";
+  if (pathname.startsWith("/merchant/listings/") && pathname.endsWith("/edit")) {
+    return "Edit listing";
+  }
   if (pathname.startsWith("/merchant/shops/") && pathname.includes("/settings")) return "Shop Settings";
   if (pathname.includes("/verification")) return "Verification";
   if (pathname.startsWith("/merchant/shops/")) return "Shop Dashboard";
@@ -186,13 +187,21 @@ export default function DashboardShell({
   secondaryNavItems,
   returnHref = "/",
   returnLabel = "Back to site",
-  contentWidth = "default",
+  contentWidth = "wide",
   children,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const session = useAppSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    function onToggle() {
+      setDrawerOpen((open) => !open);
+    }
+    window.addEventListener("toggle-sidebar", onToggle);
+    return () => window.removeEventListener("toggle-sidebar", onToggle);
+  }, []);
 
   const accent = ROLE_ACCENT[role];
   const userRole = session.user?.user_role ?? null;
@@ -289,14 +298,9 @@ export default function DashboardShell({
 
         {/* Main content column */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <DashboardHeader
-            screenName={screenName}
-            onMenuClick={() => setDrawerOpen(true)}
-          />
+          <DashboardHeader screenName={screenName} role={role} />
           <main className="flex-1 overflow-x-hidden pb-28 md:pb-0">
-            {/* Dashboards fill the full content column; max-w-7xl only guards
-             * ultrawide monitors from silly line lengths (AGENTS.md §1.2).
-             * `contentWidth="wide"` opts out of even that cap. */}
+            {/* Dashboards use the full content column (AGENTS.md §1.2). */}
             <div
               className={[
                 "w-full px-3 py-5 sm:px-4 sm:py-6 lg:px-6 lg:py-7",
