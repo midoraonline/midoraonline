@@ -122,7 +122,7 @@ export default function MerchantListingsClient({
     setRefreshing(true);
     try {
       const perShop = await Promise.all(
-        shops.map((s) => apiProducts.listShopProducts(s.id, { limit: 100 })),
+        shops.map((s) => apiProducts.listShopProducts(s.id, { limit: 100, includeUnpublished: true })),
       );
       const flat = perShop
         .flatMap((res) => res.items ?? [])

@@ -1,80 +1,22 @@
 import { Suspense } from "react";
-import { cookies } from "next/headers";
 import HomeLanding from "@/components/home/HomeLanding";
 import HomeFeedSkeleton from "@/components/skeletons/HomeFeedSkeleton";
-import { homeFeedProductToCard } from "@/lib/homeFeedCards";
-import { publicSiteOrigin } from "@/lib/publicSite";
-import type { HomeFeedProduct, HomeFeedResponse } from "@/lib/api/products";
-
-
-const EMPTY_FEED = {
-  products: [] as ReturnType<typeof homeFeedProductToCard>[],
-};
-
-async function loadFeed() {
-  try {
-    const site = publicSiteOrigin();
-    const cookieStore = await cookies();
-    const token = cookieStore.get("midora_access")?.value;
-
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const res = await fetch(`${apiBase}/api/v1/feed/home?limit=36`, {
-      headers,
-    });
-
-    if (res.ok) {
-      const data: HomeFeedResponse = await res.json();
-      if (data.algorithm?.length) {
-        return {
-          products: (data.algorithm ?? []).map((p: HomeFeedProduct) =>
-            homeFeedProductToCard(p, site)
-          ),
-        };
-      }
-    }
-
-    const fallbackRes = await fetch(`${apiBase}/api/v1/feed/latest?limit=36`, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-    if (fallbackRes.ok) {
-      const fallbackData: HomeFeedProduct[] = await fallbackRes.json();
-      if (fallbackData.length) {
-        return {
-          products: fallbackData.map((p: HomeFeedProduct) =>
-            homeFeedProductToCard(p, site)
-          ),
-        };
-      }
-    }
-
-    return EMPTY_FEED;
-  } catch (e) {
-    console.error("Failed to load home feed", e);
-    return EMPTY_FEED;
-  }
-}
+import { loadHomeFeed } from "@/lib/productFeed";
 
 async function AlgorithmFeed() {
-  const feed = await loadFeed();
-  return <HomeLanding initialProducts={feed.products} />;
-}
-
-function FeedSkeleton() {
-  return <HomeFeedSkeleton />;
+  const feed = await loadHomeFeed();
+  return (
+    <HomeLanding
+      initialProducts={feed.products}
+      initialHasMore={feed.hasMore}
+      initialCursor={feed.nextCursor}
+    />
+  );
 }
 
 export default function Home() {
   return (
-    <Suspense fallback={<FeedSkeleton />}>
+    <Suspense fallback={<HomeFeedSkeleton />}>
       <AlgorithmFeed />
     </Suspense>
   );

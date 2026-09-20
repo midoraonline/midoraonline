@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { planHasAnalytics } from "@/lib/api/payments";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -44,6 +45,11 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     if (!session.isAuthenticated) return;
     setLoading(true);
     setError(null);
+    if (!planHasAnalytics(session.user?.plan_tier)) {
+      setPlanLocked(true);
+      setLoading(false);
+      return;
+    }
     setPlanLocked(false);
     try {
       const dash = await apiShops.getShopDashboard(shop.id);
@@ -51,15 +57,17 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       setProducts(dash.products ?? []);
       setShopProfile(dash.shop as Shop);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
+      if (err instanceof ApiError && (err.status === 403 || err.code === "plan_upgrade_required")) {
         setPlanLocked(true);
+      } else if (err instanceof ApiError && err.code === "timeout") {
+        setError("Analytics took too long to load. Retry in a moment.");
       } else {
         setError(err instanceof Error ? err.message : "Failed to load analytics");
       }
     } finally {
       setLoading(false);
     }
-  }, [shop.id, session.isAuthenticated]);
+  }, [shop.id, session.isAuthenticated, session.user?.plan_tier]);
 
   useEffect(() => {
     if (!hydrated) return;

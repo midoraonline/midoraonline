@@ -30,7 +30,7 @@ export default function TermsAndConditions() {
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             Merchants must provide accurate product information, comply with
-            prohibited item rules, and fulfill orders responsibly.
+            prohibited item rules, and handle buyer enquiries responsibly.
           </p>
         </div>
 

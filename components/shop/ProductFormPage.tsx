@@ -193,6 +193,7 @@ export default function ProductFormPage({
   itemType = "product",
   backUrl = "/merchant/listings",
   hasBottomNav = true,
+  flush = false,
 }: {
   mode: "add" | "edit";
   product?: Product;
@@ -202,6 +203,7 @@ export default function ProductFormPage({
   // Post-item / standalone flows don't render the mobile BottomNav, so the
   // sticky action bar shouldn't leave a gap where the nav would be.
   hasBottomNav?: boolean;
+  flush?: boolean;
 }) {
   const router = useRouter();
   const initialKind = normalizeListingKind(
@@ -476,7 +478,9 @@ export default function ProductFormPage({
 
   return (
     <div
-      className={`mx-auto w-full max-w-5xl space-y-6 pt-2 ${
+      className={`w-full space-y-6 pt-2 ${
+        flush ? "" : "mx-auto max-w-5xl"
+      } ${
         hasBottomNav
           ? "pb-[calc(9rem+env(safe-area-inset-bottom,0px))] md:pb-32"
           : "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
@@ -492,9 +496,11 @@ export default function ProductFormPage({
             <ArrowLeft className="size-3.5" />
             Back to listings
           </Link>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {pageTitle}
-          </h1>
+          {flush ? null : (
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {pageTitle}
+            </h1>
+          )}
           <p className="text-xs text-muted">
             Provide details, media, and pricing. All listings pass automated moderation before going live.
           </p>
@@ -1150,7 +1156,7 @@ export default function ProductFormPage({
             : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4">
+        <div className={`mx-auto flex w-full items-center justify-between gap-3 px-4 ${flush ? "" : "max-w-5xl"}`}>
           <button
             type="button"
             onClick={handleCancel}

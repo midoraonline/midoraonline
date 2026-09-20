@@ -1,33 +1,50 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  const { access_token, refresh_token } = await req.json();
+import { forbidCrossOrigin } from "@/lib/http/sameOrigin";
 
-  if (!access_token) {
+const isProduction = process.env.NODE_ENV === "production";
+
+const cookieBase = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: "lax" as const,
+};
+
+function isPlausibleJwt(token: string): boolean {
+  if (token.length < 20 || token.length > 4096) return false;
+  const parts = token.split(".");
+  return parts.length === 3 && parts.every((part) => part.length > 0);
+}
+
+export async function POST(req: NextRequest) {
+  const blocked = forbidCrossOrigin(req);
+  if (blocked) return blocked;
+
+  let body: { access_token?: unknown; refresh_token?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const access = typeof body.access_token === "string" ? body.access_token : "";
+  const refresh = typeof body.refresh_token === "string" ? body.refresh_token : "";
+  if (!isPlausibleJwt(access)) {
     return NextResponse.json({ error: "Missing access_token" }, { status: 400 });
   }
 
-  const isProduction = process.env.NODE_ENV === "production";
-
   const res = NextResponse.json({ status: "ok" });
-
-  res.cookies.set("midora_access", access_token, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+  res.cookies.set("midora_access", access, {
+    ...cookieBase,
     path: "/",
-    maxAge: 15 * 60, // 15 min
+    maxAge: 15 * 60,
   });
-
-  if (refresh_token) {
-    res.cookies.set("midora_refresh", refresh_token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      path: "/api/v1/auth",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+  if (refresh && isPlausibleJwt(refresh)) {
+    res.cookies.set("midora_refresh", refresh, {
+      ...cookieBase,
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
     });
   }
-
   return res;
 }

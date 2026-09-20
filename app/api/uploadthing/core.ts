@@ -1,29 +1,20 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
+import { verifyUploadBearer } from "@/lib/auth/verifyUploadBearer";
 
 const f = createUploadthing();
 
-/**
- * Auth for uploads: require Bearer token so only logged-in users can upload.
- * Token is validated by presence; your API can verify it via /auth/me if needed.
- * All uploads are signed server-side using UPLOADTHING_TOKEN (encrypted at rest).
- */
-function getAuth(req: Request): { userId: string } | null {
-  const authHeader = req.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!token?.trim()) return null;
-  return { userId: token.slice(-12) || "user" };
+async function requireUser(req: Request): Promise<{ userId: string }> {
+  const auth = await verifyUploadBearer(req);
+  if (!auth) throw new UploadThingError("Unauthorized");
+  return auth;
 }
 
 export const ourFileRouter = {
   shopLogo: f({
     image: { maxFileSize: "4MB", maxFileCount: 1 },
   })
-    .middleware(async ({ req }) => {
-      const auth = getAuth(req);
-      if (!auth) throw new UploadThingError("Unauthorized");
-      return { userId: auth.userId };
-    })
+    .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ file }) => {
       return { url: file.ufsUrl };
     }),
@@ -31,11 +22,7 @@ export const ourFileRouter = {
   productImage: f({
     image: { maxFileSize: "4MB", maxFileCount: 8 },
   })
-    .middleware(async ({ req }) => {
-      const auth = getAuth(req);
-      if (!auth) throw new UploadThingError("Unauthorized");
-      return { userId: auth.userId };
-    })
+    .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ file }) => {
       return { url: file.ufsUrl };
     }),
@@ -43,28 +30,15 @@ export const ourFileRouter = {
   imageUploader: f({
     image: { maxFileSize: "4MB", maxFileCount: 1 },
   })
-    .middleware(async ({ req }) => {
-      const auth = getAuth(req);
-      if (!auth) throw new UploadThingError("Unauthorized");
-      return { userId: auth.userId };
-    })
+    .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ metadata, file }) => {
       return { uploadedBy: metadata.userId, url: file.ufsUrl };
     }),
 
-  /**
-   * Short product videos (hero reels, demo clips).  Clients are expected to
-   * compress to 720p/H.264 in the browser before upload — this cap is a
-   * safety net, not a target.
-   */
   productVideo: f({
     video: { maxFileSize: "32MB", maxFileCount: 4 },
   })
-    .middleware(async ({ req }) => {
-      const auth = getAuth(req);
-      if (!auth) throw new UploadThingError("Unauthorized");
-      return { userId: auth.userId };
-    })
+    .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ file }) => {
       return { url: file.ufsUrl };
     }),

@@ -244,7 +244,15 @@ export function createProduct(
 
 export function listShopProducts(
   shopId: string,
-  opts?: { category?: string; search?: string; status?: string; limit?: number; page?: number; token?: string },
+  opts?: {
+    category?: string;
+    search?: string;
+    status?: string;
+    limit?: number;
+    page?: number;
+    token?: string;
+    includeUnpublished?: boolean;
+  },
 ) {
   const params = new URLSearchParams();
   if (opts?.category) params.set("category", opts.category);
@@ -252,6 +260,7 @@ export function listShopProducts(
   if (opts?.status) params.set("status", opts.status);
   if (opts?.limit != null) params.set("limit", String(opts.limit));
   if (opts?.page != null) params.set("page", String(opts.page));
+  if (opts?.includeUnpublished) params.set("include_unpublished", "true");
   const qs = params.toString();
   return apiFetch<Paginated<Product>>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/products${qs ? `?${qs}` : ""}`,
@@ -274,13 +283,6 @@ export type ProductEngagement = {
 export function getProductEngagement(productId: string, opts?: { token?: string }) {
   return apiFetch<ProductEngagement>(`${productBase(productId)}/engagement`, {
     ...(opts?.token ? { token: opts.token } : {}),
-  });
-}
-
-export function recordProductView(productId: string) {
-  return apiFetch<{ view_count?: number }>(`${productBase(productId)}/views`, {
-    method: "POST",
-    body: "{}",
   });
 }
 
@@ -341,21 +343,6 @@ export function toggleAvailability(productId: string, token?: string | null) {
   return apiFetch<Product>(`${productBase(productId)}/toggle-availability`, {
     method: "POST",
     token,
-  });
-}
-
-export function getAlgorithmFeed(opts?: { page?: number; limit?: number; token?: string }) {
-  const limit = opts?.limit ?? 20;
-  const page = opts?.page ?? 1;
-  return apiFetch<Product[]>(`/api/v1/feed/algorithm?page=${page}&limit=${limit}`, {
-    ...(opts?.token ? { token: opts.token } : {}),
-  });
-}
-
-export function getLatestFeed(opts?: { limit?: number; token?: string }) {
-  const limit = opts?.limit ?? 20;
-  return apiFetch<Product[]>(`/api/v1/feed/latest?limit=${limit}`, {
-    ...(opts?.token ? { token: opts.token } : {}),
   });
 }
 
@@ -447,21 +434,21 @@ export function getSimilarProducts(productId: string, limit = 8) {
   );
 }
 
-export function getHomeFeed(
-  limit?: number,
-  page?: number,
-  token?: string,
-  excludeIds?: string,
-  cursor?: string | null,
-) {
+export const HOME_FEED_PAGE_SIZE = 36;
+
+export function getHomeFeed(opts: {
+  limit?: number;
+  page?: number;
+  cursor?: string | null;
+  token?: string;
+} = {}) {
   const params = new URLSearchParams();
-  if (limit) params.set("limit", String(limit));
-  if (page) params.set("page", String(page));
-  if (excludeIds) params.set("exclude_ids", excludeIds);
-  if (cursor) params.set("cursor", cursor);
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.page && !opts.cursor) params.set("page", String(opts.page));
+  if (opts.cursor) params.set("cursor", opts.cursor);
   const qs = params.toString();
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
-    ...(token ? { token } : {}),
+    ...(opts.token ? { token: opts.token } : {}),
   });
 }
 

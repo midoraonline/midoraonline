@@ -52,7 +52,7 @@ export default function CategoryBrowseSection({
   }
 
   return (
-    <section className="rounded-2xl border border-accent/15 bg-gradient-to-br from-accent/[0.06] via-background to-background p-2.5 sm:p-3">
+    <section>
       {showHeader && (
         <div className="mb-2 flex items-baseline justify-between gap-2 px-0.5">
           <h2 className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-accent uppercase sm:text-xs sm:normal-case sm:tracking-tight">
@@ -63,14 +63,14 @@ export default function CategoryBrowseSection({
 
       <div className="relative">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-accent/[0.06] to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-background to-transparent sm:from-accent/[0.06]"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-background to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-background to-transparent"
           aria-hidden
         />
-        <div className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-2 sm:overflow-visible">
+        <div className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory">
           <CategoryChip
             label="All"
             icon={ALL_CATEGORIES_ICON}
@@ -109,7 +109,7 @@ export default function CategoryBrowseSection({
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="mt-2 flex gap-1 overflow-x-auto border-t border-accent/15 pt-2 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible">
+            <div className="mt-2 flex gap-1 overflow-x-auto border-t border-border pt-2 scrollbar-none snap-x snap-mandatory">
               <SubcategoryChip
                 label="All"
                 active={

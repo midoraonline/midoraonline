@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { apiLeads, apiListingEvents } from "@/lib/api";
+import { apiLeads } from "@/lib/api";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { whatsappDigits } from "@/lib/whatsappProduct";
@@ -34,7 +34,6 @@ export default function SellerContactConsent({
     const waUrl = `https://wa.me/${whatsappDigits(whatsappNumber)}?text=${encoded}`;
 
     apiLeads.createLead(shopId, productId, "whatsapp").catch(() => {});
-    apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
     track("conversion:whatsapp_click", {
       productId,
       shopId,

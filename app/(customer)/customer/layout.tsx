@@ -7,7 +7,6 @@ import DashboardShell, {
 const NAV: DashboardNavItem[] = [
   { href: "/customer", label: "Overview", icon: <IconHome />, exact: true },
   { href: "/customer/profile", label: "Profile", icon: <IconUser /> },
-  { href: "/customer/orders", label: "Orders", icon: <IconBag /> },
   { href: "/customer/wishlist", label: "Wishlist", icon: <IconHeart /> },
   { href: "/customer/saved", label: "Saved shops", icon: <IconBookmark /> },
 ];
@@ -26,6 +25,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
       secondaryNavItems={SECONDARY}
       returnHref="/"
       returnLabel="Back to site"
+      contentWidth="wide"
     >
       {children}
     </DashboardShell>
@@ -45,14 +45,6 @@ function IconUser() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21v-1a7 7 0 0 1 16 0v1" />
-    </svg>
-  );
-}
-function IconBag() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M6 7h12l-1 14H7L6 7Z" />
-      <path d="M9 7a3 3 0 0 1 6 0" />
     </svg>
   );
 }

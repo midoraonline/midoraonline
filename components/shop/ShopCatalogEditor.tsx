@@ -98,7 +98,7 @@ export default function ShopCatalogEditor({
     if (!isAuthed) return;
     setLoading(true);
     try {
-      const { items: all } = await apiProducts.listShopProducts(shopId);
+      const { items: all } = await apiProducts.listShopProducts(shopId, { includeUnpublished: true });
       const want = normalizeListingKind(itemType);
       setItems(
         all.filter((p) => normalizeListingKind(p.item_type) === want),

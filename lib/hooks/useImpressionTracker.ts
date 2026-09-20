@@ -1,22 +1,27 @@
 /**
- * `useImpressionTracker` — fires an impression exactly once per mount when
- * the target element has been continuously >=50% visible for >=1000ms.
- *
- * Backed by IntersectionObserver so it's efficient even with hundreds of
- * simultaneously mounted cards. The impression is queued in-memory and
- * flushed to `/api/v1/feed/impressions` in batches by the module in
- * `lib/impressions.ts`.
+ * Fires `listing:impressed` exactly once per mount when the card has been
+ * continuously >=50% visible for >=1000ms. Batched ingest is handled by
+ * the analytics bus — this hook never talks to a dedicated impressions API.
  */
 
 import { useEffect, useRef } from "react";
-
-import { trackImpression, type ImpressionPool } from "@/lib/impressions";
+import { track } from "@/lib/analytics";
 
 const DEFAULT_THRESHOLD = 0.5;
 const DEFAULT_DWELL_MS = 1000;
 
+export type ImpressionPool =
+  | "organic"
+  | "boosted"
+  | "sponsored"
+  | "super_boost"
+  | "premium_store"
+  | "fresh"
+  | "exploration";
+
 export type ImpressionTrackerOptions = {
   listingId: string | null | undefined;
+  shopId?: string | null;
   pool?: ImpressionPool;
   position?: number;
   threshold?: number;
@@ -26,6 +31,7 @@ export type ImpressionTrackerOptions = {
 
 export function useImpressionTracker<T extends Element>({
   listingId,
+  shopId,
   pool = "organic",
   position,
   threshold = DEFAULT_THRESHOLD,
@@ -58,7 +64,12 @@ export function useImpressionTracker<T extends Element>({
             timeoutRef.current = setTimeout(() => {
               if (fired.current) return;
               fired.current = true;
-              trackImpression({ listing_id: listingId, pool, position });
+              track("listing:impressed", {
+                productId: listingId,
+                shopId: shopId ?? undefined,
+                pool,
+                position,
+              });
               observer.disconnect();
               timeoutRef.current = null;
             }, dwellMs);
@@ -79,7 +90,7 @@ export function useImpressionTracker<T extends Element>({
         timeoutRef.current = null;
       }
     };
-  }, [enabled, listingId, pool, position, threshold, dwellMs]);
+  }, [enabled, listingId, shopId, pool, position, threshold, dwellMs]);
 
   return ref;
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import useSWR from "swr";
 import {
   fetchCategoryListingCounts,
   listCategoryItems,
@@ -12,71 +13,28 @@ import {
   getCategoriesForFilter,
 } from "@/lib/categories";
 
-let cachedItems: CategoryItem[] | null = null;
-let inflight: Promise<CategoryItem[]> | null = null;
-let cachedCounts: Record<string, number> | null = null;
-let countsInflight: Promise<Record<string, number>> | null = null;
-
 function nestedFallback(): CategoryItem[] {
   return buildCanonicalCategoryItems();
 }
 
-function normalizeItems(items: CategoryItem[]): CategoryItem[] {
-  if (items.length > 0 && categoryItemsHaveSubcategories(items)) {
-    return items;
-  }
-  return nestedFallback();
-}
-
-async function loadCategoryItems(): Promise<CategoryItem[]> {
-  if (cachedItems && categoryItemsHaveSubcategories(cachedItems)) {
-    return cachedItems;
-  }
-  if (!inflight) {
-    inflight = listCategoryItems()
-      .then((items) => {
-        cachedItems = normalizeItems(items);
-        return cachedItems;
-      })
-      .catch(() => {
-        cachedItems = nestedFallback();
-        return cachedItems;
-      })
-      .finally(() => {
-        inflight = null;
-      });
-  }
-  return inflight;
-}
-
-async function loadCategoryCounts(): Promise<Record<string, number>> {
-  if (cachedCounts) return cachedCounts;
-  if (!countsInflight) {
-    countsInflight = fetchCategoryListingCounts()
-      .then((counts) => {
-        cachedCounts = counts;
-        return counts;
-      })
-      .catch(() => {
-        cachedCounts = {};
-        return cachedCounts;
-      })
-      .finally(() => {
-        countsInflight = null;
-      });
-  }
-  return countsInflight;
-}
-
 export function useCategoryItems() {
-  const [items, setItems] = useState<CategoryItem[]>(
-    () => cachedItems ?? nestedFallback(),
+  const { data: items = nestedFallback(), isLoading } = useSWR(
+    "categories:items",
+    listCategoryItems,
+    {
+      fallbackData: nestedFallback(),
+      revalidateOnFocus: false,
+      dedupingInterval: 60_000,
+    },
   );
-  const [counts, setCounts] = useState<Record<string, number>>(
-    () => cachedCounts ?? {},
-  );
-  const [loading, setLoading] = useState(
-    !(cachedItems && categoryItemsHaveSubcategories(cachedItems)),
+  const { data: counts = {} } = useSWR(
+    "categories:counts",
+    fetchCategoryListingCounts,
+    {
+      fallbackData: {},
+      revalidateOnFocus: false,
+      dedupingInterval: 60_000,
+    },
   );
   const tree = useMemo(() => {
     const base = getCategoriesForFilter(items);
@@ -90,23 +48,10 @@ export function useCategoryItems() {
     });
   }, [items, counts]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void loadCategoryItems().then((next) => {
-      if (!cancelled) {
-        setItems(next);
-        setLoading(false);
-      }
-    });
-    void loadCategoryCounts().then((next) => {
-      if (!cancelled) setCounts(next);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { items, tree, counts, loading };
+  return {
+    items,
+    tree,
+    counts,
+    loading: isLoading && !categoryItemsHaveSubcategories(items),
+  };
 }
-
-export { loadCategoryItems };

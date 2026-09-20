@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { useAppSession } from "@/lib/state";
-import { apiChat, apiShops } from "@/lib/api";
+import { apiChat } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 
@@ -29,11 +30,11 @@ export default function ShopContactButtons({
   const session = useAppSession();
 
   const recordWhatsAppClick = () => {
-    apiShops.recordShopEvent(shopId, "whatsapp_clicked").catch(() => {});
+    track("conversion:whatsapp_click", { shopId, clickSource: "shop_page" });
   };
 
   const doCreateConversation = async () => {
-    apiShops.recordShopEvent(shopId, "messaged").catch(() => {});
+    track("listing:messaged", { shopId });
     if (!session.isAuthenticated) {
       router.push("/login");
       return;

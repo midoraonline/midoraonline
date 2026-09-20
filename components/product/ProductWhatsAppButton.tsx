@@ -1,7 +1,6 @@
 "use client";
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import { apiListingEvents } from "@/lib/api";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
@@ -26,7 +25,6 @@ export default function ProductWhatsAppButton({
   className = "",
 }: Props) {
   const doOpen = () => {
-    apiListingEvents.recordListingEvent(productId, "whatsapp_clicked").catch(() => {});
     if (shopId) {
       track("conversion:whatsapp_click", {
         productId,

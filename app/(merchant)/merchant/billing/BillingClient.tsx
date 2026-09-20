@@ -136,8 +136,7 @@ export default function BillingClient() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div>
-        <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">Billing & plans</h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="text-sm text-muted">
           Choose a plan to control how many shops you can open, how many items each shop can list, and whether you get access to shop analytics.
         </p>
       </div>

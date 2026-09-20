@@ -32,7 +32,7 @@ export default function ShopOverviewClient({
     try {
       const [s, p, v] = await Promise.all([
         apiShops.getShop(shopId),
-        apiProducts.listShopProducts(shopId).catch(() => ({ items: [] as Product[] })),
+        apiProducts.listShopProducts(shopId, { includeUnpublished: true }).catch(() => ({ items: [] as Product[] })),
         apiShops.getVerification(shopId).catch(() => null),
       ]);
       setShop(s);

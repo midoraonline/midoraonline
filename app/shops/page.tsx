@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
@@ -9,6 +7,8 @@ import { loadShopProductCategoryMap } from "@/lib/productFeed";
 import { SHOPS_PAGE_SIZE } from "@/lib/api/shops";
 import Image from "next/image";
 import { Mail, MapPin } from "lucide-react";
+
+export const revalidate = 60;
 
 export default async function ShopListing() {
   let shops: Awaited<ReturnType<typeof listPublicShopsPage>>["items"] = [];

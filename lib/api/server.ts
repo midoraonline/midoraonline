@@ -4,7 +4,7 @@ import { cache } from "react";
 
 import { ApiError } from "@/lib/api/base";
 import { apiProducts, apiShops } from "@/lib/api";
-import type { Product, LikedProductsResponse } from "@/lib/api/products";
+import type { Product, LikedProductsResponse, SimilarProduct } from "@/lib/api/products";
 import type {
   Shop,
   Paginated,
@@ -70,9 +70,9 @@ async function nullIfUnavailable<T>(p: Promise<T>): Promise<T | null> {
 }
 
 export const getShopBySlug = cache(async (slug: string): Promise<Shop | null> => {
-  // Soft-fail 5xx so layout + metadata + page share one cached result
-  // and a blip upstream doesn't crash the RSC tree thrice.
-  return nullIfUnavailable(apiShops.bySlug(slug));
+  return nullIfUnavailable(
+    serverApiFetch<Shop>(`/api/v1/shops/by-slug/${encodeURIComponent(slug)}`),
+  );
 });
 
 export const getShopBySlugForMetadata = getShopBySlug;
@@ -121,12 +121,32 @@ export async function listPublicShopsWithContacts(opts?: {
 }
 
 export const getProductById = cache(async (productId: string): Promise<Product | null> => {
-  return nullIfNotFound(apiProducts.getProduct(productId));
+  return nullIfNotFound(
+    serverApiFetch<Product>(`/api/v1/products/${encodeURIComponent(productId)}`),
+  );
 });
 
 export const listShopProducts = cache(async (shopId: string): Promise<Product[]> => {
-  const res = await apiProducts.listShopProducts(shopId, { limit: 100 });
+  const res = await serverApiFetch<{ items?: Product[] }>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/products?limit=100`,
+    { anonymous: true },
+  );
   return res.items ?? [];
+});
+
+export const getSimilarProducts = cache(async (
+  productId: string,
+  limit = 12,
+): Promise<SimilarProduct[]> => {
+  try {
+    const data = await serverApiFetch<SimilarProduct[]>(
+      `/api/v1/products/${encodeURIComponent(productId)}/similar?limit=${limit}`,
+      { anonymous: true },
+    );
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -184,7 +204,9 @@ export const merchantApi = {
     // The forwarded `midora_access` cookie handles that.
     const res = await safeServerFetch(
       serverApiFetch<{ items: Product[] }>(
-        `/api/v1/shops/${encodeURIComponent(shopId)}/products?limit=100`,
+        `/api/v1/shops/${encodeURIComponent(shopId)}/products?limit=100${
+          _opts?.includeUnpublished ? "&include_unpublished=true" : ""
+        }`,
       ),
     );
     return res?.items ?? [];

@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Package } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
@@ -14,6 +14,7 @@ import ProductFilters, {
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import {
+  browseProductGridClass,
   categoryFilterDisplayLabel,
   EMPTY_CATEGORY_FILTER,
   isCategoryFilterActive,
@@ -22,18 +23,29 @@ import {
 } from "@/lib/browseCategories";
 import { buildNearMeDistanceMap } from "@/lib/geo";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
-import { Package } from "lucide-react";
+import { useProductSearch } from "@/lib/hooks/useProductSearch";
 import HomeHero from "@/components/home/HomeHero";
-import HomeOnboardingBanner from "@/components/home/HomeOnboardingBanner";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
+import { HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
 import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 
-const FEED_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
-const FEED_REFRESH_KEY_PREFIX = "midora:feed:last-refresh:";
+const FEED_PAGE_SIZE = HOME_FEED_PAGE_SIZE;
+
+function continuationFrom(
+  count: number,
+  hasMore?: boolean,
+  cursor?: string | null,
+): { hasMore: boolean; cursor: string | null } {
+  const more = hasMore ?? count >= FEED_PAGE_SIZE;
+  return {
+    hasMore: more,
+    cursor: cursor ?? (more ? "p:2" : null),
+  };
+}
 
 function EmptyState({ message }: { message: string }) {
   return (
@@ -46,9 +58,15 @@ function EmptyState({ message }: { message: string }) {
 
 type Props = {
   initialProducts: ProductCardData[];
+  initialHasMore?: boolean;
+  initialCursor?: string | null;
 };
 
-export default function HomeLanding({ initialProducts }: Props) {
+export default function HomeLanding({
+  initialProducts,
+  initialHasMore,
+  initialCursor = null,
+}: Props) {
   const [products, setProducts] = useState(initialProducts);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -57,170 +75,142 @@ export default function HomeLanding({ initialProducts }: Props) {
   );
   const [nearMeRanking, setNearMeRanking] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { items: categoryItems } = useCategoryItems();
   const session = useAppSession();
-  const [showPopup, setShowPopup] = useState<"signed-in" | "unsigned" | null>(null);
+  const [query, setQuery] = useState(() => searchParams.get("q")?.trim() ?? "");
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const nextCursorRef = useRef<string | null>("p:2");
-  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
-  const feedViewerKey = session.user?.id ?? "guest";
-
+  const initialContinuation = continuationFrom(
+    initialProducts.length,
+    initialHasMore,
+    initialCursor,
+  );
+  const [hasMore, setHasMore] = useState(initialContinuation.hasMore);
+  const nextCursorRef = useRef<string | null>(initialContinuation.cursor);
+  const loadMoreSentinelRef = useRef<HTMLButtonElement | null>(null);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(initialContinuation.hasMore);
   const seenIdsRef = useRef<Set<string>>(new Set(initialProducts.map((p) => p.id)));
+  const isSearching = query.trim().length >= 2;
+  hasMoreRef.current = hasMore;
+  const search = useProductSearch({
+    query,
+    category: categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel,
+    enabled: isSearching,
+    limit: 24,
+  });
 
   useEffect(() => {
+    const urlQ = searchParams.get("q")?.trim() ?? "";
+    setQuery((prev) => (urlQ !== prev ? urlQ : prev));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const next = continuationFrom(initialProducts.length, initialHasMore, initialCursor);
     setProducts(initialProducts);
     seenIdsRef.current = new Set(initialProducts.map((p) => p.id));
-    setHasMore(true);
-    nextCursorRef.current = "p:2";
-  }, [initialProducts]);
+    setHasMore(next.hasMore);
+    nextCursorRef.current = next.cursor;
+  }, [initialProducts, initialHasMore, initialCursor]);
 
-  const buildExcludeParam = useCallback((): string | undefined => {
-    const ids = [...seenIdsRef.current].slice(-500);
-    return ids.length > 0 ? ids.join(",") : undefined;
-  }, []);
-
-  const getRefreshStorageKey = useCallback(
-    () => `${FEED_REFRESH_KEY_PREFIX}${feedViewerKey}`,
-    [feedViewerKey],
-  );
-
-  const shouldRefreshFeed = useCallback((): boolean => {
-    try {
-      const raw = localStorage.getItem(getRefreshStorageKey());
-      if (!raw) return true;
-      const last = Number(raw);
-      if (!Number.isFinite(last)) return true;
-      return Date.now() - last >= FEED_REFRESH_INTERVAL_MS;
-    } catch {
-      return true;
-    }
-  }, [getRefreshStorageKey]);
-
-  const markFeedRefreshed = useCallback(() => {
-    try {
-      localStorage.setItem(getRefreshStorageKey(), String(Date.now()));
-    } catch {
-      /* ignore storage restrictions */
-    }
-  }, [getRefreshStorageKey]);
-
-  const refreshFeed = useCallback(async () => {
-    if (!shouldRefreshFeed()) return;
+  const fillEmptyFeed = useCallback(async () => {
     try {
       const site = publicSiteOrigin();
-      // Continuation only: ask for the next unseen batch after current cards.
-      // Do not use page/cursor here — backend treats exclude_ids as "next head".
-      const exclude = buildExcludeParam();
-      const data = await apiProducts.getHomeFeed(
-        36,
-        1,
-        undefined,
-        exclude,
-        undefined,
-      );
+      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE });
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
-      const filtered = cards.filter((c) => !seenIdsRef.current.has(c.id));
-      if (filtered.length > 0) {
-        filtered.forEach((c) => seenIdsRef.current.add(c.id));
-        setProducts((prev) => [...prev, ...filtered]);
-        setHasMore(true);
-      }
-      markFeedRefreshed();
+      if (cards.length === 0) return;
+      seenIdsRef.current = new Set(cards.map((c) => c.id));
+      setProducts(cards);
+      const more = Boolean(data.has_more && data.next_cursor);
+      setHasMore(more);
+      nextCursorRef.current = data.next_cursor ?? null;
     } catch {
-      /* keep current feed */
+      /* keep empty SSR feed */
     }
-  }, [buildExcludeParam, markFeedRefreshed, shouldRefreshFeed]);
+  }, []);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+    const cursor = nextCursorRef.current;
+    if (!cursor) {
+      setHasMore(false);
+      return;
+    }
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const site = publicSiteOrigin();
-      // Load-more: exclude already-shown IDs only. No cursor — combining
-      // exclude + page/cursor double-skipped the next personalized page.
-      const data = await apiProducts.getHomeFeed(
-        36,
-        1,
-        undefined,
-        buildExcludeParam(),
-        undefined,
-      );
+      const data = await apiProducts.getHomeFeed({
+        limit: FEED_PAGE_SIZE,
+        cursor,
+      });
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));
       if (fresh.length === 0) {
         setHasMore(false);
-      } else {
-        fresh.forEach((c) => seenIdsRef.current.add(c.id));
-        setProducts((prev) => [...prev, ...fresh]);
-        setHasMore(Boolean(data.has_more) || fresh.length >= 36);
+        nextCursorRef.current = null;
+        return;
       }
+      fresh.forEach((c) => seenIdsRef.current.add(c.id));
+      setProducts((prev) => [...prev, ...fresh]);
+      const more = Boolean(data.has_more && data.next_cursor);
       nextCursorRef.current = data.next_cursor ?? null;
+      setHasMore(more);
     } catch {
       setHasMore(false);
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [buildExcludeParam, hasMore, loadingMore]);
+  }, []);
+
+  const loadMoreRef = useRef(loadMore);
+  loadMoreRef.current = loadMore;
 
   useEffect(() => {
-    if (!hasMore) return;
+    if (!hasMore || isSearching) return;
     const node = loadMoreSentinelRef.current;
     if (!node) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
-        if (!entry?.isIntersecting) return;
-        void loadMore();
+        if (!entries[0]?.isIntersecting) return;
+        void loadMoreRef.current();
       },
       {
         root: null,
-        rootMargin: "300px 0px",
+        rootMargin: "400px 0px",
         threshold: 0,
       },
     );
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, isSearching, products.length]);
 
   useEffect(() => {
     if (!session.hydrated) return;
     if (products.length > 0) return;
-    void refreshFeed();
-  }, [session.hydrated, products.length, refreshFeed]);
+    void fillEmptyFeed();
+  }, [session.hydrated, products.length, fillEmptyFeed]);
 
   useEffect(() => {
     function onEngagement() {
-      void refreshFeed();
       router.refresh();
     }
-    function onVisibilityChange() {
-      if (document.visibilityState === "visible") void refreshFeed();
-    }
     window.addEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => {
-      window.removeEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [refreshFeed, router]);
+    return () => window.removeEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
+  }, [router]);
 
-  useEffect(() => {
-    if (!session.hydrated) return;
-    if (!session.isAuthenticated) return;
-    if (localStorage.getItem("midora_popup_dismissed") === "true") return;
-    const timer = setTimeout(() => {
-      setShowPopup("signed-in");
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [session.hydrated, session.isAuthenticated]);
-
-  const dismissPopup = () => {
-    localStorage.setItem("midora_popup_dismissed", "true");
-    setShowPopup(null);
-  };
+  const commitSearch = useCallback(
+    (term: string) => {
+      const next = term.trim();
+      setQuery(next);
+      const path = next ? `/?q=${encodeURIComponent(next)}` : "/";
+      router.replace(path, { scroll: false });
+    },
+    [router],
+  );
 
   useEffect(() => {
     if (!filters.nearMe || !filters.userGeo) {
@@ -275,6 +265,15 @@ export default function HomeLanding({ initialProducts }: Props) {
     return applyFilters(list, filters, { distances: nearMeDistances });
   }, [products, categoryFilter, categoryItems, filters, nearMeDistances]);
 
+  const localSearchMatches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return browseProducts.filter((p) => {
+      const hay = `${p.title} ${p.category ?? ""} ${p.shop.name}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [browseProducts, query]);
+
   const categoryFilterActive = isCategoryFilterActive(categoryFilter);
   const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
   const filterHint = categoryFilterLabel ? ` · ${categoryFilterLabel}` : "";
@@ -289,37 +288,57 @@ export default function HomeLanding({ initialProducts }: Props) {
     filters.location !== null ||
     filters.nearMe;
 
+  const displayProducts = isSearching
+    ? (() => {
+        const remote = applyFilters(search.items, filters, { distances: nearMeDistances });
+        const seen = new Set(localSearchMatches.map((p) => p.id));
+        return [...localSearchMatches, ...remote.filter((p) => !seen.has(p.id))];
+      })()
+    : browseProducts;
+  const feedEmpty = isSearching
+    ? !search.loading && displayProducts.length === 0
+    : displayProducts.length === 0;
+
   return (
     <div className="relative w-full">
-      {showPopup ? (
-        <HomeOnboardingBanner variant={showPopup} onDismiss={dismissPopup} />
-      ) : null}
-
-      <div className="mb-3 sm:mb-4">
-        <HomeHero />
+      <div className="mb-3 md:hidden">
+        <HomeHero query={query} onQueryChange={setQuery} onSubmit={commitSearch} />
       </div>
 
-      <div className="mb-4 space-y-3 sm:mb-5 sm:space-y-4">
+      <div className="mb-3 space-y-2 sm:mb-4">
         <CategoryBrowseSection
           selection={categoryFilter}
           onSelectionChange={setCategoryFilter}
+          showHeader={false}
           browseAllHref="/products"
         />
         <ProductFilters products={products} filters={filters} onChange={setFilters} />
       </div>
 
-      <div id="products-feed" className="space-y-5 sm:space-y-6">
-        <section className="space-y-3 sm:space-y-4">
+      <div id="products-feed" className="space-y-4 sm:space-y-5">
+        <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground sm:text-base">
-              {filters.nearMe
-                ? nearMeRanking
-                  ? "Sorting by distance…"
-                  : "Closest to you"
-                : `Products${filterHint}`}
+              {isSearching
+                ? search.loading
+                  ? `Searching “${query.trim()}”…`
+                  : `Results for “${query.trim()}”`
+                : filters.nearMe
+                  ? nearMeRanking
+                    ? "Sorting by distance…"
+                    : "Closest to you"
+                  : `Products${filterHint}`}
             </h2>
             <div className="flex shrink-0 items-center gap-3">
-              {anyFiltersActive ? (
+              {isSearching ? (
+                <button
+                  type="button"
+                  onClick={() => commitSearch("")}
+                  className="text-[11px] font-medium text-muted transition-colors hover:text-foreground sm:text-xs"
+                >
+                  Clear search
+                </button>
+              ) : anyFiltersActive ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -328,7 +347,7 @@ export default function HomeLanding({ initialProducts }: Props) {
                   }}
                   className="text-[11px] font-medium text-muted transition-colors hover:text-foreground sm:text-xs"
                 >
-                  {browseProducts.length} result{browseProducts.length !== 1 ? "s" : ""} · Clear
+                  {displayProducts.length} result{displayProducts.length !== 1 ? "s" : ""} · Clear
                 </button>
               ) : null}
               <Link
@@ -341,18 +360,26 @@ export default function HomeLanding({ initialProducts }: Props) {
             </div>
           </div>
 
-          {browseProducts.length === 0 ? (
+          {search.error ? (
+            <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">
+              {search.error}
+            </p>
+          ) : null}
+
+          {feedEmpty ? (
             <EmptyState
               message={
-                anyFiltersActive
-                  ? "No products match your filters. Try a different category or clear filters."
-                  : "No products yet — check back soon."
+                isSearching
+                  ? `No products match “${query.trim()}”. Try another search.`
+                  : anyFiltersActive
+                    ? "No products match your filters. Try a different category or clear filters."
+                    : "No products yet — check back soon."
               }
             />
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {browseProducts.map((p, idx) => (
+              <div className={browseProductGridClass}>
+                {displayProducts.map((p, idx) => (
                   <div key={p.id} className="h-full">
                     <ProductCard
                       product={p}
@@ -363,42 +390,31 @@ export default function HomeLanding({ initialProducts }: Props) {
                   </div>
                 ))}
               </div>
-              <div className="flex flex-col items-center gap-3 pt-1 sm:flex-row sm:justify-center">
-                {hasMore ? (
-                  <div
+              <div className="flex flex-col items-center gap-3 pt-2">
+                {!isSearching && hasMore ? (
+                  <button
                     ref={loadMoreSentinelRef}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-muted"
+                    type="button"
+                    onClick={() => void loadMore()}
+                    disabled={loadingMore}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/40 disabled:opacity-60"
                   >
-                    {loadingMore ? "Loading more…" : "Loading more as you scroll…"}
-                  </div>
+                    {loadingMore ? "Loading…" : "Load more"}
+                  </button>
                 ) : null}
-                <Link
-                  href="/products"
-                  className="dm-btn dm-btn-primary inline-flex items-center gap-1.5 px-6"
-                >
-                  View all products
-                  <ArrowRight className="size-3.5" aria-hidden />
-                </Link>
+                {isSearching && search.hasMore ? (
+                  <button
+                    type="button"
+                    onClick={() => void search.loadMore()}
+                    disabled={search.loadingMore}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/40 disabled:opacity-60"
+                  >
+                    {search.loadingMore ? "Loading…" : "Load more results"}
+                  </button>
+                ) : null}
               </div>
             </>
           )}
-        </section>
-
-        <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
-          <div className="pointer-events-none absolute -right-8 -top-8 size-40 rounded-full bg-accent/20 blur-3xl" />
-          <div className="relative min-w-0">
-            <p className="text-sm font-semibold text-primary-foreground">New to Midora?</p>
-            <p className="mt-1 text-sm text-primary-foreground/70">
-              Learn how the platform works — for shoppers and merchants alike.
-            </p>
-          </div>
-          <Link
-            href="/onboarding"
-            className="relative mt-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover sm:mt-0"
-          >
-            How it works
-            <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
         </section>
       </div>
 

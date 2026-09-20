@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -27,7 +26,7 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl";
-import { getProductById } from "@/lib/api/server";
+import { getProductById, getSimilarProducts } from "@/lib/api/server";
 import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
@@ -44,7 +43,6 @@ import {
 } from "@/lib/categories";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import MessageSellerButton from "@/components/chat/MessageSellerButton";
-import { getProductReviewStats } from "@/lib/api/reviews";
 import {
   resolveShopTrustLevel,
   SHOP_TRUST_LABEL,
@@ -129,9 +127,9 @@ export default async function ProductDetails({
 }) {
   const { slug } = await params;
   const id = resolveProductIdFromPageSlug(slug);
-  const [product, reviewStats] = await Promise.all([
+  const [product, similar] = await Promise.all([
     getProductById(id),
-    getProductReviewStats(id).catch(() => null),
+    getSimilarProducts(id, 12),
   ]);
   if (!product) notFound();
 
@@ -159,12 +157,8 @@ export default async function ProductDetails({
   const location =
     product.location_name?.trim() || shop?.location?.trim() || null;
   const trustLevel = resolveShopTrustLevel(shop?.trust_badges);
-  const ratingAvg =
-    reviewStats && reviewStats.total_reviews > 0
-      ? reviewStats.average_rating
-      : product.average_rating ?? 0;
-  const ratingCount =
-    reviewStats?.total_reviews ?? product.review_count ?? 0;
+  const ratingAvg = product.average_rating ?? 0;
+  const ratingCount = product.review_count ?? 0;
 
   const inStock =
     product.item_type === "product" &&
@@ -199,7 +193,14 @@ export default async function ProductDetails({
 
   return (
     <div className="w-full space-y-6 pb-24 sm:space-y-8 sm:pb-8">
-      <ProductPageEffects productId={product.id} />
+      <ProductPageEffects
+        productId={product.id}
+        shopId={shop?.id}
+        category={product.category ?? ""}
+        hasDiscount={isDiscounted}
+        discountPercentage={discountPct ?? undefined}
+        publishedAt={Date.parse(product.created_at ?? "") || Date.now()}
+      />
 
       <nav className="flex items-center gap-1 text-[11px] sm:text-xs" aria-label="Breadcrumb">
         <Link href="/products" className="font-medium text-muted transition-colors hover:text-accent">
@@ -546,12 +547,19 @@ export default async function ProductDetails({
           </div>
 
           <div id="reviews" className="scroll-mt-24 border-t border-border pt-4">
-            <ProductReviews productId={product.id} />
+            <ProductReviews
+              productId={product.id}
+              initialStats={{
+                total_reviews: ratingCount,
+                average_rating: ratingAvg,
+                distribution: {},
+              }}
+            />
           </div>
         </div>
       </div>
 
-      <SimilarProducts productId={product.id} />
+      <SimilarProducts productId={product.id} initialItems={similar} />
 
       {(waHref || (shop && shop.owner_id)) && (
         <PdpStickyActionBar sentinelId="pdp-buybox-end">

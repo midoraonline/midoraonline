@@ -68,17 +68,6 @@
 - `POST /api/v1/generate-from-image` (Bearer)
   - Purpose: Placeholder “generate product details from image” (currently returns empty fields)
 
-### Orders
-
-> Note: these are currently mounted at the API root (`/api/v1/`) due to router configuration.
-
-- `POST /api/v1/` (Bearer)
-  - Purpose: Create order
-- `GET /api/v1/` (Bearer)
-  - Purpose: List orders for the current user (paginated; RLS-based)
-- `PATCH /api/v1/{order_id}` (Bearer)
-  - Purpose: Update an order status
-
 ### AI context (`/api/v1/shops/*`)
 
 - `GET /api/v1/shops/{shop_id}/ai-context` (Bearer)

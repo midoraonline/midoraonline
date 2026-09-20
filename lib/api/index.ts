@@ -7,7 +7,6 @@ export * as apiProducts from "./products";
 export * as apiChat from "./chat";
 export * as apiPayments from "./payments";
 export * as apiAdmin from "./admin";
-export * as apiOrders from "./orders";
 export * as apiAiContext from "./aiContext";
 export * as apiAiImages from "./aiImages";
 export * as apiAiListing from "./aiListing";

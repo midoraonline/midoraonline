@@ -21,11 +21,15 @@ export default function ShopHeroActionBar({
   shopId,
   shopSlug,
   shopName,
+  initialLiked,
+  initialFollowed,
 }: {
   shopId: string;
   shopSlug: string;
   shopName: string;
   shopLogoUrl?: string | null;
+  initialLiked?: boolean | null;
+  initialFollowed?: boolean | null;
 }) {
   const session = useAppSession();
   const canManage = canManageShopStorefront(session, shopId);
@@ -38,6 +42,8 @@ export default function ShopHeroActionBar({
             shopSlug={shopSlug}
             shopName={shopName}
             shopId={shopId}
+            initialLiked={initialLiked}
+            initialFollowed={initialFollowed}
           />
 
           {canManage ? (

@@ -48,7 +48,7 @@ export default function CustomerOverviewClient({ initialFollowed, initialLiked }
           Welcome back, {firstName}
         </h2>
         <p className="mt-1 text-sm text-muted">
-          Track your orders, manage saved shops, and update your profile.
+          Track saved shops, your wishlist, and your profile.
         </p>
       </div>
 
@@ -67,11 +67,11 @@ export default function CustomerOverviewClient({ initialFollowed, initialLiked }
             View liked shops →
           </p>
         </Link>
-        <Link href="/customer/orders" className="dm-card group flex flex-col gap-2 p-5 transition hover:-translate-y-0.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Orders</p>
-          <p className="font-display text-3xl font-semibold text-foreground/80">—</p>
+        <Link href="/customer/wishlist" className="dm-card group flex flex-col gap-2 p-5 transition hover:-translate-y-0.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Wishlist</p>
+          <p className="font-display text-3xl font-semibold text-foreground/80">♥</p>
           <p className="mt-auto text-xs font-semibold text-foreground/60 transition-colors group-hover:text-foreground">
-            View orders →
+            View liked items →
           </p>
         </Link>
       </section>

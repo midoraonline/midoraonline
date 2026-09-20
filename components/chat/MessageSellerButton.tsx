@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAppSession } from "@/lib/state";
-import { apiChat, apiListingEvents } from "@/lib/api";
+import { apiChat } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
@@ -42,8 +43,8 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
         return;
       }
 
-      if (productId) {
-        apiListingEvents.recordListingEvent(productId, "messaged").catch(() => {});
+      if (shopId) {
+        track("listing:messaged", { productId, shopId });
         notifyFeedEngagement();
       }
 

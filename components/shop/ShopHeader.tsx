@@ -46,7 +46,7 @@ export default async function ShopHeader({
       })
     : null;
 
-  const productMedia: HeroMedia[] = products.flatMap((p) =>
+  const productMedia: HeroMedia[] = products.slice(0, 16).flatMap((p) =>
     productMediaItems(p).map<HeroMedia>((m) =>
       m.kind === "video" ? { kind: "video", src: m.src } : { kind: "image", src: m.src },
     ),

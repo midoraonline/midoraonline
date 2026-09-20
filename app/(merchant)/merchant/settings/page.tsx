@@ -367,12 +367,14 @@ function AccountInfoSection() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MerchantSettingsPage() {
   return (
-    <div className="space-y-5">
+    <div className="grid gap-5 lg:grid-cols-2">
       <AppearanceSection />
       <ProfileSection />
       <PasswordSection />
       <PushNotificationsSection />
-      <AccountInfoSection />
+      <div className="lg:col-span-2">
+        <AccountInfoSection />
+      </div>
     </div>
   );
 }

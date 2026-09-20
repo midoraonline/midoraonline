@@ -17,9 +17,30 @@
  */
 import { type NextRequest, NextResponse } from "next/server";
 
+import { forbidCrossOrigin } from "@/lib/http/sameOrigin";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
+function rewriteSetCookie(value: string, isHttps: boolean): string {
+  let cookie = value.replace(/;\s*domain=[^;,]*/gi, "");
+  if (!isHttps) cookie = cookie.replace(/;\s*secure(?=;|,|$)/gi, "");
+  cookie = cookie.replace(/;\s*samesite=none/gi, "; SameSite=Lax");
+  if (/^midora_refresh=/i.test(cookie)) {
+    if (/;\s*path=/i.test(cookie)) {
+      cookie = cookie.replace(/;\s*path=[^;,]*/gi, "; Path=/");
+    } else {
+      cookie += "; Path=/";
+    }
+  }
+  return cookie;
+}
+
 async function proxy(req: NextRequest): Promise<NextResponse> {
+  if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS") {
+    const blocked = forbidCrossOrigin(req);
+    if (blocked) return blocked;
+  }
+
   const incoming = req.nextUrl.pathname.replace(/^\/api\/dev-proxy/, "");
   const search = req.nextUrl.search ?? "";
   const target = `${API_BASE}${incoming}${search}`;
@@ -44,11 +65,8 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
       // @ts-expect-error — Node 18 fetch supports duplex
       duplex: body ? "half" : undefined,
     });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Upstream unreachable" },
-      { status: 502 },
-    );
+  } catch {
+    return NextResponse.json({ error: "Upstream unreachable" }, { status: 502 });
   }
 
   const resBody = upstream.status === 204 ? null : await upstream.arrayBuffer();
@@ -62,9 +80,7 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
   const isHttps = req.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
   upstream.headers.forEach((value, key) => {
     if (key.toLowerCase() === "set-cookie") {
-      let localCookie = value.replace(/;\s*domain=[^;,]*/gi, "");
-      if (!isHttps) localCookie = localCookie.replace(/;\s*secure(?=;|,|$)/gi, "");
-      res.headers.append("set-cookie", localCookie);
+      res.headers.append("set-cookie", rewriteSetCookie(value, isHttps));
     } else if (key.toLowerCase() !== "content-encoding") {
       res.headers.set(key, value);
     }

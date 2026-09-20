@@ -4,7 +4,7 @@ export type RegisterRequest = {
   email: string;
   password: string;
   full_name?: string;
-  user_role?: "customer" | "merchant" | "admin";
+  user_role?: "customer" | "merchant";
 };
 
 export type TokenPair = {
