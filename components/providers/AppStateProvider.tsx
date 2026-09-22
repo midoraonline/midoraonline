@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect } from "react";
 import { SWRConfig } from "swr";
 import { apiAuth, apiShops } from "@/lib/api";
+import { currentSessionEpoch, isCurrentSessionWrite } from "@/lib/auth/session-epoch";
 import {
   AUTH_CHANGED_EVENT,
   type AuthChangedDetail,
@@ -16,7 +17,9 @@ const REALTIME_REFRESH_MS = 30 * 60 * 1000;
 
 export default function AppStateProvider({ children }: { children: React.ReactNode }) {
   const runHydrate = useCallback(async (accessToken?: string) => {
+    const started = currentSessionEpoch();
     const { setSession, isAuthenticated } = useSessionStore.getState();
+    if (!isCurrentSessionWrite(started)) return;
 
     // Do not wipe an authenticated user to `undefined` before /me returns —
     // that race made post-login UI flash as signed-out on Vercel.
@@ -28,6 +31,7 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
 
     try {
       const user = await apiAuth.me(accessToken);
+      if (!isCurrentSessionWrite(started)) return;
       let ownedShopIds: string[] = [];
       try {
         const mine = await apiShops.myShops();
@@ -35,6 +39,7 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
       } catch {
         /* non-merchants or API error */
       }
+      if (!isCurrentSessionWrite(started)) return;
       setRealtimeAuth(user.supabase_realtime_token ?? null);
       setSession({
         hydrated: true,
@@ -44,6 +49,7 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
         profileError: null,
       });
     } catch {
+      if (!isCurrentSessionWrite(started)) return;
       setRealtimeAuth(null);
       setSession({
         hydrated: true,
