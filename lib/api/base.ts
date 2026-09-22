@@ -1,12 +1,23 @@
+import axios, {
+  AxiosError,
+  type AxiosRequestConfig,
+  type Method,
+} from "axios";
+
 import { AUTH_CHANGED_EVENT } from "@/lib/auth/token-storage";
 
-export type ApiFetchOptions = Omit<RequestInit, "body"> & {
+export type ApiFetchOptions = {
+  method?: Method | string;
+  headers?: HeadersInit | Record<string, string>;
   token?: string | null;
   adminKey?: string;
   anonymous?: boolean;
-  body?: RequestInit["body"] | Record<string, unknown> | unknown[] | null;
+  body?: BodyInit | Record<string, unknown> | unknown[] | null;
   timeoutMs?: number;
   skipAuthRefresh?: boolean;
+  credentials?: RequestCredentials;
+  signal?: AbortSignal;
+  cache?: RequestCache;
 };
 
 export type ApiErrorPayload = {
@@ -32,11 +43,23 @@ export class ApiError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 
+/** Shared axios instance for Midora API / same-origin proxy calls. */
+export const apiHttp = axios.create({
+  timeout: DEFAULT_TIMEOUT_MS,
+  // Cookies for session auth (browser) and SSR when callers pass withCredentials.
+  withCredentials: true,
+  headers: {
+    Accept: "application/json",
+  },
+  // Don't throw on 4xx/5xx — apiFetch maps status to ApiError itself.
+  validateStatus: () => true,
+});
+
 function getBaseUrl(): string {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!base) {
     throw new Error(
-      "Missing NEXT_PUBLIC_API_BASE_URL. Set it in .env.local (e.g. http://127.0.0.1:8000)."
+      "Missing NEXT_PUBLIC_API_BASE_URL. Set it in .env.local (e.g. http://127.0.0.1:8000).",
     );
   }
   return base.replace(/\/$/, "");
@@ -84,6 +107,21 @@ function isMultipartOrBinary(body: unknown): boolean {
   return false;
 }
 
+function headersToRecord(headers?: HeadersInit | Record<string, string>): Record<string, string> {
+  if (!headers) return {};
+  if (headers instanceof Headers) {
+    const out: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      out[key] = value;
+    });
+    return out;
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+  return { ...headers };
+}
+
 function messageFromPayload(payload: ApiErrorPayload, status: number): string {
   if (typeof payload.detail === "string" && payload.detail.trim()) {
     return payload.detail;
@@ -96,16 +134,10 @@ function messageFromPayload(payload: ApiErrorPayload, status: number): string {
   return `Request failed with status ${status}`;
 }
 
-async function parseErrorBody(res: Response): Promise<ApiErrorPayload> {
-  const text = await res.text().catch(() => "");
-  if (!text) return { detail: res.statusText };
-  try {
-    const parsed = JSON.parse(text) as ApiErrorPayload;
-    if (parsed && typeof parsed === "object") return parsed;
-    return { detail: text };
-  } catch {
-    return { detail: text };
-  }
+function payloadFromUnknown(data: unknown, fallbackDetail: string): ApiErrorPayload {
+  if (data && typeof data === "object") return data as ApiErrorPayload;
+  if (typeof data === "string" && data.trim()) return { detail: data };
+  return { detail: fallbackDetail };
 }
 
 let inflightRefresh: Promise<boolean> | null = null;
@@ -124,18 +156,16 @@ async function tryRefreshCookie(): Promise<boolean> {
   if (!inflightRefresh) {
     inflightRefresh = (async () => {
       try {
-        const res = await doFetch(
-          "/api/dev-proxy/api/v1/auth/refresh",
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: "{}",
-          },
-          8_000,
-        );
+        const res = await apiHttp.request({
+          url: "/api/dev-proxy/api/v1/auth/refresh",
+          method: "POST",
+          data: {},
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+          timeout: 8_000,
+        });
         if (epoch !== refreshEpoch) return false;
-        return res.ok;
+        return res.status >= 200 && res.status < 300;
       } catch {
         return false;
       } finally {
@@ -146,20 +176,9 @@ async function tryRefreshCookie(): Promise<boolean> {
   return inflightRefresh;
 }
 
-async function doFetch(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
-  if (!timeoutMs) return fetch(url, init);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export async function apiFetch<T>(
   path: string,
-  opts: ApiFetchOptions = {}
+  opts: ApiFetchOptions = {},
 ): Promise<T> {
   const {
     token,
@@ -170,52 +189,82 @@ export async function apiFetch<T>(
     timeoutMs = DEFAULT_TIMEOUT_MS,
     skipAuthRefresh,
     credentials,
-    ...rest
+    method = "GET",
+    signal,
   } = opts;
 
   const explicitToken = typeof token === "string" && token.length > 0 ? token : null;
   const url = resolveUrl(path);
 
-  const callerHeaders = (headers as Record<string, string>) || {};
+  const callerHeaders = headersToRecord(headers);
   const hasContentType = Object.keys(callerHeaders).some(
-    (k) => k.toLowerCase() === "content-type"
+    (k) => k.toLowerCase() === "content-type",
   );
 
   const finalHeaders: Record<string, string> = {
     Accept: "application/json",
-    ...(!hasContentType && !isMultipartOrBinary(body) ? { "Content-Type": "application/json" } : {}),
+    ...(!hasContentType && !isMultipartOrBinary(body)
+      ? { "Content-Type": "application/json" }
+      : {}),
     ...(explicitToken ? { Authorization: `Bearer ${explicitToken}` } : {}),
     ...(adminKey ? { "X-Admin-Key": adminKey } : {}),
     "X-Correlation-Id": callerHeaders["X-Correlation-Id"] || crypto.randomUUID(),
     ...callerHeaders,
   };
 
-  const init: RequestInit = {
-    ...rest,
+  // For multipart, let the browser/axios set the boundary Content-Type.
+  if (isMultipartOrBinary(body)) {
+    for (const key of Object.keys(finalHeaders)) {
+      if (key.toLowerCase() === "content-type") delete finalHeaders[key];
+    }
+  }
+
+  const withCredentials =
+    credentials === "omit" || anonymous
+      ? false
+      : credentials === "include" || credentials === "same-origin" || credentials == null
+        ? true
+        : true;
+
+  const data = shouldSerialiseAsJson(body) ? body : body ?? undefined;
+
+  const config: AxiosRequestConfig = {
+    url,
+    method: (method || "GET") as Method,
     headers: finalHeaders,
-    credentials:
-      credentials ?? (anonymous ? "omit" : "include"),
-    body: shouldSerialiseAsJson(body)
-      ? JSON.stringify(body)
-      : (body as RequestInit["body"] | null),
+    data: method && String(method).toUpperCase() === "GET" ? undefined : data,
+    timeout: timeoutMs || undefined,
+    withCredentials,
+    signal,
+    validateStatus: () => true,
   };
 
-  let res: Response;
+  let status = 0;
+  let responseData: unknown = undefined;
+  let contentType = "";
+
   try {
-    res = await doFetch(url, init, timeoutMs);
+    const res = await apiHttp.request(config);
+    status = res.status;
+    responseData = res.data;
+    const ct = res.headers["content-type"];
+    contentType = typeof ct === "string" ? ct : Array.isArray(ct) ? ct[0] || "" : "";
   } catch (e) {
-    if (e instanceof DOMException && e.name === "AbortError") {
+    if (axios.isCancel(e) || (e instanceof AxiosError && e.code === "ERR_CANCELED")) {
+      throw new ApiError("Request timed out", 0, { code: "timeout" });
+    }
+    if (e instanceof AxiosError && e.code === "ECONNABORTED") {
       throw new ApiError("Request timed out", 0, { code: "timeout" });
     }
     throw new ApiError(
       e instanceof Error ? e.message : "Network error",
       0,
-      { code: "network_error" }
+      { code: "network_error" },
     );
   }
 
   if (
-    res.status === 401 &&
+    status === 401 &&
     !skipAuthRefresh &&
     !explicitToken &&
     !anonymous &&
@@ -227,17 +276,18 @@ export async function apiFetch<T>(
     }
   }
 
-  if (!res.ok) {
-    const payload = await parseErrorBody(res);
-    throw new ApiError(messageFromPayload(payload, res.status), res.status, payload);
+  if (status < 200 || status >= 300) {
+    const payload = payloadFromUnknown(responseData, `HTTP ${status}`);
+    throw new ApiError(messageFromPayload(payload, status), status, payload);
   }
 
-  if (res.status === 204) return undefined as T;
-  const contentType = res.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) {
+  if (status === 204) return undefined as T;
+  if (contentType && !contentType.includes("application/json")) {
     return undefined as T;
   }
-  return (await res.json()) as T;
+  // axios already parsed JSON when content-type is json; empty body may be "".
+  if (responseData === "" || responseData == null) return undefined as T;
+  return responseData as T;
 }
 
 export { AUTH_CHANGED_EVENT };

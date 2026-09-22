@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import axios from "axios";
 
 function RegisterPageInner() {
   const router = useRouter();
@@ -44,13 +45,12 @@ function RegisterPageInner() {
       try {
         const tokens = await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
-        const cookieRes = await fetch("/api/auth/set-cookies", {
-          method: "POST",
-          credentials: "same-origin",
+        const cookieRes = await axios.post("/api/auth/set-cookies", tokens, {
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tokens),
+          withCredentials: true,
+          validateStatus: () => true,
         });
-        if (!cookieRes.ok) {
+        if (cookieRes.status < 200 || cookieRes.status >= 300) {
           throw new Error("Could not establish your session. Please try again.");
         }
         notifyAuthChanged();
@@ -80,13 +80,12 @@ function RegisterPageInner() {
         full_name: fullName,
         user_role: role,
       });
-      const cookieRes = await fetch("/api/auth/set-cookies", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokens),
-      });
-      if (!cookieRes.ok) {
+      const cookieRes = await axios.post("/api/auth/set-cookies", tokens, {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+          validateStatus: () => true,
+        });
+      if (cookieRes.status < 200 || cookieRes.status >= 300) {
         throw new Error("Could not establish your session. Please try again.");
       }
       notifyAuthChanged();

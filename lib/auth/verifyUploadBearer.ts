@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export async function verifyUploadBearer(
   req: Request,
 ): Promise<{ userId: string } | null> {
@@ -9,16 +11,16 @@ export async function verifyUploadBearer(
   if (!base) return null;
 
   try {
-    const res = await fetch(`${base}/api/v1/auth/me`, {
+    const res = await axios.get(`${base}/api/v1/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
-      cache: "no-store",
+      validateStatus: () => true,
     });
-    if (!res.ok) return null;
-    const me = (await res.json()) as { id?: unknown };
-    if (typeof me.id !== "string" || !me.id) return null;
+    if (res.status < 200 || res.status >= 300) return null;
+    const me = res.data as { id?: unknown };
+    if (typeof me?.id !== "string" || !me.id) return null;
     return { userId: me.id };
   } catch {
     return null;

@@ -1,4 +1,4 @@
-import { apiFetch } from "./base";
+import { apiFetch, apiHttp } from "./base";
 
 export type RegisterRequest = {
   email: string;
@@ -81,11 +81,7 @@ export async function logout() {
   // 1. Clear Next.js-domain cookies first so /me and tryRefreshCookie cannot
   //    revive the session from a leftover midora_refresh cookie.
   try {
-    await fetch("/api/auth/clear-cookies", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-    });
+    await apiHttp.post("/api/auth/clear-cookies", {}, { withCredentials: true });
   } catch {
     /* best-effort */
   }
@@ -95,12 +91,11 @@ export async function logout() {
   //    set-cookies / proxy rewrite) are sent and cleared consistently.
   //    Also hit FastAPI directly for any host-only API-domain leftovers.
   try {
-    await fetch("/api/dev-proxy/api/v1/auth/logout", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
+    await apiHttp.post(
+      "/api/dev-proxy/api/v1/auth/logout",
+      {},
+      { withCredentials: true },
+    );
   } catch {
     /* best-effort */
   }
@@ -108,12 +103,11 @@ export async function logout() {
   try {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
     if (base) {
-      await fetch(`${base}/api/v1/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
+      await apiHttp.post(
+        `${base}/api/v1/auth/logout`,
+        {},
+        { withCredentials: true },
+      );
     }
   } catch {
     /* best-effort */
@@ -122,11 +116,7 @@ export async function logout() {
   // 3. Clear again after upstream Set-Cookie clears, in case the proxy
   //    rewrote delete cookies incompletely.
   try {
-    await fetch("/api/auth/clear-cookies", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-    });
+    await apiHttp.post("/api/auth/clear-cookies", {}, { withCredentials: true });
   } catch {
     /* best-effort */
   }
