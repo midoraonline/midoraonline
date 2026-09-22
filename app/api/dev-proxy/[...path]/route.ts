@@ -79,6 +79,7 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
       method: req.method,
       headers: reqHeaders,
       body,
+      cache: "no-store",
       // @ts-expect-error — Node 18 fetch supports duplex
       duplex: body ? "half" : undefined,
     });
@@ -108,8 +109,12 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
     }
     // Same-origin browser calls do not need upstream CORS headers; they can confuse clients.
     if (lower.startsWith("access-control-")) return;
+    if (lower === "cache-control") return;
     res.headers.set(key, value);
   });
+
+  // Authenticated JSON (chat unread, conversations) must not be reused after mark-read.
+  res.headers.set("cache-control", "no-store");
 
   return res;
 }

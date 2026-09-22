@@ -4,13 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/components/Logo";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { usePresenceStore } from "@/lib/state/presence-store";
-import { apiChat, apiAuth } from "@/lib/api";
+import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useSessionStore } from "@/lib/state/session-store";
-import { useRealtimeTable } from "@/lib/realtime/hooks";
+import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
@@ -178,7 +178,6 @@ function ProfileDropdown({
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/shops", label: "Shops" },
-  { href: "/products", label: "Products" },
   { href: "/aboutus", label: "About" },
   { href: "/contactus", label: "Contact" },
 ] as const;
@@ -200,7 +199,7 @@ export default function Navbar({
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [unread, setUnread] = useState(0);
+  const unread = useChatUnreadCount("navbar-unread");
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -240,39 +239,6 @@ export default function Navbar({
   }, [displayName]);
 
   const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
-
-  const fetchUnread = useCallback(async () => {
-    if (!session.isAuthenticated) {
-      setUnread(0);
-      return;
-    }
-    try {
-      const res = await apiChat.getUnreadCount();
-      setUnread(res.unread_count);
-    } catch {}
-  }, [session.isAuthenticated]);
-
-  // Live unread badge — any change to a conversation this user participates
-  // in triggers a fresh count read. RLS in Supabase (see migration 024)
-  // ensures we only receive events for our own rows.
-  useRealtimeTable(
-    {
-      table: "conversations",
-      channel: "navbar-unread",
-      event: "*",
-      enabled: session.isAuthenticated,
-    },
-    () => {
-      void fetchUnread();
-    },
-  );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchUnread();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [fetchUnread]);
 
   /* Close mobile menu on outside click */
   useEffect(() => {

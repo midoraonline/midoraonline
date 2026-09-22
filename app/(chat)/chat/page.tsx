@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ChatList from "@/components/chat/ChatList";
 import ChatThread from "@/components/chat/ChatThread";
@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import type { Conversation } from "@/lib/api/chat";
+import { persistConversationRead } from "@/lib/chat/readState";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 function ChatPageInner() {
@@ -17,36 +18,44 @@ function ChatPageInner() {
   const convId = searchParams.get("conversation");
   const session = useAppSession();
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
-  const [showList, setShowList] = useState(true);
-
-  const fetchConversation = useCallback(async (id: string) => {
-    try {
-      const list = await apiChat.listConversations();
-      const found = list.find((c) => c.id === id);
-      if (found) setActiveConv(found);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const [resolvedFor, setResolvedFor] = useState<string | null>(null);
+  const threadOpen = Boolean(convId);
+  const shownConv = activeConv && activeConv.id === convId ? activeConv : null;
+  const lookupPending = threadOpen && resolvedFor !== convId;
 
   useEffect(() => {
-    if (convId) {
-      void fetchConversation(convId);
-      setShowList(false);
-    } else {
+    if (!convId) {
       setActiveConv(null);
-      setShowList(true);
+      setResolvedFor(null);
+      return;
     }
-  }, [convId, fetchConversation]);
+    if (!session.hydrated || !session.isAuthenticated) return;
+    let cancelled = false;
+    void persistConversationRead(convId);
+    void (async () => {
+      try {
+        const list = await apiChat.listConversations();
+        if (cancelled) return;
+        setActiveConv(list.find((c) => c.id === convId) ?? null);
+      } catch {
+        if (!cancelled) setActiveConv(null);
+      } finally {
+        if (!cancelled) setResolvedFor(convId);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [convId, session.hydrated, session.isAuthenticated]);
 
   const handleSelect = (id: string) => {
+    void persistConversationRead(id);
     router.push(`/chat?conversation=${id}`, { scroll: false });
   };
 
   const handleBack = () => {
     router.push("/chat", { scroll: false });
     setActiveConv(null);
-    setShowList(true);
   };
 
   if (!session.hydrated) {
@@ -82,31 +91,44 @@ function ChatPageInner() {
     <div className="flex min-h-0 flex-1 flex-col bg-background">
       <EnablePushBanner />
 
-      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1">
-        {/* Conversation list */}
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 overflow-hidden">
         <aside
-          className={`flex min-h-0 w-full flex-col border-border sm:w-[20rem] sm:shrink-0 sm:border-r lg:w-[22rem] ${
-            showList ? "flex" : "hidden sm:flex"
+          className={`h-full min-h-0 w-full flex-col overflow-hidden border-border md:w-[20rem] md:shrink-0 md:border-r lg:w-[22rem] ${
+            threadOpen ? "hidden md:flex" : "flex"
           }`}
         >
           <div className="flex h-12 shrink-0 items-center border-b border-border px-4">
             <h1 className="text-sm font-semibold tracking-tight">Messages</h1>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-24 md:pb-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-2 md:pb-2">
             <ChatList activeId={convId ?? undefined} onSelect={handleSelect} />
           </div>
         </aside>
 
-        {/* Thread */}
         <section
-          className={`min-h-0 min-w-0 flex-1 flex-col ${
-            showList ? "hidden sm:flex" : "flex"
+          className={`h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${
+            threadOpen ? "flex" : "hidden md:flex"
           }`}
         >
-          {activeConv ? (
-            <ChatThread conversation={activeConv} onBack={handleBack} />
+          {shownConv ? (
+            <ChatThread conversation={shownConv} onBack={handleBack} />
+          ) : lookupPending ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-muted">
+              Loading conversation…
+            </div>
+          ) : threadOpen ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-sm text-muted">
+              <p>This conversation is unavailable.</p>
+              <button
+                type="button"
+                onClick={handleBack}
+                className="dm-focus rounded-lg px-3 py-2 text-sm font-semibold text-accent"
+              >
+                Back to messages
+              </button>
+            </div>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-sm text-muted">
+            <div className="hidden flex-1 flex-col items-center justify-center px-6 text-center text-sm text-muted md:flex">
               <MaterialSymbol name="chat" className="mb-3 !text-4xl opacity-30" />
               <p className="font-medium text-foreground/80">Select a conversation</p>
               <p className="mt-1 max-w-xs text-xs">
@@ -117,9 +139,9 @@ function ChatPageInner() {
         </section>
       </div>
 
-      {/* Mobile: keep bottom nav on the list view; an open thread hides it so
-          the composer keeps every pixel above the keyboard. */}
-      {showList ? <BottomNav /> : null}
+      {/* Mobile list keeps the bottom nav; an open thread hides it so the
+          composer sits above the keyboard. Desktop split starts at md. */}
+      {threadOpen ? null : <BottomNav />}
     </div>
   );
 }

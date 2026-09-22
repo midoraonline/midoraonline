@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat, apiProducts } from "@/lib/api";
+import { sameUserId } from "@/lib/chat/participants";
+import { persistConversationRead } from "@/lib/chat/readState";
+import { useMarkConversationRead } from "@/lib/hooks/useMarkConversationRead";
 import type { Conversation, NativeMessage } from "@/lib/api/chat";
 import type { Product } from "@/lib/api/products";
 import {
@@ -152,7 +155,8 @@ export default function ChatThread({ conversation, onBack }: Props) {
   const lastTypingSentRef = useRef(0);
   const nearBottomRef = useRef(true);
 
-  const isBuyer = session.user?.id === conversation.buyer_id;
+  const isBuyer = sameUserId(session.user?.id, conversation.buyer_id);
+  useMarkConversationRead(conversation.id, session.user?.id);
   const otherUser = isBuyer ? conversation.seller : conversation.buyer;
   const otherUserId = isBuyer ? conversation.seller_id : conversation.buyer_id;
 
@@ -197,25 +201,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
     setPendingNew(0);
     nearBottomRef.current = true;
     void fetchMessages();
-    apiChat.markConversationRead(conversation.id).catch(() => {});
   }, [fetchMessages, conversation.id]);
-
-  // Also re-mark the conversation read when the tab / app regains focus.
-  // Fixes the case where the user gets a push, opens the app to an already
-  // active thread, and the badge lingers because no INSERT arrives to
-  // trigger the in-thread mark-read.
-  useEffect(() => {
-    const onFocus = () => {
-      if (document.visibilityState !== "visible") return;
-      apiChat.markConversationRead(conversation.id).catch(() => {});
-    };
-    document.addEventListener("visibilitychange", onFocus);
-    window.addEventListener("focus", onFocus);
-    return () => {
-      document.removeEventListener("visibilitychange", onFocus);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, [conversation.id]);
 
   // After initial history render, jump to bottom instantly (no smooth scroll,
   // no window-level scroll — this fixes the "page scrolls to footer" bug).
@@ -289,8 +275,8 @@ export default function ChatThread({ conversation, onBack }: Props) {
         });
         if (event === "INSERT") {
           const mine = row.sender_id === session.user?.id;
-          if (!mine) {
-            apiChat.markConversationRead(conversation.id).catch(() => {});
+          if (!mine && document.visibilityState === "visible") {
+            void persistConversationRead(conversation.id);
             if (!nearBottomRef.current) setPendingNew((n) => n + 1);
           }
         }
@@ -433,7 +419,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
           <button
             type="button"
             onClick={onBack}
-            className="dm-focus -ml-0.5 rounded-lg p-1.5 hover:bg-foreground/[0.06] sm:hidden"
+            className="dm-focus -ml-0.5 rounded-lg p-1.5 hover:bg-foreground/[0.06] md:hidden"
             aria-label="Back to conversations"
           >
             <MaterialSymbol name="arrow_back" className="!text-lg" />

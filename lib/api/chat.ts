@@ -93,8 +93,13 @@ export type NativeMessage = {
   sender?: { full_name?: string } | null;
 };
 
+function freshQuery(path: string): string {
+  const join = path.includes("?") ? "&" : "?";
+  return `${path}${join}_=${Date.now()}`;
+}
+
 export function listConversations() {
-  return apiFetch<Conversation[]>("/api/v1/chat/conversations");
+  return apiFetch<Conversation[]>(freshQuery("/api/v1/chat/conversations"));
 }
 
 export function createConversation(params: {
@@ -127,10 +132,10 @@ export function sendNativeMessage(conversationId: string, content: string) {
 export function markConversationRead(conversationId: string) {
   return apiFetch<{ status: string }>(
     `/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/read`,
-    { method: "PUT" }
+    { method: "PUT", body: {}, keepalive: true },
   );
 }
 
 export function getUnreadCount() {
-  return apiFetch<{ unread_count: number }>("/api/v1/chat/unread");
+  return apiFetch<{ unread_count: number }>(freshQuery("/api/v1/chat/unread"));
 }

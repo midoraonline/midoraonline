@@ -1,64 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 import { useAppSession, usePresenceStore } from "@/lib/state";
-import { apiChat } from "@/lib/api";
-import { useRealtimeTable } from "@/lib/realtime/hooks";
 
 type Tab = {
   label: string;
   href: string;
   icon: string;
   badge?: number;
+  center?: boolean;
   isActive?: (pathname: string) => boolean;
 };
 
 export default function BottomNav() {
   const pathname = usePathname();
   const session = useAppSession();
-  const [unread, setUnread] = useState(0);
+  const unread = useChatUnreadCount("bottomnav-unread");
 
   const role = session.user?.user_role ?? null;
   const isMerchant = role === "merchant" || role === "admin";
-
   const onlineCount = usePresenceStore((s) => s.onlineCount);
 
-  const fetchUnread = useCallback(async () => {
-    if (!session.isAuthenticated) {
-      setUnread(0);
-      return;
-    }
-    try {
-      const res = await apiChat.getUnreadCount();
-      setUnread(res.unread_count ?? 0);
-    } catch {
-      /* keep last known */
-    }
-  }, [session.isAuthenticated]);
-
-  useEffect(() => {
-    const t = setTimeout(() => void fetchUnread(), 100);
-    return () => clearTimeout(t);
-  }, [fetchUnread]);
-
-  useRealtimeTable(
-    {
-      table: "conversations",
-      channel: "bottomnav-unread",
-      event: "*",
-      enabled: session.isAuthenticated,
-    },
-    () => {
-      void fetchUnread();
-    },
-  );
+  const postHref = session.isAuthenticated
+    ? "/post-item"
+    : `/login?next=${encodeURIComponent("/post-item")}`;
 
   const tabs: Tab[] = useMemo(() => {
-    // Merchants see a listings-first tab (their most-used surface: check status,
-    // edit, delete, add new). Customers see a shops-directory tab.
     const shopsTab: Tab = isMerchant
       ? {
           label: "My listings",
@@ -110,24 +81,25 @@ export default function BottomNav() {
         isActive: (p) => p === "/",
       },
       {
-        label: "Products",
-        href: "/products",
-        icon: "shopping_bag",
-      },
-      {
         label: "Messages",
         href: "/chat",
         icon: "chat",
         badge: session.isAuthenticated ? unread : 0,
       },
+      {
+        label: "Post Item",
+        href: postHref,
+        icon: "add",
+        center: true,
+        isActive: (p) => p.startsWith("/post-item"),
+      },
       shopsTab,
       accountTab,
     ];
-  }, [isMerchant, role, session.isAuthenticated, unread]);
+  }, [isMerchant, postHref, role, session.isAuthenticated, unread]);
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-safe shadow-lg backdrop-blur-md md:hidden">
-      {/* Online strip — mobile-only presence (desktop shows it in the top navbar) */}
+    <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">
       {onlineCount > 0 ? (
         <div className="flex items-center justify-center gap-1.5 border-b border-accent/15 bg-accent/5 px-3 py-1 text-[10px] font-semibold text-accent">
           <span className="relative flex h-1.5 w-1.5">
@@ -138,20 +110,39 @@ export default function BottomNav() {
         </div>
       ) : null}
 
-      <div className="flex h-14 items-center justify-around px-2">
+      <div className="grid h-14 grid-cols-5">
         {tabs.map((tab) => {
           const isActive = tab.isActive
             ? tab.isActive(pathname)
             : tab.href === "/"
               ? pathname === "/"
-              : pathname.startsWith(tab.href);
+              : pathname.startsWith(tab.href.split("?")[0]);
           const badge = Number(tab.badge ?? 0);
+
+          if (tab.center) {
+            return (
+              <Link
+                key={`${tab.label}-${tab.href}`}
+                href={tab.href}
+                aria-current={isActive ? "page" : undefined}
+                className="dm-focus relative flex h-full items-end justify-center pb-1"
+              >
+                <span className="absolute -top-3 left-1/2 grid size-12 -translate-x-1/2 place-items-center rounded-full bg-accent text-white shadow-lg ring-4 ring-surface transition-transform active:scale-[0.98]">
+                  <MaterialSymbol name={tab.icon} className="!text-3xl" />
+                </span>
+                <span className="whitespace-nowrap text-[10px] font-bold leading-none tracking-tight text-accent">
+                  {tab.label}
+                </span>
+              </Link>
+            );
+          }
 
           return (
             <Link
               key={`${tab.label}-${tab.href}`}
               href={tab.href}
-              className={`dm-focus relative flex h-full flex-1 flex-col items-center justify-center py-1.5 transition-colors ${
+              aria-current={isActive ? "page" : undefined}
+              className={`dm-focus relative flex h-full flex-col items-center justify-center py-1.5 transition-colors ${
                 isActive
                   ? "font-bold text-accent"
                   : "text-muted hover:text-foreground"
@@ -169,7 +160,9 @@ export default function BottomNav() {
                   </span>
                 ) : null}
               </span>
-              <span className="mt-0.5 text-[10px] tracking-tight">{tab.label}</span>
+              <span className="mt-0.5 max-w-full truncate px-0.5 text-center text-[10px] leading-none tracking-tight">
+                {tab.label}
+              </span>
             </Link>
           );
         })}

@@ -18,6 +18,8 @@ export type ApiFetchOptions = {
   credentials?: RequestCredentials;
   signal?: AbortSignal;
   cache?: RequestCache;
+  /** fetch keepalive — survives reload. Keep the body under 64KB. */
+  keepalive?: boolean;
 };
 
 export type ApiErrorPayload = {
@@ -191,6 +193,7 @@ export async function apiFetch<T>(
     credentials,
     method = "GET",
     signal,
+    keepalive = false,
   } = opts;
 
   const explicitToken = typeof token === "string" && token.length > 0 ? token : null;
@@ -244,11 +247,10 @@ export async function apiFetch<T>(
   let contentType = "";
 
   try {
-    const res = await apiHttp.request(config);
-    status = res.status;
-    responseData = res.data;
-    const ct = res.headers["content-type"];
-    contentType = typeof ct === "string" ? ct : Array.isArray(ct) ? ct[0] || "" : "";
+    const dispatched = await dispatchRequest(config, keepalive);
+    status = dispatched.status;
+    responseData = dispatched.responseData;
+    contentType = dispatched.contentType;
   } catch (e) {
     if (axios.isCancel(e) || (e instanceof AxiosError && e.code === "ERR_CANCELED")) {
       throw new ApiError("Request timed out", 0, { code: "timeout" });
@@ -288,6 +290,58 @@ export async function apiFetch<T>(
   // axios already parsed JSON when content-type is json; empty body may be "".
   if (responseData === "" || responseData == null) return undefined as T;
   return responseData as T;
+}
+
+type DispatchResult = {
+  status: number;
+  responseData: unknown;
+  contentType: string;
+};
+
+/** XHR is cancelled on reload; keepalive fetch is not. Used for mark-read. */
+async function dispatchRequest(
+  config: AxiosRequestConfig,
+  keepalive: boolean,
+): Promise<DispatchResult> {
+  if (!keepalive || typeof fetch === "undefined") {
+    const res = await apiHttp.request(config);
+    const ct = res.headers["content-type"];
+    const contentType = typeof ct === "string" ? ct : Array.isArray(ct) ? ct[0] || "" : "";
+    return { status: res.status, responseData: res.data, contentType };
+  }
+
+  const method = String(config.method || "GET").toUpperCase();
+  const headers = (config.headers || {}) as Record<string, string>;
+  let body: string | undefined;
+  if (method !== "GET" && method !== "HEAD") {
+    const data = config.data;
+    body = data == null ? "{}" : typeof data === "string" ? data : JSON.stringify(data);
+  }
+
+  const res = await fetch(String(config.url), {
+    method,
+    headers,
+    body,
+    credentials: config.withCredentials ? "include" : "omit",
+    keepalive: true,
+    signal: config.signal as AbortSignal | undefined,
+    cache: "no-store",
+  });
+
+  const contentType = res.headers.get("content-type") || "";
+  if (res.status === 204) {
+    return { status: res.status, responseData: undefined, contentType };
+  }
+  const text = await res.text();
+  if (!text) return { status: res.status, responseData: undefined, contentType };
+  if (contentType.includes("application/json")) {
+    try {
+      return { status: res.status, responseData: JSON.parse(text) as unknown, contentType };
+    } catch {
+      return { status: res.status, responseData: text, contentType };
+    }
+  }
+  return { status: res.status, responseData: text, contentType };
 }
 
 export { AUTH_CHANGED_EVENT };

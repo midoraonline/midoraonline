@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import type { Conversation } from "@/lib/api/chat";
+import { sameUserId, unreadForViewer } from "@/lib/chat/participants";
+import { CHAT_READ_EVENT } from "@/lib/chat/readState";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { usePresence, useRealtimeTable } from "@/lib/realtime/hooks";
 
@@ -37,20 +39,30 @@ export default function ChatList({ activeId, onSelect }: Props) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchGen = useRef(0);
+
   const fetchList = useCallback(async () => {
     if (!session.isAuthenticated) return;
+    const gen = ++fetchGen.current;
     try {
       const list = await apiChat.listConversations();
+      if (gen !== fetchGen.current) return;
       setConversations(list);
     } catch {
       /* ignore */
     } finally {
-      setLoading(false);
+      if (gen === fetchGen.current) setLoading(false);
     }
   }, [session.isAuthenticated]);
 
   useEffect(() => {
     void fetchList();
+  }, [fetchList]);
+
+  useEffect(() => {
+    const onRead = () => void fetchList();
+    window.addEventListener(CHAT_READ_EVENT, onRead);
+    return () => window.removeEventListener(CHAT_READ_EVENT, onRead);
   }, [fetchList]);
 
   useRealtimeTable(
@@ -108,21 +120,24 @@ export default function ChatList({ activeId, onSelect }: Props) {
   return (
     <ul className="flex flex-col gap-0.5">
       {conversations.map((conv) => {
-        const isBuyer = session.user?.id === conv.buyer_id;
+        const isBuyer = sameUserId(session.user?.id, conv.buyer_id);
         const otherUser = isBuyer ? conv.seller : conv.buyer;
         const otherId = isBuyer ? conv.seller_id : conv.buyer_id;
-        const unread = isBuyer ? conv.buyer_unread : conv.seller_unread;
+        const unread = unreadForViewer(conv, session.user?.id);
         const active = conv.id === activeId;
         const isOnline = onlineIds.has(otherId);
 
         const handleClick = () => {
-          // Optimistically zero the badge so the UI reacts instantly. The
-          // realtime UPDATE from mark_read will confirm this shortly after.
+          fetchGen.current += 1;
           if (unread > 0) {
             setConversations((prev) =>
               prev.map((c) =>
                 c.id === conv.id
-                  ? { ...c, buyer_unread: isBuyer ? 0 : c.buyer_unread, seller_unread: !isBuyer ? 0 : c.seller_unread }
+                  ? {
+                      ...c,
+                      buyer_unread: isBuyer ? 0 : c.buyer_unread,
+                      seller_unread: !isBuyer ? 0 : c.seller_unread,
+                    }
                   : c,
               ),
             );
