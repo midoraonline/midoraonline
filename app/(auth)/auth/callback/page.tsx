@@ -2,50 +2,58 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import { useEffect, useState } from "react";
+import { establishGoogleCallbackSession } from "@/lib/auth/establish-session";
 
 type CallbackStatus = "processing" | "success" | "error";
 
 export default function GoogleAuthCallbackPage() {
   const router = useRouter();
-  const processedRef = useRef(false);
   const [status, setStatus] = useState<CallbackStatus>("processing");
   const [message, setMessage] = useState("Completing Google sign-in...");
 
   useEffect(() => {
-    if (processedRef.current) return;
-    processedRef.current = true;
-
     const fragment = window.location.hash.startsWith("#")
       ? window.location.hash.slice(1)
       : window.location.hash;
     const hash = new URLSearchParams(fragment);
     const error = hash.get("error");
     const provider = hash.get("provider");
+    const verified = hash.get("verified");
 
-    if (error) {
-      // Defer state updates to prevent potential cascading renders
-      Promise.resolve().then(() => {
+    let active = true;
+    if (error || provider !== "google" || verified !== "true") {
+      queueMicrotask(() => {
+        if (!active) return;
         setStatus("error");
-        setMessage(error);
+        setMessage("Google sign-in was cancelled or failed.");
       });
-      return;
+      return () => {
+        active = false;
+      };
     }
 
-    // Auth cookies were set by the API callback redirect. Strip the hash and
-    // rehydrate the session from `/auth/me`.
-    window.history.replaceState(null, "", window.location.pathname);
-    if (provider) notifyAuthChanged();
-    // Defer state updates to prevent potential cascading renders
-    Promise.resolve().then(() => {
-      setStatus("success");
-      setMessage("Sign-in successful. Redirecting to your dashboard...");
-      // Defer router navigation to prevent potential cascading renders
-      setTimeout(() => {
+    void establishGoogleCallbackSession()
+      .then(() => {
+        if (active) {
+          setStatus("success");
+          setMessage("Sign-in successful. Redirecting to your dashboard...");
+        }
         router.replace("/");
-      }, 0);
-    });
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setStatus("error");
+        setMessage(
+          err instanceof Error
+            ? err.message
+            : "Could not establish your session. Please try again.",
+        );
+      });
+
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   return (

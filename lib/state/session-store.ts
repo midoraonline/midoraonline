@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { MeResponse } from "@/lib/api/auth";
+import { claimSessionWrite } from "@/lib/auth/session-epoch";
 
 export type AppSession = {
   hydrated: boolean;
@@ -25,7 +26,10 @@ type SessionStore = AppSession & {
 export const useSessionStore = create<SessionStore>((set) => ({
   ...initialSession,
   setSession: (patch) => set((state) => ({ ...state, ...patch })),
-  resetSession: () => set({ ...initialSession, hydrated: true }),
+  resetSession: () => {
+    claimSessionWrite();
+    set({ ...initialSession, hydrated: true });
+  },
 }));
 
 export function getSessionState(): AppSession {

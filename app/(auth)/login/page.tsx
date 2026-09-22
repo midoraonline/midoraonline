@@ -1,12 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
 import { apiAuth } from "@/lib/api";
-import { establishClientSession } from "@/lib/auth/establish-session";
+import {
+  establishClientSession,
+  establishSessionFromGoogleCode,
+} from "@/lib/auth/establish-session";
 
 function LoginPageInner() {
   const router = useRouter();
@@ -17,7 +20,6 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const processedOAuthRef = useRef<string | null>(null);
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -29,32 +31,29 @@ function LoginPageInner() {
       return;
     }
     if (!code || !state) return;
-    const oauthKey = `${code}:${state}`;
-    if (processedOAuthRef.current === oauthKey) return;
-    processedOAuthRef.current = oauthKey;
 
-    let cancelled = false;
-    (async () => {
-      setGoogleLoading(true);
-      setError(null);
-      try {
-        const tokens = await apiAuth.exchangeGoogleCode({ code, state });
-        if (cancelled) return;
-        await establishClientSession(tokens);
+    let active = true;
+    setGoogleLoading(true);
+    setError(null);
+    void establishSessionFromGoogleCode(code, state)
+      .then(() => {
         const next = searchParams.get("next");
         router.replace(next && next.startsWith("/") ? next : "/");
-      } catch (err) {
-        if (cancelled) return;
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
         setError(
           err instanceof Error
             ? err.message
             : "Unable to complete Google sign-in."
         );
-      } finally {
-        if (!cancelled) setGoogleLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+      })
+      .finally(() => {
+        if (active) setGoogleLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [router, searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
