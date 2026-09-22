@@ -54,6 +54,7 @@ export type Shop = {
   trust_score?: number | null;
   available_now?: boolean | null;
   last_seen_at?: string | null;
+  owner_phone_verified?: boolean | null;
   follower_count?: number | null;
   like_count?: number | null;
   viewer_following?: boolean | null;

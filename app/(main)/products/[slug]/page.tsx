@@ -29,6 +29,8 @@ import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl"
 import { getProductById, getSimilarProducts } from "@/lib/api/server";
 import SellerContactConsent from "@/components/product/SellerContactConsent";
 import ReportListing from "@/components/product/ReportListing";
+import SellerTrustActions from "@/components/product/SellerTrustActions";
+import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
 import ProductReviews from "@/components/product/ProductReviews";
 import {
@@ -147,6 +149,7 @@ export default async function ProductDetails({
   const productPath = `/products/${canonicalSlug}`;
   const listingUrl = `${SITE}${productPath}`;
   const waHref =
+    shop?.owner_phone_verified !== false &&
     shop?.whatsapp_number?.trim() &&
     productInquiryWhatsAppUrl(shop.whatsapp_number, {
       itemTitle: product.title,
@@ -243,6 +246,15 @@ export default async function ProductDetails({
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white">
                   <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden />
                   Live now
+                </span>
+              ) : formatLastActive(shop?.last_seen_at) ? (
+                <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
+                  {formatLastActive(shop?.last_seen_at)}
+                </span>
+              ) : null}
+              {formatMemberSince(shop?.created_at) ? (
+                <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
+                  Member since {formatMemberSince(shop?.created_at)}
                 </span>
               ) : null}
               {freshness ? (
@@ -361,7 +373,7 @@ export default async function ProductDetails({
               </SellerContactConsent>
             ) : shop ? (
               <p className="rounded-xl border border-border bg-surface-subtle px-4 py-3 text-center text-xs text-muted">
-                Seller hasn&apos;t connected WhatsApp yet
+                WhatsApp unavailable until this seller verifies their phone
               </p>
             ) : null}
 
@@ -544,6 +556,13 @@ export default async function ProductDetails({
               </span>
             ) : null}
             <ReportListing productId={product.id} />
+            {shop?.owner_id ? (
+              <SellerTrustActions
+                sellerId={shop.owner_id}
+                shopId={shop.id}
+                shopName={shop.name}
+              />
+            ) : null}
           </div>
 
           <div id="reviews" className="scroll-mt-24 border-t border-border pt-4">

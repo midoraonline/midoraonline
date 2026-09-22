@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
-import { apiProducts } from "@/lib/api";
+import { apiProducts, apiShops } from "@/lib/api";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
@@ -35,9 +35,13 @@ import {
 } from "@/lib/listingMeta";
 import {
   evaluateSalePrice,
+  MAX_LISTING_MEDIA,
+  MIN_LISTING_PHOTOS,
   validateListingDraft,
   type ListingDraft,
 } from "@/lib/schemas/listingForm";
+import LocationInput from "@/components/LocationInput";
+import { useSessionStore } from "@/lib/state/session-store";
 
 const UGX = new Intl.NumberFormat("en-UG", {
   style: "currency",
@@ -67,7 +71,7 @@ function MediaGridWrapper({
       onRemove={onRemove}
       onImageUploaded={onImageUploaded}
       onVideoUploaded={onVideoUploaded}
-      maxItems={3}
+      maxItems={MAX_LISTING_MEDIA}
     />
   );
 }
@@ -149,6 +153,7 @@ function emptyDraft(kind: ListingKind): FormDraft {
     image_urls: [],
     is_published: true,
     is_negotiable: true,
+    location_name: "",
     meta: {},
   };
 }
@@ -165,6 +170,7 @@ function productToDraft(p: Product): FormDraft {
     image_urls: productImageUrls(p),
     is_published: p.is_published ?? true,
     is_negotiable: p.is_negotiable !== false,
+    location_name: p.location_name ?? "",
     meta: parseListingMeta(p.listing_meta),
   };
 }
@@ -180,6 +186,7 @@ function draftsEqual(a: FormDraft, b: FormDraft): boolean {
     a.category === b.category &&
     a.is_published === b.is_published &&
     a.is_negotiable === b.is_negotiable &&
+    a.location_name === b.location_name &&
     a.image_urls.length === b.image_urls.length &&
     a.image_urls.every((u, i) => u === b.image_urls[i]) &&
     JSON.stringify(a.meta) === JSON.stringify(b.meta)
@@ -216,6 +223,9 @@ export default function ProductFormPage({
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const sessionUser = useSessionStore((s) => s.user);
+  const [shopLocationLabel, setShopLocationLabel] = useState("");
+
   const [aiCheck, setAiCheck] = useState<ListingQualityResponse | null>(null);
   const [aiChecking, setAiChecking] = useState(false);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<{
@@ -226,6 +236,27 @@ export default function ProductFormPage({
 
   const [sessionUploaded, setSessionUploaded] = useState<string[]>([]);
   const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiShops
+      .getShop(shopId)
+      .then((shop) => {
+        if (cancelled || !shop) return;
+        const loc = shop.location;
+        const label =
+          typeof loc === "string"
+            ? loc
+            : loc && typeof loc === "object"
+              ? String((loc as { display?: string; city?: string }).display || (loc as { city?: string }).city || "")
+              : "";
+        setShopLocationLabel(label);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [shopId]);
   const { items: categoryItems, tree: categoryTree } = useCategoryItems();
   const initialRef = useRef(initialDraft);
 
@@ -273,8 +304,10 @@ export default function ProductFormPage({
       subcategoryLabel: categoryParts.subcategoryLabel,
       parentHasChildren: !!parentGroup && parentGroup.children.length > 0,
       metaFields: catFields,
+      phoneVerified: Boolean(sessionUser?.phone_verified),
+      shopLocationLabel,
     });
-  }, [draft, categoryParts, categoryTree, catFields]);
+  }, [draft, categoryParts, categoryTree, catFields, sessionUser?.phone_verified, shopLocationLabel]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -420,6 +453,7 @@ export default function ProductFormPage({
       image_urls: [...draft.image_urls],
       is_published: draft.is_published,
       is_negotiable: draft.is_negotiable,
+      location_name: draft.location_name.trim() || undefined,
       item_type: listingKindToItemType(draft.kind),
       listing_meta: meta,
     };
@@ -781,7 +815,7 @@ export default function ProductFormPage({
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">3. Photos & Video</h2>
             <p className="text-xs text-muted">
-              Up to 3 photos or short videos. At least 1 photo is required — the first one is used as the cover photo on your listing card.
+              Up to 8 photos or short videos. At least 2 photos are required to publish — the first one is the cover on your listing card.
             </p>
           </div>
 
@@ -818,6 +852,32 @@ export default function ProductFormPage({
           ) : null}
         </section>
 
+        {/* Card 3b: Location (required to publish) */}
+        <section className="dm-card p-5 sm:p-6 space-y-4">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">Location</h2>
+            <p className="text-xs text-muted">
+              Buyers need a real city or area. Country-only (e.g. Uganda) is not enough to publish.
+            </p>
+          </div>
+          <LocationInput
+            value={draft.location_name}
+            onChange={(val) => setDraft((d) => ({ ...d, location_name: val }))}
+            placeholder={shopLocationLabel || "e.g. Kisasi, Kampala"}
+          />
+          {showErrors && errors.location_name ? (
+            <p className="text-xs text-[color:var(--error)]">{errors.location_name}</p>
+          ) : null}
+          {showErrors && errors.phone ? (
+            <p className="text-xs text-[color:var(--error)]">
+              {errors.phone}{" "}
+              <a href="/merchant/settings" className="underline">
+                Verify phone
+              </a>
+            </p>
+          ) : null}
+        </section>
+
         {/* Card 4: Pricing & Stock */}
         <section className="dm-card p-5 sm:p-6 space-y-5">
           <div>
@@ -838,6 +898,9 @@ export default function ProductFormPage({
                 onChange={(e) => setDraft((d) => ({ ...d, price_ugx: e.target.value }))}
                 placeholder={draft.kind === "opportunity" ? "Optional — 0 if unpaid" : "50000"}
               />
+              {showErrors && errors.price_ugx ? (
+                <p className="text-xs text-[color:var(--error)]">{errors.price_ugx}</p>
+              ) : null}
             </div>
 
             {draft.kind !== "opportunity" ? (

@@ -56,6 +56,9 @@ export type Product = {
     trust_badges?: string[];
     available_now: boolean;
     location?: string | null;
+    created_at?: string | null;
+    last_seen_at?: string | null;
+    owner_phone_verified?: boolean;
   } | null;
 };
 

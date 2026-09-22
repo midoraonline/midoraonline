@@ -9,6 +9,7 @@ import { locationDisplay } from "./shopUtils";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
+import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import ShopHeaderRating from "@/components/shop/ShopHeaderRating";
 import ShopContactButtons from "@/components/shop/ShopContactButtons";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
@@ -39,8 +40,9 @@ export default async function ShopHeader({
   const immersive = !usePlainHero;
 
   const shopPageUrl = `${publicSiteOrigin()}/shops/${shop.slug}`;
-  const waHref = shop.whatsapp_number
-    ? shopInquiryWhatsAppUrl(shop.whatsapp_number, {
+  const waHref =
+    shop.whatsapp_number && shop.owner_phone_verified !== false
+      ? shopInquiryWhatsAppUrl(shop.whatsapp_number, {
         shopName: shop.name,
         shopUrl: shopPageUrl,
       })
@@ -182,6 +184,15 @@ export default async function ShopHeader({
             >
               <span className="size-1.5 animate-pulse rounded-full bg-current" aria-hidden />
               Live now
+            </span>
+          ) : formatLastActive(shop.last_seen_at) ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-subtle px-2 py-0.5 text-[11px] font-medium text-muted ring-1 ring-border">
+              {formatLastActive(shop.last_seen_at)}
+            </span>
+          ) : null}
+          {formatMemberSince(shop.created_at) ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-subtle px-2 py-0.5 text-[11px] font-medium text-muted ring-1 ring-border">
+              Member since {formatMemberSince(shop.created_at)}
             </span>
           ) : null}
 

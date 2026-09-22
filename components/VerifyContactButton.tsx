@@ -41,7 +41,15 @@ export default function VerifyContactButton({
       await sendCode();
       setStage("code");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send code.");
+      const msg =
+        err && typeof err === "object" && "message" in err && typeof (err as Error).message === "string"
+          ? (err as Error).message
+          : "Could not send code.";
+      setError(
+        /already linked|phone_taken|already.*(phone|number)/i.test(msg)
+          ? "That phone number is already linked to another Midora account. Sign in with that account, or use a different number."
+          : msg,
+      );
       setStage("idle");
     }
   }
@@ -57,7 +65,15 @@ export default function VerifyContactButton({
       setStage("idle");
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Incorrect code.");
+      const msg =
+        err && typeof err === "object" && "message" in err && typeof (err as Error).message === "string"
+          ? (err as Error).message
+          : "Incorrect code.";
+      setError(
+        /already linked|phone_taken|already.*(phone|number)/i.test(msg)
+          ? "That phone number is already linked to another Midora account. Sign in with that account, or use a different number."
+          : msg,
+      );
       setStage("code");
     }
   }

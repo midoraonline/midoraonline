@@ -11,6 +11,9 @@ import {
 } from "@/lib/listingMeta";
 import { isVideoUrl } from "@/lib/api/products";
 
+export const MIN_LISTING_PHOTOS = 2;
+export const MAX_LISTING_MEDIA = 8;
+
 const CONDITION_VALUES = CONDITION_OPTIONS.map((o) => o.value) as [
   string,
   ...string[],
@@ -92,6 +95,7 @@ export const listingDraftSchema = z.object({
   image_urls: z.array(z.string().url().or(z.string().min(1))),
   is_published: z.boolean(),
   is_negotiable: z.boolean(),
+  location_name: z.string().optional().default(""),
   meta: listingMetaSchema,
 });
 
@@ -108,6 +112,7 @@ export type ListingDraft = {
   image_urls: string[];
   is_published: boolean;
   is_negotiable: boolean;
+  location_name: string;
   meta: ListingMeta;
 };
 
@@ -120,7 +125,9 @@ export type ListingFieldErrors = Partial<
     | "sale_price"
     | "stock_quantity"
     | "images"
-    | "meta",
+    | "meta"
+    | "location_name"
+    | "phone",
     string
   >
 >;
@@ -132,6 +139,10 @@ export type ListingValidationContext = {
   /** Resolved category metadata fields (DB-configured or fallback). Falls
    *  back to `categoryMetaFields(parentCategoryLabel)` when omitted. */
   metaFields?: ReturnType<typeof categoryMetaFields>;
+  /** When publishing, require verified phone on the acting seller. */
+  phoneVerified?: boolean;
+  /** Shop-level location display used when listing location_name is empty. */
+  shopLocationLabel?: string | null;
 };
 
 function parseAmount(v: string): number | null {
@@ -193,8 +204,31 @@ export function validateListingDraft(
   const descCheck = descriptionMeetsStandard(draft.description);
   if (!descCheck.ok) errors.description = descCheck.message;
 
-  if (!hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
+  const photoCount = draft.image_urls.filter((u) => u.trim() && !isVideoUrl(u)).length;
+  const mediaCount = draft.image_urls.filter((u) => u.trim()).length;
+  if (mediaCount > MAX_LISTING_MEDIA) {
+    errors.images = `At most ${MAX_LISTING_MEDIA} photos or videos per listing.`;
+  } else if (draft.is_published && photoCount < MIN_LISTING_PHOTOS) {
+    errors.images = `Add at least ${MIN_LISTING_PHOTOS} photos before publishing (videos alone are not enough).`;
+  } else if (!hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
     errors.images = "Upload at least one photo (video alone is not enough).";
+  }
+
+  if (draft.is_published) {
+    if (ctx.phoneVerified === false) {
+      errors.phone = "Verify your phone number before publishing.";
+    }
+    const loc = (draft.location_name || "").trim() || (ctx.shopLocationLabel || "").trim();
+    const normalized = loc.toLowerCase().replace(/^[,.\s]+|[,.\s]+$/g, "");
+    if (!loc || ["uganda", "ug", "online", "online shop"].includes(normalized)) {
+      errors.location_name = "Add a real city/area before publishing (country-only is not enough).";
+    }
+    if (draft.kind === "product") {
+      const price = Number(String(draft.price_ugx).replace(/,/g, ""));
+      if (!Number.isFinite(price) || price <= 0) {
+        errors.price_ugx = "Set a price greater than 0 to publish a product.";
+      }
+    }
   }
 
   if (draft.category.trim() && ctx.parentHasChildren && !ctx.subcategoryLabel) {
