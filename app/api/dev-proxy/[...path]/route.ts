@@ -35,7 +35,23 @@ function rewriteSetCookie(value: string, isHttps: boolean): string {
   return cookie;
 }
 
+function upstreamSetCookies(headers: Headers): string[] {
+  const anyHeaders = headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof anyHeaders.getSetCookie === "function") {
+    return anyHeaders.getSetCookie();
+  }
+  const single = headers.get("set-cookie");
+  return single ? [single] : [];
+}
+
 async function proxy(req: NextRequest): Promise<NextResponse> {
+  if (!API_BASE) {
+    return NextResponse.json(
+      { error: "API base URL is not configured", code: "misconfigured" },
+      { status: 500 },
+    );
+  }
+
   if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS") {
     const blocked = forbidCrossOrigin(req);
     if (blocked) return blocked;
@@ -47,7 +63,8 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const reqHeaders = new Headers();
   req.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "host") return;
+    const lower = key.toLowerCase();
+    if (lower === "host" || lower === "connection") return;
     reqHeaders.set(key, value);
   });
 
@@ -75,23 +92,31 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
     statusText: upstream.statusText,
   });
 
-  // Rewrite Set-Cookie: always strip Domain= so cookies bind to Next.js's domain.
-  // Strip Secure in dev (localhost HTTP); keep in production (Vercel HTTPS).
-  const isHttps = req.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
+  const isHttps =
+    req.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
+
+  // Prefer getSetCookie() — Headers.forEach can merge/drop multiple Set-Cookie values.
+  for (const raw of upstreamSetCookies(upstream.headers)) {
+    res.headers.append("set-cookie", rewriteSetCookie(raw, isHttps));
+  }
+
   upstream.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "set-cookie") {
-      res.headers.append("set-cookie", rewriteSetCookie(value, isHttps));
-    } else if (key.toLowerCase() !== "content-encoding") {
-      res.headers.set(key, value);
+    const lower = key.toLowerCase();
+    if (lower === "set-cookie") return;
+    if (lower === "content-encoding" || lower === "content-length" || lower === "transfer-encoding") {
+      return;
     }
+    // Same-origin browser calls do not need upstream CORS headers; they can confuse clients.
+    if (lower.startsWith("access-control-")) return;
+    res.headers.set(key, value);
   });
 
   return res;
 }
 
-export const GET     = proxy;
-export const POST    = proxy;
-export const PUT     = proxy;
-export const PATCH   = proxy;
-export const DELETE  = proxy;
+export const GET = proxy;
+export const POST = proxy;
+export const PUT = proxy;
+export const PATCH = proxy;
+export const DELETE = proxy;
 export const OPTIONS = proxy;

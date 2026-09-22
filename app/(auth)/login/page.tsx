@@ -6,8 +6,7 @@ import Link from "next/link";
 
 import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
 import { apiAuth } from "@/lib/api";
-import { notifyAuthChanged } from "@/lib/auth/token-storage";
-import axios from "axios";
+import { establishClientSession } from "@/lib/auth/establish-session";
 
 function LoginPageInner() {
   const router = useRouter();
@@ -41,15 +40,7 @@ function LoginPageInner() {
       try {
         const tokens = await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
-        const cookieRes = await axios.post("/api/auth/set-cookies", tokens, {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-          validateStatus: () => true,
-        });
-        if (cookieRes.status < 200 || cookieRes.status >= 300) {
-          throw new Error("Could not establish your session. Please try again.");
-        }
-        notifyAuthChanged();
+        await establishClientSession(tokens);
         const next = searchParams.get("next");
         router.replace(next && next.startsWith("/") ? next : "/");
       } catch (err) {
@@ -72,16 +63,7 @@ function LoginPageInner() {
     setError(null);
     try {
       const tokens = await apiAuth.login({ email, password });
-      // Mirror tokens to Next.js domain so SSR can read the cookie
-      const cookieRes = await axios.post("/api/auth/set-cookies", tokens, {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-          validateStatus: () => true,
-        });
-      if (cookieRes.status < 200 || cookieRes.status >= 300) {
-        throw new Error("Could not establish your session. Please try again.");
-      }
-      notifyAuthChanged();
+      await establishClientSession(tokens);
       const next = searchParams.get("next");
       router.push(next && next.startsWith("/") ? next : "/");
     } catch (err) {

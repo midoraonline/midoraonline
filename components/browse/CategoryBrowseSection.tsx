@@ -62,14 +62,6 @@ export default function CategoryBrowseSection({
       )}
 
       <div className="relative">
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-background to-transparent sm:from-accent/[0.06]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-background to-transparent"
-          aria-hidden
-        />
         <div className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory">
           <CategoryChip
             label="All"

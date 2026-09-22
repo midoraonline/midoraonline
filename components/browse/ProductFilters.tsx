@@ -684,14 +684,6 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
       </div>
       {/* Primary filter strip — neutral chips (distinct from category browse) */}
       <div className="relative">
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-surface-subtle to-transparent sm:hidden"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-surface-subtle to-transparent sm:hidden"
-          aria-hidden
-        />
         <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-1.5 sm:overflow-visible">
           {/* Mobile: single "Sort & filter" entry — inline dropdowns get
               clipped by the horizontal scroll strip's overflow. Desktop

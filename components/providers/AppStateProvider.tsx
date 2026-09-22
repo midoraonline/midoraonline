@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useLayoutEffect } from "react";
 import { SWRConfig } from "swr";
 import { apiAuth, apiShops } from "@/lib/api";
-import { AUTH_CHANGED_EVENT } from "@/lib/auth/token-storage";
+import {
+  AUTH_CHANGED_EVENT,
+  type AuthChangedDetail,
+} from "@/lib/auth/token-storage";
 import { setRealtimeAuth } from "@/lib/realtime/supabase";
 import { useSessionStore } from "@/lib/state/session-store";
 
@@ -12,13 +15,19 @@ import { useSessionStore } from "@/lib/state/session-store";
 const REALTIME_REFRESH_MS = 30 * 60 * 1000;
 
 export default function AppStateProvider({ children }: { children: React.ReactNode }) {
-  const runHydrate = useCallback(async () => {
-    const { setSession } = useSessionStore.getState();
+  const runHydrate = useCallback(async (accessToken?: string) => {
+    const { setSession, isAuthenticated } = useSessionStore.getState();
 
-    setSession({ user: undefined, profileError: null });
+    // Do not wipe an authenticated user to `undefined` before /me returns —
+    // that race made post-login UI flash as signed-out on Vercel.
+    if (!isAuthenticated) {
+      setSession({ user: undefined, profileError: null });
+    } else {
+      setSession({ profileError: null });
+    }
 
     try {
-      const user = await apiAuth.me();
+      const user = await apiAuth.me(accessToken);
       let ownedShopIds: string[] = [];
       try {
         const mine = await apiShops.myShops();
@@ -51,8 +60,9 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
   }, [runHydrate]);
 
   useEffect(() => {
-    function onAuthChanged() {
-      void runHydrate();
+    function onAuthChanged(event: Event) {
+      const detail = (event as CustomEvent<AuthChangedDetail>).detail;
+      void runHydrate(detail?.accessToken);
     }
     window.addEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
     return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChanged);

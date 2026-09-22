@@ -3,8 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiAuth } from "@/lib/api";
-import { notifyAuthChanged } from "@/lib/auth/token-storage";
-import axios from "axios";
+import { establishClientSession } from "@/lib/auth/establish-session";
 
 function VerifyEmailPageInner() {
   const router = useRouter();
@@ -30,16 +29,10 @@ function VerifyEmailPageInner() {
       try {
         const res = await apiAuth.verifyEmail(token);
         if (cancelled) return;
-        // Mirror tokens to Next.js domain for SSR cookie access
-        const cookieRes = await axios.post("/api/auth/set-cookies", { access_token: res.access_token, refresh_token: res.refresh_token }, {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-          validateStatus: () => true,
+        await establishClientSession({
+          access_token: res.access_token,
+          refresh_token: res.refresh_token,
         });
-        if (cookieRes.status < 200 || cookieRes.status >= 300) {
-          throw new Error("Could not establish your session. Please try again.");
-        }
-        notifyAuthChanged();
         setStatus("success");
         setMessage(res.message || "Email verified successfully.");
         setTimeout(() => {
