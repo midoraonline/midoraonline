@@ -117,8 +117,9 @@ export async function enablePushNotifications(): Promise<PushSubscription | null
   if (!publicKey) {
     // VAPID keys not configured server-side yet (or still PEM-only without API).
     console.error(
-      "[push] No valid VAPID applicationServerKey. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY " +
-        "to URL-safe base64, or VAPID_PUBLIC_KEY on the API (PEM is auto-converted).",
+      "[push] No valid VAPID applicationServerKey. Set API VAPID_PUBLIC_KEY, " +
+        "VAPID_PRIVATE_KEY, and VAPID_CONTACT_EMAIL. Optional frontend mirror: " +
+        "NEXT_PUBLIC_VAPID_PUBLIC_KEY (URL-safe base64, not PEM).",
     );
     return null;
   }

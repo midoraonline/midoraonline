@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import type { Conversation } from "@/lib/api/chat";
+import { sameUserId } from "@/lib/chat/participants";
 
 type Props = { initialConversations: Conversation[] };
 
@@ -24,7 +25,9 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
 
   useEffect(() => { void load(); }, [load]);
 
-  const sellerConvs = conversations.filter((c) => c.seller_id === session.user?.id);
+  const sellerConvs = conversations.filter((c) =>
+    sameUserId(c.seller_id, session.user?.id),
+  );
 
   return (
     <div className="space-y-6">

@@ -299,7 +299,7 @@ export default function DashboardShell({
         {/* Main content column */}
         <div className="flex min-w-0 flex-1 flex-col">
           <DashboardHeader screenName={screenName} role={role} />
-          <main className="flex-1 overflow-x-hidden pb-28 md:pb-0">
+          <main className="flex-1 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {/* Dashboards use the full content column (AGENTS.md §1.2). */}
             <div
               className={[
@@ -313,7 +313,7 @@ export default function DashboardShell({
         </div>
       </div>
 
-      {/* Same mobile bottom bar as the public site (Products / My shops / Dashboard) */}
+      {/* Same mobile bottom bar as the public site (Post Item centered) */}
       {role !== "admin" ? <BottomNav /> : null}
     </div>
   );

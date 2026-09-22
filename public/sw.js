@@ -20,6 +20,24 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+function absoluteUrl(path) {
+  try {
+    return new URL(path || "/", self.location.origin).href;
+  } catch {
+    return self.location.origin + "/";
+  }
+}
+
+function sameDestination(clientUrl, targetHref) {
+  try {
+    const client = new URL(clientUrl);
+    const target = new URL(targetHref);
+    return client.pathname + client.search === target.pathname + target.search;
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -30,7 +48,7 @@ self.addEventListener("push", (event) => {
 
   const title = data.title || "Midora";
   const body = data.body || "";
-  const url = data.url || "/";
+  const url = absoluteUrl(data.url || "/");
   const tag = data.tag || undefined;
 
   const options = {
@@ -43,12 +61,29 @@ self.addEventListener("push", (event) => {
     requireInteraction: false,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    (async () => {
+      const open = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const focusedOnThread = open.some(
+        (client) =>
+          client.focused &&
+          client.visibilityState === "visible" &&
+          sameDestination(client.url, url),
+      );
+      if (focusedOnThread) return;
+      await self.registration.showNotification(title, options);
+    })(),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+  const targetUrl = absoluteUrl(
+    (event.notification.data && event.notification.data.url) || "/",
+  );
 
   event.waitUntil(
     (async () => {
@@ -57,27 +92,23 @@ self.addEventListener("notificationclick", (event) => {
         includeUncontrolled: true,
       });
 
-      // Prefer focusing an existing tab already on the target URL.
       for (const client of allClients) {
-        try {
-          const url = new URL(client.url);
-          if (url.pathname + url.search === targetUrl && "focus" in client) {
-            return client.focus();
-          }
-        } catch {
-          // ignore malformed URLs
+        if (sameDestination(client.url, targetUrl) && "focus" in client) {
+          return client.focus();
         }
       }
 
-      // Otherwise, focus any existing tab and navigate it there.
       for (const client of allClients) {
         if ("focus" in client && "navigate" in client) {
           await client.focus();
-          return client.navigate(targetUrl);
+          try {
+            return await client.navigate(targetUrl);
+          } catch {
+            break;
+          }
         }
       }
 
-      // No open tabs — open a new one.
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
       }

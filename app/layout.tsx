@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import MerchantPresenceHeartbeat from "@/components/MerchantPresenceHeartbeat";
 import PresenceTracker from "@/components/PresenceTracker";
+import PushSubscriptionSync from "@/components/chat/PushSubscriptionSync";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { AnalyticsProvider } from "@/providers/analyticsProvider";
 import "./globals.css";
@@ -86,6 +87,7 @@ export default function RootLayout({
                 <AnalyticsProvider>
                   <MerchantPresenceHeartbeat />
                   <PresenceTracker />
+                  <PushSubscriptionSync />
                   {children}
                 </AnalyticsProvider>
               </AuthProvider>
