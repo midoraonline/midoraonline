@@ -475,6 +475,72 @@ export default function ProductFormModal({
             })()
           : null}
 
+        {/* Media */}
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-sm font-medium text-foreground">
+              Photos &amp; video <span className="text-[color:var(--error)]">*</span>
+            </p>
+            <p className="text-xs text-muted">
+              {draft.image_urls.length
+                ? `${draft.image_urls.length} attached`
+                : "At least 2 photos to publish"}
+            </p>
+          </div>
+          <div className="dm-card space-y-3 p-3 sm:p-4">
+            <MediaGrid
+              urls={draft.image_urls}
+              onRemove={(i) =>
+                setDraft((d) => {
+                  const gone = d.image_urls[i];
+                  if (gone) {
+                    setSessionRemoved((prev) =>
+                      prev.includes(gone) ? prev : [...prev, gone],
+                    );
+                  }
+                  return {
+                    ...d,
+                    image_urls: d.image_urls.filter((_, j) => j !== i),
+                  };
+                })
+              }
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <ImageUpload
+                endpoint="productImage"
+                multiple
+                label="Add photos"
+                watermarkLogoUrl={shopLogoUrl}
+                onUploadManyComplete={(newUrls) => {
+                  setSessionUploaded((prev) => [...prev, ...newUrls]);
+                  setDraft((d) => ({
+                    ...d,
+                    image_urls: [...d.image_urls, ...newUrls],
+                  }));
+                }}
+              />
+              <VideoUpload
+                endpoint="productVideo"
+                label="Add video"
+                onUploadManyComplete={(newUrls) => {
+                  setSessionUploaded((prev) => [...prev, ...newUrls]);
+                  setDraft((d) => ({
+                    ...d,
+                    image_urls: [...d.image_urls, ...newUrls],
+                  }));
+                }}
+              />
+            </div>
+            {showErrors && errors.images ? (
+              <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
+            ) : (
+              <p className="text-xs text-muted">
+                Photos first — add at least 2 photos to publish. First photo is the cover.
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Listing type */}
         {allowTypePick ? (
           <div className="space-y-2">
@@ -911,72 +977,6 @@ export default function ProductFormModal({
           {showErrors && errors.meta ? (
             <p className="text-xs text-[color:var(--error)]">{errors.meta}</p>
           ) : null}
-        </div>
-
-        {/* Media */}
-        <div className="space-y-2">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-sm font-medium text-foreground">
-              Photos &amp; video <span className="text-[color:var(--error)]">*</span>
-            </p>
-            <p className="text-xs text-muted">
-              {draft.image_urls.length
-                ? `${draft.image_urls.length} attached`
-                : "At least one photo required"}
-            </p>
-          </div>
-          <div className="dm-card space-y-3 p-3 sm:p-4">
-            <MediaGrid
-              urls={draft.image_urls}
-              onRemove={(i) =>
-                setDraft((d) => {
-                  const gone = d.image_urls[i];
-                  if (gone) {
-                    setSessionRemoved((prev) =>
-                      prev.includes(gone) ? prev : [...prev, gone],
-                    );
-                  }
-                  return {
-                    ...d,
-                    image_urls: d.image_urls.filter((_, j) => j !== i),
-                  };
-                })
-              }
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <ImageUpload
-                endpoint="productImage"
-                multiple
-                label="Add photos"
-                watermarkLogoUrl={shopLogoUrl}
-                onUploadManyComplete={(newUrls) => {
-                  setSessionUploaded((prev) => [...prev, ...newUrls]);
-                  setDraft((d) => ({
-                    ...d,
-                    image_urls: [...d.image_urls, ...newUrls],
-                  }));
-                }}
-              />
-              <VideoUpload
-                endpoint="productVideo"
-                label="Add video"
-                onUploadManyComplete={(newUrls) => {
-                  setSessionUploaded((prev) => [...prev, ...newUrls]);
-                  setDraft((d) => ({
-                    ...d,
-                    image_urls: [...d.image_urls, ...newUrls],
-                  }));
-                }}
-              />
-            </div>
-            {showErrors && errors.images ? (
-              <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
-            ) : (
-              <p className="text-xs text-muted">
-                Photos upload when you pick them. A cover photo is required to publish.
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Toggles */}

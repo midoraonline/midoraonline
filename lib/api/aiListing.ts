@@ -9,6 +9,8 @@ export type ListingQualityRequest = {
 
 export type ListingQualityResponse = {
   ok: boolean;
+  /** Hard wall only when critically low — otherwise coach. */
+  critical?: boolean;
   score: number;
   title_matches: boolean;
   description_quality: "poor" | "fair" | "good";

@@ -228,6 +228,7 @@ export default function ProductFormPage({
 
   const [aiCheck, setAiCheck] = useState<ListingQualityResponse | null>(null);
   const [aiChecking, setAiChecking] = useState(false);
+  const [profileNudgeDismissed, setProfileNudgeDismissed] = useState(false);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<{
     title?: boolean;
     description?: boolean;
@@ -429,11 +430,16 @@ export default function ProductFormPage({
       setAiChecking(false);
     }
 
-    if (verdict && !verdict.ok) {
+    if (verdict?.critical) {
       toast.error("Listing needs edits before it can be posted", {
         description: verdict.feedback,
       });
       return;
+    }
+    if (verdict && !verdict.ok) {
+      toast.message("AI tips before you publish", {
+        description: verdict.feedback,
+      });
     }
 
     const price = parseAmount(draft.price_ugx);
@@ -552,12 +558,12 @@ export default function ProductFormPage({
           <button
             type="submit"
             form="product-form-page"
-            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck && !aiCheck.ok)}
+            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck?.critical)}
             title={
               !isDirty
                 ? "No changes to save."
-                : aiCheck && !aiCheck.ok
-                  ? "AI review flagged issues — please edit the listing first."
+                : aiCheck?.critical
+                  ? "AI review found critical issues — please edit the listing first."
                   : undefined
             }
             className={`dm-btn dm-btn-md gap-2 ${
@@ -622,10 +628,80 @@ export default function ProductFormPage({
             })()
           : null}
 
+
+        {/* Soft profile-photo nudge (Phase 1 Should) — first listing */}
+        {mode === "add" && !sessionUser?.avatar_url && !profileNudgeDismissed ? (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm"
+          >
+            <p className="min-w-0 flex-1 text-xs leading-relaxed text-foreground/85">
+              Add a profile photo so buyers know who they&apos;re messaging. It builds trust — you can skip for now.
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <a
+                href="/merchant/settings"
+                className="dm-btn dm-btn-secondary dm-btn-sm"
+              >
+                Add photo
+              </a>
+              <button
+                type="button"
+                onClick={() => setProfileNudgeDismissed(true)}
+                className="dm-btn dm-btn-ghost dm-btn-sm text-muted"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Card 1: Media Upload (hero — first for fast posting) */}
+        <section className="dm-card p-5 sm:p-6 space-y-4">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">1. Photos & Video</h2>
+            <p className="text-xs text-muted">
+              Up to 8 photos or short videos. At least 2 photos are required to publish — the first one is the cover on your listing card.
+            </p>
+          </div>
+
+          <MediaGridWrapper
+            urls={draft.image_urls}
+            onRemove={(index) => {
+              const target = draft.image_urls[index];
+              setDraft((d) => ({
+                ...d,
+                image_urls: d.image_urls.filter((_, i) => i !== index),
+              }));
+              if (target) {
+                setSessionRemoved((prev) => [...prev, target]);
+              }
+            }}
+            onImageUploaded={(url) => {
+              setDraft((d) => ({
+                ...d,
+                image_urls: [...d.image_urls, url],
+              }));
+              setSessionUploaded((prev) => [...prev, url]);
+            }}
+            onVideoUploaded={(url) => {
+              setDraft((d) => ({
+                ...d,
+                image_urls: [...d.image_urls, url],
+              }));
+              setSessionUploaded((prev) => [...prev, url]);
+            }}
+          />
+
+          {showErrors && errors.images ? (
+            <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
+          ) : null}
+        </section>
+
         {/* Card 1: Listing type */}
         <section className="dm-card p-5 sm:p-6 space-y-4">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">1. Listing Type</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">2. Listing Type</h2>
             <p className="text-xs text-muted">Choose what type of offering you are posting to Midora.</p>
           </div>
 
@@ -671,7 +747,7 @@ export default function ProductFormPage({
         {/* Card 2: Basic Info (Title & Description) */}
         <section className="dm-card p-5 sm:p-6 space-y-5">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">2. Listing Details</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">3. Listing Details</h2>
             <p className="text-xs text-muted">Write a clear title and detailed description for buyers.</p>
           </div>
 
@@ -808,48 +884,6 @@ export default function ProductFormPage({
               </div>
             ) : null}
           </div>
-        </section>
-
-        {/* Card 3: Media Upload */}
-        <section className="dm-card p-5 sm:p-6 space-y-4">
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">3. Photos & Video</h2>
-            <p className="text-xs text-muted">
-              Up to 8 photos or short videos. At least 2 photos are required to publish — the first one is the cover on your listing card.
-            </p>
-          </div>
-
-          <MediaGridWrapper
-            urls={draft.image_urls}
-            onRemove={(index) => {
-              const target = draft.image_urls[index];
-              setDraft((d) => ({
-                ...d,
-                image_urls: d.image_urls.filter((_, i) => i !== index),
-              }));
-              if (target) {
-                setSessionRemoved((prev) => [...prev, target]);
-              }
-            }}
-            onImageUploaded={(url) => {
-              setDraft((d) => ({
-                ...d,
-                image_urls: [...d.image_urls, url],
-              }));
-              setSessionUploaded((prev) => [...prev, url]);
-            }}
-            onVideoUploaded={(url) => {
-              setDraft((d) => ({
-                ...d,
-                image_urls: [...d.image_urls, url],
-              }));
-              setSessionUploaded((prev) => [...prev, url]);
-            }}
-          />
-
-          {showErrors && errors.images ? (
-            <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
-          ) : null}
         </section>
 
         {/* Card 3b: Location (required to publish) */}
@@ -1231,12 +1265,12 @@ export default function ProductFormPage({
           <button
             type="submit"
             form="product-form-page"
-            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck && !aiCheck.ok)}
+            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck?.critical)}
             title={
               !isDirty
                 ? "No changes to save."
-                : aiCheck && !aiCheck.ok
-                  ? "AI review flagged issues — please edit the listing first."
+                : aiCheck?.critical
+                  ? "AI review found critical issues — please edit the listing first."
                   : undefined
             }
             className={`dm-btn dm-btn-md min-w-[160px] gap-2 shadow-md ${

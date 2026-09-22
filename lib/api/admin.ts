@@ -506,3 +506,64 @@ export function adminDeleteCategory(slug: string) {
     { method: "DELETE" },
   );
 }
+
+
+export type AdminSellerReport = {
+  id: string;
+  seller_id: string;
+  reporter_id?: string;
+  reason: string;
+  description?: string | null;
+  resolved: boolean;
+  created_at: string;
+};
+
+export type AdminNearDupe = {
+  id: string;
+  product_id?: string | null;
+  seller_id?: string | null;
+  title: string;
+  reason?: string | null;
+  status: string;
+  created_at: string;
+  scores?: Record<string, unknown>;
+};
+
+export function listSellerReports(params: { resolved?: boolean; limit?: number; page?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.resolved !== undefined) qs.set("resolved", String(params.resolved));
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.page) qs.set("page", String(params.page));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<{ items: AdminSellerReport[]; total: number }>(
+    `/api/v1/admin/seller-reports${suffix}`,
+  );
+}
+
+export function resolveSellerReport(reportId: string) {
+  return apiFetch<{ status: string }>(
+    `/api/v1/admin/seller-reports/${encodeURIComponent(reportId)}/resolve`,
+    { method: "PATCH" },
+  );
+}
+
+export function listTrustQueue(params: { limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<{
+    product_reports: AdminReport[];
+    seller_reports: AdminSellerReport[];
+    near_dupes: AdminNearDupe[];
+    counts: { product_reports: number; seller_reports: number; near_dupes: number };
+  }>(`/api/v1/admin/trust-queue${suffix}`);
+}
+
+export function listNearDuplicates(params: { limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<{ items: AdminNearDupe[]; total: number }>(
+    `/api/v1/admin/near-duplicates${suffix}`,
+  );
+}

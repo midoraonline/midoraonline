@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Link from "next/link";
+import { useSessionStore } from "@/lib/state/session-store";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiLeads } from "@/lib/api";
@@ -27,6 +29,8 @@ export default function SellerContactConsent({
 }: Props) {
   const [showConsent, setShowConsent] = useState(false);
   const [consented, setConsented] = useState(false);
+  const [photoNudgeDismissed, setPhotoNudgeDismissed] = useState(false);
+  const avatarUrl = useSessionStore((s) => s.user?.avatar_url);
 
   const handleOpenWhatsApp = useCallback(() => {
     const text = `Hi, I'm interested in "${title}"${listingUrl ? `\n\n${listingUrl}` : ""}`;
@@ -91,6 +95,23 @@ export default function SellerContactConsent({
             <p className="mt-4 text-[11px] leading-relaxed text-muted">
               Only genuine inquiries please — spam or fraud may suspend your account.
             </p>
+
+            {!avatarUrl && !photoNudgeDismissed ? (
+              <div className="mt-3 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-[11px] text-foreground/85">
+                Tip: a profile photo helps sellers trust your message.{" "}
+                <Link href="/customer/settings" className="font-semibold text-accent underline">
+                  Add one
+                </Link>
+                {" · "}
+                <button
+                  type="button"
+                  className="font-semibold text-muted underline"
+                  onClick={() => setPhotoNudgeDismissed(true)}
+                >
+                  Not now
+                </button>
+              </div>
+            ) : null}
 
             <div className="mt-4 flex gap-2">
               <button
