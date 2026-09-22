@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
@@ -62,6 +62,48 @@ export default function ProductsBrowsePage({
     limit: 20,
   });
 
+  const feedCategory = useMemo(() => {
+    if (!categoryFilterActive) return null;
+    return (categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel)?.trim() || null;
+  }, [categoryFilter, categoryFilterActive]);
+
+  const categoryBootRef = useRef(true);
+  useEffect(() => {
+    if (categoryBootRef.current) {
+      categoryBootRef.current = false;
+      if (!feedCategory) return;
+    }
+    let cancelled = false;
+    async function reloadForCategory() {
+      setLoadingMore(true);
+      try {
+        const data = await apiProducts.getHomeFeed({
+          limit: 36,
+          category: feedCategory,
+        });
+        if (cancelled) return;
+        const nextItems = (data.algorithm ?? []).map(toCardLocal);
+        setAllItems(nextItems);
+        setNextCursor(data.next_cursor ?? null);
+        setHasMore(Boolean(data.has_more && data.next_cursor));
+      } catch {
+        if (!cancelled) {
+          setAllItems([]);
+          setNextCursor(null);
+          setHasMore(false);
+        }
+      } finally {
+        if (!cancelled) setLoadingMore(false);
+      }
+    }
+    void reloadForCategory();
+    return () => {
+      cancelled = true;
+    };
+    // toCardLocal is stable enough for this page; avoid dep churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedCategory]);
+
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !nextCursor) return;
     setLoadingMore(true);
@@ -69,6 +111,7 @@ export default function ProductsBrowsePage({
       const data = await apiProducts.getHomeFeed({
         limit: 36,
         cursor: nextCursor,
+        category: feedCategory,
       });
       const existing = new Set(allItems.map((p) => p.id));
       const nextItems = (data.algorithm ?? [])
@@ -87,7 +130,7 @@ export default function ProductsBrowsePage({
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, nextCursor, allItems]);
+  }, [loadingMore, hasMore, nextCursor, allItems, feedCategory]);
 
   function toCardLocal(fp: HomeFeedProduct): ProductCardData {
     return homeFeedProductToCard(fp, typeof window !== "undefined" ? window.location.origin : "");

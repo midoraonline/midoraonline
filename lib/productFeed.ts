@@ -30,10 +30,14 @@ function toCards(rows: HomeFeedProduct[]): ProductCardData[] {
 
 export const loadHomeFeed = cache(async function loadHomeFeed(
   limit = HOME_FEED_PAGE_SIZE,
+  category?: string | null,
 ): Promise<HomeFeedPage> {
   try {
+    const params = new URLSearchParams({ limit: String(limit) });
+    const cat = category?.trim();
+    if (cat) params.set("category", cat);
     const data = await serverApiFetch<HomeFeedResponse>(
-      `/api/v1/feed/home?limit=${limit}`,
+      `/api/v1/feed/home?${params.toString()}`,
     );
     const products = toCards(data.algorithm ?? []);
     if (products.length) {

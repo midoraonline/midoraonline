@@ -104,6 +104,13 @@ export default function HomeLanding({
     setQuery((prev) => (urlQ !== prev ? urlQ : prev));
   }, [searchParams]);
 
+  const feedCategory = useMemo(() => {
+    if (!isCategoryFilterActive(categoryFilter)) return null;
+    return (categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel)?.trim() || null;
+  }, [categoryFilter]);
+  const feedCategoryRef = useRef(feedCategory);
+  feedCategoryRef.current = feedCategory;
+
   useEffect(() => {
     const next = continuationFrom(initialProducts.length, initialHasMore, initialCursor);
     setProducts(initialProducts);
@@ -112,10 +119,60 @@ export default function HomeLanding({
     nextCursorRef.current = next.cursor;
   }, [initialProducts, initialHasMore, initialCursor]);
 
+  // When the browse category changes, reload from the server so infinite scroll
+  // stays in-category. "All" restores the unfiltered home feed.
+  const categoryBootRef = useRef(true);
+  useEffect(() => {
+    if (categoryBootRef.current) {
+      categoryBootRef.current = false;
+      // If landing with a preselected category (unusual), still fetch.
+      if (!feedCategory) return;
+    }
+    let cancelled = false;
+    async function reloadForCategory() {
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+      try {
+        const site = publicSiteOrigin();
+        const data = await apiProducts.getHomeFeed({
+          limit: FEED_PAGE_SIZE,
+          category: feedCategory,
+        });
+        if (cancelled) return;
+        const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
+        seenIdsRef.current = new Set(cards.map((c) => c.id));
+        setProducts(cards);
+        const more = Boolean(data.has_more && data.next_cursor);
+        setHasMore(more);
+        nextCursorRef.current = data.next_cursor ?? null;
+        hasMoreRef.current = more;
+      } catch {
+        if (!cancelled) {
+          setProducts([]);
+          setHasMore(false);
+          nextCursorRef.current = null;
+          hasMoreRef.current = false;
+        }
+      } finally {
+        if (!cancelled) {
+          loadingMoreRef.current = false;
+          setLoadingMore(false);
+        }
+      }
+    }
+    void reloadForCategory();
+    return () => {
+      cancelled = true;
+    };
+  }, [feedCategory]);
+
   const fillEmptyFeed = useCallback(async () => {
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE });
+      const data = await apiProducts.getHomeFeed({
+        limit: FEED_PAGE_SIZE,
+        category: feedCategoryRef.current,
+      });
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       if (cards.length === 0) return;
       seenIdsRef.current = new Set(cards.map((c) => c.id));
@@ -142,6 +199,7 @@ export default function HomeLanding({
       const data = await apiProducts.getHomeFeed({
         limit: FEED_PAGE_SIZE,
         cursor,
+        category: feedCategoryRef.current,
       });
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));

@@ -440,12 +440,16 @@ export function getHomeFeed(opts: {
   limit?: number;
   page?: number;
   cursor?: string | null;
+  /** Category label (parent or subcategory). Omit / empty = All. */
+  category?: string | null;
   token?: string;
 } = {}) {
   const params = new URLSearchParams();
   if (opts.limit) params.set("limit", String(opts.limit));
   if (opts.page && !opts.cursor) params.set("page", String(opts.page));
   if (opts.cursor) params.set("cursor", opts.cursor);
+  const category = opts.category?.trim();
+  if (category) params.set("category", category);
   const qs = params.toString();
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
     ...(opts.token ? { token: opts.token } : {}),
