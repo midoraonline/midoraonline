@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     maxAge: 15 * 60,
   });
   if (refresh && isPlausibleJwt(refresh)) {
+    // Path=/ so /api/dev-proxy/api/v1/auth/refresh receives the cookie.
     res.cookies.set("midora_refresh", refresh, {
       ...cookieBase,
       path: "/",
