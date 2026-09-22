@@ -44,11 +44,15 @@ function RegisterPageInner() {
       try {
         const tokens = await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
-        await fetch("/api/auth/set-cookies", {
+        const cookieRes = await fetch("/api/auth/set-cookies", {
           method: "POST",
+          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(tokens),
-        }).catch(() => {});
+        });
+        if (!cookieRes.ok) {
+          throw new Error("Could not establish your session. Please try again.");
+        }
         notifyAuthChanged();
         router.replace("/");
       } catch (err) {
@@ -76,11 +80,15 @@ function RegisterPageInner() {
         full_name: fullName,
         user_role: role,
       });
-      await fetch("/api/auth/set-cookies", {
+      const cookieRes = await fetch("/api/auth/set-cookies", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tokens),
-      }).catch(() => {});
+      });
+      if (!cookieRes.ok) {
+        throw new Error("Could not establish your session. Please try again.");
+      }
       notifyAuthChanged();
       router.push("/");
     } catch (err) {

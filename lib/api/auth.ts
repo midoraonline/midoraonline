@@ -78,27 +78,57 @@ export function me(token?: string) {
 }
 
 export async function logout() {
-  // 1. Clear Next.js-domain cookies so the browser stops sending them.
+  // 1. Clear Next.js-domain cookies first so /me and tryRefreshCookie cannot
+  //    revive the session from a leftover midora_refresh cookie.
   try {
-    await fetch("/api/auth/clear-cookies", { method: "POST" });
+    await fetch("/api/auth/clear-cookies", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+    });
   } catch {
     /* best-effort */
   }
 
-  // 2. Call FastAPI directly (NOT through the proxy) so that its Set-Cookie
-  //    headers keep the original Domain= scope and actually clear the
-  //    FastAPI-domain cookies. If we went through the proxy, the Domain=
-  //    would be stripped and the FastAPI-domain cookies would survive,
-  //    letting tryRefreshCookie re-authenticate the user on next me() call.
+  // 2. Revoke refresh + clear API-host cookies.
+  //    Prefer the same-origin proxy so Path=/ refresh cookies (set via
+  //    set-cookies / proxy rewrite) are sent and cleared consistently.
+  //    Also hit FastAPI directly for any host-only API-domain leftovers.
   try {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
-    await fetch(`${base}/api/v1/auth/logout`, {
+    await fetch("/api/dev-proxy/api/v1/auth/logout", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
+      body: "{}",
     });
   } catch {
-    /* best-effort — local Next.js cookies are already cleared */
+    /* best-effort */
+  }
+
+  try {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
+    if (base) {
+      await fetch(`${base}/api/v1/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  // 3. Clear again after upstream Set-Cookie clears, in case the proxy
+  //    rewrote delete cookies incompletely.
+  try {
+    await fetch("/api/auth/clear-cookies", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    /* best-effort */
   }
 }
 

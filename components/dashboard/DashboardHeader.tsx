@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSessionStore } from "@/lib/state/session-store";
 import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
@@ -190,6 +191,7 @@ export default function DashboardHeader({
   async function handleLogout() {
     setLogoutLoading(true);
     try {
+      useSessionStore.getState().resetSession();
       await apiAuth.logout();
     } catch {
       /* ignore */

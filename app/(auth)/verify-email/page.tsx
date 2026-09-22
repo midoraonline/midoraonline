@@ -30,11 +30,15 @@ function VerifyEmailPageInner() {
         const res = await apiAuth.verifyEmail(token);
         if (cancelled) return;
         // Mirror tokens to Next.js domain for SSR cookie access
-        await fetch("/api/auth/set-cookies", {
+        const cookieRes = await fetch("/api/auth/set-cookies", {
           method: "POST",
+          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: res.access_token, refresh_token: res.refresh_token }),
-        }).catch(() => {});
+        });
+        if (!cookieRes.ok) {
+          throw new Error("Could not establish your session. Please try again.");
+        }
         notifyAuthChanged();
         setStatus("success");
         setMessage(res.message || "Email verified successfully.");

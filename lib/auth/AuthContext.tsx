@@ -61,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    useSessionStore.getState().resetSession();
     await apiAuth.logout();
     notifyAuthChanged();
   }, []);

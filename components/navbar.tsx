@@ -9,6 +9,7 @@ import { useAppSession } from "@/lib/state";
 import { usePresenceStore } from "@/lib/state/presence-store";
 import { apiChat, apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import { useSessionStore } from "@/lib/state/session-store";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
@@ -53,6 +54,7 @@ function ProfileDropdown({
 
   const handleSignOut = async () => {
     close();
+    useSessionStore.getState().resetSession();
     try {
       await apiAuth.logout();
     } catch {

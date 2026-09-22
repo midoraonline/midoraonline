@@ -40,11 +40,15 @@ function LoginPageInner() {
       try {
         const tokens = await apiAuth.exchangeGoogleCode({ code, state });
         if (cancelled) return;
-        await fetch("/api/auth/set-cookies", {
+        const cookieRes = await fetch("/api/auth/set-cookies", {
           method: "POST",
+          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(tokens),
-        }).catch(() => {});
+        });
+        if (!cookieRes.ok) {
+          throw new Error("Could not establish your session. Please try again.");
+        }
         notifyAuthChanged();
         const next = searchParams.get("next");
         router.replace(next && next.startsWith("/") ? next : "/");
@@ -69,11 +73,15 @@ function LoginPageInner() {
     try {
       const tokens = await apiAuth.login({ email, password });
       // Mirror tokens to Next.js domain so SSR can read the cookie
-      await fetch("/api/auth/set-cookies", {
+      const cookieRes = await fetch("/api/auth/set-cookies", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tokens),
-      }).catch(() => {});
+      });
+      if (!cookieRes.ok) {
+        throw new Error("Could not establish your session. Please try again.");
+      }
       notifyAuthChanged();
       const next = searchParams.get("next");
       router.push(next && next.startsWith("/") ? next : "/");
