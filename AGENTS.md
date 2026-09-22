@@ -1,285 +1,219 @@
-# AGENTS.md — Production Engineering Rules
+# AGENTS.md — Midora Online Engineering Rules
 
+Authoritative rules for any AI/coding agent working in **this** Midora workspace.
+Read before writing code. Prefer these over general defaults; when in conflict with
+older code in scope, follow this file and update the old code.
 
-Authoritative rules for any AI/coding agent working in this repo. **Read before writing code.** Prefer these over general defaults; when in conflict with older code, follow this file and update the old code in scope.
-
-
-Stack: **Next.js 16 (App Router, React 19) · TypeScript · Drizzle ORM (Postgres) · Auth.js v5 · SWR · FastAPI (external services) · Tailwind · Recharts / Chart.js / Plotly**.
-
-
----
-
-
-## 0. Meta-rules
-
-
-- **Minimalist.** No unrequested features, refactors, comments, or abstractions. Comments only when they say something the code cannot.
-- **Modularize.** Small focused files, clear separation of concerns. Colocate route-only components under `_components/`.
-- **Data-oriented.** Back non-trivial choices with a source (docs, benchmark, PR link) — no cargo-culting.
-- **Corporate proxy.** All network installs (npm/pip/git) must go through the corporate proxy.
-- **Encoding.** Never write TS/TSX via PowerShell `Set-Content` without `-Encoding utf8` (default UTF-16 LE breaks Next.js parsing). Prefer file-edit tools.
-- **`.next` cache.** If a valid route 404s after moves/upgrades, stop dev server, delete `.next`, restart.
-
+Companion docs:
+- `AGENTS.UI.md` — UI density, stacking, and visual polish details
+- Backend lives in sibling repo `midoraapi` (FastAPI); apply §5 there
 
 ---
 
+## Stack (source of truth)
 
-## 1. Project Architecture (App Router)
-
-
-- Folders **are** the routing/loading/error contract — treat structure as first-class.
-- **Server Components are the default.** Add `"use client"` only for state, effects, or browser APIs. Push `"use client"` as far *down* the tree as possible.
-- Use **route groups** `(name)` to share layouts without touching the URL.
-- **`params` / `searchParams` are Promises in Next.js 15+** — always `await` them.
-- Use the **Metadata API** (`export const metadata` / `generateMetadata`) instead of hand-written `<title>`.
-- `loading.tsx` and `error.tsx` are part of the route contract — see §9 and §10.
-- Prefix route-only component folders with `_` (e.g. `_components/`) so they are not treated as routes.
-- Middleware file is `middleware.ts` (renamed from `proxy.ts` in Next.js 16). Keep it edge-safe (no DB imports).
-
-
-### 1.1 Page titles — do not duplicate what the header shows
-
-
-The global `Navbar` (in `(main)` layout) derives a breadcrumb/title from `pathname` — e.g. `/settings` renders "Settings" at the top of every page.
-
-
-**Do not repeat that title as an `<h1>` inside the page body.** Duplicating it wastes vertical space, dilutes hierarchy, and reads as noise.
-
-
-Rules:
-- Before adding a page-level `<h1>`, check whether the header already renders the same label (it will, for any single-segment route). If yes → **omit the `<h1>`**.
-- Section headings (`<h2>`) for cards/panels inside the page are fine and expected — those describe *content*, not the *page*.
-- If a page genuinely needs an in-body title different from the header (e.g. a nested detail view with a specific entity name), use it — but never restate the header verbatim.
-- The small `"ACCOUNT" / "TOOL" / …` uppercase eyebrow above an `<h1>` is also redundant when the header already conveys the same context. Drop it unless it adds real information.
-- Route-group segments like `(main)` don't appear in the breadcrumb, so those don't count as "shown in the header".
-
-
-### 1.2 Space utilization — dashboards use the full container width
-
-
-The `(main)` layout already provides responsive padding (`p-3 sm:p-4 lg:p-6`). Inside that, **use the full available width.** Do not slap `max-w-2xl` / `max-w-3xl` on a page and leave the rest of the screen empty.
-
-
-Rules:
-- **No page-level narrow `max-w-*` clamp on dashboards.** The default width is "the container the layout gives you". If you need a max, use `max-w-7xl` (matches `all-tools`) and `mx-auto` so it centers on ultrawide.
-- **Compose horizontally with a responsive grid** (`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4/6`) so cards fill the row instead of stacking in a narrow column. Bias wider cards with `md:col-span-2` etc.
-- **Narrow clamps are only justified for reading-optimized forms** (long paragraphs of prose, single-column signup forms). A dashboard, settings page, or tool page is never that.
-- Charts / tables / lists should stretch to their container, not sit inside a narrow wrapper that leaves whitespace on either side.
-- If a card genuinely has little content, group it in a row with siblings — don't let it span the full width alone unless it's the only card on that row.
-
-
-## 2. Authentication
-
-
-- Use **Auth.js v5** (`next-auth@beta`). Do not roll our own.
-- **Split configs:** `auth.config.ts` (edge-safe, no adapter/db) imported by `middleware.ts`; `auth.ts` (full config with Drizzle adapter, providers) imported only in server contexts.
-- **Providers:** Google, Microsoft (Azure AD / Entra ID), Credentials. Validate Credentials input with **Zod** in `authorize()`; compare with **bcrypt/Argon2**. Never log or store plaintext passwords.
-- **JWT session strategy** for edge/serverless friendliness. Put only non-sensitive claims (`id`, `email`, `role`) in the JWT.
-- Cookies: `httpOnly`, `secure` (prod), `sameSite: "lax"` (or `"strict"`). Always HTTPS.
-- **Rate-limit** `/api/auth/*` (login, register, reset).
-- **Middleware is not the authorization boundary.** Always re-check `auth()` **inside the Server Component / layout / Route Handler** that touches sensitive data. Reason: CVE-2025-29927 middleware bypass.
-- Extend `Session` / `User` types via a `.d.ts` file to include `role`, `id`, etc.
-
-
-## 3. SWR (client-side data fetching)
-
-
-- **Default to Server Components** for reads. Only use SWR when data needs client-driven updates, must be shared across components via one cache entry, or requires focus/interval revalidation.
-- Centralize the fetcher and global options (`revalidateOnFocus`, `dedupingInterval`, retry) in a single `SWRConfig` provider.
-- Use **conditional keys** (`id ? \`/api/users/${id}\` : null`) instead of guarding inside the fetcher.
-- **One key = one source of truth.** The same key must be used for `SWRConfig.fallback` (hydrated from server), the client read, and mutations.
-- Optimistic updates: use `mutate(key, asyncFn, { optimisticData, rollbackOnError: true, revalidate: false })`. Do not use the legacy 3-arg `mutate(key, data, false)` pattern.
-- No `useEffect` + `useState` fetching for new code.
-
-
-## 4. Drizzle ORM
-
-
-- **Never open a DB connection at module load in a way that runs during `next build`.** Guard behind env or lazy init if needed.
-- Serverless/edge: `drizzle-orm/neon-http` with pooled URL, `prepare: false`.
-- Long-running Node server: `drizzle-orm/node-postgres` with a `Pool`, tuned limits, graceful shutdown.
-- Schema lives in `db/schemas/`. `relations()` is for `db.query.*` only; foreign keys come from `.references()`.
-- **Migrations:** `drizzle-kit generate` + `drizzle-kit migrate` in prod. **Never `drizzle-kit push` in prod.** Run migrations **before** serving traffic — never inside a request handler.
-- Multi-tenant: row-level (`tenantId` filtered on every query) is the default; back it with Postgres RLS as a safety net.
-- DB client is a **singleton** at module scope.
-
-
-## 5. FastAPI ↔ Next.js Integration
-
-
-- Flow: **Browser → Next.js server (reads HttpOnly cookie) → FastAPI (Authorization: Bearer)**. Never expose the raw token to client JS. Never store JWT in `localStorage`.
-- Auth.js Credentials provider calls FastAPI login inside `authorize()`, receives the token, Auth.js stores it inside its own encrypted HttpOnly session cookie.
-- FastAPI stays **stateless**: verify JWT via a dependency; inject current user into protected routes.
-- Validate every FastAPI input with **Pydantic**. Do not accept raw dicts.
-- Client-side SWR calls must hit a **Next.js Route Handler**, not FastAPI directly. The Route Handler forwards the server-held token.
-- Prefer generating a typed FastAPI client from OpenAPI (`openapi-typescript` / `orval`) with **Zod** validating the boundary.
-- Keep the JWT contract (`sub`, `exp`, `role`) documented and independent of Auth.js internals so mobile/other clients can hit the same API.
-
-
-## 6. User Context & State
-
-
-- **Server-known data (session, role) does not belong in React Context.** Read via `auth()` in Server Components, pass as props.
-- Context only for **client-side UI state** shared across a subtree.
-- **Split contexts** by change frequency — one context per volatility class. Do not put user + theme + counters in one provider.
-- **Memoize the provider `value` object.** A new object identity on every render re-renders all consumers.
-- High-frequency state (inputs, scroll, live counters) belongs local, not in a broad Context.
-- For complex client state, prefer **Zustand/Jotai** (this repo already uses Zustand in `stores/`) so subscribers can select a slice and skip broad re-renders.
-
-
-### 6.1 The one allowed Context around auth: a thin action surface
-
-
-The rule above bans **storing** session in Context. It does not ban a Context that **wraps** the already-canonical Zustand store to expose a stable action surface (`login`, `register`, `logout`, `refresh`, plus derived flags like `isAdmin` / `isMerchant`). This repo does exactly that in `lib/auth/AuthContext.tsx`:
-
-
-- Zustand (`useSessionStore`) stays the single source of truth. Hydration and cross-tab sync still happen in `AppStateProvider` — the Context never fetches.
-- `<AuthProvider>` reads a shallow slice with `useShallow` and memoizes the `value` object, so consumers that only use actions don't re-render when unrelated store keys change.
-- Call sites choose the shape they want:
-  - `useAppSession()` — pure state, unchanged, still preferred for read-only components.
-  - `useAuth()` — state + login/register/logout/refresh + `isAdmin` / `isMerchant`. Preferred anywhere that also triggers an auth mutation, so the mutation and the analytics emit stay in one place.
-- Do **not** introduce a second Context that also owns session state. Extend `AuthContext` instead.
-- Do **not** put high-frequency state (typing, scroll) into `AuthContext`; it re-renders every consumer.
-
-
-## 7. Performance / Re-renders
-
-
-- **React Compiler is the primary mechanism.** If enabled, do not scatter manual `useMemo`/`useCallback`.
-- Escape hatch: `"use no memo"` at the top of a Client Component the compiler must skip. Use sparingly — needing it broadly is a signal of a deeper problem.
-- If manual memoization is required:
-  - **Profile first.** Never memoize speculatively.
-  - `useCallback` only helps when paired with a `React.memo`ed child. Otherwise it's noise.
-  - Prefer **composition** (state colocation, `children` as prop) over memoization walls.
-  - No inline object/array/function literals as props to memoized children.
-- Fix Context re-render storms by splitting contexts and memoizing the `value` object.
-
-
-## 8. Event-Driven / OOP
-
-
-- Reach for EDA when: cross-cutting concerns (audit, notifications, cache invalidation), reactions must be added without touching the emitter, or async workflows.
-- Trade-off: no single stack trace; consumers must be **idempotent**.
-- In-process events: use a **typed `EventEmitter` wrapper** with an `EventMap`. No untyped `emitter.on("string", (any) => {})`.
-- Classes only when justified: encapsulated state + behavior, enforced contract via interface, or DI for testability. Default to plain functions + data.
-- Constructor-inject collaborators (repositories, clients). Do not import singletons inside domain logic.
-
-
-## 9. Loading UI / Streaming
-
-
-- `loading.tsx` is a Suspense boundary — use it for single-source pages.
-- For pages with multiple independently-paced data sources, use **per-section `<Suspense>` boundaries** so fast sections stream in immediately.
-- **Skeletons must match final dimensions exactly** (widths, grid, spacing) — zero layout shift on swap. Match the actual shape (cards stay cards, avatars stay circles).
-- Animation: `animate-pulse` only. No shimmer parties.
-
-
-## 10. Errors
-
-
-- **`error.tsx`** (Client Component) — segment-level boundary. Nest at the segment where you want blast-radius contained.
-- **`global-error.tsx`** — only for failures in the root `layout.tsx`. Renders its own `<html>`/`<body>`.
-- For widget-level failures inside a page, use `react-error-boundary` around `<Suspense>`.
-- **Never leak stack traces to the client in prod.** Log server-side with `error.digest`; show a generic actionable message.
-- Every error UI must have a working `reset()` action.
-
-
-## 11. Security Checklist (blocking for every PR)
-
-
-- [ ] No secrets in `NEXT_PUBLIC_*`. These ship to the browser.
-- [ ] All mutating API Routes verify **Origin/Host** (Server Actions do this by default; custom routes must add it or a CSRF token).
-- [ ] Session cookies: `HttpOnly`, `Secure` (prod), `SameSite=Lax` or `Strict`.
-- [ ] Every trust-boundary input validated (Zod for TS, Pydantic for FastAPI). Types alone are not validation.
-- [ ] Auth re-checked in the Server Component/Route Handler, not only middleware (CVE-2025-29927).
-- [ ] **Per-resource authorization**, not only per-route — verify the caller can access *this* record (no horizontal privilege escalation via guessable IDs).
-- [ ] Outbound fetches from server code cannot be pointed at internal/metadata endpoints by user input (SSRF).
-- [ ] Rate-limit `/api/auth/*` and other sensitive endpoints.
-- [ ] Secrets in a secrets manager or platform env vars, scoped per env. Pre-commit secret scanning enabled.
-- [ ] Consider CSP with nonces for inline scripts on sensitive pages.
-- [ ] Keep Next.js patched — framework CVEs are real mitigations, not paperwork.
-
-
-## 12. Charts & Data Visualization
-
-
-### 12.1 Chart type by question
-- Trend over time → **line** (area if magnitude matters).
-- Precise comparison of a few categories → **bar** (column for short labels, horizontal for long labels or 10+ categories).
-- Parts of a whole, **≤5 categories only** → pie/donut. Otherwise bar. **No 3D pies. No 3D anything.**
-- Distribution → **histogram** (shape) or **box plot** (compare groups).
-- Two numerics / correlation → **scatter** (bubble for a third dim).
-- Hierarchical part-of-part → **treemap** / **sunburst**.
-- Flow through stages → **funnel** (conversion) / **Sankey** (between categories).
-- Starting-value → final-value additions/subtractions → **waterfall**.
-- Geographic pattern → **choropleth map**.
-- Density / activity by day×hour / correlation matrix → **heatmap**.
-- One KPI → **stat card**, not a chart. Gauge only if a target band matters.
-
-
-### 12.2 Guardrails
-- **Bar/column y-axis starts at zero.** Non-negotiable.
-- Line charts may zoom into a range only if the axis label calls it out.
-- Prefer chart types the audience already reads for non-technical views.
-- Never explicitly assign `undefined` to a Plotly trace property (`marker`, `line`, etc.) — Plotly's `'x' in obj` check crashes on `undefined` values. Use conditional spread: `...(cond ? { marker: {...} } : {})`.
-- Never `Math.min(...arr)` / `Math.max(...arr)` on large arrays — stack overflow risk + NaN poisoning. Manual reduce loop only.
-
-
-### 12.3 Volume → rendering strategy
-- **< 1k points** → any SVG lib (Recharts) directly.
-- **1k–10k** → SVG still fine; watch interaction frame time; consider server-side aggregation.
-- **10k–100k** → Canvas (Chart.js / ECharts) or downsample first.
-- **100k+ or streaming** → **aggregate/downsample server-side or in a Web Worker before the chart sees the data.** Use LTTB (`lttb` / `tsdownsample`) for time-series to preserve shape. No charting library saves you here — it's architectural.
-
-
-### 12.4 Data source → strategy
-- From our DB: aggregate in **SQL** (`GROUP BY`, `date_trunc`, window functions). Never pull 500k rows to sum them in the browser.
-- High-resolution telemetry: **LTTB** downsample server-side.
-- Streaming (websocket/polling): rolling window of the last N points (no unbounded arrays). Batch updates via `requestAnimationFrame` — don't re-render on every message.
-- User-uploaded CSV/Excel with unknown volume: branch on row count → small = SVG chart; large = aggregate in a Web Worker first.
-
-
-### 12.5 Library choices for this repo
-- **Recharts** — default for dashboards up to ~10k points.
-- **Chart.js / react-chartjs-2** — Canvas, 10k–100k range, already in deps.
-- **Plotly** — existing usage; keep but respect the `undefined` trace-property rule above.
-- **ECharts (`echarts-for-react`)** — reach for it when Recharts stutters or an exotic chart type is needed.
-- **visx** — only when off-the-shelf can't express the design.
-
-
-### 12.6 Next.js wiring
-- Chart components are **Client Components**; fetch and aggregate in a Server Component and pass plain data as props.
-- `ResponsiveContainer` needs the browser — keep the client boundary to the chart itself, not the whole page.
-- Canvas libs (Chart.js, ECharts) generally need `dynamic(() => import(...), { ssr: false })` because they touch `window` at import.
-- Wrap each chart in its own `<Suspense>` with a dimension-matched skeleton.
-- **Memoize the `data` prop passed into a chart** — chart libs re-run internal layout on any reference change even when values are identical.
-
-
----
-
-
-## Quick-reference
-
-
-| Need | Use |
+| Layer | Technology |
 | --- | --- |
-| Initial page load read | Server Component + direct DB query |
-| Client-updating read | SWR, keyed consistently with server fallback |
-| Form mutation | Server Action or SWR `mutate` (optimistic) |
-| Auth (Google/MS/email) | Auth.js v5, split `auth.config.ts` / `auth.ts` |
-| Call FastAPI | Server-side only; forward server-held token |
-| Type-safe SQL | Drizzle singleton, `generate` + `migrate` in prod |
-| Cross-cutting reactions | Typed `EventEmitter` (in-proc) or broker (distributed) |
-| Prevent child re-render | React Compiler; else `memo` + stable props |
-| Route loading | `loading.tsx` |
-| Multiple paces on one page | Per-section `<Suspense>` |
-| Contain a route crash | `error.tsx` at that segment |
-| Compare few categories | Bar chart (pie only if ≤5) |
-| Trend over time | Line (area if magnitude) |
-| < 10k points | SVG (Recharts) |
-| 100k+ / streaming | Aggregate/LTTB first → Canvas renderer |
+| Web app | **Next.js 16** (App Router), **React 19**, **TypeScript**, **Tailwind CSS v4** |
+| HTTP client | **axios** via `lib/api/base.ts` (`apiFetch` / `apiHttp`) — not raw `fetch` for Midora API |
+| Data UX | **SWR**, **Zustand** (`useSessionStore`) |
+| Auth | **Custom JWT** (access + refresh) issued by FastAPI; HttpOnly cookies `midora_access` / `midora_refresh` |
+| Uploads | **UploadThing** (bearer verified against `/auth/me`) |
+| Realtime | **Supabase Realtime** with short-lived JWT from `/auth/me` |
+| API | **FastAPI** + **Pydantic** + **Supabase/PostgREST** (`midoraapi`) |
+| Payments | **Pesapal** (subscribe + IPN webhook) |
+| Deploy | **Vercel** (frontend + Python API) |
 
+Do **not** introduce Auth.js, Drizzle, NestJS, or React Native patterns into this repo unless the product explicitly adds that surface.
 
+---
 
+## Table of contents
 
+1. [Core principles](#1-core-principles)
+2. [UI tokens & precision craft](#2-ui-tokens--precision-craft)
+3. [Next.js App Router (this repo)](#3-nextjs-app-router-this-repo)
+4. [Auth, cookies & API client](#4-auth-cookies--api-client)
+5. [FastAPI backend (`midoraapi`)](#5-fastapi-backend-midoraapi)
+6. [Quality, git & checklist](#6-quality-git--checklist)
 
+---
+
+## 1. Core principles
+
+### 1.1 Clean boundaries & DRY
+
+- **Separation of concerns**: UI components do not own HTTP details; call `lib/api/*`. Domain/authz rules live on the API (`core/authz.py`, route dependencies), not only in the UI.
+- **Single responsibility**: one focused module per concern (`lib/api/shops.ts`, `payments/service.py`).
+- **DRY**: if navigation, API shapes, category maps, or filter logic appear twice, extract (`lib/browseCategories.ts`, `lib/productCardMap.ts`, shared authz helpers).
+- **Composition over inheritance**: prefer small props/children wrappers. Backend modules follow `AppModule` registration in `app/factory/routers.py`.
+
+### 1.2 Concise code & early returns
+
+- Target under 150 lines for new components/modules when practical. Existing large files (`ProductFormPage`, admin clients) should be split when you touch them — do not grow them.
+- Early returns and guard clauses; avoid nested pyramids.
+- Prefer map/filter over mutating loops for transforms.
+
+### 1.3 Comments & dead code
+
+- At most **one short line** explaining non-obvious *why* (proxy TLS, cookie Path quirks, etc.).
+- No commented-out code, unused imports, or leftover `console.log` in committed code.
+
+### 1.4 Security & config
+
+- **Zero secrets in git**. Use `.env` / Vercel env; keep `.env*` gitignored.
+- Never put `SUPABASE_SERVICE_ROLE_KEY` (or mail passwords) in the Next.js client bundle. Service role belongs only on the API.
+- Validate inputs with **Zod** (frontend forms) and **Pydantic** (API).
+- Passwords: **bcrypt** on the API; never log tokens, OTPs, or raw payment payloads.
+- Propagate **`X-Correlation-Id`** on API calls (`apiFetch` already sets it).
+
+### 1.5 Observability
+
+- API: structured logging + correlation id middleware (`app/factory/middleware.py`).
+- Prefer `ApiError` with `status` + `code` over opaque failures in the UI (toast the `detail`).
+
+---
+
+## 2. UI tokens & precision craft
+
+Follow Midora’s semantic tokens in `app/globals.css` (background, foreground, muted, accent, border, surface, radius). Prefer token classes (`bg-background`, `text-muted`, `border-border`) over hardcoded hex.
+
+### 2.1 Interaction & a11y
+
+- Focus: visible rings (`dm-focus` / `focus-visible:ring-*`).
+- Touch targets ≥ 44px on mobile primary actions.
+- Respect `prefers-reduced-motion`.
+- Contrast: aim WCAG 2.1 AA (4.5:1) in light and dark.
+
+### 2.2 Components
+
+- Buttons: primary / secondary / ghost / outline with crisp radius and `active:scale-[0.98]`.
+- Cards: surface/card tokens, light border, restrained shadow.
+- Forms: border-input, muted placeholders, clear error text (not only color).
+
+### 2.3 Mobile search (important)
+
+- **One** mobile product search entry point: the **navbar search icon** that expands `ProductSearchBar`.
+- Do **not** render a second always-visible mobile search on the home feed (or elsewhere) that duplicates the navbar control.
+
+More UI density rules: `AGENTS.UI.md`.
+
+---
+
+## 3. Next.js App Router (this repo)
+
+### 3.1 Routing & layouts
+
+- Route groups are first-class:
+  - `(main)` — public marketplace shell (navbar/footer)
+  - `(auth)` — login / register / verify
+  - `(merchant)`, `(customer)`, `(admin)`, `(chat)` — role shells
+- **Server Components by default.** `"use client"` only for state, effects, browser APIs; push it as far down as possible.
+- `params` / `searchParams` are **Promises** — always `await` them.
+- Use Metadata API (`metadata` / `generateMetadata`).
+- Edge gate: `proxy.ts` (Next 16). Keep it edge-safe (no DB). Protect prefixes with cookie presence checks; still re-check auth in server data loaders.
+
+### 3.2 Page titles & width
+
+- Navbar already shows the page label for many routes — **do not duplicate** that as an in-body `<h1>` when it restates the header.
+- Dashboards use the full layout width; avoid pointless `max-w-2xl` clamps on tool pages. Reading-optimized forms may stay narrower.
+
+### 3.3 Data loading
+
+- Browser → Midora API: **`apiFetch` / `lib/api/*`** (axios; cookies via `/api/dev-proxy` for `/api/v1/*`).
+- RSC / route handlers: `serverApiFetch` / `lib/api/server.ts` (Bearer from `midora_access`).
+- Client lists: **SWR**; session: **Zustand** + `AppStateProvider` hydration on `AUTH_CHANGED`.
+- Colocate skeletons under `components/skeletons/` matching layout geometry.
+
+### 3.4 File organization
+
+- Feature UI under `components/<area>/`; API wrappers under `lib/api/`.
+- Route-only private folders: `_components/`.
+- Keep `lib/api/base.ts` as the only place that knows axios timeouts, refresh-on-401, and correlation headers.
+
+---
+
+## 4. Auth, cookies & API client
+
+### 4.1 Cookie model
+
+- Access: `midora_access` (short TTL), refresh: `midora_refresh`.
+- Browser traffic for `/api/v1/*` goes through **`/api/dev-proxy`** so Set-Cookie binds to the frontend host (SSR can read cookies).
+- After login/register/Google/verify: call **`/api/auth/set-cookies`** with tokens, then `notifyAuthChanged()` so `AppStateProvider` re-hydrates `/auth/me`.
+- Logout must:
+  1. `resetSession()` immediately
+  2. Clear frontend cookies (`/api/auth/clear-cookies` — all Path/SameSite/Secure variants)
+  3. Hit logout via proxy **and** API host
+  4. Clear cookies again
+- Never silently ignore `set-cookies` failures on login.
+
+### 4.2 Authorization UX vs enforcement
+
+- Navbar/`proxy.ts` cookie checks are UX only.
+- Server loaders and API routes enforce auth. Merchant/admin mutations must fail closed without a valid access token / role.
+
+### 4.3 axios rules
+
+- Use `apiFetch` for JSON Midora API calls.
+- Use `apiHttp` for same-origin auth helpers (clear-cookies, logout proxy).
+- Leave raw `fetch` only for streaming/binary/proxy edge cases (`app/api/dev-proxy`, image watermark upstream, geocode), not for ordinary JSON API traffic.
+
+---
+
+## 5. FastAPI backend (`midoraapi`)
+
+### 5.1 Module layout
+
+- Feature packages: `auth/`, `shop/`, `marketplace/`, `payments/`, `admin/`, `feed/`, `listingModeration/`, `notifications/`, …
+- Wire modules in `app/factory/routers.py` (`AppModule` registry).
+- Thin routers → services → Supabase client. Shared authz: `core/authz.py` (`ensure_shop_owner`, `ensure_product_owner`).
+- Config: `core/config.py` (`pydantic-settings`). Production boot must refuse default `APP_JWT_SECRET` / missing critical keys.
+
+### 5.2 Auth & data access
+
+- JWT access + rotating refresh (`jti` store). Cookie helpers in `auth/cookies.py`.
+- Prefer **user-scoped** Supabase access when JWT/RLS is correctly configured. Do **not** expand the temporary “always service role” shortcut in `get_supabase_client` — treat RLS restoration as high priority; until then, every admin-client route **must** enforce ownership/role checks in Python.
+- Admin router: `dependencies=[Depends(require_admin)]`. Align `staff` vs `admin` with the frontend if both roles exist.
+- Rate-limit auth/OTP/AI buckets (`core/rate_limit.py`); on serverless, plan for a shared store.
+
+### 5.3 Errors & payments
+
+- Stable error envelope via `app/factory/errors.py`: `{ detail, code }`.
+- Pesapal IPN is public; in production re-verify status via Pesapal API before activating plans; log + idempotency via `pesapal_webhook_logs`.
+
+### 5.4 Tests
+
+- Add pytest next to changed behavior (auth, authz, webhook). Do not ship payment/auth changes with zero tests.
+
+---
+
+## 6. Quality, git & checklist
+
+### 6.1 Git
+
+- Conventional commits: `feat|fix|refactor|docs|chore(scope): …`
+- Branches: `feat/…`, `fix/…`, etc.
+- Before push: `npm run typecheck` (frontend) / targeted pytest (API).
+
+### 6.2 Pre-commit checklist
+
+- [ ] No duplicate mobile search (navbar icon only)
+- [ ] API calls go through axios `apiFetch` / `apiHttp` (except documented proxy/binary cases)
+- [ ] No new secrets; service role not in Next client env
+- [ ] Ownership/role checks on any admin-client / mutation path
+- [ ] Cookies cleared completely on logout; session reset immediately
+- [ ] Server Components default; `"use client"` minimized
+- [ ] No duplicate page `<h1>` that restates the navbar title
+- [ ] Tokens/colors from CSS variables, not random hex
+- [ ] Typecheck/lint clean; no `console.log` left behind
+- [ ] Tests for auth/payment/authz changes
+
+---
+
+## Anti-patterns (do not do)
+
+- Second always-visible mobile `ProductSearchBar` on home in addition to the navbar icon
+- Calling FastAPI with raw `fetch` from feature code instead of `apiFetch`
+- Trusting only `proxy.ts` cookie presence for authorization
+- Growing 800+ line form/admin files without splitting when editing them
+- Documenting Auth.js/Drizzle/NestJS as Midora’s stack (it is not)

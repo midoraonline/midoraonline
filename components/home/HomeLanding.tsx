@@ -24,7 +24,6 @@ import {
 import { buildNearMeDistanceMap } from "@/lib/geo";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
-import HomeHero from "@/components/home/HomeHero";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
@@ -301,10 +300,6 @@ export default function HomeLanding({
 
   return (
     <div className="relative w-full">
-      <div className="mb-3 md:hidden">
-        <HomeHero query={query} onQueryChange={setQuery} onSubmit={commitSearch} />
-      </div>
-
       <div className="mb-3 space-y-2 sm:mb-4">
         <CategoryBrowseSection
           selection={categoryFilter}
