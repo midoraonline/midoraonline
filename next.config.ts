@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep ONNX / imgly out of the RSC server bundle (client-only dynamic import).
+  serverExternalPackages: ["@imgly/background-removal", "onnxruntime-web"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },

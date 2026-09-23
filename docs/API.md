@@ -89,7 +89,7 @@
 ### AI images (`/api/v1/ai/*`)
 
 - `POST /api/v1/ai/remove-background` (Bearer)
-  - Purpose: Remove image background; returns processed image URL
+  - Purpose: Reserved; returns **501** (server-side BG removal not configured). Product uploads use in-browser `@imgly/background-removal` instead.
 
 ### Payments (`/api/v1/payments/*`)
 

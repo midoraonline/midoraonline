@@ -14,11 +14,16 @@ import { toast } from "sonner";
 import { useUploadThing, getUploadThingAuthHeaders } from "@/lib/uploadthing";
 import { watermarkProductFilesIfShopLogo } from "@/lib/watermark/client-apply";
 import {
+  isBgRemovalSupported,
   prewarmBgRemoval,
   removeBackground,
   type BgRemovalProgress,
 } from "@/lib/bgRemoval";
 import { inspectImageMetadata } from "@/lib/imageMetadata";
+import {
+  fitImagesForUpload,
+  UPLOAD_IMAGE_MAX_BYTES,
+} from "@/lib/imageFitForUpload";
 
 type Endpoint = "shopLogo" | "productImage" | "imageUploader";
 
@@ -153,7 +158,28 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
 
         let processed = cleared;
         if (bgEnabled && autoRemoveBg) {
-          processed = await removeBackgrounds(cleared);
+          if (!isBgRemovalSupported()) {
+            toast.warning("Kept original background", {
+              description:
+                "Background removal needs WebAssembly. Uploading originals instead.",
+            });
+          } else {
+            processed = await removeBackgrounds(cleared);
+          }
+        }
+        // Always fit under UploadThing limits — BG PNGs and large phone
+        // JPEGs both commonly exceed the endpoint max and look like "upload broken".
+        const maxBytes = UPLOAD_IMAGE_MAX_BYTES[endpoint];
+        try {
+          processed = await fitImagesForUpload(processed, maxBytes);
+        } catch (err) {
+          const description =
+            err instanceof Error
+              ? err.message
+              : "Could not compress images under the upload size limit.";
+          toast.error("Upload failed", { description });
+          setPreparing(null);
+          return;
         }
         if (shouldWatermark) {
           setPreparing({ stage: "watermark", current: 0, total: processed.length });
@@ -174,7 +200,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
           }
         }
         setPreparing(null);
-        startUpload(processed);
+        await startUpload(processed);
       } catch (err) {
         setPreparing(null);
         const description =
@@ -189,6 +215,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
       shouldWatermark,
       watermarkLogoUrl,
       startUpload,
+      endpoint,
     ],
   );
 
@@ -284,13 +311,15 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
             className="size-3.5 rounded border-border text-accent focus:ring-accent"
             checked={autoRemoveBg}
             onChange={(e) => setAutoRemoveBg(e.target.checked)}
-            disabled={busy}
+            disabled={busy || !isBgRemovalSupported()}
           />
           <Sparkles className="size-3.5" aria-hidden="true" />
           <span>
             Auto-remove background
             <span className="ml-1 text-[10px] text-muted">
-              (slow on first use — downloads a 40MB AI model)
+              {isBgRemovalSupported()
+                ? "(first use downloads ~40MB AI model; falls back to original if it fails)"
+                : "(unavailable in this browser — uploads keep the original background)"}
             </span>
           </span>
         </label>
