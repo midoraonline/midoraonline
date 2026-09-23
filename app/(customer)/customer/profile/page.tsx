@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import ProfileAvatarUpload from "@/components/ProfileAvatarUpload";
 import { useEffect, useState } from "react";
 import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
@@ -63,27 +63,19 @@ export default function CustomerProfilePage() {
   return (
     <div className="space-y-5">
       {/* Avatar + identity */}
-      <section className="dm-card p-5 sm:p-6">
-        <div className="flex items-center gap-4">
-          {user.avatar_url ? (
-            <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-border bg-foreground/[0.04]">
-              <Image src={user.avatar_url} alt="" fill sizes="64px" className="object-cover" />
-            </div>
-          ) : (
-            <div className="grid size-16 shrink-0 place-items-center rounded-full bg-accent/15 text-xl font-bold text-accent">
-              {(user.full_name || user.email || "?").slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <p className="text-base font-semibold">{user.full_name || "No name set"}</p>
-            <p className="text-sm text-muted">{user.email}</p>
-            <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              user.email_verified ? "bg-emerald-500/10 text-emerald-700" : "bg-amber-500/10 text-amber-700"
-            }`}>
-              {user.email_verified ? "Verified" : "Unverified"}
-            </span>
-          </div>
+
+      <section className="dm-card space-y-4 p-5 sm:p-6">
+
+        <ProfileAvatarUpload />
+
+        <div>
+
+          <p className="text-base font-semibold">{user.full_name || "No name set"}</p>
+
+          <p className="text-sm text-muted">{user.email}</p>
+
         </div>
+
       </section>
 
       {/* Editable profile */}

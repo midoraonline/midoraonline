@@ -101,12 +101,13 @@ export default function BottomNav() {
   return (
     <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">
       {onlineCount > 0 ? (
-        <div className="flex items-center justify-center gap-1.5 border-b border-accent/15 bg-accent/5 px-3 py-1 text-[10px] font-semibold text-accent">
-          <span className="relative flex h-1.5 w-1.5">
+        // Left-aligned so the centered Post Item FAB does not cover the status.
+        <div className="flex items-center justify-start gap-1.5 border-b border-accent/15 bg-accent/5 py-1 pl-3 pr-16 text-[10px] font-semibold text-accent">
+          <span className="relative flex h-1.5 w-1.5 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
           </span>
-          <span>{onlineCount.toLocaleString()} online now</span>
+          <span className="truncate">{onlineCount.toLocaleString()} online now</span>
         </div>
       ) : null}
 

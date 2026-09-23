@@ -130,6 +130,8 @@ export function verifyEmail(token: string) {
 export type UpdateProfileRequest = {
   full_name?: string;
   phone_number?: string;
+  /** Empty string clears the avatar. */
+  avatar_url?: string | null;
 };
 
 export type ChangePasswordRequest = {

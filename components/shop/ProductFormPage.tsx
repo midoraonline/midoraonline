@@ -640,7 +640,7 @@ export default function ProductFormPage({
             </p>
             <div className="flex shrink-0 items-center gap-2">
               <a
-                href="/merchant/settings"
+                href="/merchant/settings#profile-photo"
                 className="dm-btn dm-btn-secondary dm-btn-sm"
               >
                 Add photo
@@ -905,7 +905,7 @@ export default function ProductFormPage({
           {showErrors && errors.phone ? (
             <p className="text-xs text-[color:var(--error)]">
               {errors.phone}{" "}
-              <a href="/merchant/settings" className="underline">
+              <a href="/merchant/settings#profile-photo" className="underline">
                 Verify phone
               </a>
             </p>

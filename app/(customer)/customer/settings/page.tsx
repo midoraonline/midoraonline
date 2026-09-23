@@ -6,6 +6,7 @@ import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import PushNotificationsSection from "@/components/PushNotificationsSection";
 import ThemeSelector from "@/components/ThemeSelector";
+import ProfileAvatarUpload from "@/components/ProfileAvatarUpload";
 
 // ── Status banner ─────────────────────────────────────────────────────────────
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
@@ -217,9 +218,22 @@ function AccountInfoSection() {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
+function ProfilePhotoSection() {
+  return (
+    <section className="dm-card space-y-4 p-5 sm:p-6">
+      <div>
+        <h2 className="text-base font-semibold text-foreground">Profile photo</h2>
+        <p className="mt-0.5 text-xs text-muted">Upload a photo so sellers recognize you in chat.</p>
+      </div>
+      <ProfileAvatarUpload />
+    </section>
+  );
+}
+
 export default function CustomerSettingsPage() {
   return (
     <div className="space-y-5">
+      <ProfilePhotoSection />
       <AppearanceSection />
       <PasswordSection />
       <PushNotificationsSection />

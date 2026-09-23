@@ -9,6 +9,7 @@ import PhoneNumberInput from "@/components/PhoneNumberInput";
 import VerifyContactButton from "@/components/VerifyContactButton";
 import PushNotificationsSection from "@/components/PushNotificationsSection";
 import ThemeSelector from "@/components/ThemeSelector";
+import ProfileAvatarUpload from "@/components/ProfileAvatarUpload";
 
 // ── Reusable form field ───────────────────────────────────────────────────────
 function Field({
@@ -112,6 +113,10 @@ function ProfileSection() {
           <h2 className="text-sm font-semibold">Profile</h2>
           <p className="text-xs text-muted">Update your display name and contact details.</p>
         </div>
+      </div>
+
+      <div className="mb-5">
+        <ProfileAvatarUpload />
       </div>
 
       <form onSubmit={handleSave} className="space-y-4">
