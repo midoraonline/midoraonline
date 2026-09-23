@@ -7,6 +7,7 @@ import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import UserAvatar from "@/components/UserAvatar";
 
 // ── Logout confirmation modal ────────────────────────────────────────────────
 function LogoutModal({
@@ -76,13 +77,13 @@ function LogoutModal({
 function ProfileDropdown({
   displayName,
   email,
-  initials,
+  avatarUrl,
   settingsHref,
   onLogout,
 }: {
   displayName: string;
   email: string | null;
-  initials: string;
+  avatarUrl?: string | null;
   settingsHref: string;
   onLogout: () => void;
 }) {
@@ -110,9 +111,7 @@ function ProfileDropdown({
         aria-haspopup="menu"
         className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-surface-subtle"
       >
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-bold text-accent">
-          {initials || "?"}
-        </span>
+        <UserAvatar url={avatarUrl} name={displayName} size={32} />
         <span className="hidden max-w-[120px] truncate text-sm font-medium sm:block">
           {displayName}
         </span>
@@ -125,9 +124,12 @@ function ProfileDropdown({
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
           {/* User info */}
-          <div className="border-b border-border px-4 py-3">
-            <p className="truncate text-sm font-semibold">{displayName}</p>
-            {email && <p className="truncate text-xs text-muted">{email}</p>}
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+            <UserAvatar url={avatarUrl} name={displayName} size={40} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{displayName}</p>
+              {email && <p className="truncate text-xs text-muted">{email}</p>}
+            </div>
           </div>
 
           {/* Menu items */}
@@ -180,13 +182,7 @@ export default function DashboardHeader({
   const displayName =
     session.user?.full_name?.trim() || session.user?.email?.trim() || "Account";
   const email = session.user?.email ?? null;
-  const initials = displayName
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const avatarUrl = session.user?.avatar_url ?? null;
 
   async function handleLogout() {
     setLogoutLoading(true);
@@ -235,7 +231,7 @@ export default function DashboardHeader({
           <ProfileDropdown
             displayName={displayName}
             email={email}
-            initials={initials}
+            avatarUrl={avatarUrl}
             settingsHref={settingsHref}
             onLogout={() => setShowLogout(true)}
           />

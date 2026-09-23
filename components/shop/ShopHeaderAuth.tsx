@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import UserAvatar from "@/components/UserAvatar";
 
 export default function ShopHeaderAuth() {
   const pathname = usePathname();
@@ -49,14 +50,8 @@ export default function ShopHeaderAuth() {
       session.user.full_name?.trim() ||
       session.user.email?.trim() ||
       `Account ${session.user.id.slice(0, 8)}`;
-    const initials = label
-      .split(/\s+/)
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-
     const accountBg = onAccount ? "bg-accent" : "bg-accent/90";
+    const avatarUrl = session.user.avatar_url ?? null;
 
     return (
       <>
@@ -69,9 +64,12 @@ export default function ShopHeaderAuth() {
           aria-label="Account"
           title="Account"
         >
-          <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-[11px] font-semibold">
-            {initials}
-          </span>
+          <UserAvatar
+            url={avatarUrl}
+            name={label}
+            size="sm"
+            className="bg-primary-foreground/15 text-primary-foreground"
+          />
           <span className="max-w-[120px] truncate lg:max-w-[140px]">{label}</span>
         </Link>
         <Link
@@ -83,9 +81,12 @@ export default function ShopHeaderAuth() {
           aria-label="Account"
           title="Account"
         >
-          <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-[10px] font-semibold">
-            {initials}
-          </span>
+          <UserAvatar
+            url={avatarUrl}
+            name={label}
+            size="sm"
+            className="bg-primary-foreground/15 text-primary-foreground"
+          />
         </Link>
       </>
     );

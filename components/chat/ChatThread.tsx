@@ -15,6 +15,7 @@ import {
   productPriceUgx,
 } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import UserAvatar from "@/components/UserAvatar";
 import { useKeyboardInset } from "@/lib/hooks/useKeyboardInset";
 import {
   useBroadcast,
@@ -426,9 +427,12 @@ export default function ChatThread({ conversation, onBack }: Props) {
           </button>
         )}
         <div className="relative shrink-0">
-          <div className="grid size-9 place-items-center rounded-full bg-foreground/[0.06] text-sm font-bold text-muted">
-            {(otherUser?.full_name?.charAt(0) || "?").toUpperCase()}
-          </div>
+          <UserAvatar
+            url={otherUser?.avatar_url}
+            name={otherUser?.full_name}
+            size="md"
+            className="bg-foreground/[0.06] text-muted"
+          />
           <span
             aria-label={otherOnline ? "Online" : "Offline"}
             className={[
@@ -503,15 +507,33 @@ export default function ChatThread({ conversation, onBack }: Props) {
                 const mine = msg.sender_id === session.user?.id;
                 const prev = group.msgs[i - 1];
                 const startsBlock = !prev || prev.sender_id !== msg.sender_id;
+                const avatarUrl = mine
+                  ? session.user?.avatar_url
+                  : (msg.sender?.avatar_url ?? otherUser?.avatar_url);
+                const avatarName = mine
+                  ? (session.user?.full_name || session.user?.email || "You")
+                  : (msg.sender?.full_name || otherUser?.full_name);
                 return (
                   <div
                     key={msg.id}
                     className={[
-                      "flex",
+                      "flex items-end gap-2",
                       mine ? "justify-end" : "justify-start",
                       startsBlock ? "mt-3" : "mt-0.5",
                     ].join(" ")}
                   >
+                    {!mine ? (
+                      startsBlock ? (
+                        <UserAvatar
+                          url={avatarUrl}
+                          name={avatarName}
+                          size="xs"
+                          className="mb-0.5 bg-foreground/[0.06] text-muted"
+                        />
+                      ) : (
+                        <span className="inline-block size-6 shrink-0" aria-hidden />
+                      )
+                    ) : null}
                     <div
                       className={[
                         "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
@@ -538,6 +560,18 @@ export default function ChatThread({ conversation, onBack }: Props) {
                         <MessageStatus msg={msg} mine={mine} />
                       </div>
                     </div>
+                    {mine ? (
+                      startsBlock ? (
+                        <UserAvatar
+                          url={avatarUrl}
+                          name={avatarName}
+                          size="xs"
+                          className="mb-0.5 bg-accent/15 text-accent"
+                        />
+                      ) : (
+                        <span className="inline-block size-6 shrink-0" aria-hidden />
+                      )
+                    ) : null}
                   </div>
                 );
               })}

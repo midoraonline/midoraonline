@@ -7,6 +7,7 @@ import type { Conversation } from "@/lib/api/chat";
 import { sameUserId, unreadForViewer } from "@/lib/chat/participants";
 import { CHAT_READ_EVENT } from "@/lib/chat/readState";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import UserAvatar from "@/components/UserAvatar";
 import { usePresence, useRealtimeTable } from "@/lib/realtime/hooks";
 
 type Props = {
@@ -158,9 +159,12 @@ export default function ChatList({ activeId, onSelect }: Props) {
               ].join(" ")}
             >
               <div className="relative shrink-0">
-                <div className="grid size-10 place-items-center rounded-full bg-foreground/[0.06] text-sm font-bold text-muted">
-                  {(otherUser?.full_name?.charAt(0) || "?").toUpperCase()}
-                </div>
+                <UserAvatar
+                  url={otherUser?.avatar_url}
+                  name={otherUser?.full_name}
+                  size="lg"
+                  className="bg-foreground/[0.06] text-muted"
+                />
                 <span
                   aria-hidden
                   className={[

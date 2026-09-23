@@ -79,8 +79,8 @@ export type Conversation = {
   seller_unread: number;
   created_at: string;
   updated_at: string;
-  buyer?: { full_name?: string } | null;
-  seller?: { full_name?: string } | null;
+  buyer?: { full_name?: string; avatar_url?: string | null } | null;
+  seller?: { full_name?: string; avatar_url?: string | null } | null;
 };
 
 export type NativeMessage = {
@@ -90,7 +90,7 @@ export type NativeMessage = {
   content: string;
   read_at?: string | null;
   created_at: string;
-  sender?: { full_name?: string } | null;
+  sender?: { full_name?: string; avatar_url?: string | null } | null;
 };
 
 function freshQuery(path: string): string {

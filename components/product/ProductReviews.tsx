@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import UserAvatar from "@/components/UserAvatar";
 import { Star } from "lucide-react";
 import { apiFetch } from "@/lib/api/base";
 import { useAppSession } from "@/lib/state";
@@ -13,7 +14,7 @@ type ProductReview = {
   rating: number;
   comment?: string | null;
   created_at: string;
-  users?: { full_name?: string | null } | null;
+  users?: { full_name?: string | null; avatar_url?: string | null } | null;
 };
 
 type ReviewStats = {
@@ -214,6 +215,12 @@ export default function ProductReviews({ productId, initialStats }: Props) {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
+                      <UserAvatar
+                        url={r.users?.avatar_url}
+                        name={r.users?.full_name || "Anonymous"}
+                        size="xs"
+                        className="bg-foreground/[0.06] text-muted"
+                      />
                       <span className="truncate text-xs font-semibold text-foreground/80">
                         {r.users?.full_name || "Anonymous"}
                       </span>

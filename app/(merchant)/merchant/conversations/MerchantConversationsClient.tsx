@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import UserAvatar from "@/components/UserAvatar";
 import { useCallback, useEffect, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
@@ -60,8 +61,13 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
               href={`/chat?conversation=${c.id}`}
               className="dm-card dm-card-hover flex items-center gap-4 p-4"
             >
-              <div className="relative size-10 shrink-0 rounded-full bg-foreground/[0.06] flex items-center justify-center text-sm font-bold text-muted">
-                {(c.buyer?.full_name?.charAt(0) || "?").toUpperCase()}
+              <div className="relative shrink-0">
+                <UserAvatar
+                  url={c.buyer?.avatar_url}
+                  name={c.buyer?.full_name}
+                  size="lg"
+                  className="bg-foreground/[0.06] text-muted"
+                />
                 {c.seller_unread > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] h-[18px] place-items-center rounded-full bg-red-500 text-[8px] font-bold text-white">
                     {c.seller_unread > 9 ? "9+" : c.seller_unread}

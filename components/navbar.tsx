@@ -14,19 +14,20 @@ import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
+import UserAvatar from "@/components/UserAvatar";
 
 import { LogOut } from "lucide-react";
 
 function ProfileDropdown({
   displayName,
-  initials,
+  avatarUrl,
   dashboardHref,
   role,
   ownedShopIds,
   onNavigate,
 }: {
   displayName: string;
-  initials: string;
+  avatarUrl?: string | null;
   dashboardHref: string;
   role: string | null;
   ownedShopIds: string[];
@@ -83,9 +84,12 @@ function ProfileDropdown({
         aria-expanded={ddOpen}
         className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-border h-9 px-1 sm:pl-1.5 sm:pr-2 text-xs font-medium transition-all dm-focus hover:shadow-sm hover:border-border-strong bg-surface text-foreground"
       >
-        <span className="grid size-7 place-items-center rounded-full bg-foreground/[0.08] text-[11px] font-semibold shrink-0 leading-none">
-          {initials}
-        </span>
+        <UserAvatar
+          url={avatarUrl}
+          name={displayName}
+          size="sm"
+          className="bg-foreground/[0.08] text-foreground"
+        />
         <span className="max-w-[100px] truncate lg:max-w-[120px] hidden sm:block leading-none">{displayName}</span>
         <MaterialSymbol
           name="expand_more"
@@ -228,15 +232,6 @@ export default function Navbar({
     );
   }, [session.user]);
 
-  const initials = useMemo(() => {
-    if (!displayName) return "";
-    return displayName
-      .split(" ")
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  }, [displayName]);
 
   const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
 
@@ -432,7 +427,7 @@ export default function Navbar({
             {session.isAuthenticated && displayName ? (
               <ProfileDropdown
                 displayName={displayName}
-                initials={initials}
+                avatarUrl={session.user?.avatar_url}
                 dashboardHref={dashboardHref}
                 role={role}
                 ownedShopIds={session.ownedShopIds ?? []}
