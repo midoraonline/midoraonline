@@ -12,16 +12,48 @@ import type { Conversation } from "@/lib/api/chat";
 import { persistConversationRead } from "@/lib/chat/readState";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
+function ChatShellFallback() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 overflow-hidden">
+        <aside className="hidden h-full min-h-0 w-full flex-col overflow-hidden border-border md:flex md:w-[20rem] md:shrink-0 md:border-r lg:w-[22rem]">
+          <div className="flex h-12 shrink-0 items-center border-b border-border px-4">
+            <h1 className="text-sm font-semibold tracking-tight">Messages</h1>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted">
+            <span className="inline-flex items-center gap-2">
+              <span className="size-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              Loading…
+            </span>
+          </div>
+        </aside>
+        <section className="flex h-full min-h-0 min-w-0 flex-1 items-center justify-center text-sm text-muted">
+          <span className="inline-flex items-center gap-2">
+            <span className="size-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            Loading conversation…
+          </span>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const convId = searchParams.get("conversation");
+  const urlConvId = searchParams.get("conversation");
   const session = useAppSession();
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [resolvedFor, setResolvedFor] = useState<string | null>(null);
+  const [optimisticId, setOptimisticId] = useState<string | null>(null);
+  const convId = optimisticId ?? urlConvId;
   const threadOpen = Boolean(convId);
   const shownConv = activeConv && activeConv.id === convId ? activeConv : null;
-  const lookupPending = threadOpen && resolvedFor !== convId;
+  const lookupPending = threadOpen && !shownConv && resolvedFor !== convId;
+
+  useEffect(() => {
+    if (urlConvId && urlConvId === optimisticId) setOptimisticId(null);
+  }, [urlConvId, optimisticId]);
 
   useEffect(() => {
     if (!convId) {
@@ -30,6 +62,11 @@ function ChatPageInner() {
       return;
     }
     if (!session.hydrated || !session.isAuthenticated) return;
+    if (activeConv?.id === convId) {
+      setResolvedFor(convId);
+      void persistConversationRead(convId);
+      return;
+    }
     let cancelled = false;
     void persistConversationRead(convId);
     void (async () => {
@@ -46,22 +83,30 @@ function ChatPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [convId, session.hydrated, session.isAuthenticated]);
+  }, [convId, session.hydrated, session.isAuthenticated, activeConv?.id]);
 
-  const handleSelect = (id: string) => {
-    void persistConversationRead(id);
-    router.push(`/chat?conversation=${id}`, { scroll: false });
+  const handleSelect = (conv: Conversation) => {
+    void persistConversationRead(conv.id);
+    setOptimisticId(conv.id);
+    setActiveConv(conv);
+    setResolvedFor(conv.id);
+    router.push(`/chat?conversation=${conv.id}`, { scroll: false });
   };
 
   const handleBack = () => {
-    router.push("/chat", { scroll: false });
+    setOptimisticId(null);
     setActiveConv(null);
+    setResolvedFor(null);
+    router.push("/chat", { scroll: false });
   };
 
   if (!session.hydrated) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-muted">
-        Loading…
+        <span className="inline-flex items-center gap-2">
+          <span className="size-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          Loading…
+        </span>
       </div>
     );
   }
@@ -113,8 +158,16 @@ function ChatPageInner() {
           {shownConv ? (
             <ChatThread conversation={shownConv} onBack={handleBack} />
           ) : lookupPending ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-muted">
-              Loading conversation…
+            <div className="flex flex-1 flex-col">
+              <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-3">
+                <div className="size-9 animate-pulse rounded-full bg-foreground/10" />
+                <div className="h-3 w-28 animate-pulse rounded bg-foreground/10" />
+              </div>
+              <div className="flex flex-1 flex-col gap-3 p-4">
+                <div className="h-10 w-2/3 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+                <div className="ml-auto h-10 w-1/2 animate-pulse rounded-2xl bg-accent/15" />
+                <div className="h-10 w-3/5 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+              </div>
             </div>
           ) : threadOpen ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-sm text-muted">
@@ -139,8 +192,6 @@ function ChatPageInner() {
         </section>
       </div>
 
-      {/* Mobile list keeps the bottom nav; an open thread hides it so the
-          composer sits above the keyboard. Desktop split starts at md. */}
       {threadOpen ? null : <BottomNav />}
     </div>
   );
@@ -148,13 +199,7 @@ function ChatPageInner() {
 
 export default function ChatPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-1 items-center justify-center text-sm text-muted">
-          Loading messages…
-        </div>
-      }
-    >
+    <Suspense fallback={<ChatShellFallback />}>
       <ChatPageInner />
     </Suspense>
   );

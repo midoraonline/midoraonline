@@ -467,8 +467,11 @@ export default function ChatThread({ conversation, onBack }: Props) {
         className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4"
       >
         {loading && messages.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-sm text-muted">
-            Loading messages…
+          <div className="flex flex-col gap-3 py-6" aria-busy="true" aria-label="Loading messages">
+            <div className="h-10 w-2/3 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+            <div className="ml-auto h-10 w-1/2 animate-pulse rounded-2xl bg-accent/15" />
+            <div className="h-10 w-3/5 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+            <div className="ml-auto h-8 w-2/5 animate-pulse rounded-2xl bg-accent/15" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">

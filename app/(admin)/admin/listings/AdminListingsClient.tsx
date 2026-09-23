@@ -7,7 +7,7 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 const FILTERS = ["pending_review", "active", "rejected", "all"] as const;
 const FILTER_LABELS: Record<string, string> = {
-  pending_review: "Pending",
+  pending_review: "In review",
   active: "Active",
   rejected: "Rejected",
   all: "All",

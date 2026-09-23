@@ -12,7 +12,7 @@ import {
 import { isVideoUrl } from "@/lib/api/products";
 
 export const MIN_LISTING_PHOTOS = 2;
-export const MAX_LISTING_MEDIA = 8;
+export const MAX_LISTING_MEDIA = 3;
 
 const CONDITION_VALUES = CONDITION_OPTIONS.map((o) => o.value) as [
   string,

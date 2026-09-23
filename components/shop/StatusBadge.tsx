@@ -16,7 +16,7 @@ export const STATUS_CONFIG: Record<ProductStatus, StatusMeta> = {
     dot: "solid",
   },
   pending_review: {
-    label: "Reviewing",
+    label: "In review",
     pillClass:
       "bg-[color:var(--warning)]/12 text-[color:var(--warning)] ring-1 ring-inset ring-[color:var(--warning)]/25",
     dot: "pulse",

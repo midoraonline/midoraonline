@@ -23,9 +23,6 @@ import {
   productImageUrls,
   productPrimaryImage,
   productPriceUgx,
-  productIsDiscounted,
-  productOriginalPriceUgx,
-  productDiscountPercent,
   type Product,
   type ProductStatus,
 } from "@/lib/api/products";
@@ -42,7 +39,7 @@ const TAB_META: {
   test: (s: ProductStatus | null | undefined) => boolean;
 }[] = [
   { key: "all", label: "All", test: () => true },
-  { key: "reviewing", label: "Reviewing", test: (s) => s === "pending_review" },
+  { key: "reviewing", label: "In review", test: (s) => s === "pending_review" },
   { key: "live", label: "Live", test: (s) => s === "active" },
   { key: "rejected", label: "Not approved", test: (s) => s === "rejected" },
   {
@@ -313,170 +310,228 @@ export default function MerchantListingsClient({
         </div>
       </div>
 
-      {/* Listing rows */}
+      {/* Listing rows: cards on mobile, table on md+ */}
       {filtered.length === 0 ? (
         <EmptyState tab={tab} hasShops={shops.length > 0} onAdd={openAdd} />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {filtered.map((p) => {
-            const cover = productPrimaryImage(p);
-            const mediaCount = productImageUrls(p).length;
-            const shopMeta = shopById.get(p.shop_id);
-            const reviewing = p.status === "pending_review";
-            const rejected = p.status === "rejected";
-            return (
-              <li
-                key={p.id}
-                className="dm-card group relative overflow-hidden p-3 transition-all hover:border-accent/40 hover:shadow-md sm:p-4"
-              >
-                <div className="flex gap-3 sm:gap-4">
-                  {/* Thumb */}
-                  <Link
-                    href={`/merchant/listings/${p.id}/edit`}
-                    className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle sm:size-24"
-                    title="Edit listing"
-                  >
-                    {cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- CDN
-                      <img
-                        src={cover}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-[10px] text-muted">
-                        No image
-                      </div>
-                    )}
-                    {mediaCount > 1 ? (
-                      <span className="absolute bottom-1 right-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                        +{mediaCount - 1}
-                      </span>
-                    ) : null}
-                  </Link>
-
-                  {/* Body */}
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <Link
-                          href={`/merchant/listings/${p.id}/edit`}
-                          className="block truncate text-sm font-bold text-foreground transition-colors hover:text-accent sm:text-[15px]"
-                        >
-                          {p.title || "Untitled"}
-                        </Link>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
-                          <StatusBadge status={p.status} is_published={p.is_published} />
-                          {showMultipleShops && shopMeta ? (
-                            <Link
-                              href={`/merchant/shops/${shopMeta.id}/catalog`}
-                              className="inline-flex max-w-[140px] items-center gap-1 truncate rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-foreground/70 hover:bg-foreground/[0.1]"
-                              title={`Manage ${shopMeta.name}`}
-                            >
-                              {shopMeta.logo_url ? (
-                                <Image
-                                  src={shopMeta.logo_url}
-                                  alt=""
-                                  width={12}
-                                  height={12}
-                                  className="size-3 rounded-full object-cover"
-                                />
-                              ) : null}
-                              <span className="truncate">{shopMeta.name}</span>
-                            </Link>
-                          ) : null}
-                          <span className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-foreground/70">
-                            <Eye className="size-3" aria-hidden />
-                            {p.view_count ?? 0}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="whitespace-nowrap text-sm font-semibold text-foreground">
-                        {productIsDiscounted(p) ? (
-                          <span className="flex flex-col items-end gap-0">
-                            <span className="text-[color:var(--error)]">
-                              {formatUGX(productPriceUgx(p))}
-                            </span>
-                            <span className="text-[10px] line-through text-muted/60">
-                              {formatUGX(productOriginalPriceUgx(p))} · -
-                              {productDiscountPercent(p)}%
-                            </span>
-                          </span>
-                        ) : (
-                          formatUGX(productPriceUgx(p))
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Moderation feedback */}
-                    {reviewing && !p.review_notes ? (
-                      <p className="text-[11px] leading-snug text-[color:var(--warning)]">
-                        <span className="font-semibold">Reviewing — </span>
-                        <span className="opacity-90">
-                          usually done within a minute. Goes live automatically once approved.
-                        </span>
-                        <span className="ml-1 opacity-60">
-                          · Submitted {relativeTime(p.reviewed_at ?? p.created_at)}
-                        </span>
-                      </p>
-                    ) : null}
-                    {(reviewing || rejected) && p.review_notes ? (
-                      <p
-                        className={`text-[11px] leading-snug ${
-                          rejected
-                            ? "text-[color:var(--error)]"
-                            : "text-[color:var(--warning)]"
-                        }`}
-                        title={p.review_notes ?? undefined}
-                      >
-                        <span className="font-semibold">
-                          {rejected ? "Not approved: " : "Reviewer note: "}
-                        </span>
-                        <span className="opacity-90">{p.review_notes}</span>
-                      </p>
-                    ) : null}
-
-                    {/* Actions */}
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <Link
-                        href={`/merchant/listings/${p.id}/edit`}
-                        className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-foreground/75 hover:bg-foreground/[0.06]"
-                      >
-                        <Pencil className="size-3" />
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setPendingDelete(p)}
-                        className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[color:var(--error)] hover:bg-[color:var(--error-subtle)]"
-                      >
-                        <Trash2 className="size-3" />
-                        Delete
-                      </button>
-                      {rejected ? (
-                        <Link
-                          href={`/merchant/listings/${p.id}/edit`}
-                          className="dm-btn dm-btn-primary dm-btn-sm ml-auto"
-                        >
-                          Edit & resubmit
-                        </Link>
+        <>
+          <ul className="flex flex-col gap-2 md:hidden">
+            {filtered.map((p) => {
+              const cover = productPrimaryImage(p);
+              const mediaCount = productImageUrls(p).length;
+              const shopMeta = shopById.get(p.shop_id);
+              const reviewing = p.status === "pending_review";
+              const rejected = p.status === "rejected";
+              return (
+                <li
+                  key={p.id}
+                  className="dm-card group relative overflow-hidden p-3 transition-all hover:border-accent/40 hover:shadow-md"
+                >
+                  <div className="flex gap-3">
+                    <Link
+                      href={`/merchant/listings/${p.id}/edit`}
+                      className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle"
+                      title="Edit listing"
+                    >
+                      {cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- CDN
+                        <img
+                          src={cover}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
-                        <Link
-                          href={`/products/${p.id}`}
-                          className="ml-auto dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-foreground/60 hover:text-foreground"
-                          target="_blank"
-                          rel="noopener"
-                        >
-                          Preview
-                        </Link>
+                        <div className="flex h-full items-center justify-center text-[10px] text-muted">
+                          No image
+                        </div>
                       )}
+                      {mediaCount > 1 ? (
+                        <span className="absolute bottom-1 right-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                          +{mediaCount - 1}
+                        </span>
+                      ) : null}
+                    </Link>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <Link
+                            href={`/merchant/listings/${p.id}/edit`}
+                            className="block truncate text-sm font-bold text-foreground hover:text-accent"
+                          >
+                            {p.title || "Untitled"}
+                          </Link>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+                            <StatusBadge status={p.status} is_published={p.is_published} />
+                            {showMultipleShops && shopMeta ? (
+                              <span className="truncate text-[10px]">{shopMeta.name}</span>
+                            ) : null}
+                            <span className="inline-flex items-center gap-1 text-[10px]">
+                              <Eye className="size-3" aria-hidden />
+                              {p.view_count ?? 0}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="whitespace-nowrap text-sm font-semibold">
+                          {formatUGX(productPriceUgx(p))}
+                        </p>
+                      </div>
+                      {reviewing && !p.review_notes ? (
+                        <p className="text-[11px] text-[color:var(--warning)]">
+                          <span className="font-semibold">In review</span>
+                          <span className="opacity-80"> · awaiting review</span>
+                        </p>
+                      ) : null}
+                      {(reviewing || rejected) && p.review_notes ? (
+                        <p
+                          className={`line-clamp-2 text-[11px] ${
+                            rejected ? "text-[color:var(--error)]" : "text-[color:var(--warning)]"
+                          }`}
+                        >
+                          {rejected ? "Not approved: " : "Note: "}
+                          {p.review_notes}
+                        </p>
+                      ) : null}
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <Link
+                          href={`/merchant/listings/${p.id}/edit`}
+                          className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-foreground/75 hover:bg-foreground/[0.06]"
+                        >
+                          <Pencil className="size-3" />
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setPendingDelete(p)}
+                          className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[color:var(--error)] hover:bg-[color:var(--error-subtle)]"
+                        >
+                          <Trash2 className="size-3" />
+                          Delete
+                        </button>
+                        {rejected ? (
+                          <Link
+                            href={`/merchant/listings/${p.id}/edit`}
+                            className="dm-btn dm-btn-primary dm-btn-sm ml-auto"
+                          >
+                            Resubmit
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/products/${p.id}`}
+                            className="ml-auto text-[11px] font-medium text-foreground/60"
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            Preview
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="dm-card hidden overflow-hidden md:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-surface-subtle/80 text-[11px] uppercase tracking-wider text-muted">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Listing</th>
+                  <th className="px-3 py-3 font-semibold">Status</th>
+                  <th className="px-3 py-3 font-semibold">Price</th>
+                  <th className="px-3 py-3 font-semibold">Views</th>
+                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map((p) => {
+                  const cover = productPrimaryImage(p);
+                  const shopMeta = shopById.get(p.shop_id);
+                  const reviewing = p.status === "pending_review";
+                  const rejected = p.status === "rejected";
+                  return (
+                    <tr key={p.id} className="hover:bg-foreground/[0.02]">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/merchant/listings/${p.id}/edit`}
+                            className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle"
+                          >
+                            {cover ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- CDN
+                              <img src={cover} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-[9px] text-muted">
+                                —
+                              </div>
+                            )}
+                          </Link>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/merchant/listings/${p.id}/edit`}
+                              className="block truncate font-semibold text-foreground hover:text-accent"
+                            >
+                              {p.title || "Untitled"}
+                            </Link>
+                            <p className="truncate text-[11px] text-muted">
+                              {showMultipleShops && shopMeta ? shopMeta.name : relativeTime(p.created_at)}
+                              {reviewing && !p.review_notes ? " · Awaiting review" : ""}
+                              {p.review_notes ? ` · ${p.review_notes}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={p.status} is_published={p.is_published} />
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap font-medium tabular-nums">
+                        {formatUGX(productPriceUgx(p))}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums text-muted">
+                        {p.view_count ?? 0}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <Link
+                            href={`/merchant/listings/${p.id}/edit`}
+                            className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-foreground/[0.06]"
+                          >
+                            <Pencil className="size-3.5" />
+                            Edit
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setPendingDelete(p)}
+                            className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[color:var(--error)] hover:bg-[color:var(--error-subtle)]"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                          {rejected ? (
+                            <Link
+                              href={`/merchant/listings/${p.id}/edit`}
+                              className="dm-btn dm-btn-primary dm-btn-sm"
+                            >
+                              Resubmit
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/products/${p.id}`}
+                              className="dm-focus rounded-lg px-2 py-1.5 text-xs font-medium text-foreground/60 hover:text-foreground"
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              Preview
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* Delete confirmation */}
@@ -529,8 +584,8 @@ function EmptyState({
       icon: <Package className="size-6" aria-hidden />,
     },
     reviewing: {
-      title: "Nothing under review",
-      hint: "New listings show here while the auto-moderator scans them (usually under a minute).",
+      title: "Nothing in review",
+      hint: "New listings show here while Midora checks them — or when they await admin review.",
       icon: <Clock className="size-6" aria-hidden />,
     },
     live: {

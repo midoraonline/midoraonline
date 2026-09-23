@@ -12,7 +12,7 @@ import { usePresence, useRealtimeTable } from "@/lib/realtime/hooks";
 
 type Props = {
   activeId?: string;
-  onSelect: (id: string) => void;
+  onSelect: (conversation: Conversation) => void;
 };
 
 type PresenceState = { user_id: string };
@@ -100,9 +100,17 @@ export default function ChatList({ activeId, onSelect }: Props) {
 
   if (loading && conversations.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-muted">
-        Loading conversations…
-      </div>
+      <ul className="flex flex-col gap-1 p-1" aria-busy="true" aria-label="Loading conversations">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <li key={i} className="flex items-center gap-3 rounded-xl p-3">
+            <div className="size-11 shrink-0 animate-pulse rounded-full bg-foreground/10" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="h-3 w-1/2 animate-pulse rounded bg-foreground/10" />
+              <div className="h-2.5 w-3/4 animate-pulse rounded bg-foreground/[0.06]" />
+            </div>
+          </li>
+        ))}
+      </ul>
     );
   }
 
@@ -143,7 +151,7 @@ export default function ChatList({ activeId, onSelect }: Props) {
               ),
             );
           }
-          onSelect(conv.id);
+          onSelect(conv);
         };
 
         return (

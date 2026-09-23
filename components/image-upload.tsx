@@ -24,6 +24,10 @@ import {
   fitImagesForUpload,
   UPLOAD_IMAGE_MAX_BYTES,
 } from "@/lib/imageFitForUpload";
+import {
+  BG_COLOR_PRESETS,
+  compositeOnColor,
+} from "@/lib/bgComposite";
 
 type Endpoint = "shopLogo" | "productImage" | "imageUploader";
 
@@ -72,6 +76,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
     { stage: "watermark" | "bg"; current: number; total: number; pct?: number } | null
   >(null);
   const [autoRemoveBg, setAutoRemoveBg] = useState(false);
+  const [bgColor, setBgColor] = useState("#ffffff");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const bgEnabled = allowBackgroundRemoval ?? endpointDefaultsAllowBg(endpoint);
@@ -116,12 +121,17 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
         };
         setPreparing({ stage: "bg", current: i + 1, total: files.length });
         try {
-          const blob = await removeBackground(file, { onProgress });
+          let blob = await removeBackground(file, { onProgress });
+          try {
+            blob = await compositeOnColor(blob, bgColor);
+          } catch {
+            /* keep transparent cutout if composite fails */
+          }
           const ext = fileExt(blob.type);
           const stem = file.name.replace(/\.[^.]+$/, "");
           out.push(
             new File([blob], `${stem}-nobg.${ext}`, {
-              type: blob.type || "image/png",
+              type: blob.type || "image/jpeg",
             }),
           );
         } catch (err) {
@@ -135,7 +145,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
       }
       return out;
     },
-    [],
+    [bgColor],
   );
 
   const uploadFiles = useCallback(
@@ -305,24 +315,60 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
       </div>
 
       {bgEnabled ? (
-        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
-          <input
-            type="checkbox"
-            className="size-3.5 rounded border-border text-accent focus:ring-accent"
-            checked={autoRemoveBg}
-            onChange={(e) => setAutoRemoveBg(e.target.checked)}
-            disabled={busy || !isBgRemovalSupported()}
-          />
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          <span>
-            Auto-remove background
-            <span className="ml-1 text-[10px] text-muted">
-              {isBgRemovalSupported()
-                ? "(first use downloads ~40MB AI model; falls back to original if it fails)"
-                : "(unavailable in this browser — uploads keep the original background)"}
+        <div className="mt-2 space-y-2">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
+            <input
+              type="checkbox"
+              className="size-3.5 rounded border-border text-accent focus:ring-accent"
+              checked={autoRemoveBg}
+              onChange={(e) => setAutoRemoveBg(e.target.checked)}
+              disabled={busy || !isBgRemovalSupported()}
+            />
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            <span>
+              Auto-remove background
+              <span className="ml-1 text-[10px] text-muted">
+                {isBgRemovalSupported()
+                  ? "(falls back to original if it fails)"
+                  : "(unavailable here — keeps original)"}
+              </span>
             </span>
-          </span>
-        </label>
+          </label>
+          {autoRemoveBg && isBgRemovalSupported() ? (
+            <div className="flex flex-wrap items-center gap-2 pl-5">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                Fill color
+              </span>
+              {BG_COLOR_PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  title={p.label}
+                  disabled={busy}
+                  onClick={() => setBgColor(p.value)}
+                  className={`size-6 rounded-full border-2 shadow-xs ${
+                    bgColor.toLowerCase() === p.value.toLowerCase()
+                      ? "border-accent ring-2 ring-accent/30"
+                      : "border-border"
+                  }`}
+                  style={{ backgroundColor: p.value }}
+                  aria-label={p.label}
+                />
+              ))}
+              <label className="inline-flex items-center gap-1 text-[10px] text-muted">
+                <input
+                  type="color"
+                  value={bgColor}
+                  disabled={busy}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="size-6 cursor-pointer rounded border border-border bg-transparent p-0"
+                  aria-label="Custom background color"
+                />
+                Custom
+              </label>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {progressPct > 0 && busy ? (

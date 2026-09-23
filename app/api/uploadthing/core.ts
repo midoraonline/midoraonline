@@ -21,7 +21,7 @@ export const ourFileRouter = {
 
   productImage: f({
     // 8MB: BG-removed PNGs / phone photos after client fit; keep in sync with UPLOAD_IMAGE_MAX_BYTES
-    image: { maxFileSize: "8MB", maxFileCount: 8 },
+    image: { maxFileSize: "8MB", maxFileCount: 3 },
   })
     .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ file }) => {

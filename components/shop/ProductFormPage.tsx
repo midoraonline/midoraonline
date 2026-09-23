@@ -60,11 +60,13 @@ function MediaGridWrapper({
   onRemove,
   onImageUploaded,
   onVideoUploaded,
+  onSetCover,
 }: {
   urls: string[];
   onRemove: (index: number) => void;
   onImageUploaded: (url: string) => void;
   onVideoUploaded: (url: string) => void;
+  onSetCover: (index: number) => void;
 }) {
   return (
     <MediaDropzone
@@ -72,6 +74,7 @@ function MediaGridWrapper({
       onRemove={onRemove}
       onImageUploaded={onImageUploaded}
       onVideoUploaded={onVideoUploaded}
+      onSetCover={onSetCover}
       maxItems={MAX_LISTING_MEDIA}
     />
   );
@@ -633,7 +636,7 @@ export default function ProductFormPage({
                 ? "Not approved by moderation"
                 : notes
                   ? "Under review"
-                  : "Reviewing your listing";
+                  : "In review — awaiting approval";
               const body = notes
                 ? notes
                 : "Automated checks usually finish within a minute. Your listing goes live automatically once approved.";
@@ -691,7 +694,7 @@ export default function ProductFormPage({
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">1. Photos & Video</h2>
             <p className="text-xs text-muted">
-              Up to 8 photos or short videos. At least 2 photos are required to publish — the first one is the cover on your listing card.
+              Up to 3 photos (or short videos). At least 2 photos to publish — tap Set cover to choose which shows on your listing card.
             </p>
           </div>
 
@@ -706,6 +709,15 @@ export default function ProductFormPage({
               if (target) {
                 setSessionRemoved((prev) => [...prev, target]);
               }
+            }}
+            onSetCover={(index) => {
+              if (index <= 0) return;
+              setDraft((d) => {
+                const next = [...d.image_urls];
+                const [picked] = next.splice(index, 1);
+                next.unshift(picked);
+                return { ...d, image_urls: next };
+              });
             }}
             onImageUploaded={(url) => {
               setDraft((d) => ({

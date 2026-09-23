@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ImagePlus, UploadCloud, Video as VideoIcon, X } from "lucide-react";
+import { ImagePlus, Loader2, Star, UploadCloud, Video as VideoIcon, X } from "lucide-react";
 import { isVideoUrl } from "@/lib/api/products";
 import {
   ImageUpload,
@@ -17,6 +17,7 @@ type MediaDropzoneProps = {
   onImageUploaded: (url: string) => void;
   onVideoUploaded: (url: string) => void;
   onRemove: (index: number) => void;
+  onSetCover?: (index: number) => void;
   maxItems?: number;
   disabled?: boolean;
 };
@@ -36,16 +37,27 @@ export function MediaDropzone({
   onImageUploaded,
   onVideoUploaded,
   onRemove,
-  maxItems = 10,
+  onSetCover,
+  maxItems = 3,
   disabled = false,
 }: MediaDropzoneProps) {
   const imageRef = useRef<ImageUploadHandle>(null);
   const videoRef = useRef<VideoUploadHandle>(null);
   const [isDragging, setDragging] = useState(false);
+  const [busyHint, setBusyHint] = useState(false);
   const dragCounter = useRef(0);
 
   const remaining = Math.max(0, maxItems - urls.length);
   const atCapacity = remaining <= 0;
+
+  const pollBusy = useCallback(() => {
+    const tick = () => {
+      const busy = Boolean(imageRef.current?.isBusy() || videoRef.current?.isBusy());
+      setBusyHint(busy);
+      if (busy) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, []);
 
   const handleFiles = useCallback(
     (fileList: FileList | File[]) => {
@@ -55,12 +67,14 @@ export function MediaDropzone({
       const { images, videos } = partitionFiles(capped);
       if (images.length && imageRef.current) {
         imageRef.current.submitFiles(images);
+        pollBusy();
       }
       if (videos.length && videoRef.current) {
         void videoRef.current.submitFiles(videos);
+        pollBusy();
       }
     },
-    [remaining],
+    [remaining, pollBusy],
   );
 
   const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
@@ -100,6 +114,7 @@ export function MediaDropzone({
     () =>
       urls.map((url, i) => {
         const video = isVideoUrl(url);
+        const isCover = i === 0 && !video;
         return (
           <li
             key={`${url}-${i}`}
@@ -123,31 +138,53 @@ export function MediaDropzone({
                 Video
               </span>
             ) : null}
-            {i === 0 ? (
-              <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-xs">
+            {isCover ? (
+              <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+                <Star className="size-3 fill-current" aria-hidden />
                 Cover
               </span>
             ) : null}
-            <button
-              type="button"
-              onClick={() => onRemove(i)}
-              className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-black/70 text-white transition-all hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-              aria-label={`Remove ${video ? "video" : "photo"}`}
-            >
-              <X className="size-4" strokeWidth={2.5} aria-hidden />
-            </button>
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+              {!video && i > 0 && onSetCover ? (
+                <button
+                  type="button"
+                  onClick={() => onSetCover(i)}
+                  className="inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm"
+                >
+                  <Star className="size-3" aria-hidden />
+                  Set cover
+                </button>
+              ) : (
+                <span />
+              )}
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                className="flex size-7 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90"
+                aria-label={`Remove ${video ? "video" : "photo"}`}
+              >
+                <X className="size-4" strokeWidth={2.5} aria-hidden />
+              </button>
+            </div>
           </li>
         );
       }),
-    [urls, onRemove],
+    [urls, onRemove, onSetCover],
   );
 
   return (
     <div className="space-y-4">
       {urls.length > 0 ? (
-        <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+        <ul className="grid grid-cols-3 gap-3 sm:grid-cols-3 md:grid-cols-3">
           {grid}
         </ul>
+      ) : null}
+
+      {busyHint ? (
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-subtle px-3 py-2 text-xs text-muted">
+          <Loader2 className="size-3.5 animate-spin text-accent" aria-hidden />
+          Preparing media…
+        </div>
       ) : null}
 
       <div
@@ -156,7 +193,7 @@ export function MediaDropzone({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={[
-          "relative rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition-all",
+          "relative rounded-2xl border-2 border-dashed p-5 sm:p-7 text-center transition-all",
           isDragging
             ? "border-accent bg-accent/10 ring-4 ring-accent/20"
             : "border-border bg-surface-subtle hover:border-accent/40 hover:bg-accent/5",
@@ -165,21 +202,21 @@ export function MediaDropzone({
         aria-disabled={disabled || atCapacity}
       >
         <div className="mx-auto flex max-w-md flex-col items-center gap-3">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-            <UploadCloud className="size-7" aria-hidden />
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <UploadCloud className="size-6" aria-hidden />
           </div>
           <div className="space-y-1">
             <p className="text-sm font-bold text-foreground">
               {atCapacity
-                ? "You reached the media limit"
+                ? "Photo limit reached"
                 : isDragging
                   ? "Drop to upload"
-                  : "Drag & drop photos or videos"}
+                  : "Add photos"}
             </p>
             <p className="text-xs text-muted">
               {atCapacity
-                ? `Maximum ${maxItems} items per listing.`
-                : `Or use the buttons below · ${remaining} slot${remaining === 1 ? "" : "s"} left`}
+                ? `Maximum ${maxItems} photos per listing.`
+                : `${remaining} of ${maxItems} slots left · drag & drop or use buttons`}
             </p>
           </div>
 
@@ -189,20 +226,29 @@ export function MediaDropzone({
               endpoint="productImage"
               multiple
               label="Add photos"
-              onUploadComplete={(url) => onImageUploaded(url)}
-              onUploadManyComplete={(list) => list.forEach(onImageUploaded)}
+              onUploadComplete={(url) => {
+                onImageUploaded(url);
+                setBusyHint(false);
+              }}
+              onUploadManyComplete={(list) => {
+                list.forEach(onImageUploaded);
+                setBusyHint(false);
+              }}
             />
             <VideoUpload
               ref={videoRef}
               endpoint="productVideo"
               label="Add video"
-              onUploadComplete={(url) => onVideoUploaded(url)}
+              onUploadComplete={(url) => {
+                onVideoUploaded(url);
+                setBusyHint(false);
+              }}
             />
           </div>
 
           <p className="pt-1 text-[11px] text-muted">
             <ImagePlus className="mr-1 inline size-3" aria-hidden />
-            At least 1 photo required · Up to {maxItems} items · Video max 3 min
+            At least 2 photos to publish · Max {maxItems} · First / Set cover = listing card
           </p>
         </div>
       </div>
