@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Clock, Video as VideoIcon, X } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api/base";
 import { apiProducts } from "@/lib/api";
 import {
   isVideoUrl,
@@ -354,20 +355,16 @@ export default function ProductFormModal({
       mode === "add"
         ? `${LISTING_KIND_LABEL[draft.kind]} added`
         : "Changes saved";
+    const toastId = toast.loading(`${label}…`);
     const request =
       mode === "add"
         ? apiProducts.createProduct(shopId, body)
         : product
           ? apiProducts.updateProduct(product.id, body)
           : Promise.reject(new Error("Missing product"));
-    toast.promise(request, {
-      loading: `${label}…`,
-      success: done,
-      error: (err) =>
-        err instanceof Error ? err.message : "Could not save. Try again.",
-    });
     try {
       await request;
+      toast.success(done, { id: toastId });
       // Save succeeded → media the user X-ed off is truly gone.
       // Session-uploaded media that survived the save is now persisted,
       // so it stops being an orphan candidate.
@@ -378,8 +375,39 @@ export default function ProductFormModal({
       setSessionUploaded([]);
       initialRef.current = draft;
       onSaved();
-    } catch {
-      /* toast already */
+    } catch (err) {
+      const timedOut =
+        err instanceof ApiError &&
+        (err.code === "timeout" || /timed out/i.test(err.message));
+      if (timedOut && mode === "add") {
+        try {
+          const res = await apiProducts.listShopProducts(shopId, {
+            limit: 30,
+            includeUnpublished: true,
+          });
+          const title = body.title.trim().toLowerCase();
+          const match = (res.items ?? []).find(
+            (item) => (item.title || "").trim().toLowerCase() === title,
+          );
+          if (match) {
+            toast.success("Listing submitted — check status on your listings page", {
+              id: toastId,
+            });
+            if (sessionRemoved.length) void deleteUploadThingFiles(sessionRemoved);
+            setSessionRemoved([]);
+            setSessionUploaded([]);
+            initialRef.current = draft;
+            onSaved();
+            return;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+      toast.error(
+        err instanceof Error ? err.message : "Could not save. Try again.",
+        { id: toastId },
+      );
     } finally {
       setSaving(false);
     }

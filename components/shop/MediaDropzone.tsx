@@ -186,7 +186,7 @@ export function MediaDropzone({
           <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
             <ImageUpload
               ref={imageRef}
-              endpoint="imageUploader"
+              endpoint="productImage"
               multiple
               label="Add photos"
               onUploadComplete={(url) => onImageUploaded(url)}

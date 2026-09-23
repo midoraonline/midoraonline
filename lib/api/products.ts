@@ -238,10 +238,14 @@ export function createProduct(
   body: CreateProductRequest,
   token?: string | null,
 ) {
+  // Publish path can run enqueue + mail/ranking/embed + inline moderation
+  // (up to ~MODERATION_INLINE_TIMEOUT). Default apiFetch 20s caused false
+  // "timed out" toasts while the product was already saved.
   return apiFetch<Product>(`/api/v1/shops/${encodeURIComponent(shopId)}/products`, {
     method: "POST",
     token,
     body: buildCreatePayload(body),
+    timeoutMs: 90_000,
   });
 }
 
@@ -313,6 +317,7 @@ export function updateProduct(
     method: "PATCH",
     token,
     body: buildPatchPayload(body),
+    timeoutMs: 90_000,
   });
 }
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
@@ -473,20 +474,16 @@ export default function ProductFormPage({
       mode === "add"
         ? `${LISTING_KIND_LABEL[draft.kind]} added`
         : "Changes saved";
+    const toastId = toast.loading(`${label}…`);
     const request =
       mode === "add"
         ? apiProducts.createProduct(shopId, body)
         : product
           ? apiProducts.updateProduct(product.id, body)
           : Promise.reject(new Error("Missing product"));
-    toast.promise(request, {
-      loading: `${label}…`,
-      success: done,
-      error: (err) =>
-        err instanceof Error ? err.message : "Could not save. Try again.",
-    });
     try {
       await request;
+      toast.success(done, { id: toastId });
       if (sessionRemoved.length) {
         void deleteUploadThingFiles(sessionRemoved);
       }
@@ -494,8 +491,41 @@ export default function ProductFormPage({
       setSessionUploaded([]);
       initialRef.current = draft;
       router.push(backUrl);
-    } catch {
-      /* toast handles error */
+    } catch (err) {
+      // Client timeout can fire while the API already saved + queued moderation.
+      // Confirm by listing; never leave the merchant thinking publish failed.
+      const timedOut =
+        err instanceof ApiError &&
+        (err.code === "timeout" || /timed out/i.test(err.message));
+      if (timedOut && mode === "add") {
+        try {
+          const res = await apiProducts.listShopProducts(shopId, {
+            limit: 30,
+            includeUnpublished: true,
+          });
+          const title = body.title.trim().toLowerCase();
+          const match = (res.items ?? []).find(
+            (p) => (p.title || "").trim().toLowerCase() === title,
+          );
+          if (match) {
+            toast.success("Listing submitted — check status on your listings page", {
+              id: toastId,
+            });
+            if (sessionRemoved.length) void deleteUploadThingFiles(sessionRemoved);
+            setSessionRemoved([]);
+            setSessionUploaded([]);
+            initialRef.current = draft;
+            router.push(backUrl);
+            return;
+          }
+        } catch {
+          /* fall through to error */
+        }
+      }
+      toast.error(
+        err instanceof Error ? err.message : "Could not save. Try again.",
+        { id: toastId },
+      );
     } finally {
       setSaving(false);
     }
