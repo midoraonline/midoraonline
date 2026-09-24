@@ -306,7 +306,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             </div>
           )}
 
-          {canCaptureStage2 && stage2Status !== "pending" && (
+          {canCaptureStage2 && (
             <>
               {activeForm !== 2 ? (
                 <button type="button" onClick={() => setActiveForm(2)} className="dm-btn dm-btn-primary dm-btn-sm mt-4">

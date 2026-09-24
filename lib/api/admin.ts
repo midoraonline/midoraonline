@@ -563,7 +563,13 @@ export function listTrustQueue(params: { limit?: number } = {}) {
     product_reports: AdminReport[];
     seller_reports: AdminSellerReport[];
     near_dupes: AdminNearDupe[];
-    counts: { product_reports: number; seller_reports: number; near_dupes: number };
+    manual_review?: AdminNearDupe[];
+    counts: {
+      product_reports: number;
+      seller_reports: number;
+      near_dupes: number;
+      manual_review?: number;
+    };
   }>(`/api/v1/admin/trust-queue${suffix}`);
 }
 

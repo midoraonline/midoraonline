@@ -231,6 +231,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
     const c: Record<TabKey, number> = {
       all: items.length,
       pending: 0,
+      submitted: 0,
       unverified: 0,
       verified: 0,
       rejected: 0,
@@ -267,7 +268,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
     shopId: string,
     action: "approve" | "reject" | "queue",
     successMsg: string,
-    stage?: 2 | 3,
+    stage?: 2 | 3 | 4,
   ) {
     setBusyShopId(shopId);
     try {
