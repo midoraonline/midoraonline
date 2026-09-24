@@ -3,6 +3,7 @@ import {
   Skeleton,
   SkeletonRegion,
 } from "@/components/skeletons/Skeleton";
+import { browseProductGridClass } from "@/lib/browseCategories";
 
 function ImageGallerySkeleton() {
   return (
@@ -106,7 +107,7 @@ export default function ProductDetailLoading() {
             <Skeleton className="h-8 w-20" rounded="xl" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className={browseProductGridClass}>
             {[0, 1, 2, 3].map((i) => (
               <ProductCardSkeleton key={i} delay={i + 1} />
             ))}

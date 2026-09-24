@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
+import { isVideoUrl } from "@/lib/api/products";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
@@ -16,8 +17,12 @@ import {
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
 import {
+  COMPENSATION_OPTIONS,
   LISTING_KIND_LABEL,
+  listingCardLabel,
   normalizeListingKind,
+  parseListingMeta,
+  type ListingMeta,
 } from "@/lib/listingMeta";
 
 export type ProductCardData = {
@@ -72,6 +77,34 @@ function formatUGX(value: number) {
     currency: "UGX",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function optionLabel(
+  options: readonly { value: string; label: string }[],
+  value: string | undefined,
+): string | null {
+  if (!value) return null;
+  return options.find((o) => o.value === value)?.label ?? null;
+}
+
+function formatListingRate(
+  price: number,
+  kind: "service" | "opportunity",
+  meta: ListingMeta,
+): string {
+  if (kind === "service" && meta.pricing_model === "quote") return "Get a quote";
+  if (price <= 0) {
+    if (kind === "opportunity") {
+      return optionLabel(COMPENSATION_OPTIONS, meta.compensation) ?? "See details";
+    }
+    return "Get a quote";
+  }
+  const base = formatUGX(price);
+  if (kind === "service") {
+    if (meta.pricing_model === "hourly") return `${base}/hr`;
+    if (meta.pricing_model === "starting_at") return `From ${base}`;
+  }
+  return base;
 }
 
 function userMediaUnoptimized(src: string) {
@@ -227,13 +260,7 @@ export default function ProductCard({
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
       <div className="flex max-w-[75%] flex-wrap gap-1">
         {showKindBadge && (
-          <Badge
-            className={
-              listingKind === "opportunity"
-                ? "bg-sky-600 text-white"
-                : "bg-violet-600 text-white"
-            }
-          >
+          <Badge className="bg-white/90 text-foreground">
             {LISTING_KIND_LABEL[listingKind]}
           </Badge>
         )}
@@ -334,6 +361,60 @@ export default function ProductCard({
       </span>
     </div>
   );
+
+  const coverIsPhoto =
+    Boolean(product.imageUrl?.trim()) && !isVideoUrl(product.imageUrl ?? "");
+  const textFirst =
+    !coverIsPhoto && (listingKind === "service" || listingKind === "opportunity");
+
+  if (textFirst) {
+    const meta = parseListingMeta(product.listing_meta);
+    const rate = formatListingRate(price, listingKind, meta);
+    return (
+      <article
+        ref={impressionRef as React.RefObject<HTMLElement>}
+        className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden"
+      >
+        <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
+          <div className="flex items-start justify-between gap-2">
+            <p className="min-w-0 truncate pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+              {listingCardLabel(listingKind, meta, product.category)}
+            </p>
+            <ProductLikeButton
+              productId={product.id}
+              variant="floating"
+              initialLiked={product.isLiked}
+              initialLikeCount={product.likeCount}
+            />
+          </div>
+          <Link href={productHref} className="dm-focus block outline-none">
+            <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm">
+              {product.title}
+            </h3>
+          </Link>
+          <div className="flex flex-wrap items-baseline gap-1.5">
+            <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
+              {rate}
+            </span>
+            {price > 0 && product.negotiable !== false ? (
+              <span className="text-[10px] font-medium text-muted">· Negotiable</span>
+            ) : null}
+          </div>
+          {metaRow}
+          <div className="mt-auto pt-1.5">
+            <WhatsAppCta
+              waHref={waHref}
+              productId={product.id}
+              productHref={productHref}
+              shopId={product.shop.id}
+              category={product.category ?? undefined}
+              hasDiscount={isDiscounted}
+            />
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   if (layout === "horizontal") {
     return (
