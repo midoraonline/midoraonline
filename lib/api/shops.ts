@@ -381,13 +381,14 @@ export function confirmShopWhatsAppCode(shopId: string, code: string) {
 
 export type VerificationStatus =
   | "unverified"
+  | "submitted"
   | "pending"
   | "verified"
   | "rejected";
 
 export type DocumentUpload = {
   url: string;
-  type: "national_id_front" | "national_id_back" | "selfie" | "business_cert" | "shop_photo" | "business_reg" | "tax_doc";
+  type: string;
   label: string;
 };
 
@@ -405,11 +406,11 @@ export type Verification = {
   submitted_whatsapp?: string | null;
   submitted_location?: string | null;
   shop_duration_days?: number;
-  // Stage-aware fields
   current_stage?: number;
   badges?: string[];
   stage2_status?: VerificationStatus;
   stage3_status?: VerificationStatus;
+  stage4_status?: VerificationStatus;
 };
 
 export function getVerification(shopId: string, token?: string | null) {
@@ -421,19 +422,31 @@ export function getVerification(shopId: string, token?: string | null) {
 
 export function submitForVerificationStage(
   shopId: string,
-  stage: 2 | 3,
+  stage: 2 | 3 | 4,
   body: {
     notes?: string;
     documents?: DocumentUpload[];
     submitted_phone?: string;
     submitted_whatsapp?: string;
     submitted_location?: string;
+    request_review?: boolean;
   } = {},
   token?: string | null
 ) {
   return apiFetch<Verification>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/verification/submit`,
     { method: "POST", token, body: { ...body, stage } }
+  );
+}
+
+export function requestVerificationReview(
+  shopId: string,
+  body: { stage?: 2 | 3 | 4; notes?: string } = {},
+  token?: string | null
+) {
+  return apiFetch<Verification>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/verification/request-review`,
+    { method: "POST", token, body }
   );
 }
 

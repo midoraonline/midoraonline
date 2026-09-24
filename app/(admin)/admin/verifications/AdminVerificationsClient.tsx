@@ -12,10 +12,11 @@ import type {
 import { ApiError } from "@/lib/api/base";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 
-type TabKey = "all" | "pending" | "verified" | "rejected" | "unverified";
+type TabKey = "all" | "pending" | "submitted" | "verified" | "rejected" | "unverified";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "pending", label: "Pending" },
+  { key: "pending", label: "Review queue" },
+  { key: "submitted", label: "Captured (no review)" },
   { key: "unverified", label: "Not submitted" },
   { key: "verified", label: "Verified" },
   { key: "rejected", label: "Rejected" },
@@ -24,6 +25,7 @@ const TABS: { key: TabKey; label: string }[] = [
 
 const STATUS_BADGE: Record<VerificationStatus, string> = {
   unverified: "bg-foreground/[0.06] text-foreground/70",
+  submitted: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
   pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   verified: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   rejected: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
@@ -33,16 +35,22 @@ const BADGE_LABELS: Record<string, string> = {
   shop_listed: "Shop listed",
   identity_verified: "Identity",
   business_verified: "Business",
+  professional_verified: "Professional",
 };
 
 const DOC_TYPE_LABELS: Record<string, string> = {
   national_id_front: "National ID (front)",
   national_id_back: "National ID (back)",
-  selfie: "Selfie / profile photo",
+  passport: "Passport",
+  driving_permit: "Driving permit",
+  selfie: "Selfie with ID",
   business_cert: "Business certificate",
   shop_photo: "Shop photo",
   business_reg: "Business registration",
+  tin: "TIN",
   tax_doc: "Tax document",
+  professional_cred: "Professional credential",
+  professional_license: "Professional license",
 };
 
 type StageStatus = VerificationStatus | string;
@@ -51,14 +59,17 @@ type ParsedSubmission = {
   badges: string[];
   stage2Status: StageStatus;
   stage3Status: StageStatus;
+  stage4Status: StageStatus;
   stage2Notes: string | null;
   stage3Notes: string | null;
+  stage4Notes: string | null;
   stage2Docs: AdminVerificationDoc[];
   stage3Docs: AdminVerificationDoc[];
+  stage4Docs: AdminVerificationDoc[];
   phone: string | null;
   whatsapp: string | null;
   location: string | null;
-  pendingStage: 2 | 3 | null;
+  pendingStage: 2 | 3 | 4 | null;
   appliedFor: string[];
 };
 
@@ -91,6 +102,7 @@ function parseSubmission(v: AdminVerification): ParsedSubmission {
 
   const stage2Status = asStatus(v.stage2_status ?? meta.stage2_status);
   const stage3Status = asStatus(v.stage3_status ?? meta.stage3_status);
+  const stage4Status = asStatus(v.stage4_status ?? meta.stage4_status);
 
   const badgesRaw = Array.isArray(v.badges)
     ? v.badges
@@ -101,10 +113,11 @@ function parseSubmission(v: AdminVerification): ParsedSubmission {
 
   const stage2Docs = asDocs(meta.stage2_docs);
   const stage3Docs = asDocs(meta.stage3_docs);
+  const stage4Docs = asDocs(meta.stage4_docs);
   const fallbackDocs = asDocs(v.submitted_docs);
-  // Older rows may only have top-level submitted_docs
   const docs2 = stage2Docs.length > 0 ? stage2Docs : stage3Status === "unverified" ? fallbackDocs : stage2Docs;
   const docs3 = stage3Docs.length > 0 ? stage3Docs : stage3Status !== "unverified" ? fallbackDocs : [];
+  const docs4 = stage4Docs;
 
   const phone =
     (typeof v.submitted_phone === "string" && v.submitted_phone) ||
@@ -123,27 +136,33 @@ function parseSubmission(v: AdminVerification): ParsedSubmission {
     (typeof meta.stage2_notes === "string" && meta.stage2_notes.trim()) || null;
   const stage3Notes =
     (typeof meta.stage3_notes === "string" && meta.stage3_notes.trim()) || null;
+  const stage4Notes =
+    (typeof meta.stage4_notes === "string" && meta.stage4_notes.trim()) || null;
 
-  let pendingStage: 2 | 3 | null = null;
-  if (stage3Status === "pending") pendingStage = 3;
+  let pendingStage: 2 | 3 | 4 | null = null;
+  if (stage4Status === "pending") pendingStage = 4;
+  else if (stage3Status === "pending") pendingStage = 3;
   else if (stage2Status === "pending") pendingStage = 2;
   else if (v.status === "pending") {
-    // Legacy pending without stage flags — treat as identity
     pendingStage = 2;
   }
 
   const appliedFor: string[] = [];
   if (stage2Status !== "unverified") appliedFor.push("Stage 2 · Identity");
   if (stage3Status !== "unverified") appliedFor.push("Stage 3 · Business");
+  if (stage4Status !== "unverified") appliedFor.push("Stage 4 · Professional");
 
   return {
     badges: badges.length ? badges : ["shop_listed"],
     stage2Status,
     stage3Status,
+    stage4Status,
     stage2Notes,
     stage3Notes,
+    stage4Notes,
     stage2Docs: docs2,
     stage3Docs: docs3,
+    stage4Docs: docs4,
     phone,
     whatsapp,
     location,
@@ -356,11 +375,19 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
             const isOpen = expanded[v.shop_id] ?? v.status === "pending";
             const canQueue = v.status === "unverified";
             const stageLabel =
-              sub.pendingStage === 3
-                ? "Stage 3 · Business"
-                : sub.pendingStage === 2
-                  ? "Stage 2 · Identity"
-                  : null;
+              sub.pendingStage === 4
+                ? "Stage 4 · Professional"
+                : sub.pendingStage === 3
+                  ? "Stage 3 · Business"
+                  : sub.pendingStage === 2
+                    ? "Stage 2 · Identity"
+                    : null;
+            const pendingName =
+              sub.pendingStage === 4
+                ? "Professional"
+                : sub.pendingStage === 3
+                  ? "Business"
+                  : "Identity";
 
             return (
               <li
@@ -458,6 +485,14 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                   >
                     Business: {sub.stage3Status}
                   </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      STATUS_BADGE[(sub.stage4Status as VerificationStatus)] ||
+                      STATUS_BADGE.unverified
+                    }`}
+                  >
+                    Professional: {sub.stage4Status}
+                  </span>
                 </div>
 
                 {isOpen ? (
@@ -533,10 +568,17 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                       notes={sub.stage3Notes}
                       docs={sub.stage3Docs}
                     />
+                    <StageDocsBlock
+                      title="Stage 4 · Professional documents"
+                      status={sub.stage4Status}
+                      notes={sub.stage4Notes}
+                      docs={sub.stage4Docs}
+                    />
 
                     {v.notes &&
                     v.notes !== sub.stage2Notes &&
-                    v.notes !== sub.stage3Notes ? (
+                    v.notes !== sub.stage3Notes &&
+                    v.notes !== sub.stage4Notes ? (
                       <p className="rounded-lg border border-border bg-background p-3 text-xs text-muted">
                         <strong className="font-semibold text-foreground/80">
                           Latest notes:
@@ -585,7 +627,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                       >
                         {isBusy
                           ? "Working…"
-                          : `Approve ${sub.pendingStage === 3 ? "Business" : "Identity"}`}
+                          : `Approve ${pendingName}`}
                       </button>
                       <button
                         disabled={isBusy}
@@ -599,7 +641,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         }
                         className="rounded-xl border border-rose-500/60 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-300"
                       >
-                        Reject {sub.pendingStage === 3 ? "Business" : "Identity"}
+                        Reject {pendingName}
                       </button>
                     </>
                   ) : (
@@ -635,6 +677,23 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                           className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                         >
                           {isBusy ? "Working…" : "Approve Business"}
+                        </button>
+                      ) : null}
+                      {sub.stage2Status === "verified" &&
+                      sub.stage4Status !== "verified" ? (
+                        <button
+                          disabled={isBusy}
+                          onClick={() =>
+                            runAction(
+                              v.shop_id,
+                              "approve",
+                              `${shopName}: Professional approved.`,
+                              4,
+                            )
+                          }
+                          className="rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                        >
+                          {isBusy ? "Working…" : "Approve Professional"}
                         </button>
                       ) : null}
                       <button

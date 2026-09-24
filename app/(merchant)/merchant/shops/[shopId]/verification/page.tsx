@@ -13,7 +13,7 @@ export default function MerchantVerificationPage() {
       <div>
         <h2 className="text-base font-semibold tracking-tight">Shop Verification</h2>
         <p className="mt-1 text-xs text-muted">
-          Complete the 3-stage verification journey to unlock trust badges for your public shop page.
+          Optional ID capture first. Request review when you need Identity / Business / Professional badges or unlocks (more listings, paid plans).
         </p>
       </div>
 

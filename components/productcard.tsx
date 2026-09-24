@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Briefcase, ImageIcon, MapPin, Play, Star, Wrench, Zap } from "lucide-react";
+import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { track } from "@/lib/analytics";
@@ -16,12 +16,8 @@ import {
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
 import {
-  COMPENSATION_OPTIONS,
   LISTING_KIND_LABEL,
-  OPPORTUNITY_KIND_OPTIONS,
-  PRICING_MODEL_OPTIONS,
   normalizeListingKind,
-  parseListingMeta,
 } from "@/lib/listingMeta";
 
 export type ProductCardData = {
@@ -62,7 +58,6 @@ export type ProductCardData = {
   location_name?: string | null;
   /** product | service | opportunity (job maps to opportunity) */
   item_type?: string | null;
-  listing_meta?: Record<string, unknown> | null;
   likeCount?: number;
   isLiked?: boolean;
   rating?: number;
@@ -179,250 +174,6 @@ function WhatsAppCta({
   );
 }
 
-
-function metaLabel(
-  options: readonly { value: string; label: string }[],
-  value: string | undefined,
-): string | null {
-  if (!value) return null;
-  return options.find((o) => o.value === value)?.label ?? value;
-}
-
-function formatRate(price: number, kind: "service" | "opportunity", meta: ReturnType<typeof parseListingMeta>) {
-  if (kind === "service" && meta.pricing_model === "quote") return "Get a quote";
-  if (price <= 0) {
-    if (kind === "opportunity") {
-      const pay = metaLabel(COMPENSATION_OPTIONS, meta.compensation);
-      return pay ?? "See details";
-    }
-    return "Get a quote";
-  }
-  const base = formatUGX(price);
-  if (kind === "service") {
-    if (meta.pricing_model === "hourly") return `${base}/hr`;
-    if (meta.pricing_model === "starting_at") return `From ${base}`;
-  }
-  return base;
-}
-
-function ServiceCard({
-  product,
-  impressionPool,
-  impressionPosition,
-}: {
-  product: ProductCardData;
-  impressionPool?: ImpressionPool;
-  impressionPosition?: number;
-}) {
-  const impressionRef = useImpressionTracker<HTMLElement>({
-    listingId: product.id,
-    shopId: product.shop.id,
-    pool: impressionPool ?? (product.boosted ? "boosted" : "organic"),
-    position: impressionPosition,
-  });
-  const meta = parseListingMeta(product.listing_meta);
-  const productHref = `/products/${product.slug}`;
-  const location =
-    product.location_name?.trim() || product.shop.location?.trim() || null;
-  const pricing = metaLabel(PRICING_MODEL_OPTIONS, meta.pricing_model);
-  const price = product.discountPriceUGX != null && product.discountPriceUGX > 0
-    ? product.discountPriceUGX
-    : product.priceUGX;
-  const rate = formatRate(price, "service", meta);
-  const waHref = product.shopWhatsApp?.trim()
-    ? productInquiryWhatsAppUrl(product.shopWhatsApp, {
-        itemTitle: product.title,
-        itemUrl: product.listingUrl ?? undefined,
-      })
-    : null;
-  const tInfo = timeLabel(product.updated_at || null);
-
-  return (
-    <article
-      ref={impressionRef as React.RefObject<HTMLElement>}
-      className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden border border-violet-500/20 bg-surface"
-    >
-      <div className="relative flex items-center gap-2 border-b border-violet-500/15 bg-violet-600/10 px-3 py-2">
-        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-violet-600 text-white">
-          <Wrench className="size-3.5" strokeWidth={2.25} aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300">
-            Service
-          </p>
-          {product.category ? (
-            <p className="truncate text-[11px] font-medium text-foreground/80">{product.category}</p>
-          ) : null}
-        </div>
-        {pricing ? (
-          <span className="shrink-0 rounded-md bg-violet-600/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-800 dark:text-violet-200">
-            {pricing}
-          </span>
-        ) : null}
-        <div className="absolute right-2 top-2 z-[7]">
-          <ProductLikeButton
-            productId={product.id}
-            variant="floating"
-            initialLiked={product.isLiked}
-            initialLikeCount={product.likeCount}
-          />
-        </div>
-      </div>
-
-      {product.imageUrl ? (
-        <Link href={productHref} className="dm-focus relative block aspect-[16/9] w-full overflow-hidden bg-surface-subtle outline-none">
-          <Image
-            src={product.imageUrl}
-            alt={product.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 50vw, 25vw"
-            unoptimized={userMediaUnoptimized(product.imageUrl)}
-          />
-        </Link>
-      ) : null}
-
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <Link href={productHref} className="dm-focus block outline-none">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground hover:text-accent">
-            {product.title}
-          </h3>
-        </Link>
-        <div className="flex flex-wrap items-baseline gap-1.5">
-          <span className="text-base font-extrabold tabular-nums text-accent">{rate}</span>
-          {product.negotiable !== false && rate !== "Get a quote" ? (
-            <span className="text-[10px] font-medium text-muted">· Negotiable</span>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
-          <MapPin className="size-3 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
-          <span className="truncate font-medium text-foreground/80">{location ?? "Uganda"}</span>
-          {tInfo ? <span className="ml-auto shrink-0 tabular-nums">{tInfo.label}</span> : null}
-        </div>
-        <div className="mt-auto pt-1.5">
-          <WhatsAppCta
-            waHref={waHref}
-            productId={product.id}
-            productHref={productHref}
-            shopId={product.shop.id}
-            category={product.category ?? undefined}
-            compact
-          />
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function OpportunityAlertCard({
-  product,
-  impressionPool,
-  impressionPosition,
-}: {
-  product: ProductCardData;
-  impressionPool?: ImpressionPool;
-  impressionPosition?: number;
-}) {
-  const impressionRef = useImpressionTracker<HTMLElement>({
-    listingId: product.id,
-    shopId: product.shop.id,
-    pool: impressionPool ?? (product.boosted ? "boosted" : "organic"),
-    position: impressionPosition,
-  });
-  const meta = parseListingMeta(product.listing_meta);
-  const productHref = `/products/${product.slug}`;
-  const location =
-    product.location_name?.trim() || product.shop.location?.trim() || null;
-  const kindLabel =
-    metaLabel(OPPORTUNITY_KIND_OPTIONS, meta.opportunity_kind) ?? "Opportunity";
-  const isJob =
-    meta.opportunity_kind === "job" ||
-    (product.item_type ?? "").toLowerCase() === "job" ||
-    /job/i.test(product.category ?? "");
-  const price = product.priceUGX;
-  const rate = formatRate(price, "opportunity", meta);
-  const tInfo = timeLabel(product.updated_at || null);
-  const Icon = isJob ? Briefcase : Bell;
-
-  return (
-    <article
-      ref={impressionRef as React.RefObject<HTMLElement>}
-      className="dm-product-card dm-card-hover relative flex h-full w-full flex-col overflow-hidden border border-sky-500/25 bg-surface pl-1"
-    >
-      <div className="absolute inset-y-0 left-0 w-1 bg-sky-600" aria-hidden />
-      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-3.5">
-        <div className="flex items-start gap-2">
-          <span
-            className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-white ${
-              isJob ? "bg-sky-600" : "bg-sky-500"
-            }`}
-          >
-            <Icon className="size-4" strokeWidth={2.25} aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-wrap items-center gap-1">
-              <span className="rounded-md bg-sky-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-                {isJob ? "Job alert" : kindLabel}
-              </span>
-              {product.boosted ? (
-                <span className="inline-flex items-center gap-0.5 rounded-md bg-accent px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-                  <Zap className="size-2.5" strokeWidth={2.5} aria-hidden />
-                  Hot
-                </span>
-              ) : null}
-              {tInfo ? (
-                <span className="text-[10px] font-medium text-muted">{tInfo.label}</span>
-              ) : null}
-            </div>
-            <Link href={productHref} className="dm-focus block outline-none">
-              <h3 className="line-clamp-2 text-sm font-bold leading-snug tracking-tight text-foreground hover:text-sky-700 dark:hover:text-sky-300 sm:text-[15px]">
-                {product.title}
-              </h3>
-            </Link>
-          </div>
-          <ProductLikeButton
-            productId={product.id}
-            variant="floating"
-            initialLiked={product.isLiked}
-            initialLikeCount={product.likeCount}
-          />
-        </div>
-
-        {product.category ? (
-          <p className="text-[11px] font-medium text-muted">{product.category}</p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-          <span className="inline-flex min-w-0 items-center gap-0.5 font-medium text-foreground/80">
-            <MapPin className="size-3 shrink-0 text-sky-600" strokeWidth={2} aria-hidden />
-            <span className="truncate">{location ?? "Uganda"}</span>
-          </span>
-          <span className="font-extrabold tabular-nums text-sky-700 dark:text-sky-300">
-            {rate}
-          </span>
-          {meta.compensation && price > 0 ? (
-            <span className="text-muted">
-              · {metaLabel(COMPENSATION_OPTIONS, meta.compensation)}
-            </span>
-          ) : null}
-          {meta.deadline?.trim() ? (
-            <span className="text-muted">· Due {meta.deadline.trim()}</span>
-          ) : null}
-        </div>
-
-        <div className="mt-auto pt-1">
-          <Link
-            href={productHref}
-            className="dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl bg-sky-600 py-2.5 text-xs font-bold text-white transition-colors hover:bg-sky-700 active:scale-[0.98]"
-          >
-            {isJob ? "View job" : "View opportunity"}
-          </Link>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 export default function ProductCard({
   product,
   layout = "vertical",
@@ -470,25 +221,6 @@ export default function ProductCard({
   const ratingValue = product.rating ?? 0;
   const listingKind = normalizeListingKind(product.item_type);
   const showKindBadge = listingKind !== "product";
-
-  if (listingKind === "service") {
-    return (
-      <ServiceCard
-        product={product}
-        impressionPool={impressionPool}
-        impressionPosition={impressionPosition}
-      />
-    );
-  }
-  if (listingKind === "opportunity") {
-    return (
-      <OpportunityAlertCard
-        product={product}
-        impressionPool={impressionPool}
-        impressionPosition={impressionPosition}
-      />
-    );
-  }
 
   const imageBadges = (
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
@@ -568,10 +300,10 @@ export default function ProductCard({
       {trustLevel !== "registered" ? (
         <span
           className={`inline-flex shrink-0 items-center gap-0.5 font-semibold ${
-            trustLevel === "business" ? "text-accent" : "text-sky-600"
+            trustLevel === "business" ? "text-accent" : trustLevel === "professional" ? "text-sky-700 dark:text-sky-300" : "text-sky-600"
           }`}
           title={
-            trustLevel === "business" ? "Business verified" : "Identity verified"
+            SHOP_TRUST_LABEL[trustLevel]
           }
         >
           <VerifiedIcon

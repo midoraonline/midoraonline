@@ -170,7 +170,7 @@ export default async function ShopHeader({
                 size={13}
                 label={SHOP_TRUST_LABEL[trustLevel]}
               />
-              {trustLevel === "business" ? "Business verified" : "Identity verified"}
+              {SHOP_TRUST_LABEL[trustLevel]}
             </Meta>
           ) : null}
 

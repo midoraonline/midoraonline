@@ -337,7 +337,7 @@ export default async function ProductDetails({
                     size={14}
                     label={SHOP_TRUST_LABEL[trustLevel]}
                   />
-                  {trustLevel === "business" ? "Business verified" : "Identity verified"}
+                  {SHOP_TRUST_LABEL[trustLevel]}
                 </span>
               ) : null}
 

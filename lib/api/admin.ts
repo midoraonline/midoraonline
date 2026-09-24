@@ -40,6 +40,7 @@ export type AdminSubscription = {
 
 export type VerificationStatus =
   | "unverified"
+  | "submitted"
   | "pending"
   | "verified"
   | "rejected";
@@ -68,6 +69,7 @@ export type AdminVerification = {
   badges?: string[] | null;
   stage2_status?: VerificationStatus | null;
   stage3_status?: VerificationStatus | null;
+  stage4_status?: VerificationStatus | null;
   shops?: {
     name?: string | null;
     slug?: string | null;
@@ -92,6 +94,12 @@ export type AdminVerificationStages = {
     location?: string | null;
   };
   stage3: {
+    status: string;
+    requested_at?: string | null;
+    notes?: string | null;
+    docs?: AdminVerificationDoc[] | null;
+  };
+  stage4?: {
     status: string;
     requested_at?: string | null;
     notes?: string | null;
@@ -223,7 +231,7 @@ export function listVerifications(
 export function approveVerification(
   shopId: string,
   notes?: string,
-  opts?: { stage?: 2 | 3; adminKey?: string },
+  opts?: { stage?: 2 | 3 | 4; adminKey?: string },
 ) {
   const stage = opts?.stage ?? 2;
   const params = new URLSearchParams({ stage: String(stage) });
@@ -236,7 +244,7 @@ export function approveVerification(
 export function rejectVerification(
   shopId: string,
   notes?: string,
-  opts?: { stage?: 2 | 3; adminKey?: string },
+  opts?: { stage?: 2 | 3 | 4; adminKey?: string },
 ) {
   const stage = opts?.stage ?? 2;
   const params = new URLSearchParams({ stage: String(stage) });
@@ -555,13 +563,7 @@ export function listTrustQueue(params: { limit?: number } = {}) {
     product_reports: AdminReport[];
     seller_reports: AdminSellerReport[];
     near_dupes: AdminNearDupe[];
-    manual_review: AdminNearDupe[];
-    counts: {
-      product_reports: number;
-      seller_reports: number;
-      near_dupes: number;
-      manual_review: number;
-    };
+    counts: { product_reports: number; seller_reports: number; near_dupes: number };
   }>(`/api/v1/admin/trust-queue${suffix}`);
 }
 

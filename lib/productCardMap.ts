@@ -34,25 +34,31 @@ export function shopIsVerified(shop: {
   trust_badges?: string[] | null;
 }): boolean {
   const badges = shop.trust_badges ?? [];
-  if (badges.includes("identity_verified") || badges.includes("business_verified")) {
+  if (
+    badges.includes("identity_verified") ||
+    badges.includes("business_verified") ||
+    badges.includes("professional_verified")
+  ) {
     return true;
   }
   return shop.is_active === true;
 }
 
 /** Highest verification stage for display on cards. */
-export type ShopTrustLevel = "business" | "identity" | "registered";
+export type ShopTrustLevel = "business" | "professional" | "identity" | "registered";
 
 export function resolveShopTrustLevel(badges?: string[] | null): ShopTrustLevel {
   const list = badges ?? [];
   if (list.includes("business_verified")) return "business";
+  if (list.includes("professional_verified")) return "professional";
   if (list.includes("identity_verified")) return "identity";
   return "registered";
 }
 
 export const SHOP_TRUST_LABEL: Record<ShopTrustLevel, string> = {
-  business: "Business",
-  identity: "Identity",
+  business: "Verified Business",
+  professional: "Verified Professional",
+  identity: "Identity Verified",
   registered: "Registered",
 };
 
@@ -116,7 +122,6 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
     updated_at: p.updated_at ?? p.created_at ?? null,
     location_name: p.location_name ?? null,
     item_type: p.item_type ?? null,
-    listing_meta: p.listing_meta ?? null,
     rating: ratingFromAverage(p.average_rating),
     reviewCount: p.review_count ?? 0,
     negotiable: p.is_negotiable !== false,
@@ -165,7 +170,6 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     updated_at: item.updated_at ?? item.created_at ?? null,
     location_name: item.location_name ?? null,
     item_type: item.item_type ?? null,
-    listing_meta: item.listing_meta ?? null,
     rating: ratingFromAverage(item.average_rating),
     reviewCount: item.review_count ?? 0,
     negotiable: item.is_negotiable !== false,
@@ -216,7 +220,6 @@ export function productToCard(
     updated_at: product.updated_at ?? product.created_at ?? null,
     location_name: product.location_name ?? null,
     item_type: product.item_type ?? null,
-    listing_meta: product.listing_meta ?? null,
     rating: ratingFromAverage(product.average_rating),
     reviewCount: product.review_count ?? 0,
     negotiable: product.is_negotiable !== false,
@@ -260,7 +263,6 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
     boosted: false,
     updated_at: p.created_at ?? null,
     item_type: p.item_type ?? null,
-    listing_meta: p.listing_meta ?? null,
     rating: ratingFromAverage(p.average_rating),
     reviewCount: p.review_count ?? 0,
     negotiable: p.is_negotiable !== false,
@@ -304,7 +306,6 @@ export function likedProductToCard(p: LikedProduct): ProductCardData {
     boosted: false,
     updated_at: p.created_at ?? null,
     item_type: p.item_type ?? null,
-    listing_meta: p.listing_meta ?? null,
     rating: ratingFromAverage(p.average_rating),
     reviewCount: p.review_count ?? 0,
     negotiable: p.is_negotiable !== false,
