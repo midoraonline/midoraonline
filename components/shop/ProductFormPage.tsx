@@ -25,6 +25,7 @@ import {
   COMPENSATION_OPTIONS,
   CONDITION_OPTIONS,
   deriveOpportunityKindFromSubcategory,
+  indefiniteArticle,
   LISTING_KIND_LABEL,
   LISTING_KIND_OPTIONS,
   listingKindToItemType,
@@ -546,9 +547,10 @@ export default function ProductFormPage({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [isDirty]);
 
+  const kindName = LISTING_KIND_LABEL[draft.kind].toLowerCase();
   const pageTitle =
     mode === "add"
-      ? `Post ${draft.kind === "opportunity" ? "an" : "a"} ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}`
+      ? `Post ${indefiniteArticle(kindName)} ${kindName}`
       : "Edit listing";
 
   return (

@@ -5,11 +5,19 @@ import { MessageCircle } from "lucide-react";
 import MidoraInfoChat from "./midoraInfoChat";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function MidoraInfoChatWidget() {
+export default function MidoraInfoChatWidget({
+  aboveBottomNav = false,
+}: {
+  /** Lift the button above the mobile bottom nav. Desktop stays put. */
+  aboveBottomNav?: boolean;
+}) {
   const [open, setOpen] = useState(false);
+  const position = aboveBottomNav
+    ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6"
+    : "bottom-20 md:bottom-6";
 
   return (
-    <div className="z-fab fixed bottom-20 md:bottom-6 right-6 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3">
+    <div className={`z-fab fixed right-6 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3 ${position}`}>
       <AnimatePresence>
         {open && (
           <motion.div

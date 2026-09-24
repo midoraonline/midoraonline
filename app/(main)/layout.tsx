@@ -38,7 +38,7 @@ export default function MainLayout({
       </main>
       <Footer />
       <BottomNav />
-      <MidoraInfoChatWidget />
+      <MidoraInfoChatWidget aboveBottomNav />
     </div>
   );
 }
