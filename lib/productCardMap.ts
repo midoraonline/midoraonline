@@ -49,8 +49,8 @@ export type ShopTrustLevel = "business" | "professional" | "identity" | "registe
 
 export function resolveShopTrustLevel(badges?: string[] | null): ShopTrustLevel {
   const list = badges ?? [];
-  if (list.includes("business_verified")) return "business";
   if (list.includes("professional_verified")) return "professional";
+  if (list.includes("business_verified")) return "business";
   if (list.includes("identity_verified")) return "identity";
   return "registered";
 }

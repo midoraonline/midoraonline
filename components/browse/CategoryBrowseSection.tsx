@@ -31,6 +31,18 @@ export default function CategoryBrowseSection({
 }: Props) {
   const { tree, counts } = useCategoryItems();
 
+  const listingEntries = useMemo(() => {
+    const pinned = tree.filter((g) => listingEntryRank(g.parent.label) >= 0);
+    return [...pinned].sort(
+      (a, b) => listingEntryRank(a.parent.label) - listingEntryRank(b.parent.label),
+    );
+  }, [tree]);
+
+  const otherGroups = useMemo(
+    () => tree.filter((g) => listingEntryRank(g.parent.label) < 0),
+    [tree],
+  );
+
   const activeGroup = useMemo(
     () =>
       selection.parentLabel
@@ -61,6 +73,28 @@ export default function CategoryBrowseSection({
         </div>
       )}
 
+      {listingEntries.length > 0 ? (
+        <div className="mb-2 grid grid-cols-2 gap-2 sm:flex">
+          {listingEntries.map(({ parent }) => (
+            <CategoryChip
+              key={parent.slug}
+              label={parent.label}
+              icon={resolveCategoryIcon(parent.label)}
+              count={counts[parent.label]}
+              selected={isParentSelected(parent.label)}
+              active={isParentActive(parent.label)}
+              prominent
+              onClick={() =>
+                onSelectionChange({
+                  parentLabel: parent.label,
+                  subcategoryLabel: null,
+                })
+              }
+            />
+          ))}
+        </div>
+      ) : null}
+
       <div className="relative">
         <div className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory">
           <CategoryChip
@@ -71,7 +105,7 @@ export default function CategoryBrowseSection({
             onClick={() => onSelectionChange(EMPTY_CATEGORY_FILTER)}
           />
 
-          {tree.map(({ parent }) => (
+          {otherGroups.map(({ parent }) => (
             <CategoryChip
               key={parent.slug}
               label={parent.label}
@@ -168,6 +202,14 @@ export default function CategoryBrowseSection({
   );
 }
 
+/** Services and Opportunities stay above the scrolling category row. */
+function listingEntryRank(label: string): number {
+  const key = label.trim().toLowerCase();
+  if (key === "services") return 0;
+  if (key === "opportunities") return 1;
+  return -1;
+}
+
 function CategoryChip({
   label,
   icon: Icon,
@@ -175,6 +217,7 @@ function CategoryChip({
   active,
   onClick,
   count,
+  prominent = false,
 }: {
   label: string;
   icon: LucideIcon;
@@ -182,6 +225,7 @@ function CategoryChip({
   active: boolean;
   onClick: () => void;
   count?: number;
+  prominent?: boolean;
 }) {
   const emphasized = active || selected;
   return (
@@ -189,7 +233,9 @@ function CategoryChip({
       type="button"
       onClick={onClick}
       aria-pressed={emphasized}
-      className={`inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full px-2.5 text-[11px] transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
+      className={`inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-2.5 text-[11px] transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
+        prominent ? "h-11 w-full justify-center text-xs sm:w-auto" : "h-9"
+      } ${
         active
           ? "bg-accent text-white shadow-md shadow-accent/30"
           : selected

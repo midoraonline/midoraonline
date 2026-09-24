@@ -325,7 +325,11 @@ export default async function ProductDetails({
               {trustLevel !== "registered" ? (
                 <span
                   className={`inline-flex items-center gap-1 font-semibold ${
-                    trustLevel === "business" ? "text-accent" : "text-sky-600"
+                    trustLevel === "business"
+                      ? "text-accent"
+                      : trustLevel === "professional"
+                        ? "text-sky-700 dark:text-sky-300"
+                        : "text-sky-600"
                   }`}
                 >
                   <VerifiedIcon
@@ -431,7 +435,11 @@ export default async function ProductDetails({
                   {trustLevel !== "registered" ? (
                     <span
                       className={
-                        trustLevel === "business" ? "font-medium text-accent" : "font-medium text-sky-600"
+                        trustLevel === "business"
+                          ? "font-medium text-accent"
+                          : trustLevel === "professional"
+                            ? "font-medium text-sky-700 dark:text-sky-300"
+                            : "font-medium text-sky-600"
                       }
                     >
                       · {SHOP_TRUST_LABEL[trustLevel]}
