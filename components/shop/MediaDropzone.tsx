@@ -19,6 +19,8 @@ type MediaDropzoneProps = {
   onRemove: (index: number) => void;
   onSetCover?: (index: number) => void;
   maxItems?: number;
+  /** Products need photos to publish. Services and opportunities do not. */
+  photosRequired?: boolean;
   disabled?: boolean;
 };
 
@@ -39,6 +41,7 @@ export function MediaDropzone({
   onRemove,
   onSetCover,
   maxItems = 3,
+  photosRequired = true,
   disabled = false,
 }: MediaDropzoneProps) {
   const imageRef = useRef<ImageUploadHandle>(null);
@@ -248,7 +251,7 @@ export function MediaDropzone({
 
           <p className="pt-1 text-[11px] text-muted">
             <ImagePlus className="mr-1 inline size-3" aria-hidden />
-            At least 2 photos to publish · Max {maxItems} · First / Set cover = listing card
+            {photosRequired ? "At least 2 photos to publish" : "Photos optional"} · Max {maxItems} · First / Set cover = listing card
           </p>
         </div>
       </div>

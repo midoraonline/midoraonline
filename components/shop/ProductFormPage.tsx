@@ -60,12 +60,14 @@ function MediaGridWrapper({
   onImageUploaded,
   onVideoUploaded,
   onSetCover,
+  photosRequired,
 }: {
   urls: string[];
   onRemove: (index: number) => void;
   onImageUploaded: (url: string) => void;
   onVideoUploaded: (url: string) => void;
   onSetCover: (index: number) => void;
+  photosRequired: boolean;
 }) {
   return (
     <MediaDropzone
@@ -75,6 +77,7 @@ function MediaGridWrapper({
       onVideoUploaded={onVideoUploaded}
       onSetCover={onSetCover}
       maxItems={MAX_LISTING_MEDIA}
+      photosRequired={photosRequired}
     />
   );
 }
@@ -545,7 +548,7 @@ export default function ProductFormPage({
 
   const pageTitle =
     mode === "add"
-      ? `Post a ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}`
+      ? `Post ${draft.kind === "opportunity" ? "an" : "a"} ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}`
       : "Edit listing";
 
   return (
@@ -688,76 +691,10 @@ export default function ProductFormPage({
           </div>
         ) : null}
 
-        {/* Card 1: Media Upload (hero — first for fast posting) */}
-        <section className={`dm-card p-5 sm:p-6 space-y-4${draft.kind === "opportunity" ? " border-l-4 border-l-sky-600" : ""}`}>
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
-              {draft.kind === "opportunity"
-                ? "1. Media (optional)"
-                : draft.kind === "service"
-                  ? "1. Photos & Video (optional)"
-                  : "1. Photos & Video"}
-            </h2>
-            <p className="text-xs text-muted">
-              {draft.kind === "opportunity"
-                ? "Jobs and openings work as text alerts — photos are optional. You can still add up to 3 photos or a short video if you want."
-                : draft.kind === "service"
-                  ? "Photos are optional for services. Add up to 3 if they help clients trust your work — tap Set cover when you do."
-                  : "Up to 3 photos (or short videos). At least 2 photos to publish — tap Set cover to choose which shows on your listing card."}
-            </p>
-            {draft.kind === "opportunity" ? (
-              <p className="mt-2 rounded-lg bg-sky-600/10 px-3 py-2 text-xs font-medium text-sky-800 dark:text-sky-200 ring-1 ring-sky-600/20">
-                Tip: clear title, location, pay/budget, and requirements matter more than a cover photo for job alerts.
-              </p>
-            ) : null}
-          </div>
-
-          <MediaGridWrapper
-            urls={draft.image_urls}
-            onRemove={(index) => {
-              const target = draft.image_urls[index];
-              setDraft((d) => ({
-                ...d,
-                image_urls: d.image_urls.filter((_, i) => i !== index),
-              }));
-              if (target) {
-                setSessionRemoved((prev) => [...prev, target]);
-              }
-            }}
-            onSetCover={(index) => {
-              if (index <= 0) return;
-              setDraft((d) => {
-                const next = [...d.image_urls];
-                const [picked] = next.splice(index, 1);
-                next.unshift(picked);
-                return { ...d, image_urls: next };
-              });
-            }}
-            onImageUploaded={(url) => {
-              setDraft((d) => ({
-                ...d,
-                image_urls: [...d.image_urls, url],
-              }));
-              setSessionUploaded((prev) => [...prev, url]);
-            }}
-            onVideoUploaded={(url) => {
-              setDraft((d) => ({
-                ...d,
-                image_urls: [...d.image_urls, url],
-              }));
-              setSessionUploaded((prev) => [...prev, url]);
-            }}
-          />
-
-          {showErrors && errors.images ? (
-            <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
-          ) : null}
-        </section>
-
-        {/* Card 1: Listing type */}
+        {/* Listing type is chosen before media — photo rules depend on it. */}
         <section className="dm-card p-5 sm:p-6 space-y-4">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">2. Listing Type</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">1. Listing Type</h2>
             <p className="text-xs text-muted">Choose what type of offering you are posting to Midora.</p>
           </div>
 
@@ -798,6 +735,67 @@ export default function ProductFormPage({
               Listing Kind: {LISTING_KIND_LABEL[draft.kind]}
             </p>
           )}
+        </section>
+
+        <section className="dm-card p-5 sm:p-6 space-y-4">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+              {draft.kind === "opportunity"
+                ? "2. Media (optional)"
+                : draft.kind === "service"
+                  ? "2. Photos & Video (optional)"
+                  : "2. Photos & Video"}
+            </h2>
+            <p className="text-xs text-muted">
+              {draft.kind === "opportunity"
+                ? "Photos are optional. You can still add up to 3 photos or a short video."
+                : draft.kind === "service"
+                  ? "Photos are optional for services. Add up to 3 if they help clients trust your work — tap Set cover when you do."
+                  : "Up to 3 photos (or short videos). At least 2 photos to publish — tap Set cover to choose which shows on your listing card."}
+            </p>
+          </div>
+
+          <MediaGridWrapper
+            photosRequired={draft.kind === "product"}
+            urls={draft.image_urls}
+            onRemove={(index) => {
+              const target = draft.image_urls[index];
+              setDraft((d) => ({
+                ...d,
+                image_urls: d.image_urls.filter((_, i) => i !== index),
+              }));
+              if (target) {
+                setSessionRemoved((prev) => [...prev, target]);
+              }
+            }}
+            onSetCover={(index) => {
+              if (index <= 0) return;
+              setDraft((d) => {
+                const next = [...d.image_urls];
+                const [picked] = next.splice(index, 1);
+                next.unshift(picked);
+                return { ...d, image_urls: next };
+              });
+            }}
+            onImageUploaded={(url) => {
+              setDraft((d) => ({
+                ...d,
+                image_urls: [...d.image_urls, url],
+              }));
+              setSessionUploaded((prev) => [...prev, url]);
+            }}
+            onVideoUploaded={(url) => {
+              setDraft((d) => ({
+                ...d,
+                image_urls: [...d.image_urls, url],
+              }));
+              setSessionUploaded((prev) => [...prev, url]);
+            }}
+          />
+
+          {showErrors && errors.images ? (
+            <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
+          ) : null}
         </section>
 
         {/* Card 2: Basic Info (Title & Description) */}

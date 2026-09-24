@@ -28,14 +28,12 @@ export default function AdminReportsClient({ initialReports }: Props) {
       setSellerReports(queue.seller_reports ?? []);
       setNearDupes(queue.near_dupes ?? []);
       setManualReview(queue.manual_review ?? []);
-      setCounts(
-        queue.counts ?? {
-          product_reports: 0,
-          seller_reports: 0,
-          near_dupes: 0,
-          manual_review: 0,
-        },
-      );
+      setCounts({
+        product_reports: queue.counts?.product_reports ?? 0,
+        seller_reports: queue.counts?.seller_reports ?? 0,
+        near_dupes: queue.counts?.near_dupes ?? 0,
+        manual_review: queue.counts?.manual_review ?? 0,
+      });
     } catch {
       try {
         const [listings, sellers, dupes] = await Promise.all([

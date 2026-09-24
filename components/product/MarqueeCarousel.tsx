@@ -10,39 +10,53 @@ type Props = {
   speed?: number;
 };
 
+const GAP_PX = 12;
+
+/** Card width matches browse columns (2 / 3 / 4) inside this scroller. */
+function applyCardWidth(root: HTMLElement) {
+  const width = root.clientWidth;
+  const cols = width >= 1024 ? 4 : width >= 768 ? 3 : 2;
+  const card = Math.max(0, (width - GAP_PX * (cols - 1)) / cols);
+  root.style.setProperty("--marquee-card", `${card}px`);
+  return card + GAP_PX;
+}
+
 export default function MarqueeCarousel({ items, speed = 50 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
-  const lastTimeRef = useRef(0);
-
-  const cardWidth = 256 + 12;
-
-  const tick = (time: number) => {
-    if (!scrollRef.current) return;
-    if (!lastTimeRef.current) lastTimeRef.current = time;
-    const delta = time - lastTimeRef.current;
-    lastTimeRef.current = time;
-
-    if (!pausedRef.current) {
-      const step = (speed * delta) / 1000;
-      const el = scrollRef.current;
-      el.scrollLeft += step;
-      const half = items.length * cardWidth;
-      if (el.scrollLeft >= half) {
-        el.scrollLeft = 0;
-      }
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  };
+  const strideRef = useRef(0);
+  const countRef = useRef(items.length);
+  const speedRef = useRef(speed);
 
   useEffect(() => {
-    lastTimeRef.current = 0;
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    countRef.current = items.length;
+    speedRef.current = speed;
+    const root = scrollRef.current;
+    if (!root) return;
+    const measure = () => {
+      strideRef.current = applyCardWidth(root);
     };
-  }, [items, speed]);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    let last = 0;
+    let raf = 0;
+    const loop = (time: number) => {
+      const delta = last ? time - last : 0;
+      last = time;
+      if (!pausedRef.current && strideRef.current > 0) {
+        root.scrollLeft += (speedRef.current * delta) / 1000;
+        const loopAt = countRef.current * strideRef.current;
+        if (loopAt > 0 && root.scrollLeft >= loopAt) root.scrollLeft = 0;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [items.length, speed]);
 
   if (items.length === 0) return null;
 
@@ -66,7 +80,7 @@ export default function MarqueeCarousel({ items, speed = 50 }: Props) {
         {doubled.map((p, i) => (
           <motion.div
             key={`${p.id}-${i}`}
-            className="w-64 shrink-0"
+            className="w-[var(--marquee-card,46%)] shrink-0"
             variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 },

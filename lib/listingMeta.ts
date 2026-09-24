@@ -406,6 +406,26 @@ function optionLabel<T extends string>(
   return options.find((o) => o.value === value)?.label ?? value;
 }
 
+/** One short label for a text listing card: type, category, or both when they differ. */
+export function listingCardLabel(
+  kind: ListingKind,
+  meta: ListingMeta,
+  category?: string | null,
+): string {
+  const categoryLabel = category?.trim() ?? "";
+  if (kind === "service") return categoryLabel || "Service";
+  if (kind !== "opportunity") return categoryLabel || "Product";
+  const kindLabel = optionLabel(OPPORTUNITY_KIND_OPTIONS, meta.opportunity_kind);
+  if (
+    kindLabel &&
+    categoryLabel &&
+    categoryLabel.toLowerCase() !== kindLabel.toLowerCase()
+  ) {
+    return `${kindLabel} · ${categoryLabel}`;
+  }
+  return kindLabel || categoryLabel || "Opportunity";
+}
+
 function pushIf(
   rows: { label: string; value: string }[],
   label: string,

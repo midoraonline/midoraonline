@@ -510,6 +510,49 @@ export default function ProductFormModal({
             })()
           : null}
 
+        {/* Listing type */}
+        {allowTypePick ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              What are you posting? <span className="text-[color:var(--error)]">*</span>
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {LISTING_KIND_OPTIONS.map((opt) => {
+                const active = draft.kind === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        kind: opt.value,
+                        meta: {},
+                      }))
+                    }
+                    className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      active
+                        ? "border-accent bg-accent/10 ring-1 ring-accent/30"
+                        : "border-border bg-surface hover:border-accent/40"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-foreground">
+                      {opt.label}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                      {opt.hint}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs font-medium text-muted">
+            Type: {LISTING_KIND_LABEL[draft.kind]}
+          </p>
+        )}
+
         {/* Media */}
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
@@ -578,56 +621,15 @@ export default function ProductFormModal({
             </div>
             {showErrors && errors.images ? (
               <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
-            ) : (
+            ) : draft.kind === "product" ? (
               <p className="text-xs text-muted">
-                Photos first — add at least 2 photos to publish. First photo is the cover.
+                At least 2 photos to publish. First photo is the cover.
               </p>
+            ) : (
+              <p className="text-xs text-muted">Optional — up to 3 photos or a short video.</p>
             )}
           </div>
         </div>
-
-        {/* Listing type */}
-        {allowTypePick ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">
-              What are you posting? <span className="text-[color:var(--error)]">*</span>
-            </p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {LISTING_KIND_OPTIONS.map((opt) => {
-                const active = draft.kind === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        kind: opt.value,
-                        meta: {},
-                      }))
-                    }
-                    className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                      active
-                        ? "border-accent bg-accent/10 ring-1 ring-accent/30"
-                        : "border-border bg-surface hover:border-accent/40"
-                    }`}
-                  >
-                    <span className="block text-sm font-semibold text-foreground">
-                      {opt.label}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] leading-snug text-muted">
-                      {opt.hint}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs font-medium text-muted">
-            Type: {LISTING_KIND_LABEL[draft.kind]}
-          </p>
-        )}
 
         {/* Title */}
         <div className="space-y-1.5">

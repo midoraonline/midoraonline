@@ -909,7 +909,7 @@ function VerificationBadge({
   status,
   active,
 }: {
-  status: "unverified" | "pending" | "verified" | "rejected";
+  status: "unverified" | "submitted" | "pending" | "verified" | "rejected";
   active: boolean;
 }) {
   const tone =
