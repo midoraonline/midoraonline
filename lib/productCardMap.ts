@@ -125,6 +125,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
     rating: ratingFromAverage(p.average_rating),
     reviewCount: p.review_count ?? 0,
     negotiable: p.is_negotiable !== false,
+    listing_meta: p.listing_meta ?? null,
   };
 }
 
@@ -173,6 +174,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     rating: ratingFromAverage(item.average_rating),
     reviewCount: item.review_count ?? 0,
     negotiable: item.is_negotiable !== false,
+    listing_meta: (item as { listing_meta?: Record<string, unknown> | null }).listing_meta ?? null,
   };
 }
 
@@ -223,6 +225,7 @@ export function productToCard(
     rating: ratingFromAverage(product.average_rating),
     reviewCount: product.review_count ?? 0,
     negotiable: product.is_negotiable !== false,
+    listing_meta: product.listing_meta ?? null,
   };
 }
 

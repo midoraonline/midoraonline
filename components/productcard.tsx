@@ -63,6 +63,7 @@ export type ProductCardData = {
   rating?: number;
   reviewCount?: number;
   negotiable?: boolean;
+  listing_meta?: Record<string, unknown> | null;
 };
 
 function formatUGX(value: number) {
