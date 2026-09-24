@@ -8,6 +8,7 @@ import {
   categoryMetaFields,
   descriptionMeetsStandard,
   hasRequiredListingImage,
+  photosRequiredForKind,
 } from "@/lib/listingMeta";
 import { isVideoUrl } from "@/lib/api/products";
 
@@ -206,12 +207,15 @@ export function validateListingDraft(
 
   const photoCount = draft.image_urls.filter((u) => u.trim() && !isVideoUrl(u)).length;
   const mediaCount = draft.image_urls.filter((u) => u.trim()).length;
+  const needsPhotos = photosRequiredForKind(draft.kind);
   if (mediaCount > MAX_LISTING_MEDIA) {
     errors.images = `At most ${MAX_LISTING_MEDIA} photos or videos per listing.`;
-  } else if (draft.is_published && photoCount < MIN_LISTING_PHOTOS) {
+  } else if (needsPhotos && draft.is_published && photoCount < MIN_LISTING_PHOTOS) {
     errors.images = `Add at least ${MIN_LISTING_PHOTOS} photos before publishing (videos alone are not enough).`;
-  } else if (!hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
+  } else if (needsPhotos && !hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
     errors.images = "Upload at least one photo (video alone is not enough).";
+  } else if (!needsPhotos && mediaCount > 0 && photoCount === 0) {
+    errors.images = "Add a photo if you include media (video alone is not enough), or remove the video.";
   }
 
   if (draft.is_published) {

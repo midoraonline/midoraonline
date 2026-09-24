@@ -37,7 +37,6 @@ import {
 import {
   evaluateSalePrice,
   MAX_LISTING_MEDIA,
-  MIN_LISTING_PHOTOS,
   validateListingDraft,
   type ListingDraft,
 } from "@/lib/schemas/listingForm";
@@ -690,12 +689,27 @@ export default function ProductFormPage({
         ) : null}
 
         {/* Card 1: Media Upload (hero — first for fast posting) */}
-        <section className="dm-card p-5 sm:p-6 space-y-4">
+        <section className={`dm-card p-5 sm:p-6 space-y-4${draft.kind === "opportunity" ? " border-l-4 border-l-sky-600" : ""}`}>
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">1. Photos & Video</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+              {draft.kind === "opportunity"
+                ? "1. Media (optional)"
+                : draft.kind === "service"
+                  ? "1. Photos & Video (optional)"
+                  : "1. Photos & Video"}
+            </h2>
             <p className="text-xs text-muted">
-              Up to 3 photos (or short videos). At least 2 photos to publish — tap Set cover to choose which shows on your listing card.
+              {draft.kind === "opportunity"
+                ? "Jobs and openings work as text alerts — photos are optional. You can still add up to 3 photos or a short video if you want."
+                : draft.kind === "service"
+                  ? "Photos are optional for services. Add up to 3 if they help clients trust your work — tap Set cover when you do."
+                  : "Up to 3 photos (or short videos). At least 2 photos to publish — tap Set cover to choose which shows on your listing card."}
             </p>
+            {draft.kind === "opportunity" ? (
+              <p className="mt-2 rounded-lg bg-sky-600/10 px-3 py-2 text-xs font-medium text-sky-800 dark:text-sky-200 ring-1 ring-sky-600/20">
+                Tip: clear title, location, pay/budget, and requirements matter more than a cover photo for job alerts.
+              </p>
+            ) : null}
           </div>
 
           <MediaGridWrapper

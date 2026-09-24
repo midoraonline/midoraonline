@@ -343,7 +343,11 @@ export default function HomeLanding({
     filters.verifiedOnly ||
     filters.minRating !== null ||
     filters.location !== null ||
-    filters.nearMe;
+    filters.nearMe ||
+    filters.listingKind !== null ||
+    filters.opportunityKind !== null ||
+    filters.compensation !== null ||
+    filters.pricingModel !== null;
 
   const displayProducts = isSearching
     ? (() => {
@@ -365,7 +369,12 @@ export default function HomeLanding({
           showHeader={false}
           browseAllHref="/products"
         />
-        <ProductFilters products={products} filters={filters} onChange={setFilters} />
+        <ProductFilters
+          products={products}
+          filters={filters}
+          onChange={setFilters}
+          contextParentLabel={categoryFilter.parentLabel}
+        />
       </div>
 
       <div id="products-feed" className="space-y-4 sm:space-y-5">

@@ -26,6 +26,7 @@ import {
   CONDITION_OPTIONS,
   descriptionMeetsStandard,
   hasRequiredListingImage,
+  photosRequiredForKind,
   LISTING_KIND_LABEL,
   LISTING_KIND_OPTIONS,
   listingKindToItemType,
@@ -263,8 +264,14 @@ export default function ProductFormModal({
     if (!draft.title.trim()) e.title = "Title is required.";
     const descCheck = descriptionMeetsStandard(draft.description);
     if (!descCheck.ok) e.description = descCheck.message;
-    if (!hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
-      e.images = "Upload at least one photo (video alone is not enough).";
+    const photoCount = draft.image_urls.filter((u) => u.trim() && !isVideoUrl(u)).length;
+    const mediaCount = draft.image_urls.filter((u) => u.trim()).length;
+    if (photosRequiredForKind(draft.kind)) {
+      if (!hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
+        e.images = "Upload at least one photo (video alone is not enough).";
+      }
+    } else if (mediaCount > 0 && photoCount === 0) {
+      e.images = "Add a photo if you include media (video alone is not enough), or remove the video.";
     }
     if (!draft.category.trim()) e.category = "Pick a category.";
     else {
@@ -507,12 +514,22 @@ export default function ProductFormModal({
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-sm font-medium text-foreground">
-              Photos &amp; video <span className="text-[color:var(--error)]">*</span>
+              {draft.kind === "product" ? (
+                <>
+                  Photos &amp; video <span className="text-[color:var(--error)]">*</span>
+                </>
+              ) : draft.kind === "opportunity" ? (
+                "Media (optional)"
+              ) : (
+                "Photos & video (optional)"
+              )}
             </p>
             <p className="text-xs text-muted">
               {draft.image_urls.length
                 ? `${draft.image_urls.length} attached`
-                : "At least 2 photos to publish"}
+                : draft.kind === "product"
+                  ? "At least 2 photos to publish"
+                  : "Optional — 0 is OK"}
             </p>
           </div>
           <div className="dm-card space-y-3 p-3 sm:p-4">

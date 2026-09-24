@@ -5,6 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
+import ProductFilters, {
+  applyFilters,
+  DEFAULT_FILTERS,
+  type FilterState,
+} from "@/components/browse/ProductFilters";
 import ProductCard from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import {
@@ -31,6 +36,7 @@ export default function ProductsBrowsePage({
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [allItems, setAllItems] = useState(items);
   const { items: categoryItems } = useCategoryItems();
   const [nextCursor, setNextCursor] = useState<string | null>(
@@ -142,19 +148,25 @@ export default function ProductsBrowsePage({
     if (categoryFilterActive) {
       list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter, categoryItems));
     }
-    return list;
-  }, [allItems, categoryFilter, categoryFilterActive, categoryItems, isSearching]);
+    return applyFilters(list, filters);
+  }, [allItems, categoryFilter, categoryFilterActive, categoryItems, filters, isSearching]);
 
-  const displayItems = isSearching ? search.items : browseItems;
+  const displayItems = isSearching ? applyFilters(search.items, filters) : browseItems;
   const filterHint = categoryFilterLabel ? ` · ${categoryFilterLabel}` : "";
 
   return (
     <div className="w-full">
-      <div className="mb-3 sm:mb-4">
+      <div className="mb-3 space-y-2 sm:mb-4">
         <CategoryBrowseSection
           selection={categoryFilter}
           onSelectionChange={setCategoryFilter}
           showHeader={false}
+        />
+        <ProductFilters
+          products={allItems}
+          filters={filters}
+          onChange={setFilters}
+          contextParentLabel={categoryFilter.parentLabel}
         />
       </div>
 

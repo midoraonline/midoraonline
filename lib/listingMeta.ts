@@ -342,6 +342,11 @@ export function descriptionMeetsStandard(text: string): {
   return { ok: true };
 }
 
+/** Physical products need cover photos; services/opportunities are text-first. */
+export function photosRequiredForKind(kind: ListingKind): boolean {
+  return kind === "product";
+}
+
 export function hasRequiredListingImage(
   urls: string[],
   isVideoUrl: (u: string) => boolean,

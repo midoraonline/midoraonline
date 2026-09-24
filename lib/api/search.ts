@@ -30,6 +30,7 @@ export type SearchProductItem = {
   primary_image?: string | null;
   category?: string | null;
   item_type?: string | null;
+  listing_meta?: Record<string, unknown> | null;
   view_count?: number;
   like_count?: number;
   viewer_liked?: boolean | null;

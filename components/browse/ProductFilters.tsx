@@ -19,6 +19,14 @@ import {
 } from "lucide-react";
 import type { ProductCardData } from "@/components/productcard";
 import {
+  COMPENSATION_OPTIONS,
+  OPPORTUNITY_KIND_OPTIONS,
+  PRICING_MODEL_OPTIONS,
+  normalizeListingKind,
+  parseListingMeta,
+  type ListingKind,
+} from "@/lib/listingMeta";
+import {
   GeoLocationError,
   getBrowserLocation,
   labelFromReverse,
@@ -54,6 +62,14 @@ export type FilterState = {
   /** Sort listings by GPS proximity when userGeo is set. */
   nearMe: boolean;
   userGeo: UserGeo | null;
+  /** Narrow to product / service / opportunity when set. */
+  listingKind: ListingKind | null;
+  /** Opportunities: job | gig | … from listing_meta.opportunity_kind */
+  opportunityKind: string | null;
+  /** Opportunities: paid | unpaid | … */
+  compensation: string | null;
+  /** Services: fixed | hourly | starting_at | quote */
+  pricingModel: string | null;
 };
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -66,6 +82,10 @@ export const DEFAULT_FILTERS: FilterState = {
   location: null,
   nearMe: false,
   userGeo: null,
+  listingKind: null,
+  opportunityKind: null,
+  compensation: null,
+  pricingModel: null,
 };
 
 const SORT_LABELS: Record<SortOption, string> = {
@@ -116,6 +136,10 @@ function activeFilterCount(f: FilterState): number {
   if (f.verifiedOnly) n++;
   if (f.minRating !== null) n++;
   if (f.location !== null || f.nearMe) n++;
+  if (f.listingKind !== null) n++;
+  if (f.opportunityKind !== null) n++;
+  if (f.compensation !== null) n++;
+  if (f.pricingModel !== null) n++;
   return n;
 }
 
@@ -137,6 +161,27 @@ export function applyFilters(
         p.location_name?.trim() === filters.location ||
         p.shop.location?.trim() === filters.location,
     );
+  }
+  if (filters.listingKind !== null) {
+    list = list.filter((p) => normalizeListingKind(p.item_type) === filters.listingKind);
+  }
+  if (filters.opportunityKind !== null) {
+    list = list.filter((p) => {
+      const meta = parseListingMeta(p.listing_meta);
+      return meta.opportunity_kind === filters.opportunityKind;
+    });
+  }
+  if (filters.compensation !== null) {
+    list = list.filter((p) => {
+      const meta = parseListingMeta(p.listing_meta);
+      return meta.compensation === filters.compensation;
+    });
+  }
+  if (filters.pricingModel !== null) {
+    list = list.filter((p) => {
+      const meta = parseListingMeta(p.listing_meta);
+      return meta.pricing_model === filters.pricingModel;
+    });
   }
 
   switch (filters.sort) {
@@ -537,9 +582,11 @@ type Props = {
   products: ProductCardData[];
   filters: FilterState;
   onChange: (filters: FilterState) => void;
+  /** Active top-level category label (e.g. Services / Opportunities) for contextual chips. */
+  contextParentLabel?: string | null;
 };
 
-export default function ProductFilters({ products, filters, onChange }: Props) {
+export default function ProductFilters({ products, filters, onChange, contextParentLabel }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLocating, setDrawerLocating] = useState(false);
   const [drawerNearMeError, setDrawerNearMeError] = useState<string | null>(null);
@@ -547,6 +594,20 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
   const locations = useMemo(() => collectLocationEntries(products), [products]);
   const count = activeFilterCount(filters);
   const hasActiveFilters = count > 0;
+
+  const parentCtx = (contextParentLabel ?? "").trim().toLowerCase();
+  const showOpportunityFilters =
+    parentCtx === "opportunities" ||
+    filters.listingKind === "opportunity" ||
+    products.some((p) => normalizeListingKind(p.item_type) === "opportunity");
+  const showServiceFilters =
+    parentCtx === "services" ||
+    filters.listingKind === "service" ||
+    products.some((p) => normalizeListingKind(p.item_type) === "service");
+  const showKindToggle =
+    showOpportunityFilters ||
+    showServiceFilters ||
+    products.some((p) => normalizeListingKind(p.item_type) !== "product");
 
   function update(partial: Partial<FilterState>) {
     onChange({ ...filters, ...partial });
@@ -666,7 +727,39 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
     });
   }
 
-  // Always show location control so Near me works even before listings load places.
+    if (filters.listingKind) {
+    appliedChips.push({
+      key: "listingKind",
+      label: filters.listingKind === "opportunity" ? "Opportunities" : filters.listingKind === "service" ? "Services" : "Products",
+      clear: () => update({ listingKind: null, opportunityKind: null, compensation: null, pricingModel: null }),
+    });
+  }
+  if (filters.opportunityKind) {
+    const label = OPPORTUNITY_KIND_OPTIONS.find((o) => o.value === filters.opportunityKind)?.label ?? filters.opportunityKind;
+    appliedChips.push({
+      key: "opportunityKind",
+      label,
+      clear: () => update({ opportunityKind: null }),
+    });
+  }
+  if (filters.compensation) {
+    const label = COMPENSATION_OPTIONS.find((o) => o.value === filters.compensation)?.label ?? filters.compensation;
+    appliedChips.push({
+      key: "compensation",
+      label,
+      clear: () => update({ compensation: null }),
+    });
+  }
+  if (filters.pricingModel) {
+    const label = PRICING_MODEL_OPTIONS.find((o) => o.value === filters.pricingModel)?.label ?? filters.pricingModel;
+    appliedChips.push({
+      key: "pricingModel",
+      label,
+      clear: () => update({ pricingModel: null }),
+    });
+  }
+
+// Always show location control so Near me works even before listings load places.
   const showLocationControl = true;
 
   return (
@@ -833,7 +926,7 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
                 </div>
               </FilterSection>
 
-              <FilterSection title="Price (UGX)">
+              <FilterSection title={showOpportunityFilters && !showServiceFilters ? "Budget / pay (UGX)" : "Price (UGX)"}>
                 <div className="grid grid-cols-2 gap-1.5">
                   {PRICE_PRESETS.map((preset) => {
                     const on = preset.min === filters.minPrice && preset.max === filters.maxPrice;
@@ -1001,6 +1094,131 @@ export default function ProductFilters({ products, filters, onChange }: Props) {
                   })}
                 </div>
               </FilterSection>
+
+              {showKindToggle ? (
+                <FilterSection title="Listing type">
+                  <div className="flex flex-wrap gap-1.5">
+                    {(
+                      [
+                        { value: null as ListingKind | null, label: "All" },
+                        { value: "product" as ListingKind, label: "Products" },
+                        { value: "service" as ListingKind, label: "Services" },
+                        { value: "opportunity" as ListingKind, label: "Opportunities" },
+                      ]
+                    ).map((opt) => {
+                      const on = filters.listingKind === opt.value;
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() =>
+                            update({
+                              listingKind: opt.value,
+                              opportunityKind: opt.value === "opportunity" ? filters.opportunityKind : null,
+                              compensation: opt.value === "opportunity" ? filters.compensation : null,
+                              pricingModel: opt.value === "service" ? filters.pricingModel : null,
+                            })
+                          }
+                          className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                            on
+                              ? "bg-accent text-white shadow-sm shadow-accent/20"
+                              : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+              ) : null}
+
+              {showServiceFilters ? (
+                <FilterSection title="Service pricing">
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRICING_MODEL_OPTIONS.map((opt) => {
+                      const on = filters.pricingModel === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            update({
+                              pricingModel: on ? null : opt.value,
+                              listingKind: filters.listingKind ?? "service",
+                            })
+                          }
+                          className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                            on
+                              ? "bg-violet-600 text-white shadow-sm"
+                              : "bg-violet-600/10 text-foreground/80 ring-1 ring-violet-600/15 hover:bg-violet-600/15"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+              ) : null}
+
+              {showOpportunityFilters ? (
+                <FilterSection title="Opportunity type">
+                  <div className="flex flex-wrap gap-1.5">
+                    {OPPORTUNITY_KIND_OPTIONS.map((opt) => {
+                      const on = filters.opportunityKind === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            update({
+                              opportunityKind: on ? null : opt.value,
+                              listingKind: filters.listingKind ?? "opportunity",
+                            })
+                          }
+                          className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                            on
+                              ? "bg-sky-600 text-white shadow-sm"
+                              : "bg-sky-600/10 text-foreground/80 ring-1 ring-sky-600/15 hover:bg-sky-600/15"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+              ) : null}
+
+              {showOpportunityFilters ? (
+                <FilterSection title="Compensation">
+                  <div className="flex flex-wrap gap-1.5">
+                    {COMPENSATION_OPTIONS.map((opt) => {
+                      const on = filters.compensation === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            update({
+                              compensation: on ? null : opt.value,
+                              listingKind: filters.listingKind ?? "opportunity",
+                            })
+                          }
+                          className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                            on
+                              ? "bg-sky-600 text-white shadow-sm"
+                              : "bg-sky-600/10 text-foreground/80 ring-1 ring-sky-600/15 hover:bg-sky-600/15"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+              ) : null}
 
               <FilterSection title="Shop">
                 <div className="flex flex-wrap gap-1.5">
