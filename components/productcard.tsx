@@ -371,17 +371,11 @@ export default function ProductCard({
     </span>
   ) : null;
 
+  const trustLabel =
+    trustLevel === "identity" ? "Identity verified" : SHOP_TRUST_LABEL[trustLevel];
   const trustMark =
     trustLevel === "registered" ? null : (
-      <span
-        className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
-          trustLevel === "business"
-            ? "text-accent"
-            : trustLevel === "professional"
-              ? "text-sky-700 dark:text-sky-300"
-              : "text-sky-600"
-        }`}
-      >
+      <span title={trustLabel} className="inline-flex shrink-0">
         <VerifiedIcon
           className={
             trustLevel === "business"
@@ -389,9 +383,8 @@ export default function ProductCard({
               : "!text-[13px] text-sky-600"
           }
           size={13}
-          label={SHOP_TRUST_LABEL[trustLevel]}
+          label={trustLabel}
         />
-        <span>{SHOP_TRUST_LABEL[trustLevel]}</span>
       </span>
     );
 

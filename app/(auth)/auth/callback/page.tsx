@@ -1,16 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { apiAuth } from "@/lib/api";
 import { establishGoogleCallbackSession } from "@/lib/auth/establish-session";
+import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
 
 type CallbackStatus = "processing" | "success" | "error";
+
+const SIGN_IN_ERROR = "We couldn't finish signing you in. Please try again.";
 
 export default function GoogleAuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<CallbackStatus>("processing");
   const [message, setMessage] = useState("Completing Google sign-in...");
+  const [restarting, setRestarting] = useState(false);
+
+  useLayoutEffect(() => {
+    setGoogleCallbackPending(true);
+  }, []);
 
   useEffect(() => {
     const fragment = window.location.hash.startsWith("#")
@@ -23,10 +31,11 @@ export default function GoogleAuthCallbackPage() {
 
     let active = true;
     if (error || provider !== "google" || verified !== "true") {
+      setGoogleCallbackPending(false);
       queueMicrotask(() => {
         if (!active) return;
         setStatus("error");
-        setMessage("Google sign-in was cancelled or failed.");
+        setMessage(SIGN_IN_ERROR);
       });
       return () => {
         active = false;
@@ -41,14 +50,10 @@ export default function GoogleAuthCallbackPage() {
         }
         router.replace("/");
       })
-      .catch((err: unknown) => {
+      .catch(() => {
         if (!active) return;
         setStatus("error");
-        setMessage(
-          err instanceof Error
-            ? err.message
-            : "Could not establish your session. Please try again.",
-        );
+        setMessage(SIGN_IN_ERROR);
       });
 
     return () => {
@@ -56,9 +61,38 @@ export default function GoogleAuthCallbackPage() {
     };
   }, [router]);
 
+  async function tryAgain() {
+    setRestarting(true);
+    setStatus("processing");
+    setMessage("Starting Google sign-in...");
+    try {
+      const isLocal =
+        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      if (isLocal) {
+        const origin = window.location.origin;
+        const query = new URLSearchParams({
+          origin,
+          redirect_to: `${origin}/login`,
+          redirect_uri: `${origin}/login`,
+        });
+        const res = await fetch(`/api/auth/google-url?${query}`);
+        if (!res.ok) throw new Error("unavailable");
+        const data = (await res.json()) as { url: string };
+        window.location.href = data.url;
+        return;
+      }
+      const data = await apiAuth.getGoogleAuthUrl();
+      window.location.href = data.url;
+    } catch {
+      setRestarting(false);
+      setStatus("error");
+      setMessage(SIGN_IN_ERROR);
+    }
+  }
+
   return (
     <div className="dm-card p-6 sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Google authentication</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Google sign-in</h1>
       <p className="mt-2 text-sm text-muted">{message}</p>
 
       {status === "processing" ? (
@@ -66,15 +100,15 @@ export default function GoogleAuthCallbackPage() {
       ) : null}
 
       {status === "error" ? (
-        <div className="mt-4 space-y-2">
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-2xl px-3 py-2">
-            {message}
-          </p>
-          <p className="text-xs text-muted">
-            <Link href="/login" className="font-semibold text-foreground/80 hover:text-foreground">
-              Return to sign in
-            </Link>
-          </p>
+        <div className="mt-4 space-y-3">
+          <button
+            type="button"
+            onClick={() => void tryAgain()}
+            disabled={restarting}
+            className="dm-btn dm-btn-primary min-h-11 w-full"
+          >
+            {restarting ? "Starting…" : "Try again"}
+          </button>
         </div>
       ) : null}
     </div>
