@@ -4,6 +4,7 @@ import axios, {
   type Method,
 } from "axios";
 
+import { isGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
 import { AUTH_CHANGED_EVENT } from "@/lib/auth/token-storage";
 
 export type ApiFetchOptions = {
@@ -154,6 +155,9 @@ if (typeof window !== "undefined") {
 
 async function tryRefreshCookie(): Promise<boolean> {
   if (typeof window === "undefined") return false;
+  // A revoked frontend refresh presented here wipes every token for the user,
+  // including the Google session the callback is about to redeem.
+  if (isGoogleCallbackPending()) return false;
   const epoch = refreshEpoch;
   if (!inflightRefresh) {
     inflightRefresh = (async () => {
