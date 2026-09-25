@@ -102,7 +102,7 @@ export default function BottomNav() {
     <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">
       {onlineCount > 0 ? (
         // Left-aligned so the centered Post Item FAB does not cover the status.
-        <div className="flex items-center justify-start gap-1.5 border-b border-accent/15 bg-accent/5 py-1 pl-3 pr-16 text-[10px] font-semibold text-accent">
+        <div className="flex h-[var(--bottom-nav-status)] items-center justify-start gap-1.5 overflow-hidden border-b border-accent/15 bg-accent/5 pl-3 pr-16 text-[10px] font-semibold leading-none text-accent">
           <span className="relative flex h-1.5 w-1.5 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
@@ -111,7 +111,7 @@ export default function BottomNav() {
         </div>
       ) : null}
 
-      <div className="grid h-14 grid-cols-5">
+      <div className="grid h-[var(--bottom-nav-row)] grid-cols-5">
         {tabs.map((tab) => {
           const isActive = tab.isActive
             ? tab.isActive(pathname)
@@ -128,7 +128,7 @@ export default function BottomNav() {
                 aria-current={isActive ? "page" : undefined}
                 className="dm-focus relative flex h-full items-end justify-center pb-1"
               >
-                <span className="absolute -top-3 left-1/2 grid size-12 -translate-x-1/2 place-items-center rounded-full bg-accent text-white shadow-lg ring-4 ring-surface transition-transform active:scale-[0.98]">
+                <span className="absolute -top-[var(--bottom-nav-fab-lift)] left-1/2 grid size-12 -translate-x-1/2 place-items-center rounded-full bg-accent text-white shadow-lg ring-[length:var(--bottom-nav-fab-ring)] ring-surface transition-transform active:scale-[0.98]">
                   <MaterialSymbol name={tab.icon} className="!text-3xl" />
                 </span>
                 <span className="whitespace-nowrap text-[10px] font-bold leading-none tracking-tight text-accent">

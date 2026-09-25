@@ -9,6 +9,7 @@ import {
   type HomeFeedProduct,
   type HomeFeedResponse,
 } from "@/lib/api/products";
+import { appendCatalogParams, type CatalogQuery } from "@/lib/api/catalogFilters";
 import { serverApiFetch } from "@/lib/api/serverFetch";
 
 export type HomeFeedPage = {
@@ -33,9 +34,9 @@ export const loadHomeFeed = cache(async function loadHomeFeed(
   category?: string | null,
 ): Promise<HomeFeedPage> {
   try {
+    const catalog: CatalogQuery = { category };
     const params = new URLSearchParams({ limit: String(limit) });
-    const cat = category?.trim();
-    if (cat) params.set("category", cat);
+    appendCatalogParams(params, catalog);
     const data = await serverApiFetch<HomeFeedResponse>(
       `/api/v1/feed/home?${params.toString()}`,
     );
@@ -52,8 +53,12 @@ export const loadHomeFeed = cache(async function loadHomeFeed(
   }
 
   try {
+    const latestParams = new URLSearchParams({
+      limit: String(Math.min(100, Math.max(1, limit))),
+    });
+    appendCatalogParams(latestParams, { category });
     const latest = await serverApiFetch<HomeFeedProduct[]>(
-      `/api/v1/feed/latest?limit=${limit}`,
+      `/api/v1/feed/latest?${latestParams.toString()}`,
       { anonymous: true },
     );
     const products = toCards(latest ?? []);

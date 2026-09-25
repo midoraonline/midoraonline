@@ -18,13 +18,11 @@ import {
   X,
 } from "lucide-react";
 import type { ProductCardData } from "@/components/productcard";
-import { resolveShopTrustLevel } from "@/lib/productCardMap";
 import {
   COMPENSATION_OPTIONS,
   OPPORTUNITY_KIND_OPTIONS,
   PRICING_MODEL_OPTIONS,
   normalizeListingKind,
-  parseListingMeta,
   type ListingKind,
 } from "@/lib/listingMeta";
 import {
@@ -142,88 +140,6 @@ function activeFilterCount(f: FilterState): number {
   if (f.compensation !== null) n++;
   if (f.pricingModel !== null) n++;
   return n;
-}
-
-export function applyFilters(
-  products: ProductCardData[],
-  filters: FilterState,
-  opts?: { distances?: Map<string, number> | null },
-): ProductCardData[] {
-  let list = [...products];
-
-  if (filters.minPrice !== null) list = list.filter((p) => p.priceUGX >= filters.minPrice!);
-  if (filters.maxPrice !== null) list = list.filter((p) => p.priceUGX <= filters.maxPrice!);
-  if (filters.availableNow) list = list.filter((p) => p.shop.available_now !== false);
-  if (filters.verifiedOnly) {
-    list = list.filter((p) => resolveShopTrustLevel(p.shop.trust_badges) !== "registered");
-  }
-  if (filters.minRating !== null) list = list.filter((p) => (p.rating ?? 0) >= filters.minRating!);
-  if (filters.location !== null && !filters.nearMe) {
-    list = list.filter(
-      (p) =>
-        p.location_name?.trim() === filters.location ||
-        p.shop.location?.trim() === filters.location,
-    );
-  }
-  if (filters.listingKind !== null) {
-    list = list.filter((p) => normalizeListingKind(p.item_type) === filters.listingKind);
-  }
-  if (filters.opportunityKind !== null) {
-    list = list.filter((p) => {
-      const meta = parseListingMeta(p.listing_meta);
-      return meta.opportunity_kind === filters.opportunityKind;
-    });
-  }
-  if (filters.compensation !== null) {
-    list = list.filter((p) => {
-      const meta = parseListingMeta(p.listing_meta);
-      return meta.compensation === filters.compensation;
-    });
-  }
-  if (filters.pricingModel !== null) {
-    list = list.filter((p) => {
-      const meta = parseListingMeta(p.listing_meta);
-      return meta.pricing_model === filters.pricingModel;
-    });
-  }
-
-  switch (filters.sort) {
-    case "price_asc":
-      list.sort((a, b) => a.priceUGX - b.priceUGX);
-      break;
-    case "price_desc":
-      list.sort((a, b) => b.priceUGX - a.priceUGX);
-      break;
-    case "newest":
-      list.sort((a, b) => {
-        const da = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-        const db = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-        return db - da;
-      });
-      break;
-    case "most_viewed":
-      list.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
-      break;
-    case "best_rated":
-      list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-      break;
-    case "trust_score":
-      list.sort((a, b) => (b.shop.trust_score ?? 0) - (a.shop.trust_score ?? 0));
-      break;
-    case "relevance":
-    default:
-      if (filters.nearMe && opts?.distances && opts.distances.size > 0) {
-        list.sort((a, b) => {
-          const da = opts.distances!.get(a.id) ?? Number.POSITIVE_INFINITY;
-          const db = opts.distances!.get(b.id) ?? Number.POSITIVE_INFINITY;
-          if (da !== db) return da - db;
-          return 0;
-        });
-      }
-      break;
-  }
-
-  return list;
 }
 
 function useClickOutside(

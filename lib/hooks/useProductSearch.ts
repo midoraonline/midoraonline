@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 
 import { apiSearch } from "@/lib/api";
+import { catalogQueryKey, type CatalogQuery } from "@/lib/api/catalogFilters";
 import type { SearchMode, SearchProductsResponse } from "@/lib/api/search";
 import { searchItemToCard } from "@/lib/searchMap";
 import type { ProductCardData } from "@/components/productcard";
@@ -11,6 +12,7 @@ import type { ProductCardData } from "@/components/productcard";
 type UseProductSearchOptions = {
   query: string;
   category?: string | null;
+  catalog?: CatalogQuery | null;
   enabled?: boolean;
   debounceMs?: number;
   limit?: number;
@@ -19,6 +21,7 @@ type UseProductSearchOptions = {
 export function useProductSearch({
   query,
   category,
+  catalog,
   enabled = true,
   debounceMs = 350,
   limit = 20,
@@ -40,18 +43,19 @@ export function useProductSearch({
     return () => clearTimeout(timer);
   }, [q, active, debounceMs]);
 
+  const filterKey = catalogQueryKey(catalog);
   const key =
     active && debouncedQ
-      ? (["search:products", debouncedQ, category ?? "", limit] as const)
+      ? (["search:products", debouncedQ, filterKey, limit] as const)
       : null;
 
   const { data, error, isLoading } = useSWR(
     key,
-    ([, searchQ, cat, lim]) =>
+    ([, searchQ, , lim]) =>
       apiSearch.searchProducts(searchQ, {
         page: 1,
         limit: lim,
-        category: cat || undefined,
+        catalog,
       }),
     { revalidateOnFocus: false, dedupingInterval: 8_000 },
   );
@@ -60,7 +64,7 @@ export function useProductSearch({
     setExtra([]);
     setPage(1);
     trackedQuery.current = null;
-  }, [debouncedQ, category, limit]);
+  }, [debouncedQ, filterKey, limit]);
 
   useEffect(() => {
     if (!data || !debouncedQ) return;
@@ -97,7 +101,7 @@ export function useProductSearch({
       const res: SearchProductsResponse = await apiSearch.searchProducts(debouncedQ, {
         page: nextPage,
         limit,
-        category: category ?? undefined,
+        catalog,
       });
       const site = typeof window !== "undefined" ? window.location.origin : undefined;
       const seen = new Set(items.map((p) => p.id));
@@ -119,7 +123,7 @@ export function useProductSearch({
     hasMore,
     page,
     limit,
-    category,
+    catalog,
     items,
   ]);
 
