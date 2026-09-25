@@ -13,7 +13,6 @@ type Props = {
   children: (open: () => void) => React.ReactNode;
 };
 
-// Three short bullets is what people actually read before a Proceed click.
 const TIPS = [
   "Verify the seller before paying",
   "Never send money upfront",
@@ -39,96 +38,89 @@ export default function TradeDisclaimer({ onConfirm, type, whatsappVerified, chi
 
   const modal = (
     <div
-      className="z-modal fixed inset-0 flex items-end justify-center bg-foreground/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="z-modal fixed inset-0 flex items-end justify-center bg-black/50 p-0 md:items-center md:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="trade-safe-title"
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-lg sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-2xl border border-border bg-surface px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-lg md:rounded-2xl md:p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
-            <MaterialSymbol name="verified_user" className="!text-lg" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h3 id="trade-safe-title" className="text-sm font-semibold text-foreground">
-              Trade safely on Midora
-            </h3>
-            <p className="mt-0.5 text-xs text-muted">
-              You&apos;re heading to {isWhatsApp ? "WhatsApp" : "in-app messages"} to
-              contact the seller.
-            </p>
-            {isWhatsApp && whatsappVerified !== undefined ? (
-              <p
-                className={[
-                  "mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                  whatsappVerified
-                    ? "bg-emerald-500/10 text-emerald-700"
-                    : "bg-amber-500/10 text-amber-700",
-                ].join(" ")}
-              >
-                <MaterialSymbol
-                  name={whatsappVerified ? "verified" : "info"}
-                  className="!text-sm"
-                />
-                {whatsappVerified
-                  ? "This WhatsApp number is verified"
-                  : "This WhatsApp number isn't verified yet"}
-              </p>
-            ) : null}
-          </div>
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-foreground/15 md:hidden" aria-hidden />
+        <div className="flex items-start justify-between gap-3">
+          <h3 id="trade-safe-title" className="text-base font-semibold text-foreground">
+            Trade safely on Midora
+          </h3>
           <button
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+            className="dm-focus grid size-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
           >
-            <MaterialSymbol name="close" className="!text-base" />
+            <MaterialSymbol name="close" className="!text-lg" />
           </button>
         </div>
+        <p className="mt-1 text-sm text-muted">
+          You&apos;re heading to {isWhatsApp ? "WhatsApp" : "in-app messages"} to contact the seller.
+        </p>
+        {isWhatsApp && whatsappVerified !== undefined ? (
+          <p
+            className={[
+              "mt-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
+              whatsappVerified
+                ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
+                : "bg-amber-500/15 text-amber-900 dark:text-amber-200",
+            ].join(" ")}
+          >
+            <MaterialSymbol
+              name={whatsappVerified ? "verified" : "info"}
+              className="!text-sm"
+            />
+            {whatsappVerified
+              ? "This WhatsApp number is verified"
+              : "This WhatsApp number isn't verified yet"}
+          </p>
+        ) : null}
 
-        <ul className="mt-4 space-y-1.5 text-xs text-foreground/80">
-          {TIPS.map((t) => (
-            <li key={t} className="flex items-center gap-2">
-              <MaterialSymbol name="check_circle" className="!text-sm shrink-0 text-accent" />
-              {t}
+        <ul className="mt-4 space-y-2.5 text-sm leading-snug text-foreground">
+          {TIPS.map((tip) => (
+            <li key={tip} className="flex items-start gap-2.5">
+              <MaterialSymbol name="check_circle" className="!text-base mt-0.5 shrink-0 text-accent" />
+              <span>{tip}</span>
             </li>
           ))}
         </ul>
 
-        <div className="mt-5 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="dm-btn dm-btn-ghost dm-btn-sm flex-1"
-          >
-            Cancel
-          </button>
+        <div className="mt-6 flex flex-col gap-2 md:flex-row-reverse">
           <button
             type="button"
             onClick={() => {
               setOpen(false);
               onConfirm();
             }}
-            className={[
-              "dm-btn dm-btn-sm flex-1 gap-1.5",
+            className={
               isWhatsApp
-                ? "text-white shadow-sm hover:brightness-95"
-                : "dm-btn-primary",
-            ].join(" ")}
-            style={isWhatsApp ? { background: "#25D366" } : undefined}
+                ? "dm-focus inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white transition hover:bg-[#22c35e] active:scale-[0.98] md:flex-1"
+                : "dm-btn dm-btn-primary min-h-11 w-full md:flex-1"
+            }
           >
             {isWhatsApp ? (
               <>
-                <WhatsAppIcon className="size-3.5" />
+                <WhatsAppIcon className="size-4 text-white" />
                 Continue to WhatsApp
               </>
             ) : (
               "Continue to messages"
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="dm-focus inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-transparent px-4 text-sm font-semibold text-foreground transition hover:bg-foreground/[0.04] active:scale-[0.98] md:flex-1"
+          >
+            Cancel
           </button>
         </div>
       </div>

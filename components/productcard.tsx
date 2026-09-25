@@ -430,9 +430,9 @@ export default function ProductCard({
     return (
       <article
         ref={impressionRef as React.RefObject<HTMLElement>}
-        className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden"
+        className="dm-product-card dm-card-hover flex w-full flex-col self-start overflow-hidden"
       >
-        <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
+        <div className="flex flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="min-w-0 truncate pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
               {listingCardLabel(listingKind, meta, product.category)}
@@ -469,16 +469,14 @@ export default function ProductCard({
             ) : null}
           </div>
           {metaRow}
-          <div className="mt-auto pt-1.5">
-            <WhatsAppCta
-              waHref={waHref}
-              productId={product.id}
-              productHref={productHref}
-              shopId={product.shop.id}
-              category={product.category ?? undefined}
-              hasDiscount={isDiscounted}
-            />
-          </div>
+          <WhatsAppCta
+            waHref={waHref}
+            productId={product.id}
+            productHref={productHref}
+            shopId={product.shop.id}
+            category={product.category ?? undefined}
+            hasDiscount={isDiscounted}
+          />
         </div>
       </article>
     );
