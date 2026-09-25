@@ -35,6 +35,7 @@ import ProductOwnerActions from "@/components/product/ProductOwnerActions";
 import ProductReviews from "@/components/product/ProductReviews";
 import {
   LISTING_KIND_LABEL,
+  isTextOnlyListing,
   listingMetaDisplayRows,
   normalizeListingKind,
   parseListingMeta,
@@ -49,6 +50,7 @@ import {
   resolveShopTrustLevel,
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
+import { isOnlineLocation } from "@/lib/listingLocation";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -91,12 +93,15 @@ export async function generateMetadata({
   const url = `${SITE}${path}`;
   const images = productImageUrls(product);
   const price = productPriceUgx(product);
+  const textOnly = isTextOnlyListing(product.item_type, images.length);
   const desc =
     (product.description && product.description.trim().slice(0, 160)) ||
     `${product.title} — ${formatUGX(price)} on Midora Online.`;
   const ogImages = images[0]
     ? [{ url: images[0], alt: product.title }]
-    : [{ url: `${SITE}/logo.png`, alt: "Midora Online" }];
+    : textOnly
+      ? undefined
+      : [{ url: `${SITE}/logo.png`, alt: "Midora Online" }];
 
   return {
     title: `${product.title} | Midora Online`,
@@ -110,13 +115,13 @@ export async function generateMetadata({
       url,
       type: "website",
       siteName: "Midora Online",
-      images: ogImages,
+      ...(ogImages ? { images: ogImages } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: textOnly ? "summary" : "summary_large_image",
       title: product.title,
       description: desc,
-      images: ogImages.map((i) => i.url),
+      ...(ogImages ? { images: ogImages.map((i) => i.url) } : {}),
     },
     alternates: { canonical: url },
   };
@@ -159,6 +164,7 @@ export default async function ProductDetails({
   const freshness = timeAgo(product.updated_at || product.created_at);
   const location =
     product.location_name?.trim() || shop?.location?.trim() || null;
+  const locationOnline = isOnlineLocation(location);
   const trustLevel = resolveShopTrustLevel(shop?.trust_badges);
   const ratingAvg = product.average_rating ?? 0;
   const ratingCount = product.review_count ?? 0;
@@ -171,6 +177,7 @@ export default async function ProductDetails({
   const isNegotiable = product.is_negotiable !== false;
   const shopLive = shop?.available_now === true;
   const listingKind = normalizeListingKind(product.item_type);
+  const textOnly = isTextOnlyListing(product.item_type, images.length);
   const listingMeta = parseListingMeta(product.listing_meta);
   const categoryParts = resolveCategoryParts(
     product.category,
@@ -219,8 +226,14 @@ export default async function ProductDetails({
         <span className="min-w-0 truncate text-foreground/70">{product.title}</span>
       </nav>
 
-      <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-8">
-        {/* Gallery */}
+      <div
+        className={
+          textOnly
+            ? "grid gap-5"
+            : "grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-8"
+        }
+      >
+        {textOnly ? null : (
         <div className="min-w-0 lg:sticky lg:top-20">
           <ProductImageGallery images={images} title={product.title}>
             {shop ? (
@@ -232,6 +245,7 @@ export default async function ProductDetails({
             ) : null}
           </ProductImageGallery>
         </div>
+        )}
 
         {/* Buy box */}
         <div className="min-w-0 space-y-4">
@@ -315,7 +329,9 @@ export default async function ProductDetails({
                 ) : null}
               </a>
 
-              {location ? (
+              {locationOnline ? (
+                <span className="font-medium text-foreground/80">Online</span>
+              ) : location ? (
                 <span className="inline-flex min-w-0 items-center gap-1">
                   <MapPin className="size-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
                   <span className="truncate font-medium text-foreground/80">{location}</span>

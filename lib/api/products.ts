@@ -83,6 +83,8 @@ export type CreateProductRequest = {
   is_published?: boolean;
   is_negotiable?: boolean;
   location_name?: string;
+  /** True when the seller chose Online. No coordinates are sent with it. */
+  is_online?: boolean;
   listing_meta?: Record<string, unknown>;
   status?: ProductStatus;
 };
@@ -117,6 +119,7 @@ function buildCreatePayload(body: CreateProductRequest): Record<string, unknown>
   if (body.is_published !== undefined) o.is_published = body.is_published;
   if (body.is_negotiable !== undefined) o.is_negotiable = body.is_negotiable;
   if (body.location_name !== undefined && body.location_name !== "") o.location_name = body.location_name;
+  if (body.is_online !== undefined) o.is_online = body.is_online;
   if (body.listing_meta !== undefined) o.listing_meta = body.listing_meta;
   const imgs = normalizeImageUrlsForApi(body.image_urls);
   if (imgs?.length) o.image_urls = imgs;
@@ -136,6 +139,7 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.is_published !== undefined) o.is_published = body.is_published;
   if (body.is_negotiable !== undefined) o.is_negotiable = body.is_negotiable;
   if (body.location_name !== undefined) o.location_name = body.location_name;
+  if (body.is_online !== undefined) o.is_online = body.is_online;
   if (body.listing_meta !== undefined) o.listing_meta = body.listing_meta;
   if (body.image_urls !== undefined) {
     const imgs = normalizeImageUrlsForApi(body.image_urls);

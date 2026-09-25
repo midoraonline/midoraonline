@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -20,12 +19,14 @@ import {
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import {
+  isVideoUrl,
   productImageUrls,
   productPrimaryImage,
   productPriceUgx,
   type Product,
   type ProductStatus,
 } from "@/lib/api/products";
+import { isTextOnlyListing } from "@/lib/listingMeta";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -317,8 +318,10 @@ export default function MerchantListingsClient({
         <>
           <ul className="flex flex-col gap-2 md:hidden">
             {filtered.map((p) => {
+              const media = productImageUrls(p);
               const cover = productPrimaryImage(p);
-              const mediaCount = productImageUrls(p).length;
+              const mediaCount = media.length;
+              const textOnly = isTextOnlyListing(p.item_type, mediaCount);
               const shopMeta = shopById.get(p.shop_id);
               const reviewing = p.status === "pending_review";
               const rejected = p.status === "rejected";
@@ -328,6 +331,7 @@ export default function MerchantListingsClient({
                   className="dm-card group relative overflow-hidden p-3 transition-all hover:border-accent/40 hover:shadow-md"
                 >
                   <div className="flex gap-3">
+                    {textOnly ? null : (
                     <Link
                       href={`/merchant/listings/${p.id}/edit`}
                       className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle"
@@ -342,7 +346,7 @@ export default function MerchantListingsClient({
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-[10px] text-muted">
-                          No image
+                          {media.some((u) => isVideoUrl(u)) ? "Video" : "No image"}
                         </div>
                       )}
                       {mediaCount > 1 ? (
@@ -351,6 +355,7 @@ export default function MerchantListingsClient({
                         </span>
                       ) : null}
                     </Link>
+                    )}
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -445,7 +450,9 @@ export default function MerchantListingsClient({
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((p) => {
+                  const media = productImageUrls(p);
                   const cover = productPrimaryImage(p);
+                  const textOnly = isTextOnlyListing(p.item_type, media.length);
                   const shopMeta = shopById.get(p.shop_id);
                   const reviewing = p.status === "pending_review";
                   const rejected = p.status === "rejected";
@@ -453,6 +460,7 @@ export default function MerchantListingsClient({
                     <tr key={p.id} className="hover:bg-foreground/[0.02]">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
+                          {textOnly ? null : (
                           <Link
                             href={`/merchant/listings/${p.id}/edit`}
                             className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle"
@@ -462,10 +470,11 @@ export default function MerchantListingsClient({
                               <img src={cover} alt="" className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex h-full items-center justify-center text-[9px] text-muted">
-                                —
+                                {media.some((u) => isVideoUrl(u)) ? "Video" : "—"}
                               </div>
                             )}
                           </Link>
+                          )}
                           <div className="min-w-0">
                             <Link
                               href={`/merchant/listings/${p.id}/edit`}

@@ -42,6 +42,7 @@ import {
   type ListingDraft,
 } from "@/lib/schemas/listingForm";
 import LocationInput from "@/components/LocationInput";
+import { listingPlaceFields } from "@/lib/listingLocation";
 import { useSessionStore } from "@/lib/state/session-store";
 
 const UGX = new Intl.NumberFormat("en-UG", {
@@ -466,7 +467,7 @@ export default function ProductFormPage({
       image_urls: [...draft.image_urls],
       is_published: draft.is_published,
       is_negotiable: draft.is_negotiable,
-      location_name: draft.location_name.trim() || undefined,
+      ...listingPlaceFields(draft.location_name, shopLocationLabel),
       item_type: listingKindToItemType(draft.kind),
       listing_meta: meta,
     };
@@ -947,11 +948,13 @@ export default function ProductFormPage({
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">Location</h2>
             <p className="text-xs text-muted">
-              Buyers need a real city or area. Country-only (e.g. Uganda) is not enough to publish.
+              City or area, or Online if buyers do not visit a place. Country-only (e.g. Uganda) is not enough.
             </p>
           </div>
           <LocationInput
             value={draft.location_name}
+            onlineValue="Online"
+            onlineLabel="Online"
             onChange={(val) => setDraft((d) => ({ ...d, location_name: val }))}
             placeholder={shopLocationLabel || "e.g. Kisasi, Kampala"}
           />

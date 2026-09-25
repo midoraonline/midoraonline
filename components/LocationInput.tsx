@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { geocodeSearch, type GeocodeHit } from "@/lib/geo";
+import { isOnlineLocation } from "@/lib/listingLocation";
 
 export type ResolvedLocation = {
   display: string;
@@ -17,6 +18,9 @@ type Props = {
   onResolved?: (place: ResolvedLocation | null) => void;
   placeholder?: string;
   className?: string;
+  /** Stored when Online is selected. Shop forms keep "Online Shop". */
+  onlineValue?: string;
+  onlineLabel?: string;
 };
 
 export default function LocationInput({
@@ -25,11 +29,13 @@ export default function LocationInput({
   onResolved,
   placeholder = "Search location (e.g. Kisasi)",
   className = "",
+  onlineValue = "Online Shop",
+  onlineLabel = "Online shop",
 }: Props) {
   const uid = useId();
   const radioName = `location_type_${uid}`;
 
-  const isOnline = value === "Online Shop";
+  const isOnline = isOnlineLocation(value);
   const [query, setQuery] = useState(isOnline ? "" : value);
   const [results, setResults] = useState<GeocodeHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +45,7 @@ export default function LocationInput({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (value === "Online Shop") {
+    if (isOnlineLocation(value)) {
       setQuery("");
     } else if (value !== query && !isOpen) {
       setQuery(value);
@@ -121,13 +127,13 @@ export default function LocationInput({
             checked={isOnline}
             onChange={() => {
               setIsOpen(false);
-              onChange("Online Shop");
+              onChange(onlineValue);
               onResolved?.(null);
             }}
             className="accent-primary"
           />
           <span className="group-hover:text-foreground/90 text-foreground/80 transition-colors">
-            Online shop
+            {onlineLabel}
           </span>
         </label>
       </div>

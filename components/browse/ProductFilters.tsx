@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import type { ProductCardData } from "@/components/productcard";
+import { isOnlineLocation } from "@/lib/listingLocation";
 import {
   COMPENSATION_OPTIONS,
   OPPORTUNITY_KIND_OPTIONS,
@@ -119,7 +120,8 @@ type LocationEntry = { name: string; count: number };
 function collectLocationEntries(products: ProductCardData[]): LocationEntry[] {
   const counts = new Map<string, number>();
   for (const p of products) {
-    const loc = p.location_name?.trim() || p.shop.location?.trim();
+    const raw = p.location_name?.trim() || p.shop.location?.trim();
+    const loc = raw && isOnlineLocation(raw) ? "Online" : raw;
     if (loc) counts.set(loc, (counts.get(loc) ?? 0) + 1);
   }
   return Array.from(counts.entries())

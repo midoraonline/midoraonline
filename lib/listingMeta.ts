@@ -99,6 +99,19 @@ export function listingKindToItemType(kind: ListingKind): ItemType {
   return kind;
 }
 
+/** Services, opportunities, and jobs may publish with zero photos or videos. */
+export function allowsEmptyMedia(itemType?: string | null): boolean {
+  const kind = normalizeListingKind(itemType);
+  return kind === "service" || kind === "opportunity";
+}
+
+export function isTextOnlyListing(
+  itemType: string | null | undefined,
+  mediaCount: number,
+): boolean {
+  return allowsEmptyMedia(itemType) && mediaCount <= 0;
+}
+
 export const CONDITION_OPTIONS = [
   { value: "new", label: "New" },
   { value: "like_new", label: "Like new" },
