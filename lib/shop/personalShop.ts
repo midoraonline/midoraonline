@@ -29,9 +29,8 @@ export function derivePersonalShopSpec(user: MeResponse): {
 }
 
 /**
- * Idempotently ensure the current user has at least one shop to attach a
- * listing to. If none exist, auto-provision a lightweight personal shop
- * and update the session. Returns the shopId to post the listing to.
+ * Old-API fallback only: POST /api/v1/products is missing (404/405), so create
+ * a shop and post on the shop route. Do not call this before the first attempt.
  */
 export async function ensureShopForListing(): Promise<string> {
   const state = useSessionStore.getState();

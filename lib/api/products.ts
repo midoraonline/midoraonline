@@ -42,6 +42,7 @@ export type Product = {
   average_rating?: number | null;
   review_count?: number | null;
   is_negotiable?: boolean | null;
+  is_online?: boolean | null;
   ai_seo_tags?: string | null;
   ai_generated_desc?: boolean | null;
   shop?: {
@@ -60,6 +61,10 @@ export type Product = {
     created_at?: string | null;
     last_seen_at?: string | null;
     owner_phone_verified?: boolean;
+    is_personal?: boolean | null;
+    seller_name?: string | null;
+    joined_at?: string | null;
+    last_active_at?: string | null;
   } | null;
 };
 
@@ -68,6 +73,8 @@ export type Paginated<T> = {
   total?: number;
   page?: number;
   page_size?: number;
+  limit?: number;
+  total_pages?: number;
 };
 
 export type CreateProductRequest = {
@@ -238,6 +245,16 @@ export function productMediaItems(p: Product): ProductMedia[] {
   );
 }
 
+/** Signed-in create with no shop id. The API attaches a personal profile or the only real shop. */
+export function createListing(body: CreateProductRequest, token?: string | null) {
+  return apiFetch<Product>("/api/v1/products", {
+    method: "POST",
+    token,
+    body: buildCreatePayload(body),
+    timeoutMs: 90_000,
+  });
+}
+
 export function createProduct(
   shopId: string,
   body: CreateProductRequest,
@@ -251,6 +268,16 @@ export function createProduct(
     token,
     body: buildCreatePayload(body),
     timeoutMs: 90_000,
+  });
+}
+
+export function listMyProducts(opts?: { page?: number; limit?: number; token?: string }) {
+  const params = new URLSearchParams();
+  if (opts?.page != null) params.set("page", String(opts.page));
+  if (opts?.limit != null) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return apiFetch<Paginated<Product>>(`/api/v1/products/me${qs ? `?${qs}` : ""}`, {
+    ...(opts?.token ? { token: opts.token } : {}),
   });
 }
 
@@ -397,6 +424,10 @@ export type HomeFeedProduct = {
     location?: string | null;
     location_lat?: number | null;
     location_lng?: number | null;
+    is_personal?: boolean | null;
+    seller_name?: string | null;
+    joined_at?: string | null;
+    last_active_at?: string | null;
   };
   boosted: boolean;
 };
@@ -439,6 +470,10 @@ export type SimilarProduct = {
   shop_is_active?: boolean | null;
   shop_trust_badges?: string[];
   shop_available_now?: boolean | null;
+  shop_is_personal?: boolean | null;
+  seller_name?: string | null;
+  seller_joined_at?: string | null;
+  seller_last_active_at?: string | null;
 };
 
 export function getSimilarProducts(productId: string, limit = 8) {

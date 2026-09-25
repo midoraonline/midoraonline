@@ -238,7 +238,7 @@ export default async function ProductDetails({
           <ProductImageGallery images={images} title={product.title}>
             {shop ? (
               <ProductShopLogoOverlay
-                shopName={shop.name}
+                shopName={shop.is_personal ? shop.seller_name || shop.name : shop.name}
                 logoUrl={shop.logo_url}
                 className="!left-3 !top-auto !right-auto !bottom-3"
               />
@@ -261,14 +261,15 @@ export default async function ProductDetails({
                   <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden />
                   Live now
                 </span>
-              ) : formatLastActive(shop?.last_seen_at) ? (
+              ) : formatLastActive(shop?.is_personal ? shop.last_active_at ?? shop.last_seen_at : shop?.last_seen_at) ? (
                 <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
-                  {formatLastActive(shop?.last_seen_at)}
+                  {formatLastActive(shop?.is_personal ? shop.last_active_at ?? shop.last_seen_at : shop?.last_seen_at)}
                 </span>
               ) : null}
-              {formatMemberSince(shop?.created_at) ? (
+              {formatMemberSince(shop?.is_personal ? shop.joined_at ?? shop.created_at : shop?.created_at) ? (
                 <span className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-muted">
-                  Member since {formatMemberSince(shop?.created_at)}
+                  {shop?.is_personal ? "Joined" : "Member since"}{" "}
+                  {formatMemberSince(shop?.is_personal ? shop.joined_at ?? shop.created_at : shop?.created_at)}
                 </span>
               ) : null}
               {freshness ? (
@@ -418,6 +419,51 @@ export default async function ProductDetails({
 
           {/* Seller */}
           {shop ? (
+            shop.is_personal ? (
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
+                <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
+                  {shop.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={shop.logo_url}
+                      alt=""
+                      className="size-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-xs font-bold text-muted">
+                      {(shop.seller_name || shop.name).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {shop.seller_name || shop.name}
+                  </p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted">
+                    {formatMemberSince(shop.joined_at ?? shop.created_at) ? (
+                      <span>Joined {formatMemberSince(shop.joined_at ?? shop.created_at)}</span>
+                    ) : null}
+                    {formatLastActive(shop.last_active_at ?? shop.last_seen_at) ? (
+                      <span>{formatLastActive(shop.last_active_at ?? shop.last_seen_at)}</span>
+                    ) : null}
+                    {trustLevel !== "registered" ? (
+                      <span
+                        className={
+                          trustLevel === "business"
+                            ? "font-medium text-accent"
+                            : trustLevel === "professional"
+                              ? "font-medium text-sky-700 dark:text-sky-300"
+                              : "font-medium text-sky-600"
+                        }
+                      >
+                        {SHOP_TRUST_LABEL[trustLevel]}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+              </div>
+            ) : (
             <Link
               href={`/shops/${shop.slug}`}
               className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/30 hover:bg-accent/[0.03]"
@@ -465,6 +511,7 @@ export default async function ProductDetails({
               </div>
               <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
             </Link>
+            )
           ) : null}
 
           {shop ? (

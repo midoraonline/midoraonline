@@ -9,6 +9,7 @@ import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useImpressionTracker, type ImpressionPool } from "@/lib/hooks/useImpressionTracker";
+import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
@@ -55,6 +56,10 @@ export type ProductCardData = {
     location?: string | null;
     lat?: number | null;
     lng?: number | null;
+    is_personal?: boolean;
+    seller_name?: string | null;
+    joined_at?: string | null;
+    last_active_at?: string | null;
   };
   category?: string | null;
   description?: string | null;
@@ -71,6 +76,20 @@ export type ProductCardData = {
   negotiable?: boolean;
   listing_meta?: Record<string, unknown> | null;
 };
+
+function PersonalSellerLine({ shop }: { shop: ProductCardData["shop"] }) {
+  if (!shop.is_personal) return null;
+  const name = shop.seller_name?.trim() || shop.name;
+  const joined = formatMemberSince(shop.joined_at);
+  const active = formatLastActive(shop.last_active_at);
+  return (
+    <p className="truncate text-[11px] leading-snug text-muted">
+      <span className="font-medium text-foreground/80">{name}</span>
+      {joined ? <span> · Joined {joined}</span> : null}
+      {active ? <span> · {active}</span> : null}
+    </p>
+  );
+}
 
 function formatUGX(value: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -430,6 +449,7 @@ export default function ProductCard({
               {product.title}
             </h3>
           </Link>
+          <PersonalSellerLine shop={product.shop} />
           {isBoosted || shopLive || isDiscounted ? (
             <div className="flex flex-wrap gap-1">
               {isBoosted ? <Badge className="bg-accent text-white">Hot</Badge> : null}
@@ -492,6 +512,7 @@ export default function ProductCard({
                 {product.title}
               </h3>
             </Link>
+            <PersonalSellerLine shop={product.shop} />
             <div className="flex flex-wrap items-baseline gap-1.5">
               <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">
                 {formatUGX(price)}
@@ -551,6 +572,7 @@ export default function ProductCard({
             {product.title}
           </h3>
         </Link>
+        <PersonalSellerLine shop={product.shop} />
 
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">

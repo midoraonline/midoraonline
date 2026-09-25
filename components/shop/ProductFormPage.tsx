@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "luc
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
@@ -209,12 +210,16 @@ export default function ProductFormPage({
   backUrl = "/merchant/listings",
   hasBottomNav = true,
   flush = false,
+  onShopRequired,
 }: {
   mode: "add" | "edit";
   product?: Product;
-  shopId: string;
+  /** Omit on create so the API attaches a personal profile or the only real shop. */
+  shopId?: string;
   itemType?: ItemType;
   backUrl?: string;
+  /** Several shops: parent shows the picker. The draft stays mounted. */
+  onShopRequired?: () => void;
   // Post-item / standalone flows don't render the mobile BottomNav, so the
   // sticky action bar shouldn't leave a gap where the nav would be.
   hasBottomNav?: boolean;
@@ -247,6 +252,7 @@ export default function ProductFormPage({
   const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!shopId) return;
     let cancelled = false;
     apiShops
       .getShop(shopId)
@@ -484,7 +490,7 @@ export default function ProductFormPage({
     const toastId = toast.loading(`${label}…`);
     const request =
       mode === "add"
-        ? apiProducts.createProduct(shopId, body)
+        ? publishNewListing(body, shopId)
         : product
           ? apiProducts.updateProduct(product.id, body)
           : Promise.reject(new Error("Missing product"));
@@ -499,6 +505,14 @@ export default function ProductFormPage({
       initialRef.current = draft;
       router.push(backUrl);
     } catch (err) {
+      if (err instanceof ShopRequiredError) {
+        toast.message("Choose a shop", {
+          id: toastId,
+          description: "Pick which shop this listing belongs to, then save again.",
+        });
+        onShopRequired?.();
+        return;
+      }
       // Client timeout can fire while the API already saved + queued moderation.
       // Confirm by listing; never leave the merchant thinking publish failed.
       const timedOut =
@@ -506,10 +520,12 @@ export default function ProductFormPage({
         (err.code === "timeout" || /timed out/i.test(err.message));
       if (timedOut && mode === "add") {
         try {
-          const res = await apiProducts.listShopProducts(shopId, {
-            limit: 30,
-            includeUnpublished: true,
-          });
+          const res = shopId
+            ? await apiProducts.listShopProducts(shopId, {
+                limit: 30,
+                includeUnpublished: true,
+              })
+            : await apiProducts.listMyProducts({ limit: 30 });
           const title = body.title.trim().toLowerCase();
           const match = (res.items ?? []).find(
             (p) => (p.title || "").trim().toLowerCase() === title,

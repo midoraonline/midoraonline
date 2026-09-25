@@ -69,7 +69,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             Browse Products
           </Link>
           <Link
-            href="/open-shop"
+            href="/post-item"
             className="px-6 py-3 bg-black/60 border border-neutral-700 hover:border-neutral-500 text-white font-bold text-xs rounded-full backdrop-blur-xs transition-all hover:bg-black/80 active:scale-95 cursor-pointer"
           >
             Sell an Item

@@ -68,12 +68,6 @@ function ProfileDropdown({
 
   const isMerchant = role === "merchant" || role === "admin";
   const hasShops = ownedShopIds.length > 0;
-  const newProductHref =
-    ownedShopIds.length === 0
-      ? "/open-shop"
-      : ownedShopIds.length === 1
-        ? `/merchant/shops/${ownedShopIds[0]}/catalog?openAdd=true`
-        : `/merchant/shops?intent=new-product`;
 
   return (
     <div ref={ref} className="relative">
@@ -136,13 +130,28 @@ function ProfileDropdown({
                   ) : null}
                 </Link>
                 <Link
-                  href={newProductHref}
+                  href="/post-item"
                   onClick={close}
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
                 >
                   <MaterialSymbol name="add_box" className="!text-base text-accent shrink-0" />
-                  New product
+                  Post item
                 </Link>
+                {hasShops ? null : (
+                  <Link
+                    href="/open-shop"
+                    onClick={close}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
+                  >
+                    <MaterialSymbol name="storefront" className="!text-base text-muted shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block">Open a shop</span>
+                      <span className="block text-[11px] font-normal text-muted">
+                        Analytics, organization, a public storefront
+                      </span>
+                    </span>
+                  </Link>
+                )}
                 <Link
                   href="/merchant/leads"
                   onClick={close}
@@ -397,30 +406,23 @@ export default function Navbar({
                     </span>
                   )}
                 </Link>
-                {/* Create Shop — shown when user has no shops */}
+                <Link
+                  href="/post-item"
+                  className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                  aria-label="Post an item"
+                >
+                  <MaterialSymbol name="add" className="!text-base" />
+                  Post item
+                </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
-                    className="hidden rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                    className="hidden text-xs font-semibold text-muted transition-colors hover:text-foreground md:inline"
+                    title="Analytics, organization, and a shareable storefront"
                   >
-                    Create Shop
+                    Open a shop
                   </Link>
-                ) : (
-                  /* New product quick-action for merchants who already have a shop. */
-                  <Link
-                    href={
-                      session.ownedShopIds.length === 1
-                        ? `/merchant/shops/${session.ownedShopIds[0]}/catalog?openAdd=true`
-                        : `/merchant/shops?intent=new-product`
-                    }
-                    className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
-                    aria-label="Create a new product"
-                    title="New product"
-                  >
-                    <MaterialSymbol name="add" className="!text-base" />
-                    New product
-                  </Link>
-                )}
+                ) : null}
               </>
             ) : null}
 
@@ -502,17 +504,29 @@ export default function Navbar({
               })}
             </div>
 
-            {/* Mobile: create shop — shown when logged in */}
             {session.isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-0.5 px-2">
+                <Link
+                  href="/post-item"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
+                >
+                  <MaterialSymbol name="add" className="!text-lg" />
+                  Post item
+                </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
                     onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors dm-focus hover:bg-foreground/[0.04]"
                   >
-                    <MaterialSymbol name="store" className="!text-lg" />
-                    Create Shop
+                    <MaterialSymbol name="store" className="!text-lg text-muted" />
+                    <span>
+                      <span className="block">Open a shop</span>
+                      <span className="block text-[11px] font-normal text-muted">
+                        Analytics, organization, a public storefront
+                      </span>
+                    </span>
                   </Link>
                 ) : null}
               </div>
