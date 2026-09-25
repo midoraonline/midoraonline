@@ -11,6 +11,7 @@ import {
   photosRequiredForKind,
 } from "@/lib/listingMeta";
 import { isVideoUrl } from "@/lib/api/products";
+import { isOnlineLocation } from "@/lib/listingLocation";
 
 export const MIN_LISTING_PHOTOS = 2;
 export const MAX_LISTING_MEDIA = 3;
@@ -224,7 +225,7 @@ export function validateListingDraft(
     }
     const loc = (draft.location_name || "").trim() || (ctx.shopLocationLabel || "").trim();
     const normalized = loc.toLowerCase().replace(/^[,.\s]+|[,.\s]+$/g, "");
-    if (!loc || ["uganda", "ug", "online", "online shop"].includes(normalized)) {
+    if (!isOnlineLocation(loc) && (!loc || normalized === "uganda" || normalized === "ug")) {
       errors.location_name = "Add a real city/area before publishing (country-only is not enough).";
     }
     if (draft.kind === "product") {

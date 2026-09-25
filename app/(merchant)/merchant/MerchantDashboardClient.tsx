@@ -580,10 +580,18 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
 
           {shops.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-8 text-center">
-              <p className="text-sm text-muted">You haven't opened a shop yet.</p>
-              <Link href="/open-shop" className="mt-4 inline-flex rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:opacity-90">
-                Open your first shop
-              </Link>
+              <p className="text-sm text-muted">No shop yet. You can still post listings.</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <Link href="/post-item" className="inline-flex rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:opacity-90">
+                  Post an item
+                </Link>
+                <Link href="/open-shop" className="inline-flex rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted hover:text-foreground">
+                  Open a shop
+                </Link>
+              </div>
+              <p className="mt-2 text-[11px] text-muted">
+                A shop adds analytics, organization, and a public storefront.
+              </p>
             </div>
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">

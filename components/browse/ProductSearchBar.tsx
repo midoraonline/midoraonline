@@ -9,6 +9,7 @@ import { apiSearch } from "@/lib/api";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 import { searchItemToCard } from "@/lib/searchMap";
+import { isTextOnlyListing } from "@/lib/listingMeta";
 
 type Suggestion = {
   query: string;
@@ -21,6 +22,7 @@ type ProductHit = {
   priceUGX: number;
   imageUrl?: string;
   listingUrl: string;
+  textOnly: boolean;
 };
 
 export default function ProductSearchBar({
@@ -102,6 +104,10 @@ export default function ProductSearchBar({
           priceUGX: card.priceUGX,
           imageUrl: card.imageUrl,
           listingUrl: `/products/${card.slug}`,
+          textOnly: isTextOnlyListing(
+            card.item_type,
+            card.imageUrl || card.hasVideo ? 1 : 0,
+          ),
         };
       });
     },
@@ -210,7 +216,7 @@ export default function ProductSearchBar({
                     onClick={() => setFocused(false)}
                     className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-surface-subtle"
                   >
-                    {hit.imageUrl ? (
+                    {hit.textOnly ? null : hit.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={hit.imageUrl}

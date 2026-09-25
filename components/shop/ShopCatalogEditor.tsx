@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import type { ProductStatus } from "@/lib/api/products";
 import {
+  isVideoUrl,
   productImageUrls,
   productPrimaryImage,
   productPriceUgx,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/api/products";
 import {
   LISTING_KIND_LABEL,
+  isTextOnlyListing,
   normalizeListingKind,
 } from "@/lib/listingMeta";
 import { useAppSession } from "@/lib/state";
@@ -238,13 +240,15 @@ export default function ShopCatalogEditor({
         ) : (
           <ul className="mt-4 space-y-3">
             {items.map((p) => {
+              const media = productImageUrls(p);
               const img = productPrimaryImage(p);
-              const mediaCount = productImageUrls(p).length;
+              const mediaCount = media.length;
+              const textOnly = isTextOnlyListing(p.item_type, mediaCount);
               const isToggling = toggling[p.id] ?? false;
               return (
                 <li key={p.id} className="dm-card overflow-hidden">
                   <div className="flex items-start gap-3 p-4">
-                    {/* Thumbnail */}
+                    {textOnly ? null : (
                     <Link
                       href={`/merchant/listings/${p.id}/edit`}
                       className="relative mt-0.5 size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:size-16"
@@ -259,11 +263,14 @@ export default function ShopCatalogEditor({
                           unoptimized
                         />
                       ) : (
-                        <div className="grid h-full place-items-center">
-                          <ImagePlus className="size-5 text-muted/50" />
+                        <div className="grid h-full place-items-center text-[10px] text-muted">
+                          {media.some((u) => isVideoUrl(u)) ? "Video" : (
+                            <ImagePlus className="size-5 text-muted/50" />
+                          )}
                         </div>
                       )}
                     </Link>
+                    )}
 
                     {/* Info */}
                     <div className="min-w-0 flex-1">

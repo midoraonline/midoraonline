@@ -3,6 +3,7 @@ import { readGeocodeCache, writeGeocodeCache } from "./geocodeCache";
 import { haversineKm } from "./haversine";
 import { geocodeFirst } from "./nominatimClient";
 import type { LatLng } from "./types";
+import { isOnlineLocation } from "@/lib/listingLocation";
 import { resolveUgandaPlaceCoords } from "./ugandaPlaces";
 
 const MAX_NOMINATIM_LOOKUPS_PER_PASS = 6;
@@ -14,6 +15,7 @@ export function productPlaceLabel(p: ProductCardData): string | null {
 
 /** Prefer stored shop lat/lng from the feed; fall back to place-string resolution. */
 export function productStoredCoords(p: ProductCardData): LatLng | null {
+  if (isOnlineLocation(productPlaceLabel(p))) return null;
   const lat = p.shop.lat;
   const lng = p.shop.lng;
   if (
@@ -34,6 +36,7 @@ export async function resolvePlaceCoords(
   place: string,
   opts?: { allowNetwork?: boolean; signal?: AbortSignal },
 ): Promise<LatLng | null> {
+  if (isOnlineLocation(place)) return null;
   const seeded = resolveUgandaPlaceCoords(place);
   if (seeded) return seeded;
 

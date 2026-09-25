@@ -9,6 +9,7 @@ import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useImpressionTracker, type ImpressionPool } from "@/lib/hooks/useImpressionTracker";
+import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
@@ -24,6 +25,7 @@ import {
   parseListingMeta,
   type ListingMeta,
 } from "@/lib/listingMeta";
+import { isOnlineLocation } from "@/lib/listingLocation";
 
 export type ProductCardData = {
   id: string;
@@ -54,6 +56,10 @@ export type ProductCardData = {
     location?: string | null;
     lat?: number | null;
     lng?: number | null;
+    is_personal?: boolean;
+    seller_name?: string | null;
+    joined_at?: string | null;
+    last_active_at?: string | null;
   };
   category?: string | null;
   description?: string | null;
@@ -70,6 +76,20 @@ export type ProductCardData = {
   negotiable?: boolean;
   listing_meta?: Record<string, unknown> | null;
 };
+
+function PersonalSellerLine({ shop }: { shop: ProductCardData["shop"] }) {
+  if (!shop.is_personal) return null;
+  const name = shop.seller_name?.trim() || shop.name;
+  const joined = formatMemberSince(shop.joined_at);
+  const active = formatLastActive(shop.last_active_at);
+  return (
+    <p className="truncate text-[11px] leading-snug text-muted">
+      <span className="font-medium text-foreground/80">{name}</span>
+      {joined ? <span> · Joined {joined}</span> : null}
+      {active ? <span> · {active}</span> : null}
+    </p>
+  );
+}
 
 function formatUGX(value: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -105,6 +125,39 @@ function formatListingRate(
     if (meta.pricing_model === "starting_at") return `From ${base}`;
   }
   return base;
+}
+
+function ListingCover({
+  url,
+  title,
+  sizes,
+}: {
+  url: string;
+  title: string;
+  sizes: string;
+}) {
+  if (isVideoUrl(url)) {
+    return (
+      <video
+        src={url}
+        className="absolute inset-0 h-full w-full object-cover"
+        muted
+        playsInline
+        preload="metadata"
+        aria-label={title}
+      />
+    );
+  }
+  return (
+    <Image
+      src={url}
+      alt={title}
+      fill
+      className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+      sizes={sizes}
+      unoptimized={userMediaUnoptimized(url)}
+    />
+  );
 }
 
 function userMediaUnoptimized(src: string) {
@@ -226,7 +279,6 @@ export default function ProductCard({
     position: impressionPosition,
   });
 
-  const unopt = product.imageUrl ? userMediaUnoptimized(product.imageUrl) : false;
   const waHref = product.shopWhatsApp?.trim()
     ? productInquiryWhatsAppUrl(product.shopWhatsApp, {
         itemTitle: product.title,
@@ -237,8 +289,10 @@ export default function ProductCard({
   const tInfo = timeLabel(product.updated_at || null);
   const isBoosted = product.boosted === true;
   const shopLive = product.shop.available_now === true;
-  const location =
+  const locationRaw =
     product.location_name?.trim() || product.shop.location?.trim() || null;
+  const locationOnline = isOnlineLocation(locationRaw);
+  const locationLabel = locationOnline ? "Online" : locationRaw ?? "Uganda";
 
   const isDiscounted =
     product.discountPriceUGX != null &&
@@ -344,10 +398,10 @@ export default function ProductCard({
   const metaRow = (
     <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
       <span className="inline-flex min-w-0 flex-1 items-center gap-0.5">
-        <MapPin className="size-3 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-        <span className="truncate font-medium text-foreground/80">
-          {location ?? "Uganda"}
-        </span>
+        {locationOnline ? null : (
+          <MapPin className="size-3 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+        )}
+        <span className="truncate font-medium text-foreground/80">{locationLabel}</span>
       </span>
       {listingKind === "product" ? trustMark : null}
       <span className="inline-flex shrink-0 items-center gap-0.5">
@@ -366,10 +420,9 @@ export default function ProductCard({
     </div>
   );
 
-  const coverIsPhoto =
-    Boolean(product.imageUrl?.trim()) && !isVideoUrl(product.imageUrl ?? "");
-  const textFirst =
-    !coverIsPhoto && (listingKind === "service" || listingKind === "opportunity");
+  const coverUrl = product.imageUrl?.trim() || "";
+  const hasMedia = Boolean(coverUrl) || product.hasVideo === true;
+  const textFirst = !hasMedia && listingKind !== "product";
 
   if (textFirst) {
     const meta = parseListingMeta(product.listing_meta);
@@ -396,6 +449,16 @@ export default function ProductCard({
               {product.title}
             </h3>
           </Link>
+          <PersonalSellerLine shop={product.shop} />
+          {isBoosted || shopLive || isDiscounted ? (
+            <div className="flex flex-wrap gap-1">
+              {isBoosted ? <Badge className="bg-accent text-white">Hot</Badge> : null}
+              {shopLive ? <Badge className="bg-emerald-600 text-white">Live now</Badge> : null}
+              {isDiscounted ? (
+                <Badge className="bg-amber-400 text-primary">-{discountPct}%</Badge>
+              ) : null}
+            </div>
+          ) : null}
           {trustMark}
           <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
@@ -429,15 +492,8 @@ export default function ProductCard({
       >
         <div className="group relative w-2/5 shrink-0 overflow-hidden bg-surface-subtle sm:w-[42%]">
           <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.title}
-                fill
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                sizes="(max-width: 640px) 40vw, 25vw"
-                unoptimized={unopt}
-              />
+            {coverUrl ? (
+              <ListingCover url={coverUrl} title={product.title} sizes="(max-width: 640px) 40vw, 25vw" />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-muted">
                 <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
@@ -456,6 +512,7 @@ export default function ProductCard({
                 {product.title}
               </h3>
             </Link>
+            <PersonalSellerLine shop={product.shop} />
             <div className="flex flex-wrap items-baseline gap-1.5">
               <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">
                 {formatUGX(price)}
@@ -492,14 +549,11 @@ export default function ProductCard({
     >
       <div className="group relative aspect-square w-full overflow-hidden bg-surface-subtle sm:aspect-[4/3]">
         <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">
-          {product.imageUrl ? (
-            <Image
-              src={product.imageUrl}
-              alt={product.title}
-              fill
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          {coverUrl ? (
+            <ListingCover
+              url={coverUrl}
+              title={product.title}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              unoptimized={unopt}
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center text-muted">
@@ -518,6 +572,7 @@ export default function ProductCard({
             {product.title}
           </h3>
         </Link>
+        <PersonalSellerLine shop={product.shop} />
 
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">

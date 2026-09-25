@@ -18,6 +18,10 @@ export type SearchProductShop = {
   location?: string | null;
   location_lat?: number | null;
   location_lng?: number | null;
+  is_personal?: boolean | null;
+  seller_name?: string | null;
+  joined_at?: string | null;
+  last_active_at?: string | null;
 };
 
 export type SearchProductItem = {

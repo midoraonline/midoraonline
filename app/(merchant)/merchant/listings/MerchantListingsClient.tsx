@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -19,13 +18,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import {
+  isVideoUrl,
   productImageUrls,
   productPrimaryImage,
   productPriceUgx,
   type Product,
   type ProductStatus,
 } from "@/lib/api/products";
+import { isTextOnlyListing } from "@/lib/listingMeta";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -55,6 +57,46 @@ function formatUGX(n: number) {
     currency: "UGX",
     maximumFractionDigits: 0,
   }).format(n);
+}
+
+function sortListings(items: Product[]): Product[] {
+  return [...items].sort((a, b) => {
+    const rank = (p: Product) =>
+      p.status === "pending_review" ? 0 : p.status === "rejected" ? 1 : 2;
+    const rDiff = rank(a) - rank(b);
+    if (rDiff !== 0) return rDiff;
+    return String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
+  });
+}
+
+async function loadOwnerListings(shops: ListingShopSummary[]): Promise<Product[]> {
+  try {
+    const first = await apiProducts.listMyProducts({ page: 1, limit: 100 });
+    const items = [...(first.items ?? [])];
+    const pageSize = first.limit || first.page_size || 100;
+    const totalPages = Math.min(
+      first.total_pages ??
+        (first.total != null ? Math.ceil(first.total / pageSize) : 1),
+      10,
+    );
+    if (totalPages > 1) {
+      const rest = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, i) =>
+          apiProducts.listMyProducts({ page: i + 2, limit: 100 }),
+        ),
+      );
+      for (const page of rest) items.push(...(page.items ?? []));
+    }
+    return sortListings(items);
+  } catch (e) {
+    if (!(e instanceof ApiError) || (e.status !== 404 && e.status !== 405)) throw e;
+    const perShop = await Promise.all(
+      shops.map((s) =>
+        apiProducts.listShopProducts(s.id, { limit: 100, includeUnpublished: true }),
+      ),
+    );
+    return sortListings(perShop.flatMap((res) => res.items ?? []));
+  }
 }
 
 function relativeTime(iso?: string | null): string {
@@ -118,19 +160,7 @@ export default function MerchantListingsClient({
   const reload = useCallback(async () => {
     setRefreshing(true);
     try {
-      const perShop = await Promise.all(
-        shops.map((s) => apiProducts.listShopProducts(s.id, { limit: 100, includeUnpublished: true })),
-      );
-      const flat = perShop
-        .flatMap((res) => res.items ?? [])
-        .sort((a, b) => {
-          const rank = (p: Product) =>
-            p.status === "pending_review" ? 0 : p.status === "rejected" ? 1 : 2;
-          const rDiff = rank(a) - rank(b);
-          if (rDiff !== 0) return rDiff;
-          return String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
-        });
-      setItems(flat);
+      setItems(await loadOwnerListings(shops));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to refresh listings");
     } finally {
@@ -169,11 +199,7 @@ export default function MerchantListingsClient({
   }
 
   function openAdd() {
-    if (shops.length === 1) {
-      router.push(`/post-item?shop_id=${shops[0].id}`);
-    } else {
-      router.push("/post-item");
-    }
+    router.push("/post-item");
   }
 
   const showMultipleShops = shops.length > 1;
@@ -189,9 +215,11 @@ export default function MerchantListingsClient({
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="mt-0.5 text-xs text-muted">
-            Everything you&apos;ve posted across{" "}
-            {shops.length === 1 ? "your shop" : `${shops.length} shops`}. Approved
-            listings go live automatically.
+            {shops.length === 0
+              ? "Everything you've posted."
+              : shops.length === 1
+                ? "Everything you've posted across your shop. Approved listings go live automatically."
+                : `Everything you've posted across ${shops.length} shops. Approved listings go live automatically.`}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -204,20 +232,14 @@ export default function MerchantListingsClient({
             <Loader2 className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
           </button>
-          {shops.length > 0 ? (
-            <button
-              type="button"
-              onClick={openAdd}
-              className="dm-btn dm-btn-primary dm-btn-sm inline-flex items-center gap-1"
-            >
-              <ImagePlus className="size-3.5" />
-              Add listing
-            </button>
-          ) : (
-            <Link href="/open-shop" className="dm-btn dm-btn-primary dm-btn-sm">
-              Open a shop
-            </Link>
-          )}
+          <button
+            type="button"
+            onClick={openAdd}
+            className="dm-btn dm-btn-primary dm-btn-sm inline-flex items-center gap-1"
+          >
+            <ImagePlus className="size-3.5" />
+            Add listing
+          </button>
         </div>
       </header>
 
@@ -317,8 +339,10 @@ export default function MerchantListingsClient({
         <>
           <ul className="flex flex-col gap-2 md:hidden">
             {filtered.map((p) => {
+              const media = productImageUrls(p);
               const cover = productPrimaryImage(p);
-              const mediaCount = productImageUrls(p).length;
+              const mediaCount = media.length;
+              const textOnly = isTextOnlyListing(p.item_type, mediaCount);
               const shopMeta = shopById.get(p.shop_id);
               const reviewing = p.status === "pending_review";
               const rejected = p.status === "rejected";
@@ -328,6 +352,7 @@ export default function MerchantListingsClient({
                   className="dm-card group relative overflow-hidden p-3 transition-all hover:border-accent/40 hover:shadow-md"
                 >
                   <div className="flex gap-3">
+                    {textOnly ? null : (
                     <Link
                       href={`/merchant/listings/${p.id}/edit`}
                       className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle"
@@ -342,7 +367,7 @@ export default function MerchantListingsClient({
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-[10px] text-muted">
-                          No image
+                          {media.some((u) => isVideoUrl(u)) ? "Video" : "No image"}
                         </div>
                       )}
                       {mediaCount > 1 ? (
@@ -351,6 +376,7 @@ export default function MerchantListingsClient({
                         </span>
                       ) : null}
                     </Link>
+                    )}
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -445,7 +471,9 @@ export default function MerchantListingsClient({
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((p) => {
+                  const media = productImageUrls(p);
                   const cover = productPrimaryImage(p);
+                  const textOnly = isTextOnlyListing(p.item_type, media.length);
                   const shopMeta = shopById.get(p.shop_id);
                   const reviewing = p.status === "pending_review";
                   const rejected = p.status === "rejected";
@@ -453,6 +481,7 @@ export default function MerchantListingsClient({
                     <tr key={p.id} className="hover:bg-foreground/[0.02]">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
+                          {textOnly ? null : (
                           <Link
                             href={`/merchant/listings/${p.id}/edit`}
                             className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle"
@@ -462,10 +491,11 @@ export default function MerchantListingsClient({
                               <img src={cover} alt="" className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex h-full items-center justify-center text-[9px] text-muted">
-                                —
+                                {media.some((u) => isVideoUrl(u)) ? "Video" : "—"}
                               </div>
                             )}
                           </Link>
+                          )}
                           <div className="min-w-0">
                             <Link
                               href={`/merchant/listings/${p.id}/edit`}
@@ -561,22 +591,6 @@ function EmptyState({
   hasShops: boolean;
   onAdd: () => void;
 }) {
-  if (!hasShops) {
-    return (
-      <div className="dm-card flex flex-col items-center gap-3 p-8 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-          <ImagePlus className="size-6" aria-hidden />
-        </div>
-        <p className="text-sm font-bold text-foreground">No shop yet</p>
-        <p className="max-w-xs text-xs text-muted">
-          Open a shop first — that&apos;s where your listings live.
-        </p>
-        <Link href="/open-shop" className="dm-btn dm-btn-primary dm-btn-sm">
-          Open a shop
-        </Link>
-      </div>
-    );
-  }
   const map: Record<Tab, { title: string; hint: string; icon: React.ReactNode }> = {
     all: {
       title: "No listings yet",
@@ -615,6 +629,11 @@ function EmptyState({
       <button type="button" onClick={onAdd} className="dm-btn dm-btn-primary dm-btn-sm">
         Add listing
       </button>
+      {!hasShops && tab === "all" ? (
+        <Link href="/open-shop" className="text-[11px] font-medium text-muted hover:text-foreground">
+          Open a shop for analytics, organization, and a public storefront
+        </Link>
+      ) : null}
     </div>
   );
 }

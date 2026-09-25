@@ -1,5 +1,6 @@
 import type { Contact, Shop, ShopLocation } from "@/lib/api/shops";
 import type { LatLng } from "@/lib/geo/types";
+import { isOnlineLocation } from "@/lib/listingLocation";
 
 export function filterDuplicateContacts(shop: Shop): Contact[] {
   const emailNorm = shop.shop_email?.trim().toLowerCase() ?? "";
@@ -58,7 +59,7 @@ export function buildShopLocationPayload(
   coords?: LatLng | null,
 ): ShopLocation | null {
   const trimmed = display.trim();
-  if (!trimmed || trimmed === "Online Shop") return null;
+  if (!trimmed || isOnlineLocation(trimmed)) return null;
   if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
     return { display: trimmed, lat: coords.lat, lng: coords.lng };
   }

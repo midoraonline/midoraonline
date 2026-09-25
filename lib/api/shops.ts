@@ -1,5 +1,6 @@
 import { apiFetch } from "./base";
 import type { Product } from "./products";
+import { realShops } from "@/lib/shop/realShops";
 
 export type ShopType = "product" | "service" | "both";
 
@@ -61,6 +62,11 @@ export type Shop = {
   viewer_liked_shop?: boolean | null;
   trust_badges?: string[];
   created_at?: string | null;
+  /** Hidden seller profile. Not a public storefront. */
+  is_personal?: boolean | null;
+  seller_name?: string | null;
+  joined_at?: string | null;
+  last_active_at?: string | null;
 };
 
 export type Paginated<T> = {
@@ -92,7 +98,10 @@ export function listPublic(opts?: {
     params.set("exclude_ids", opts.exclude_ids.slice(-500).join(","));
   }
   const qs = params.toString();
-  return apiFetch<Paginated<Shop>>(`/api/v1/shops${qs ? `?${qs}` : ""}`);
+  return apiFetch<Paginated<Shop>>(`/api/v1/shops${qs ? `?${qs}` : ""}`).then((res) => ({
+    ...res,
+    items: realShops(res.items ?? []),
+  }));
 }
 
 export async function productCategoriesForShops(
@@ -183,7 +192,10 @@ export function unlikeShop(shopId: string, token?: string | null) {
 }
 
 export function myShops(token?: string | null) {
-  return apiFetch<Paginated<Shop>>("/api/v1/shops/me", { token });
+  return apiFetch<Paginated<Shop>>("/api/v1/shops/me", { token }).then((res) => ({
+    ...res,
+    items: realShops(res.items ?? []),
+  }));
 }
 
 export type EngagementShop = {
@@ -194,6 +206,7 @@ export type EngagementShop = {
   logo_url?: string | null;
   shop_type?: string | null;
   is_active?: boolean;
+  is_personal?: boolean | null;
   view_count?: number;
   follower_count?: number;
   like_count?: number;
@@ -213,11 +226,21 @@ export type MerchantStats = {
 };
 
 export function myFollowedShops() {
-  return apiFetch<{ items: EngagementShop[]; total: number }>("/api/v1/shops/me/followed");
+  return apiFetch<{ items: EngagementShop[]; total: number }>("/api/v1/shops/me/followed").then(
+    (res) => {
+      const items = realShops(res.items ?? []);
+      return { ...res, items, total: items.length };
+    },
+  );
 }
 
 export function myLikedShops() {
-  return apiFetch<{ items: EngagementShop[]; total: number }>("/api/v1/shops/me/liked");
+  return apiFetch<{ items: EngagementShop[]; total: number }>("/api/v1/shops/me/liked").then(
+    (res) => {
+      const items = realShops(res.items ?? []);
+      return { ...res, items, total: items.length };
+    },
+  );
 }
 
 export function myStats() {

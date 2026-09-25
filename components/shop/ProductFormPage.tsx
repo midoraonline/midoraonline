@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "luc
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
@@ -42,6 +43,7 @@ import {
   type ListingDraft,
 } from "@/lib/schemas/listingForm";
 import LocationInput from "@/components/LocationInput";
+import { listingPlaceFields } from "@/lib/listingLocation";
 import { useSessionStore } from "@/lib/state/session-store";
 
 const UGX = new Intl.NumberFormat("en-UG", {
@@ -208,12 +210,16 @@ export default function ProductFormPage({
   backUrl = "/merchant/listings",
   hasBottomNav = true,
   flush = false,
+  onShopRequired,
 }: {
   mode: "add" | "edit";
   product?: Product;
-  shopId: string;
+  /** Omit on create so the API attaches a personal profile or the only real shop. */
+  shopId?: string;
   itemType?: ItemType;
   backUrl?: string;
+  /** Several shops: parent shows the picker. The draft stays mounted. */
+  onShopRequired?: () => void;
   // Post-item / standalone flows don't render the mobile BottomNav, so the
   // sticky action bar shouldn't leave a gap where the nav would be.
   hasBottomNav?: boolean;
@@ -246,6 +252,7 @@ export default function ProductFormPage({
   const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!shopId) return;
     let cancelled = false;
     apiShops
       .getShop(shopId)
@@ -390,6 +397,13 @@ export default function ProductFormPage({
     setAiCheck(null);
   }
 
+  function afterSaveHref() {
+    if (mode !== "add") return backUrl;
+    const role = useSessionStore.getState().user?.user_role;
+    if (role === "merchant" || role === "admin") return "/merchant/listings";
+    return backUrl;
+  }
+
   function handleCancel() {
     if (saving) return;
     if (isDirty) {
@@ -466,7 +480,7 @@ export default function ProductFormPage({
       image_urls: [...draft.image_urls],
       is_published: draft.is_published,
       is_negotiable: draft.is_negotiable,
-      location_name: draft.location_name.trim() || undefined,
+      ...listingPlaceFields(draft.location_name, shopLocationLabel),
       item_type: listingKindToItemType(draft.kind),
       listing_meta: meta,
     };
@@ -483,7 +497,7 @@ export default function ProductFormPage({
     const toastId = toast.loading(`${label}…`);
     const request =
       mode === "add"
-        ? apiProducts.createProduct(shopId, body)
+        ? publishNewListing(body, shopId)
         : product
           ? apiProducts.updateProduct(product.id, body)
           : Promise.reject(new Error("Missing product"));
@@ -496,8 +510,16 @@ export default function ProductFormPage({
       setSessionRemoved([]);
       setSessionUploaded([]);
       initialRef.current = draft;
-      router.push(backUrl);
+      router.push(afterSaveHref());
     } catch (err) {
+      if (err instanceof ShopRequiredError) {
+        toast.message("Choose a shop", {
+          id: toastId,
+          description: "Pick which shop this listing belongs to, then save again.",
+        });
+        onShopRequired?.();
+        return;
+      }
       // Client timeout can fire while the API already saved + queued moderation.
       // Confirm by listing; never leave the merchant thinking publish failed.
       const timedOut =
@@ -505,10 +527,12 @@ export default function ProductFormPage({
         (err.code === "timeout" || /timed out/i.test(err.message));
       if (timedOut && mode === "add") {
         try {
-          const res = await apiProducts.listShopProducts(shopId, {
-            limit: 30,
-            includeUnpublished: true,
-          });
+          const res = shopId
+            ? await apiProducts.listShopProducts(shopId, {
+                limit: 30,
+                includeUnpublished: true,
+              })
+            : await apiProducts.listMyProducts({ limit: 30 });
           const title = body.title.trim().toLowerCase();
           const match = (res.items ?? []).find(
             (p) => (p.title || "").trim().toLowerCase() === title,
@@ -521,7 +545,7 @@ export default function ProductFormPage({
             setSessionRemoved([]);
             setSessionUploaded([]);
             initialRef.current = draft;
-            router.push(backUrl);
+            router.push(afterSaveHref());
             return;
           }
         } catch {
@@ -947,11 +971,13 @@ export default function ProductFormPage({
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">Location</h2>
             <p className="text-xs text-muted">
-              Buyers need a real city or area. Country-only (e.g. Uganda) is not enough to publish.
+              City or area, or Online if buyers do not visit a place. Country-only (e.g. Uganda) is not enough.
             </p>
           </div>
           <LocationInput
             value={draft.location_name}
+            onlineValue="Online"
+            onlineLabel="Online"
             onChange={(val) => setDraft((d) => ({ ...d, location_name: val }))}
             placeholder={shopLocationLabel || "e.g. Kisasi, Kampala"}
           />

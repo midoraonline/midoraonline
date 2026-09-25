@@ -28,6 +28,7 @@ import type {
 import type { Conversation } from "@/lib/api/chat";
 import type { Lead } from "@/lib/api/leads";
 import { safeServerFetch, serverApiFetch } from "@/lib/api/serverFetch";
+import { realShops } from "@/lib/shop/realShops";
 
 /**
  * Server-side data access layer.
@@ -178,7 +179,14 @@ export const publicApi = {
 
 export const merchantApi = {
   myShops: () =>
-    safeServerFetch(serverApiFetch<Paginated<Shop>>("/api/v1/shops/me")),
+    safeServerFetch(serverApiFetch<Paginated<Shop>>("/api/v1/shops/me")).then((res) =>
+      res ? { ...res, items: realShops(res.items ?? []) } : res,
+    ),
+
+  myListings: () =>
+    safeServerFetch(
+      serverApiFetch<Paginated<Product>>("/api/v1/products/me?limit=100"),
+    ),
 
   myStats: () => safeServerFetch(serverApiFetch<MerchantStats>("/api/v1/shops/me/stats")),
 
@@ -257,6 +265,10 @@ export const customerApi = {
       serverApiFetch<{ items: EngagementShop[]; total: number }>(
         "/api/v1/shops/me/followed",
       ),
+    ).then((res) =>
+      res
+        ? { ...res, items: realShops(res.items ?? []), total: realShops(res.items ?? []).length }
+        : res,
     ),
 
   likedShops: () =>
@@ -264,6 +276,10 @@ export const customerApi = {
       serverApiFetch<{ items: EngagementShop[]; total: number }>(
         "/api/v1/shops/me/liked",
       ),
+    ).then((res) =>
+      res
+        ? { ...res, items: realShops(res.items ?? []), total: realShops(res.items ?? []).length }
+        : res,
     ),
 
   likedProducts: (opts?: { limit?: number; page?: number }) => {

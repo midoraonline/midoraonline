@@ -27,6 +27,12 @@ type ShopLike = {
   location?: string | null;
   lat?: number | null;
   lng?: number | null;
+  is_personal?: boolean | null;
+  seller_name?: string | null;
+  joined_at?: string | null;
+  last_active_at?: string | null;
+  created_at?: string | null;
+  last_seen_at?: string | null;
 };
 
 export function shopIsVerified(shop: {
@@ -73,6 +79,23 @@ function normalizeTrustBadges(raw: unknown): string[] {
   return badges.length > 0 ? badges : ["shop_listed"];
 }
 
+function sellerCardFields(shop: {
+  is_personal?: boolean | null;
+  seller_name?: string | null;
+  name?: string | null;
+  joined_at?: string | null;
+  created_at?: string | null;
+  last_active_at?: string | null;
+  last_seen_at?: string | null;
+}) {
+  return {
+    is_personal: shop.is_personal === true,
+    seller_name: shop.seller_name ?? null,
+    joined_at: shop.joined_at ?? shop.created_at ?? null,
+    last_active_at: shop.last_active_at ?? shop.last_seen_at ?? null,
+  };
+}
+
 function anyVideoInUrls(urls: readonly (string | null | undefined)[] | null | undefined): boolean {
   if (!urls) return false;
   for (const u of urls) {
@@ -116,6 +139,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
       location: p.shop.location ?? null,
       lat: p.shop.location_lat ?? null,
       lng: p.shop.location_lng ?? null,
+      ...sellerCardFields(p.shop),
     },
     category: p.category ?? null,
     boosted: p.boosted,
@@ -165,6 +189,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
       location: item.shop.location ?? null,
       lat: item.shop.location_lat ?? null,
       lng: item.shop.location_lng ?? null,
+      ...sellerCardFields(item.shop),
     },
     category: item.category ?? null,
     boosted: item.boosted,
@@ -215,6 +240,7 @@ export function productToCard(
       location: shop.location ?? null,
       lat: shop.lat ?? null,
       lng: shop.lng ?? null,
+      ...sellerCardFields(shop),
     },
     category: product.category ?? null,
     description: product.description ?? null,
@@ -251,7 +277,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
     sellerId: p.owner_id ?? null,
     shop: {
       id: p.shop_id,
-      name: p.shop_name ?? "Shop",
+      name: (p.shop_is_personal ? p.seller_name : null) || p.shop_name || "Shop",
       slug: p.shop_slug ?? p.shop_id,
       verified: shopIsVerified({
         is_active: p.shop_is_active,
@@ -262,6 +288,10 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
       trust_score: null,
       available_now: p.shop_available_now ?? null,
       location: null,
+      is_personal: p.shop_is_personal === true,
+      seller_name: p.seller_name ?? null,
+      joined_at: p.seller_joined_at ?? null,
+      last_active_at: p.seller_last_active_at ?? null,
     },
     boosted: false,
     updated_at: p.created_at ?? null,

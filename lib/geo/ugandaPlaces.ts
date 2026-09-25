@@ -1,3 +1,4 @@
+import { isOnlineLocation } from "@/lib/listingLocation";
 import type { LatLng } from "./types";
 
 /**
@@ -47,7 +48,6 @@ const UG_PLACE_COORDS: Record<string, LatLng> = {
   bushenyi: { lat: -0.5853, lng: 30.2114 },
   rukungiri: { lat: -0.8411, lng: 29.9419 },
   kisoro: { lat: -1.285, lng: 29.685 },
-  "online shop": { lat: 0.3476, lng: 32.5825 },
 };
 
 /** Longest-key-first so "fort portal" wins over partial noise. */
@@ -69,10 +69,9 @@ export function normalizePlaceQuery(raw: string): string {
  */
 export function resolveUgandaPlaceCoords(place: string): LatLng | null {
   const q = normalizePlaceQuery(place);
-  if (!q || q === "online shop") return null;
+  if (!q || isOnlineLocation(q)) return null;
 
   for (const key of SORTED_KEYS) {
-    if (key === "online shop") continue;
     if (q === key || q.includes(key)) {
       return UG_PLACE_COORDS[key] ?? null;
     }

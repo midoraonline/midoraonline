@@ -11,9 +11,11 @@ import { useMarkConversationRead } from "@/lib/hooks/useMarkConversationRead";
 import type { Conversation, NativeMessage } from "@/lib/api/chat";
 import type { Product } from "@/lib/api/products";
 import {
+  isVideoUrl,
   productImageUrls,
   productPriceUgx,
 } from "@/lib/api/products";
+import { isTextOnlyListing } from "@/lib/listingMeta";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import UserAvatar from "@/components/UserAvatar";
 import { useKeyboardInset } from "@/lib/hooks/useKeyboardInset";
@@ -98,15 +100,16 @@ function autosize(el: HTMLTextAreaElement) {
 
 /** Compact product summary shown at the top of a product-scoped conversation. */
 function ProductContextCard({ product }: { product: Product }) {
-  const imgs = productImageUrls(product).filter((u) => !u.match(/\.(mp4|webm|mov|m4v)/i));
-  const cover = imgs[0];
+  const urls = productImageUrls(product);
+  const cover = urls.find((u) => !isVideoUrl(u));
+  const textOnly = isTextOnlyListing(product.item_type, urls.length);
   const price = productPriceUgx(product);
   return (
     <Link
       href={`/products/${product.id}`}
       className="dm-focus mx-3 mt-2 flex items-center gap-3 rounded-xl border border-border bg-surface-subtle p-2 transition-colors hover:bg-foreground/[0.05]"
     >
-      {cover ? (
+      {textOnly ? null : cover ? (
         <Image
           src={cover}
           alt={product.title}
@@ -116,7 +119,7 @@ function ProductContextCard({ product }: { product: Product }) {
         />
       ) : (
         <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent">
-          <MaterialSymbol name="sell" className="!text-lg" />
+          <MaterialSymbol name={urls.length ? "play_circle" : "sell"} className="!text-lg" />
         </span>
       )}
       <div className="min-w-0 flex-1">
