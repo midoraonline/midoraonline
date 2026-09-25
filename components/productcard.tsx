@@ -317,6 +317,30 @@ export default function ProductCard({
     </span>
   ) : null;
 
+  const trustMark =
+    trustLevel === "registered" ? null : (
+      <span
+        className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+          trustLevel === "business"
+            ? "text-accent"
+            : trustLevel === "professional"
+              ? "text-sky-700 dark:text-sky-300"
+              : "text-sky-600"
+        }`}
+      >
+        <VerifiedIcon
+          className={
+            trustLevel === "business"
+              ? "!text-[13px] text-accent"
+              : "!text-[13px] text-sky-600"
+          }
+          size={13}
+          label={SHOP_TRUST_LABEL[trustLevel]}
+        />
+        <span>{SHOP_TRUST_LABEL[trustLevel]}</span>
+      </span>
+    );
+
   const metaRow = (
     <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
       <span className="inline-flex min-w-0 flex-1 items-center gap-0.5">
@@ -325,27 +349,7 @@ export default function ProductCard({
           {location ?? "Uganda"}
         </span>
       </span>
-      {trustLevel !== "registered" ? (
-        <span
-          className={`inline-flex shrink-0 items-center gap-0.5 font-semibold ${
-            trustLevel === "business" ? "text-accent" : trustLevel === "professional" ? "text-sky-700 dark:text-sky-300" : "text-sky-600"
-          }`}
-          title={
-            SHOP_TRUST_LABEL[trustLevel]
-          }
-        >
-          <VerifiedIcon
-            className={
-              trustLevel === "business"
-                ? "!text-[11px] text-accent"
-                : "!text-[11px] text-sky-600"
-            }
-            size={11}
-            label={SHOP_TRUST_LABEL[trustLevel]}
-          />
-          <span>{SHOP_TRUST_LABEL[trustLevel]}</span>
-        </span>
-      ) : null}
+      {listingKind === "product" ? trustMark : null}
       <span className="inline-flex shrink-0 items-center gap-0.5">
         <Star
           className={`size-3 ${ratingValue > 0 ? "fill-amber-400 text-amber-400" : "text-muted"}`}
@@ -392,6 +396,7 @@ export default function ProductCard({
               {product.title}
             </h3>
           </Link>
+          {trustMark}
           <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
               {rate}
@@ -528,6 +533,7 @@ export default function ProductCard({
           )}
         </div>
 
+        {listingKind !== "product" ? trustMark : null}
         {metaRow}
 
         <div className="mt-auto pt-1.5">

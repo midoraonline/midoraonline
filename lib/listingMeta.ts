@@ -80,6 +80,11 @@ export const LISTING_KIND_LABEL: Record<ListingKind, string> = {
   opportunity: "Opportunity",
 };
 
+/** "an" before a vowel sound, otherwise "a" (opportunity → an, service → a). */
+export function indefiniteArticle(word: string): "a" | "an" {
+  return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
+}
+
 /** Map API item_type → public listing kind (job → opportunity). */
 export function normalizeListingKind(
   itemType?: string | null,

@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import type { ProductCardData } from "@/components/productcard";
+import { resolveShopTrustLevel } from "@/lib/productCardMap";
 import {
   COMPENSATION_OPTIONS,
   OPPORTUNITY_KIND_OPTIONS,
@@ -153,7 +154,9 @@ export function applyFilters(
   if (filters.minPrice !== null) list = list.filter((p) => p.priceUGX >= filters.minPrice!);
   if (filters.maxPrice !== null) list = list.filter((p) => p.priceUGX <= filters.maxPrice!);
   if (filters.availableNow) list = list.filter((p) => p.shop.available_now !== false);
-  if (filters.verifiedOnly) list = list.filter((p) => p.shop.verified === true);
+  if (filters.verifiedOnly) {
+    list = list.filter((p) => resolveShopTrustLevel(p.shop.trust_badges) !== "registered");
+  }
   if (filters.minRating !== null) list = list.filter((p) => (p.rating ?? 0) >= filters.minRating!);
   if (filters.location !== null && !filters.nearMe) {
     list = list.filter(
@@ -821,7 +824,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
             onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
           >
             <span className={filters.verifiedOnly ? "font-semibold" : "font-medium"}>
-              Verified
+              {showKindToggle ? "Verified only" : "Verified"}
             </span>
           </Chip>
 
