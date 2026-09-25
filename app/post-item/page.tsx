@@ -158,7 +158,11 @@ function NewListingContent() {
             mode="add"
             shopId={selectedShopId ?? undefined}
             itemType={paramItemType}
-            backUrl="/merchant/listings"
+            backUrl={
+              session.user?.user_role === "merchant" || session.user?.user_role === "admin"
+                ? "/merchant/listings"
+                : "/"
+            }
             hasBottomNav={false}
             onShopRequired={() => void openPicker()}
           />

@@ -397,6 +397,13 @@ export default function ProductFormPage({
     setAiCheck(null);
   }
 
+  function afterSaveHref() {
+    if (mode !== "add") return backUrl;
+    const role = useSessionStore.getState().user?.user_role;
+    if (role === "merchant" || role === "admin") return "/merchant/listings";
+    return backUrl;
+  }
+
   function handleCancel() {
     if (saving) return;
     if (isDirty) {
@@ -503,7 +510,7 @@ export default function ProductFormPage({
       setSessionRemoved([]);
       setSessionUploaded([]);
       initialRef.current = draft;
-      router.push(backUrl);
+      router.push(afterSaveHref());
     } catch (err) {
       if (err instanceof ShopRequiredError) {
         toast.message("Choose a shop", {
@@ -538,7 +545,7 @@ export default function ProductFormPage({
             setSessionRemoved([]);
             setSessionUploaded([]);
             initialRef.current = draft;
-            router.push(backUrl);
+            router.push(afterSaveHref());
             return;
           }
         } catch {
