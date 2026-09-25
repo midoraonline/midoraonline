@@ -13,7 +13,7 @@ export default function MidoraInfoChatWidget({
 }) {
   const [open, setOpen] = useState(false);
   const position = aboveBottomNav
-    ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6"
+    ? "bottom-[var(--bottom-nav-clearance)] md:bottom-6"
     : "bottom-20 md:bottom-6";
 
   return (

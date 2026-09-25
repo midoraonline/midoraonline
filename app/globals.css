@@ -72,6 +72,19 @@
   --shop-safe-top: env(safe-area-inset-top, 0px);
   --shop-header-float-y: 0.5rem;
 
+  /* Ask Midora clears the tab row, Post Item button, and online strip via this stack. */
+  --bottom-nav-row: 3.5rem;
+  --bottom-nav-fab-lift: 0.75rem;
+  --bottom-nav-fab-ring: 4px;
+  --bottom-nav-fab-overhang: calc(var(--bottom-nav-fab-lift) + var(--bottom-nav-fab-ring));
+  --bottom-nav-status: 1.75rem;
+  --bottom-nav-border: 1px;
+  --bottom-nav-gap: 1rem;
+  --bottom-nav-clearance: calc(
+    env(safe-area-inset-bottom, 0px) + var(--bottom-nav-border) + var(--bottom-nav-row) +
+      max(var(--bottom-nav-fab-overhang), var(--bottom-nav-status)) + var(--bottom-nav-gap)
+  );
+
   /*
    * Stacking layers (document.body portals for modals)
    *   fab     — Ask Midora, shop chat, feedback tab, back-to-top
