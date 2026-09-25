@@ -1,4 +1,5 @@
 import { apiFetch } from "./base";
+import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
 
 function productBase(productId: string) {
   return `/api/v1/products/${encodeURIComponent(productId)}`;
@@ -450,14 +451,17 @@ export function getHomeFeed(opts: {
   cursor?: string | null;
   /** Category label (parent or subcategory). Omit / empty = All. */
   category?: string | null;
+  catalog?: CatalogQuery | null;
   token?: string;
 } = {}) {
   const params = new URLSearchParams();
-  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.limit) params.set("limit", String(Math.min(200, Math.max(1, opts.limit))));
   if (opts.page && !opts.cursor) params.set("page", String(opts.page));
   if (opts.cursor) params.set("cursor", opts.cursor);
-  const category = opts.category?.trim();
-  if (category) params.set("category", category);
+  appendCatalogParams(params, {
+    ...opts.catalog,
+    category: opts.catalog?.category ?? opts.category,
+  });
   const qs = params.toString();
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
     ...(opts.token ? { token: opts.token } : {}),

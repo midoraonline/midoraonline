@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
-  applyFilters,
   DEFAULT_FILTERS,
   type FilterState,
 } from "@/components/browse/ProductFilters";
@@ -18,11 +17,10 @@ import {
   categoryFilterDisplayLabel,
   EMPTY_CATEGORY_FILTER,
   isCategoryFilterActive,
-  productMatchesCategoryFilter,
   type CategoryFilterSelection,
 } from "@/lib/browseCategories";
-import { buildNearMeDistanceMap } from "@/lib/geo";
-import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
+import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
+import { toCatalogQuery } from "@/lib/catalogQuery";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 import { useAppSession } from "@/lib/state";
@@ -69,13 +67,10 @@ export default function HomeLanding({
   const [products, setProducts] = useState(initialProducts);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const [nearMeDistances, setNearMeDistances] = useState<Map<string, number> | null>(
-    null,
-  );
-  const [nearMeRanking, setNearMeRanking] = useState(false);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { items: categoryItems } = useCategoryItems();
   const session = useAppSession();
   const [query, setQuery] = useState(() => searchParams.get("q")?.trim() ?? "");
   const [loadingMore, setLoadingMore] = useState(false);
@@ -92,9 +87,22 @@ export default function HomeLanding({
   const seenIdsRef = useRef<Set<string>>(new Set(initialProducts.map((p) => p.id)));
   const isSearching = query.trim().length >= 2;
   hasMoreRef.current = hasMore;
+  const feedCategory = useMemo(() => {
+    if (!isCategoryFilterActive(categoryFilter)) return null;
+    return (categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel)?.trim() || null;
+  }, [categoryFilter]);
+  const catalog = useMemo(
+    () => toCatalogQuery(filters, feedCategory),
+    [filters, feedCategory],
+  );
+  const catalogKey = catalogQueryKey(catalog);
+  const catalogRef = useRef(catalog);
+  catalogRef.current = catalog;
+
   const search = useProductSearch({
     query,
-    category: categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel,
+    category: feedCategory,
+    catalog,
     enabled: isSearching,
     limit: 24,
   });
@@ -104,14 +112,10 @@ export default function HomeLanding({
     setQuery((prev) => (urlQ !== prev ? urlQ : prev));
   }, [searchParams]);
 
-  const feedCategory = useMemo(() => {
-    if (!isCategoryFilterActive(categoryFilter)) return null;
-    return (categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel)?.trim() || null;
-  }, [categoryFilter]);
-  const feedCategoryRef = useRef(feedCategory);
-  feedCategoryRef.current = feedCategory;
+  const feedRequestRef = useRef(0);
 
   useEffect(() => {
+    if (catalogQueryActive(catalogRef.current)) return;
     const next = continuationFrom(initialProducts.length, initialHasMore, initialCursor);
     setProducts(initialProducts);
     seenIdsRef.current = new Set(initialProducts.map((p) => p.id));
@@ -119,26 +123,33 @@ export default function HomeLanding({
     nextCursorRef.current = next.cursor;
   }, [initialProducts, initialHasMore, initialCursor]);
 
-  // When the browse category changes, reload from the server so infinite scroll
-  // stays in-category. "All" restores the unfiltered home feed.
-  const categoryBootRef = useRef(true);
+  // Category and sheet filters are applied by the API. Reset to the first page.
+  const catalogBootRef = useRef(true);
   useEffect(() => {
-    if (categoryBootRef.current) {
-      categoryBootRef.current = false;
-      // If landing with a preselected category (unusual), still fetch.
-      if (!feedCategory) return;
+    if (catalogBootRef.current) {
+      catalogBootRef.current = false;
+      if (!catalogQueryActive(catalogRef.current)) return;
     }
+    const requestId = ++feedRequestRef.current;
     let cancelled = false;
-    async function reloadForCategory() {
+    async function reloadFiltered() {
       loadingMoreRef.current = true;
+      setFeedLoading(true);
+      setFeedError(null);
       setLoadingMore(true);
+      setProducts([]);
+      seenIdsRef.current = new Set();
+      nextCursorRef.current = null;
+      setHasMore(false);
+      hasMoreRef.current = false;
       try {
         const site = publicSiteOrigin();
         const data = await apiProducts.getHomeFeed({
           limit: FEED_PAGE_SIZE,
-          category: feedCategory,
+          page: 1,
+          catalog: catalogRef.current,
         });
-        if (cancelled) return;
+        if (cancelled || requestId !== feedRequestRef.current) return;
         const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
         seenIdsRef.current = new Set(cards.map((c) => c.id));
         setProducts(cards);
@@ -147,31 +158,35 @@ export default function HomeLanding({
         nextCursorRef.current = data.next_cursor ?? null;
         hasMoreRef.current = more;
       } catch {
-        if (!cancelled) {
+        if (!cancelled && requestId === feedRequestRef.current) {
           setProducts([]);
           setHasMore(false);
           nextCursorRef.current = null;
           hasMoreRef.current = false;
+          setFeedError("Couldn't load listings. Try again.");
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && requestId === feedRequestRef.current) {
           loadingMoreRef.current = false;
           setLoadingMore(false);
+          setFeedLoading(false);
         }
       }
     }
-    void reloadForCategory();
+    void reloadFiltered();
     return () => {
       cancelled = true;
     };
-  }, [feedCategory]);
+  }, [catalogKey]);
 
   const fillEmptyFeed = useCallback(async () => {
+    if (catalogQueryActive(catalogRef.current)) return;
     try {
       const site = publicSiteOrigin();
       const data = await apiProducts.getHomeFeed({
         limit: FEED_PAGE_SIZE,
-        category: feedCategoryRef.current,
+        page: 1,
+        catalog: catalogRef.current,
       });
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       if (cards.length === 0) return;
@@ -192,6 +207,7 @@ export default function HomeLanding({
       setHasMore(false);
       return;
     }
+    const requestId = feedRequestRef.current;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
@@ -199,8 +215,9 @@ export default function HomeLanding({
       const data = await apiProducts.getHomeFeed({
         limit: FEED_PAGE_SIZE,
         cursor,
-        category: feedCategoryRef.current,
+        catalog: catalogRef.current,
       });
+      if (requestId !== feedRequestRef.current) return;
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));
       if (fresh.length === 0) {
@@ -214,10 +231,12 @@ export default function HomeLanding({
       nextCursorRef.current = data.next_cursor ?? null;
       setHasMore(more);
     } catch {
-      setHasMore(false);
+      if (requestId === feedRequestRef.current) setHasMore(false);
     } finally {
-      loadingMoreRef.current = false;
-      setLoadingMore(false);
+      if (requestId === feedRequestRef.current) {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
     }
   }, []);
 
@@ -247,9 +266,10 @@ export default function HomeLanding({
 
   useEffect(() => {
     if (!session.hydrated) return;
-    if (products.length > 0) return;
+    if (products.length > 0 || feedLoading) return;
+    if (catalogQueryActive(catalogRef.current)) return;
     void fillEmptyFeed();
-  }, [session.hydrated, products.length, fillEmptyFeed]);
+  }, [session.hydrated, products.length, feedLoading, fillEmptyFeed]);
 
   useEffect(() => {
     function onEngagement() {
@@ -269,68 +289,6 @@ export default function HomeLanding({
     [router],
   );
 
-  useEffect(() => {
-    if (!filters.nearMe || !filters.userGeo) {
-      setNearMeDistances(null);
-      setNearMeRanking(false);
-      return;
-    }
-
-    const userGeo = filters.userGeo;
-    const ac = new AbortController();
-    let cancelled = false;
-
-    async function run() {
-      setNearMeRanking(true);
-      try {
-        // Fast pass: Uganda seed + localStorage cache (no network).
-        const quick = await buildNearMeDistanceMap(products, userGeo, {
-          allowNetwork: false,
-          signal: ac.signal,
-        });
-        if (cancelled) return;
-        setNearMeDistances(new Map(quick.distances));
-
-        // Slow pass: geocode remaining unique places via Nominatim proxy.
-        if (quick.pendingNetwork > 0) {
-          const full = await buildNearMeDistanceMap(products, userGeo, {
-            allowNetwork: true,
-            signal: ac.signal,
-          });
-          if (cancelled) return;
-          setNearMeDistances(new Map(full.distances));
-        }
-      } catch {
-        if (!cancelled) setNearMeDistances((prev) => prev ?? new Map());
-      } finally {
-        if (!cancelled) setNearMeRanking(false);
-      }
-    }
-
-    void run();
-    return () => {
-      cancelled = true;
-      ac.abort();
-    };
-  }, [filters.nearMe, filters.userGeo, products]);
-
-  const browseProducts = useMemo(() => {
-    let list = products;
-    if (isCategoryFilterActive(categoryFilter)) {
-      list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter, categoryItems));
-    }
-    return applyFilters(list, filters, { distances: nearMeDistances });
-  }, [products, categoryFilter, categoryItems, filters, nearMeDistances]);
-
-  const localSearchMatches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return browseProducts.filter((p) => {
-      const hay = `${p.title} ${p.category ?? ""} ${p.shop.name}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [browseProducts, query]);
-
   const categoryFilterActive = isCategoryFilterActive(categoryFilter);
   const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
   const filterHint = categoryFilterLabel ? ` · ${categoryFilterLabel}` : "";
@@ -349,16 +307,10 @@ export default function HomeLanding({
     filters.compensation !== null ||
     filters.pricingModel !== null;
 
-  const displayProducts = isSearching
-    ? (() => {
-        const remote = applyFilters(search.items, filters, { distances: nearMeDistances });
-        const seen = new Set(localSearchMatches.map((p) => p.id));
-        return [...localSearchMatches, ...remote.filter((p) => !seen.has(p.id))];
-      })()
-    : browseProducts;
+  const displayProducts = isSearching ? search.items : products;
   const feedEmpty = isSearching
     ? !search.loading && displayProducts.length === 0
-    : displayProducts.length === 0;
+    : !feedLoading && displayProducts.length === 0;
 
   return (
     <div className="relative w-full">
@@ -385,11 +337,11 @@ export default function HomeLanding({
                 ? search.loading
                   ? `Searching “${query.trim()}”…`
                   : `Results for “${query.trim()}”`
-                : filters.nearMe
-                  ? nearMeRanking
-                    ? "Sorting by distance…"
-                    : "Closest to you"
-                  : `Products${filterHint}`}
+                : feedLoading
+                  ? "Loading listings…"
+                  : filters.nearMe
+                    ? "Closest to you"
+                    : `Products${filterHint}`}
             </h2>
             <div className="flex shrink-0 items-center gap-3">
               {isSearching ? (
@@ -427,8 +379,15 @@ export default function HomeLanding({
               {search.error}
             </p>
           ) : null}
+          {feedError && !isSearching ? (
+            <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">
+              {feedError}
+            </p>
+          ) : null}
 
-          {feedEmpty ? (
+          {feedLoading && !isSearching && displayProducts.length === 0 ? (
+            <EmptyState message="Loading listings…" />
+          ) : feedEmpty && !feedError ? (
             <EmptyState
               message={
                 isSearching

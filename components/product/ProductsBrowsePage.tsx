@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
-  applyFilters,
   DEFAULT_FILTERS,
   type FilterState,
 } from "@/components/browse/ProductFilters";
@@ -17,10 +16,10 @@ import {
   categoryFilterDisplayLabel,
   EMPTY_CATEGORY_FILTER,
   isCategoryFilterActive,
-  productMatchesCategoryFilter,
   type CategoryFilterSelection,
 } from "@/lib/browseCategories";
-import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
+import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
+import { toCatalogQuery } from "@/lib/catalogQuery";
 import { apiProducts } from "@/lib/api";
 import type { HomeFeedProduct } from "@/lib/api/products";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
@@ -38,14 +37,17 @@ export default function ProductsBrowsePage({
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [allItems, setAllItems] = useState(items);
-  const { items: categoryItems } = useCategoryItems();
   const [nextCursor, setNextCursor] = useState<string | null>(
     items.length >= 36 ? "p:2" : null,
   );
   const [loadingMore, setLoadingMore] = useState(false);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(items.length >= 36);
+  const catalogRef = useRef(toCatalogQuery(DEFAULT_FILTERS, null));
 
   useEffect(() => {
+    if (catalogQueryActive(catalogRef.current)) return;
     setAllItems(items);
     setNextCursor(items.length >= 36 ? "p:2" : null);
     setHasMore(items.length >= 36);
@@ -61,31 +63,41 @@ export default function ProductsBrowsePage({
   const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
   const isSearching = q.length > 0;
 
-  const search = useProductSearch({
-    query,
-    category: categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel,
-    enabled: isSearching,
-    limit: 20,
-  });
-
   const feedCategory = useMemo(() => {
     if (!categoryFilterActive) return null;
     return (categoryFilter.subcategoryLabel ?? categoryFilter.parentLabel)?.trim() || null;
   }, [categoryFilter, categoryFilterActive]);
+  const catalog = useMemo(
+    () => toCatalogQuery(filters, feedCategory),
+    [filters, feedCategory],
+  );
+  const catalogKey = catalogQueryKey(catalog);
+  catalogRef.current = catalog;
 
-  const categoryBootRef = useRef(true);
+  const search = useProductSearch({
+    query,
+    category: feedCategory,
+    catalog,
+    enabled: isSearching,
+    limit: 20,
+  });
+
+  const catalogBootRef = useRef(true);
   useEffect(() => {
-    if (categoryBootRef.current) {
-      categoryBootRef.current = false;
-      if (!feedCategory) return;
+    if (catalogBootRef.current) {
+      catalogBootRef.current = false;
+      if (!catalogQueryActive(catalogRef.current)) return;
     }
     let cancelled = false;
-    async function reloadForCategory() {
+    async function reloadFiltered() {
+      setFeedLoading(true);
+      setFeedError(null);
       setLoadingMore(true);
       try {
         const data = await apiProducts.getHomeFeed({
           limit: 36,
-          category: feedCategory,
+          page: 1,
+          catalog: catalogRef.current,
         });
         if (cancelled) return;
         const nextItems = (data.algorithm ?? []).map(toCardLocal);
@@ -97,18 +109,20 @@ export default function ProductsBrowsePage({
           setAllItems([]);
           setNextCursor(null);
           setHasMore(false);
+          setFeedError("Couldn't load listings. Try again.");
         }
       } finally {
-        if (!cancelled) setLoadingMore(false);
+        if (!cancelled) {
+          setLoadingMore(false);
+          setFeedLoading(false);
+        }
       }
     }
-    void reloadForCategory();
+    void reloadFiltered();
     return () => {
       cancelled = true;
     };
-    // toCardLocal is stable enough for this page; avoid dep churn.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedCategory]);
+  }, [catalogKey]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !nextCursor) return;
@@ -117,7 +131,7 @@ export default function ProductsBrowsePage({
       const data = await apiProducts.getHomeFeed({
         limit: 36,
         cursor: nextCursor,
-        category: feedCategory,
+        catalog: catalogRef.current,
       });
       const existing = new Set(allItems.map((p) => p.id));
       const nextItems = (data.algorithm ?? [])
@@ -136,22 +150,13 @@ export default function ProductsBrowsePage({
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, nextCursor, allItems, feedCategory]);
+  }, [loadingMore, hasMore, nextCursor, allItems]);
 
   function toCardLocal(fp: HomeFeedProduct): ProductCardData {
     return homeFeedProductToCard(fp, typeof window !== "undefined" ? window.location.origin : "");
   }
 
-  const browseItems = useMemo(() => {
-    if (isSearching) return [];
-    let list = allItems;
-    if (categoryFilterActive) {
-      list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter, categoryItems));
-    }
-    return applyFilters(list, filters);
-  }, [allItems, categoryFilter, categoryFilterActive, categoryItems, filters, isSearching]);
-
-  const displayItems = isSearching ? applyFilters(search.items, filters) : browseItems;
+  const displayItems = isSearching ? search.items : allItems;
   const filterHint = categoryFilterLabel ? ` · ${categoryFilterLabel}` : "";
 
   return (
@@ -231,7 +236,11 @@ export default function ProductsBrowsePage({
             </Link>
           </div>
 
-          {items.length === 0 && !isSearching ? (
+          {feedError && !isSearching ? (
+            <div className="dm-card mt-6 p-8 text-sm text-muted">{feedError}</div>
+          ) : feedLoading && !isSearching ? (
+            <div className="dm-card mt-6 p-8 text-sm text-muted">Loading listings…</div>
+          ) : items.length === 0 && !isSearching && !catalogQueryActive(catalog) ? (
             <div className="dm-card mt-6 p-8 sm:p-10">
               <p className="text-sm leading-relaxed text-muted">
                 No products are available yet. Open a{" "}
@@ -247,7 +256,7 @@ export default function ProductsBrowsePage({
             <div className="dm-card mt-6 p-8 text-sm text-muted">{search.error}</div>
           ) : displayItems.length === 0 ? (
             <div className="dm-card mt-6 p-8 text-sm text-muted">
-              No listings match your filters. Try clearing search or category.
+              No listings match your filters. Try another category, or clear filters.
             </div>
           ) : (
             <>
@@ -272,7 +281,7 @@ export default function ProductsBrowsePage({
                     {search.loadingMore ? "Loading..." : "Load more results"}
                   </button>
                 </div>
-              ) : !isSearching && !categoryFilterActive && hasMore ? (
+              ) : !isSearching && hasMore ? (
                 <div className="mt-6 text-center">
                   <button
                     type="button"

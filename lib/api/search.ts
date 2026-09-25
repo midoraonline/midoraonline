@@ -1,4 +1,5 @@
 import { apiFetch } from "./base";
+import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
 
 export type SearchMode = "vector" | "keyword" | "hybrid";
 
@@ -80,6 +81,7 @@ export type SearchProductsOptions = {
   page?: number;
   limit?: number;
   category?: string | null;
+  catalog?: CatalogQuery | null;
   log?: boolean;
   token?: string | null;
 };
@@ -87,8 +89,11 @@ export type SearchProductsOptions = {
 export function searchProducts(q: string, opts?: SearchProductsOptions) {
   const params = new URLSearchParams({ q: q.trim() });
   if (opts?.page) params.set("page", String(opts.page));
-  if (opts?.limit) params.set("limit", String(opts.limit));
-  if (opts?.category) params.set("category", opts.category);
+  if (opts?.limit) params.set("limit", String(Math.min(100, Math.max(1, opts.limit))));
+  appendCatalogParams(params, {
+    ...opts?.catalog,
+    category: opts?.catalog?.category ?? opts?.category,
+  });
   if (opts?.log === false) params.set("log", "false");
 
   return apiFetch<SearchProductsResponse>(`/api/v1/search/products?${params}`, {
