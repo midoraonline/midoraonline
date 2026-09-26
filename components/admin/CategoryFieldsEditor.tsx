@@ -5,6 +5,15 @@ import { toast } from "sonner";
 
 import { apiAdmin } from "@/lib/api";
 import {
+  addCategoryField,
+  deleteCategoryField,
+  isFieldsRouteMissing,
+  reorderCategoryFields,
+  updateCategoryField,
+} from "@/lib/api/categoryFields";
+import {
+  fieldHelp,
+  fieldKind,
   normalizeCategoryFields,
   type CategoryMetaField,
   type CategoryMetaFieldKind,
@@ -47,7 +56,7 @@ function toEditorRows(parent: CategoryMetaField[], own: CategoryMetaField[]): Ed
     return {
       ...field,
       required: over?.required ?? field.required,
-      help: over?.help ?? field.help,
+      help_text: over?.help_text ?? field.help_text,
       inherited: true,
     };
   });
@@ -62,12 +71,13 @@ function serialize(field: EditorField): CategoryMetaField {
   const out: CategoryMetaField = {
     key: field.key.trim(),
     label: field.label.trim(),
-    kind: field.kind,
+    type: fieldKind(field),
+    kind: fieldKind(field),
     required: Boolean(field.required),
   };
   if (field.placeholder?.trim()) out.placeholder = field.placeholder.trim();
-  if (field.help?.trim()) out.help = field.help.trim();
-  if (field.kind === "select" && field.options?.length) out.options = field.options;
+  if (fieldHelp(field)) out.help_text = fieldHelp(field);
+  if (fieldKind(field) === "select" && field.options?.length) out.options = field.options;
   return out;
 }
 
@@ -128,9 +138,9 @@ export default function CategoryFieldsEditor({
         const base = parentFields.find((row) => row.key === field.key);
         if (!base) continue;
         const requiredChanged = Boolean(field.required) !== Boolean(base.required);
-        const helpChanged = (field.help ?? "") !== (base.help ?? "");
+        const helpChanged = fieldHelp(field) !== fieldHelp(base);
         if (requiredChanged || helpChanged) {
-          saved.push(serialize({ ...base, required: field.required, help: field.help }));
+          saved.push(serialize({ ...base, required: field.required, help_text: field.help_text }));
         }
         continue;
       }
@@ -140,10 +150,56 @@ export default function CategoryFieldsEditor({
     return saved;
   }
 
+  async function saveViaFieldRoutes() {
+    const beforeOwn = new Map(
+      baseline.filter((field) => !field.inherited && field.key).map((field) => [field.key, field]),
+    );
+    const afterOwn = fields.filter((field) => !field.inherited && field.key.trim() && field.label.trim());
+    const afterKeys = new Set(afterOwn.map((field) => field.key));
+
+    for (const [key] of beforeOwn) {
+      if (!afterKeys.has(key)) await deleteCategoryField(slug, key);
+    }
+    for (const field of afterOwn) {
+      const stored = serialize(field);
+      if (!beforeOwn.has(field.key)) {
+        await addCategoryField(slug, stored);
+        continue;
+      }
+      const prev = beforeOwn.get(field.key)!;
+      if (JSON.stringify(serialize(prev)) !== JSON.stringify(stored)) {
+        await updateCategoryField(slug, field.key, stored);
+      }
+    }
+    for (const field of fields) {
+      if (!field.inherited || !field.key) continue;
+      const prev = baseline.find((row) => row.inherited && row.key === field.key);
+      const parent = parentFields.find((row) => row.key === field.key);
+      if (!prev || !parent) continue;
+      const requiredChanged = Boolean(field.required) !== Boolean(prev.required);
+      const helpChanged = fieldHelp(field) !== fieldHelp(prev);
+      if (!requiredChanged && !helpChanged) continue;
+      const body: Partial<CategoryMetaField> = {};
+      if (requiredChanged || helpChanged) body.required = Boolean(field.required);
+      if (helpChanged) body.help_text = fieldHelp(field);
+      await updateCategoryField(slug, field.key, body);
+    }
+    const ownKeys = afterOwn.map((field) => field.key);
+    const prevOwnKeys = baseline.filter((field) => !field.inherited && field.key).map((field) => field.key);
+    if (ownKeys.join("\0") !== prevOwnKeys.join("\0")) {
+      await reorderCategoryFields(slug, ownKeys);
+    }
+  }
+
   async function save() {
     setSaving(true);
     try {
-      await apiAdmin.adminUpdateCategory(slug, { metadata: payload() });
+      try {
+        await saveViaFieldRoutes();
+      } catch (err) {
+        if (!isFieldsRouteMissing(err)) throw err;
+        await apiAdmin.adminUpdateCategory(slug, { metadata: payload(), fields: payload() });
+      }
       toast.success("Fields saved");
       onSaved();
     } catch (err) {
@@ -182,9 +238,14 @@ export default function CategoryFieldsEditor({
                 />
                 <select
                   className="dm-input sm:col-span-1"
-                  value={field.kind}
+                  value={fieldKind(field)}
                   disabled={field.inherited}
-                  onChange={(e) => update(index, { kind: e.target.value as CategoryMetaFieldKind })}
+                  onChange={(e) =>
+                    update(index, {
+                      kind: e.target.value as CategoryMetaFieldKind,
+                      type: e.target.value as CategoryMetaFieldKind,
+                    })
+                  }
                   aria-label="Field type"
                 >
                   {KINDS.map((kind) => (
@@ -195,13 +256,13 @@ export default function CategoryFieldsEditor({
                 </select>
                 <input
                   className="dm-input sm:col-span-2"
-                  value={field.help ?? ""}
-                  onChange={(e) => update(index, { help: e.target.value })}
+                  value={field.help_text ?? ""}
+                  onChange={(e) => update(index, { help_text: e.target.value })}
                   placeholder="Help text"
                   aria-label="Help text"
                 />
               </div>
-              {field.kind === "select" && !field.inherited ? (
+              {fieldKind(field) === "select" && !field.inherited ? (
                 <textarea
                   className="dm-input"
                   rows={2}

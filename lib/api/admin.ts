@@ -479,6 +479,8 @@ export type AdminCategory = {
   sort_order: number;
   parent_slug?: string | null;
   metadata?: CategoryMetaField[];
+  fields?: CategoryMetaField[];
+  effective_fields?: CategoryMetaField[];
 };
 
 export function adminListCategories() {
@@ -502,7 +504,7 @@ export function adminCreateCategory(body: {
 
 export function adminUpdateCategory(
   slug: string,
-  body: Partial<Pick<AdminCategory, "label" | "parent_slug" | "sort_order" | "metadata">>,
+  body: Partial<Pick<AdminCategory, "label" | "parent_slug" | "sort_order" | "metadata" | "fields">>,
 ) {
   return apiFetch<AdminCategory>(
     `/api/v1/admin/settings/categories/${encodeURIComponent(slug)}`,

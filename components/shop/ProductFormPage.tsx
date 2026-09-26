@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "luc
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { fetchCategoryFields, missingListingFields } from "@/lib/api/categoryFields";
 import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
@@ -29,6 +30,7 @@ import {
   deriveOpportunityKindFromSubcategory,
   indefiniteArticle,
   LISTING_KIND_LABEL,
+  normalizeCategoryFields,
   LISTING_KIND_OPTIONS,
   listingKindToItemType,
   normalizeListingKind,
@@ -237,6 +239,10 @@ export default function ProductFormPage({
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});
+  const [remoteFields, setRemoteFields] = useState<ReturnType<typeof normalizeCategoryFields> | null>(
+    null,
+  );
   const sessionUser = useSessionStore((s) => s.user);
   const [shopLocationLabel, setShopLocationLabel] = useState("");
 
@@ -301,15 +307,39 @@ export default function ProductFormPage({
     () => resolveCategoryParts(draft.category, categoryItems),
     [draft.category, categoryItems],
   );
-  const catFields = useMemo(
-    () =>
-      categoryMetaFieldsFromItems(
-        categoryParts.parentLabel,
-        categoryItems,
-        categoryParts.subcategoryLabel,
-      ),
-    [categoryParts.parentLabel, categoryParts.subcategoryLabel, categoryItems],
-  );
+  const fieldIdentifier = categoryParts.subcategoryLabel || categoryParts.parentLabel || "";
+  useEffect(() => {
+    if (!fieldIdentifier) {
+      setRemoteFields(null);
+      return;
+    }
+    let cancelled = false;
+    setRemoteFields(null);
+    fetchCategoryFields(fieldIdentifier)
+      .then((res) => {
+        if (cancelled) return;
+        setRemoteFields(res ? normalizeCategoryFields(res.fields) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteFields(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fieldIdentifier]);
+  const catFields = useMemo(() => {
+    if (remoteFields !== null) return remoteFields;
+    return categoryMetaFieldsFromItems(
+      categoryParts.parentLabel,
+      categoryItems,
+      categoryParts.subcategoryLabel,
+    );
+  }, [
+    remoteFields,
+    categoryParts.parentLabel,
+    categoryParts.subcategoryLabel,
+    categoryItems,
+  ]);
 
   const errors = useMemo(() => {
     const parentGroup = categoryTree.find(
@@ -520,6 +550,20 @@ export default function ProductFormPage({
           description: "Pick which shop this listing belongs to, then save again.",
         });
         onShopRequired?.();
+        return;
+      }
+      const missing = missingListingFields(err);
+      if (missing) {
+        const next: Record<string, string> = {};
+        for (const field of missing) {
+          next[field.key] = `${field.label} is required for this category.`;
+        }
+        setServerFieldErrors(next);
+        setShowErrors(true);
+        toast.error(
+          err instanceof Error ? err.message : "Add the required category fields.",
+          { id: toastId },
+        );
         return;
       }
       // Client timeout can fire while the API already saved + queued moderation.
@@ -1277,12 +1321,19 @@ export default function ProductFormPage({
             <CategoryMetaInputs
               fields={catFields}
               meta={draft.meta}
-              onChange={(key, value) =>
+              fieldErrors={showErrors ? serverFieldErrors : undefined}
+              onChange={(key, value) => {
+                setServerFieldErrors((current) => {
+                  if (!current[key]) return current;
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                });
                 setDraft((d) => ({
                   ...d,
                   meta: { ...d.meta, [key]: value } as ListingMeta,
-                }))
-              }
+                }));
+              }}
             />
           ) : null}
 

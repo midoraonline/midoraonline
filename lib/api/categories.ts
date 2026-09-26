@@ -14,6 +14,8 @@ export type CategoryItem = {
   sort_order: number;
   parent_slug?: string | null;
   metadata?: CategoryMetaField[];
+  fields?: CategoryMetaField[];
+  effective_fields?: CategoryMetaField[];
 };
 
 export type CategoryListResponse = {
@@ -38,10 +40,15 @@ export async function listCategoryItems(): Promise<CategoryItem[]> {
     const res = await apiFetch<CategoryListResponse>("/api/v1/categories/");
     if (res.items.length > 0 && categoryItemsHaveSubcategories(res.items)) {
       return res.items
-        .map((item) => ({
-          ...item,
-          metadata: normalizeCategoryFields(item.metadata),
-        }))
+        .map((item) => {
+          const metadata = normalizeCategoryFields(item.metadata ?? item.fields);
+          const next: CategoryItem = { ...item, metadata };
+          if (item.fields !== undefined) next.fields = normalizeCategoryFields(item.fields);
+          if (item.effective_fields !== undefined) {
+            next.effective_fields = normalizeCategoryFields(item.effective_fields);
+          }
+          return next;
+        })
         .sort((a, b) => a.sort_order - b.sort_order);
     }
   } catch {

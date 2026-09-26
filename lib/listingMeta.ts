@@ -51,12 +51,26 @@ export type CategoryMetaFieldKind = "text" | "number" | "select" | "date" | "boo
 export type CategoryMetaField = {
   key: string;
   label: string;
+  /** Mirrors `type`. Kept so older readers still see a kind. */
   kind: CategoryMetaFieldKind;
+  type?: CategoryMetaFieldKind;
   required?: boolean;
   placeholder?: string;
-  help?: string;
+  help_text?: string;
   options?: readonly { value: string; label: string }[];
+  inherited?: boolean;
+  overridden?: boolean;
+  partial?: boolean;
+  overrides?: string[];
 };
+
+export function fieldKind(field: CategoryMetaField): CategoryMetaFieldKind {
+  return field.type || field.kind || "text";
+}
+
+export function fieldHelp(field: CategoryMetaField): string {
+  return field.help_text?.trim() || "";
+}
 
 export const LISTING_KIND_OPTIONS: {
   value: ListingKind;
@@ -341,20 +355,28 @@ function fieldFromRecord(row: Record<string, unknown>, fallbackKey?: string): Ca
   const key = String(row.key ?? row.name ?? fallbackKey ?? "").trim();
   if (!key) return null;
   const label = String(row.label ?? row.title ?? key).trim() || key;
-  const helpRaw = row.help ?? row.help_text ?? row.helpText;
+  const helpRaw = row.help_text ?? row.helpText ?? row.help ?? row.hint;
+  const kind = asFieldKind(row.type ?? row.kind);
   const field: CategoryMetaField = {
     key,
     label,
-    kind: asFieldKind(row.kind ?? row.type),
+    type: kind,
+    kind,
   };
   if (row.required != null) {
     field.required = row.required === true || row.required === "true" || row.required === 1;
   }
   const placeholder = String(row.placeholder ?? "").trim();
   if (placeholder) field.placeholder = placeholder;
-  if (typeof helpRaw === "string" && helpRaw.trim()) field.help = helpRaw.trim();
+  if (typeof helpRaw === "string" && helpRaw.trim()) field.help_text = helpRaw.trim();
   const options = asFieldOptions(row.options);
   if (options) field.options = options;
+  if (row.inherited === true) field.inherited = true;
+  if (row.overridden === true) field.overridden = true;
+  if (row.partial === true) field.partial = true;
+  if (Array.isArray(row.overrides)) {
+    field.overrides = row.overrides.map((item) => String(item));
+  }
   return field;
 }
 
@@ -405,9 +427,10 @@ export function mergeCategoryFields(
       ...base,
       ...field,
       label: field.label || base.label,
-      kind: field.kind || base.kind,
+      type: field.type || field.kind || base.type || base.kind,
+      kind: field.kind || field.type || base.kind,
       required: field.required !== undefined ? field.required : base.required,
-      help: field.help ?? base.help,
+      help_text: field.help_text ?? base.help_text,
       placeholder: field.placeholder ?? base.placeholder,
       options: field.options?.length ? field.options : base.options,
     };
@@ -423,21 +446,27 @@ export function categoryMetaFieldsFromItems(
     label: string;
     parent_slug?: string | null;
     metadata?: unknown;
+    fields?: unknown;
+    effective_fields?: unknown;
   }[],
   subcategoryLabel?: string | null,
 ): CategoryMetaField[] {
   const p = (parentLabel ?? "").trim();
   if (!p) return [];
   const parentItem = items.find((i) => !i.parent_slug && i.label === p);
-  const storedParent = normalizeCategoryFields(parentItem?.metadata);
-  const parentFields = storedParent.length > 0 ? storedParent : categoryMetaFields(parentLabel);
-
   const sub = (subcategoryLabel ?? "").trim();
+  const childItem = sub
+    ? items.find((i) => i.label === sub && (!parentItem || i.parent_slug === parentItem.slug))
+    : undefined;
+  const target = childItem ?? parentItem;
+  if (target && target.effective_fields !== undefined) {
+    return normalizeCategoryFields(target.effective_fields);
+  }
+
+  const storedParent = normalizeCategoryFields(parentItem?.metadata ?? parentItem?.fields);
+  const parentFields = storedParent.length > 0 ? storedParent : categoryMetaFields(parentLabel);
   if (!sub) return parentFields;
-  const childItem = items.find(
-    (i) => i.label === sub && (!parentItem || i.parent_slug === parentItem.slug),
-  );
-  const childFields = normalizeCategoryFields(childItem?.metadata);
+  const childFields = normalizeCategoryFields(childItem?.metadata ?? childItem?.fields);
   if (childFields.length === 0) return parentFields;
   return mergeCategoryFields(parentFields, childFields);
 }
@@ -661,7 +690,7 @@ export function listingMetaDisplayRows(
     if (field.key === "brand" && kind === "product" && meta.brand) continue;
     const raw = meta[field.key];
     if (raw == null || raw === "") continue;
-    if (field.kind === "select" && field.options) {
+    if (fieldKind(field) === "select" && field.options) {
       const label = optionLabel(
         field.options as readonly { value: string; label: string }[],
         String(raw),

@@ -31,10 +31,16 @@ export default function AdminCategoriesClient() {
     try {
       const rows = await apiAdmin.adminListCategories();
       setCategories(
-        (Array.isArray(rows) ? rows : []).map((row) => ({
-          ...row,
-          metadata: normalizeCategoryFields(row.metadata),
-        })),
+        (Array.isArray(rows) ? rows : []).map((row) => {
+          const metadata = normalizeCategoryFields(row.metadata ?? row.fields);
+          return {
+            ...row,
+            metadata,
+            ...(row.effective_fields !== undefined
+              ? { effective_fields: normalizeCategoryFields(row.effective_fields) }
+              : {}),
+          };
+        }),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load categories");
