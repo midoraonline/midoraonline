@@ -6,7 +6,7 @@ import {
   type CategoryLabel,
   type CategoryTreeGroup,
 } from "@/lib/categories";
-import type { CategoryMetaField } from "@/lib/listingMeta";
+import { normalizeCategoryFields, type CategoryMetaField } from "@/lib/listingMeta";
 
 export type CategoryItem = {
   slug: string;
@@ -37,7 +37,12 @@ export async function listCategoryItems(): Promise<CategoryItem[]> {
   try {
     const res = await apiFetch<CategoryListResponse>("/api/v1/categories/");
     if (res.items.length > 0 && categoryItemsHaveSubcategories(res.items)) {
-      return res.items.slice().sort((a, b) => a.sort_order - b.sort_order);
+      return res.items
+        .map((item) => ({
+          ...item,
+          metadata: normalizeCategoryFields(item.metadata),
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order);
     }
   } catch {
     /* use nested fallback */

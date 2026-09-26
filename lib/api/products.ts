@@ -406,6 +406,7 @@ export type HomeFeedProduct = {
   review_count?: number | null;
   is_negotiable?: boolean | null;
   location_name?: string | null;
+  description?: string | null;
   listing_meta?: Record<string, unknown> | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -448,6 +449,7 @@ export type SimilarProduct = {
   id: string;
   shop_id: string;
   title: string;
+  description?: string | null;
   price_ugx: number;
   discount_price?: number | null;
   discount_expires_at?: string | null;

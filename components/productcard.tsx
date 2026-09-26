@@ -23,6 +23,7 @@ import {
   listingCardLabel,
   normalizeListingKind,
   parseListingMeta,
+  textListingChips,
   type ListingMeta,
 } from "@/lib/listingMeta";
 import { isOnlineLocation } from "@/lib/listingLocation";
@@ -309,6 +310,9 @@ export default function ProductCard({
   const ratingValue = product.rating ?? 0;
   const listingKind = normalizeListingKind(product.item_type);
   const showKindBadge = listingKind !== "product";
+  const coverUrl = product.imageUrl?.trim() || "";
+  const hasMedia = Boolean(coverUrl) || product.hasVideo === true;
+  const textFirst = !hasMedia && listingKind !== "product";
 
   const imageBadges = (
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
@@ -396,7 +400,7 @@ export default function ProductCard({
         )}
         <span className="truncate font-medium text-foreground/80">{locationLabel}</span>
       </span>
-      {listingKind === "product" ? trustMark : null}
+      {listingKind === "product" || textFirst ? trustMark : null}
       <span className="inline-flex shrink-0 items-center gap-0.5">
         <Star
           className={`size-3 ${ratingValue > 0 ? "fill-amber-400 text-amber-400" : "text-muted"}`}
@@ -413,19 +417,17 @@ export default function ProductCard({
     </div>
   );
 
-  const coverUrl = product.imageUrl?.trim() || "";
-  const hasMedia = Boolean(coverUrl) || product.hasVideo === true;
-  const textFirst = !hasMedia && listingKind !== "product";
-
   if (textFirst) {
     const meta = parseListingMeta(product.listing_meta);
     const rate = formatListingRate(price, listingKind, meta);
+    const chips = textListingChips(listingKind, meta);
+    const description = product.description?.trim() || "";
     return (
       <article
         ref={impressionRef as React.RefObject<HTMLElement>}
-        className="dm-product-card dm-card-hover flex w-full flex-col self-start overflow-hidden"
+        className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden"
       >
-        <div className="flex flex-col gap-1.5 p-2.5 sm:p-3">
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="min-w-0 truncate pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
               {listingCardLabel(listingKind, meta, product.category)}
@@ -452,7 +454,22 @@ export default function ProductCard({
               ) : null}
             </div>
           ) : null}
-          {trustMark}
+          {chips.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {chips.map((chip) => (
+                <span
+                  key={chip}
+                  className={`inline-flex max-w-full truncate rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                    chip === "Urgent"
+                      ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                      : "border-border bg-surface-subtle text-foreground/80"
+                  }`}
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
               {rate}
@@ -461,15 +478,22 @@ export default function ProductCard({
               <span className="text-[10px] font-medium text-muted">· Negotiable</span>
             ) : null}
           </div>
-          {metaRow}
-          <WhatsAppCta
-            waHref={waHref}
-            productId={product.id}
-            productHref={productHref}
-            shopId={product.shop.id}
-            category={product.category ?? undefined}
-            hasDiscount={isDiscounted}
-          />
+          {description ? (
+            <p className="line-clamp-3 flex-1 text-[11px] leading-snug text-muted sm:text-xs">
+              {description}
+            </p>
+          ) : null}
+          <div className={`${description ? "" : "mt-auto "}space-y-1.5`}>
+            {metaRow}
+            <WhatsAppCta
+              waHref={waHref}
+              productId={product.id}
+              productHref={productHref}
+              shopId={product.shop.id}
+              category={product.category ?? undefined}
+              hasDiscount={isDiscounted}
+            />
+          </div>
         </div>
       </article>
     );

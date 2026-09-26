@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/products";
 import CategoryPicker from "@/components/CategoryPicker";
 import { MediaDropzone } from "@/components/shop/MediaDropzone";
+import CategoryMetaInputs from "@/components/shop/CategoryMetaInputs";
 import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
@@ -469,6 +470,7 @@ export default function ProductFormPage({
       draft.kind,
       draft.meta,
       categoryParts.parentLabel,
+      catFields,
     );
 
     const body: CreateProductRequest = {
@@ -1272,52 +1274,16 @@ export default function ProductFormPage({
           ) : null}
 
           {catFields.length > 0 ? (
-            <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
-              {catFields.map((field) => (
-                <div key={field.key} className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    {field.label}
-                    {field.required ? (
-                      <span className="text-[color:var(--error)]"> *</span>
-                    ) : null}
-                  </label>
-                  {field.kind === "select" ? (
-                    <select
-                      className="dm-input"
-                      value={String(draft.meta[field.key] ?? "")}
-                      onChange={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          meta: {
-                            ...d.meta,
-                            [field.key]: e.target.value || undefined,
-                          } as ListingMeta,
-                        }))
-                      }
-                    >
-                      <option value="">Select…</option>
-                      {(field.options ?? []).map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      className="dm-input"
-                      value={String(draft.meta[field.key] ?? "")}
-                      onChange={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          meta: { ...d.meta, [field.key]: e.target.value } as ListingMeta,
-                        }))
-                      }
-                      placeholder={field.placeholder}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+            <CategoryMetaInputs
+              fields={catFields}
+              meta={draft.meta}
+              onChange={(key, value) =>
+                setDraft((d) => ({
+                  ...d,
+                  meta: { ...d.meta, [key]: value } as ListingMeta,
+                }))
+              }
+            />
           ) : null}
 
           {showErrors && errors.meta ? (

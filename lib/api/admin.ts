@@ -482,7 +482,9 @@ export type AdminCategory = {
 };
 
 export function adminListCategories() {
-  return apiFetch<AdminCategory[]>("/api/v1/admin/settings/categories");
+  return apiFetch<AdminCategory[] | { items: AdminCategory[] }>(
+    "/api/v1/admin/settings/categories",
+  ).then((raw) => (Array.isArray(raw) ? raw : raw.items ?? []));
 }
 
 export function adminCreateCategory(body: {

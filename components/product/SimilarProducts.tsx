@@ -38,7 +38,9 @@ export default function SimilarProducts({ productId, initialItems }: Props) {
       <h2 className="text-sm font-semibold tracking-tight">Similar products</h2>
       <div className={`mt-4 ${browseProductGridClass}`}>
         {items.map((p) => (
-          <ProductCard key={p.id} product={similarProductToCard(p)} />
+          <div key={p.id} className="h-full">
+            <ProductCard product={similarProductToCard(p)} />
+          </div>
         ))}
       </div>
     </div>

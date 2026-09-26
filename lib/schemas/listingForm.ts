@@ -253,6 +253,13 @@ export function validateListingDraft(
   for (const field of ctx.metaFields ?? categoryMetaFields(ctx.parentCategoryLabel)) {
     if (!field.required) continue;
     const v = draft.meta[field.key];
+    if (field.kind === "boolean") {
+      if (v !== "true") {
+        errors.meta = `${field.label} is required for this category.`;
+        break;
+      }
+      continue;
+    }
     if (v == null || String(v).trim() === "") {
       errors.meta = `${field.label} is required for this category.`;
       break;
