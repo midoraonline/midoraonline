@@ -177,8 +177,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
             processed = await removeBackgrounds(cleared);
           }
         }
-        // Always fit under UploadThing limits — BG PNGs and large phone
-        // JPEGs both commonly exceed the endpoint max and look like "upload broken".
+        // Keep originals that already fit. HEIC is converted; only over-limit files are resized.
         const maxBytes = UPLOAD_IMAGE_MAX_BYTES[endpoint];
         try {
           processed = await fitImagesForUpload(processed, maxBytes);

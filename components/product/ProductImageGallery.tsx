@@ -1,13 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { isVideoUrl } from "@/lib/api/products";
-
-function userMediaUnoptimized(src: string) {
-  return /ufs\.sh|utfs\.io/i.test(src) || /\.svg(\?|$)/i.test(src);
-}
+import FallbackImage from "@/components/media/FallbackImage";
 
 function isVideoSrc(src: string) {
   return isVideoUrl(src);
@@ -71,10 +67,12 @@ function MainVideo({
   src,
   visible,
   onPlayingChange,
+  onError,
 }: {
   src: string;
   visible: boolean;
   onPlayingChange: (playing: boolean) => void;
+  onError?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
 
@@ -102,6 +100,7 @@ function MainVideo({
       onPlay={() => onPlayingChange(true)}
       onPause={() => onPlayingChange(false)}
       onEnded={() => onPlayingChange(false)}
+      onError={onError}
     />
   );
 }
@@ -116,14 +115,25 @@ export default function ProductImageGallery({
   children?: React.ReactNode;
 }) {
   const [active, setActive] = useState(0);
+  const [dead, setDead] = useState<string[]>([]);
   const resumeAtRef = useRef(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const touchStartX = useRef<number | null>(null);
-  const safeLen = images.length;
+  const live = useMemo(
+    () => images.filter((url) => !dead.includes(url)),
+    [images, dead],
+  );
+  const safeLen = live.length;
+  const activeIndex = safeLen === 0 ? 0 : Math.min(active, safeLen - 1);
+
+  const markDead = useCallback((url: string) => {
+    setDead((prev) => (prev.includes(url) ? prev : [...prev, url]));
+  }, []);
 
   useEffect(() => {
     Promise.resolve().then(() => {
       setActive(0);
+      setDead([]);
       setVideoPlaying(false);
     });
   }, [images]);
@@ -148,9 +158,9 @@ export default function ProductImageGallery({
   const step = useCallback(
     (delta: number) => {
       if (safeLen <= 1) return;
-      onPick((active + delta + safeLen) % safeLen);
+      onPick((activeIndex + delta + safeLen) % safeLen);
     },
-    [active, onPick, safeLen],
+    [activeIndex, onPick, safeLen],
   );
 
   const handlePlayingChange = useCallback((playing: boolean) => {
@@ -184,8 +194,8 @@ export default function ProductImageGallery({
           step(dx < 0 ? 1 : -1);
         }}
       >
-        {images.map((url, i) => {
-          const visible = i === active;
+        {live.map((url, i) => {
+          const visible = i === activeIndex;
           if (isVideoSrc(url)) {
             return (
               <MainVideo
@@ -193,13 +203,14 @@ export default function ProductImageGallery({
                 src={url}
                 visible={visible}
                 onPlayingChange={handlePlayingChange}
+                onError={() => markDead(url)}
               />
             );
           }
           return (
-            <Image
+            <FallbackImage
               key={`${url}-${i}`}
-              src={url}
+              urls={[url]}
               alt={i === 0 ? title : `${title} — image ${i + 1}`}
               fill
               className={[
@@ -208,8 +219,7 @@ export default function ProductImageGallery({
               ].join(" ")}
               sizes="(max-width: 1024px) 100vw, min(640px, 50vw)"
               priority={i === 0}
-              unoptimized={userMediaUnoptimized(url)}
-              aria-hidden={!visible}
+              onExhausted={() => markDead(url)}
             />
           );
         })}
@@ -219,7 +229,7 @@ export default function ProductImageGallery({
         {safeLen > 1 ? (
           <>
             <span className="pointer-events-none absolute bottom-3 left-1/2 z-[5] -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-0.5 text-[10px] font-semibold tabular-nums text-white backdrop-blur-sm">
-              {active + 1} / {safeLen}
+              {activeIndex + 1} / {safeLen}
             </span>
             <button
               type="button"
@@ -246,9 +256,9 @@ export default function ProductImageGallery({
           className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
           aria-label="Product media"
         >
-          {images.map((url, i) => {
+          {live.map((url, i) => {
             const isVideo = isVideoSrc(url);
-            const isActive = i === active;
+            const isActive = i === activeIndex;
             return (
               <li key={`${url}-thumb-${i}`} className="shrink-0">
                 <button
@@ -273,13 +283,13 @@ export default function ProductImageGallery({
                       </span>
                     </>
                   ) : (
-                    <Image
-                      src={url}
+                    <FallbackImage
+                      urls={[url]}
                       alt=""
                       fill
                       className="object-cover"
                       sizes="64px"
-                      unoptimized={userMediaUnoptimized(url)}
+                      onExhausted={() => markDead(url)}
                     />
                   )}
                 </button>

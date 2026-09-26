@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import FallbackImage from "@/components/media/FallbackImage";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -31,7 +31,6 @@ import {
 } from "@/lib/listingMeta";
 import { useAppSession } from "@/lib/state";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import StatusBadge from "@/components/shop/StatusBadge";
 
 function formatUGX(n: number) {
@@ -128,7 +127,6 @@ export default function ShopCatalogEditor({
   async function removeProduct(product: Product) {
     if (!isAuthed) return;
     setDeleting(true);
-    const mediaUrls = productImageUrls(product);
     const request = apiProducts.deleteProduct(product.id);
     toast.promise(request, {
       loading: "Removing listing…",
@@ -137,9 +135,6 @@ export default function ShopCatalogEditor({
     });
     try {
       await request;
-      if (mediaUrls.length) {
-        void deleteUploadThingFiles(mediaUrls);
-      }
       setPendingDelete(null);
       await load();
     } catch {
@@ -254,13 +249,19 @@ export default function ShopCatalogEditor({
                       className="relative mt-0.5 size-14 shrink-0 overflow-hidden rounded-xl bg-foreground/[0.04] sm:size-16"
                     >
                       {img ? (
-                        <Image
-                          src={img}
+                        <FallbackImage
+                          urls={media.filter((url) => !isVideoUrl(url))}
                           alt=""
                           fill
                           className="object-cover"
                           sizes="64px"
-                          unoptimized
+                          fallback={
+                            <div className="grid h-full place-items-center text-[10px] text-muted">
+                              {media.some((url) => isVideoUrl(url)) ? "Video" : (
+                                <ImagePlus className="size-5 text-muted/50" />
+                              )}
+                            </div>
+                          }
                         />
                       ) : (
                         <div className="grid h-full place-items-center text-[10px] text-muted">

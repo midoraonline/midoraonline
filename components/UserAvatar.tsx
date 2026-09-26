@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import FallbackImage from "@/components/media/FallbackImage";
 
 const SIZE_PX = {
   xs: 24,
@@ -59,13 +59,13 @@ export default function UserAvatar({
       aria-hidden={alt ? undefined : true}
     >
       {url ? (
-        <Image
-          src={url}
+        <FallbackImage
+          urls={[url]}
           alt={label}
           fill
           sizes={`${px}px`}
           className="object-cover"
-          unoptimized
+          fallback={<span className="font-bold leading-none">{initials}</span>}
         />
       ) : (
         <span className="font-bold leading-none">{initials}</span>

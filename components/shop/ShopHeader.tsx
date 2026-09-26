@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import FallbackImage from "@/components/media/FallbackImage";
 import type { CSSProperties, ReactNode } from "react";
 import type { Shop } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
@@ -119,24 +119,23 @@ export default async function ShopHeader({
                 : "relative size-16 overflow-hidden rounded-2xl bg-surface-subtle ring-2 ring-accent/20 shadow-sm sm:size-[4.5rem]"
             }
           >
-            {shop.logo_url ? (
-              <Image
-                src={shop.logo_url}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="72px"
-                priority
-              />
-            ) : (
-              <div
-                className={`flex size-full items-center justify-center text-xl font-bold sm:text-2xl ${
-                  immersive ? "text-white" : "text-accent"
-                }`}
-              >
-                {shop.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <FallbackImage
+              urls={shop.logo_url ? [shop.logo_url] : []}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="72px"
+              priority
+              fallback={
+                <div
+                  className={`flex size-full items-center justify-center text-xl font-bold sm:text-2xl ${
+                    immersive ? "text-white" : "text-accent"
+                  }`}
+                >
+                  {shop.name.charAt(0).toUpperCase()}
+                </div>
+              }
+            />
           </div>
 
           <h1

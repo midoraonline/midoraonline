@@ -2,7 +2,7 @@ import axios from "axios";
 
 export async function verifyUploadBearer(
   req: Request,
-): Promise<{ userId: string } | null> {
+): Promise<{ userId: string; role: string | null } | null> {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!token) return null;
@@ -19,9 +19,10 @@ export async function verifyUploadBearer(
       validateStatus: () => true,
     });
     if (res.status < 200 || res.status >= 300) return null;
-    const me = res.data as { id?: unknown };
+    const me = res.data as { id?: unknown; user_role?: unknown };
     if (typeof me?.id !== "string" || !me.id) return null;
-    return { userId: me.id };
+    const role = typeof me.user_role === "string" ? me.user_role : null;
+    return { userId: me.id, role };
   } catch {
     return null;
   }
