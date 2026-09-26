@@ -5,7 +5,8 @@ import { toast } from "sonner";
 
 import { apiAdmin } from "@/lib/api";
 import type { AdminCategory } from "@/lib/api/admin";
-import { CATEGORY_META_FIELD_KEY_OPTIONS, type CategoryMetaField } from "@/lib/listingMeta";
+import CategoryFieldsEditor from "@/components/admin/CategoryFieldsEditor";
+import { CATEGORY_META_FIELD_KEY_OPTIONS, normalizeCategoryFields } from "@/lib/listingMeta";
 
 function slugify(label: string): string {
   return label
@@ -13,150 +14,6 @@ function slugify(label: string): string {
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-function optionsToText(options?: readonly { value: string; label: string }[]): string {
-  return (options ?? []).map((o) => `${o.value}|${o.label}`).join("\n");
-}
-
-function textToOptions(text: string): { value: string; label: string }[] {
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [value, label] = line.split("|").map((s) => s.trim());
-      return { value: value || "", label: label || value || "" };
-    })
-    .filter((o) => o.value);
-}
-
-function emptyField(): CategoryMetaField {
-  return { key: "brand", label: "Brand", kind: "text" };
-}
-
-function FieldsEditor({
-  slug,
-  initial,
-  onSaved,
-  scopeLabel,
-}: {
-  slug: string;
-  initial: CategoryMetaField[];
-  onSaved: () => void;
-  scopeLabel: string;
-}) {
-  const [fields, setFields] = useState<CategoryMetaField[]>(initial);
-  const [saving, setSaving] = useState(false);
-  const dirty = JSON.stringify(fields) !== JSON.stringify(initial);
-
-  useEffect(() => setFields(initial), [initial]);
-
-  function update(i: number, patch: Partial<CategoryMetaField>) {
-    setFields((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
-  }
-
-  async function save() {
-    setSaving(true);
-    try {
-      await apiAdmin.adminUpdateCategory(slug, { metadata: fields });
-      toast.success("Fields saved");
-      onSaved();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save fields");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="space-y-3 rounded-xl border border-border/60 bg-surface-subtle/40 p-3">
-      <p className="text-xs text-muted">
-        Extra fields shown on the post-item form for {scopeLabel}.
-      </p>
-      {fields.length === 0 ? (
-        <p className="text-xs text-muted italic">No extra fields configured.</p>
-      ) : (
-        <div className="space-y-2">
-          {fields.map((f, i) => (
-            <div key={i} className="grid gap-2 rounded-lg border border-border/50 p-2 sm:grid-cols-6">
-              <input
-                className="dm-input sm:col-span-1"
-                value={f.key}
-                onChange={(e) => update(i, { key: e.target.value })}
-                list="category-meta-field-keys"
-                placeholder="Field key (e.g. brand)"
-              />
-              <input
-                className="dm-input sm:col-span-1"
-                value={f.label}
-                onChange={(e) => update(i, { label: e.target.value })}
-                placeholder="Field label"
-              />
-              <select
-                className="dm-input sm:col-span-1"
-                value={f.kind}
-                onChange={(e) => update(i, { kind: e.target.value as CategoryMetaField["kind"] })}
-              >
-                <option value="text">Text</option>
-                <option value="select">Select</option>
-              </select>
-              {f.kind === "text" ? (
-                <input
-                  className="dm-input sm:col-span-2"
-                  value={f.placeholder ?? ""}
-                  onChange={(e) => update(i, { placeholder: e.target.value })}
-                  placeholder="Placeholder"
-                />
-              ) : (
-                <textarea
-                  className="dm-input sm:col-span-2"
-                  rows={2}
-                  value={optionsToText(f.options)}
-                  onChange={(e) => update(i, { options: textToOptions(e.target.value) })}
-                  placeholder={"value|Label\none per line"}
-                />
-              )}
-              <div className="flex items-center gap-2 sm:col-span-1">
-                <label className="flex items-center gap-1.5 text-xs text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(f.required)}
-                    onChange={(e) => update(i, { required: e.target.checked })}
-                  />
-                  Required
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setFields((rows) => rows.filter((_, idx) => idx !== i))}
-                  className="ml-auto text-xs font-semibold text-rose-600 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setFields((rows) => [...rows, emptyField()])}
-          className="dm-btn dm-btn-ghost dm-btn-sm"
-        >
-          + Add field
-        </button>
-        <button
-          type="button"
-          onClick={() => void save()}
-          disabled={!dirty || saving}
-          className="dm-btn dm-btn-primary dm-btn-sm ml-auto disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save fields"}
-        </button>
-      </div>
-    </div>
-  );
 }
 
 export default function AdminCategoriesClient() {
@@ -173,7 +30,18 @@ export default function AdminCategoriesClient() {
     setError(null);
     try {
       const rows = await apiAdmin.adminListCategories();
-      setCategories(rows);
+      setCategories(
+        (Array.isArray(rows) ? rows : []).map((row) => {
+          const metadata = normalizeCategoryFields(row.metadata ?? row.fields);
+          return {
+            ...row,
+            metadata,
+            ...(row.effective_fields !== undefined
+              ? { effective_fields: normalizeCategoryFields(row.effective_fields) }
+              : {}),
+          };
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load categories");
     } finally {
@@ -374,11 +242,12 @@ export default function AdminCategoriesClient() {
                             </div>
                             {childFieldsOpen ? (
                               <div className="pl-6">
-                                <FieldsEditor
+                                <CategoryFieldsEditor
                                   slug={child.slug}
-                                  initial={child.metadata ?? []}
-                                  onSaved={load}
-                                  scopeLabel="this subcategory only (overrides the category field with the same key)"
+                                  ownJson={JSON.stringify(child.metadata ?? [])}
+                                  parentJson={JSON.stringify(parent.metadata ?? [])}
+                                  onSaved={() => void load()}
+                                  scopeLabel="Inherited category fields, plus fields that apply only to this subcategory. Mark an inherited field required here when this subcategory needs it."
                                 />
                               </div>
                             ) : null}
@@ -404,11 +273,11 @@ export default function AdminCategoriesClient() {
                       </div>
                     </div>
 
-                    <FieldsEditor
+                    <CategoryFieldsEditor
                       slug={parent.slug}
-                      initial={parent.metadata ?? []}
-                      onSaved={load}
-                      scopeLabel="every subcategory under this category (unless a subcategory overrides a field below)"
+                      ownJson={JSON.stringify(parent.metadata ?? [])}
+                      onSaved={() => void load()}
+                      scopeLabel="Fields for every subcategory under this category. A subcategory can add its own fields or mark these required."
                     />
                   </div>
                 ) : null}

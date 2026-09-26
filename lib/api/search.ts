@@ -34,6 +34,7 @@ export type SearchProductItem = {
   image_urls?: string[] | null;
   primary_image?: string | null;
   category?: string | null;
+  description?: string | null;
   item_type?: string | null;
   listing_meta?: Record<string, unknown> | null;
   view_count?: number;

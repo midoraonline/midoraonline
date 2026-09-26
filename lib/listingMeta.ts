@@ -40,17 +40,37 @@ export type ListingMeta = {
   compensation?: "paid" | "unpaid" | "commission" | "negotiable";
   deadline?: string;
   requirements?: string;
+  urgency?: string;
+  employment_type?: string;
+  employment?: string;
   [key: string]: string | undefined;
 };
+
+export type CategoryMetaFieldKind = "text" | "number" | "select" | "date" | "boolean";
 
 export type CategoryMetaField = {
   key: string;
   label: string;
-  kind: "text" | "select";
+  /** Mirrors `type`. Kept so older readers still see a kind. */
+  kind: CategoryMetaFieldKind;
+  type?: CategoryMetaFieldKind;
   required?: boolean;
   placeholder?: string;
+  help_text?: string;
   options?: readonly { value: string; label: string }[];
+  inherited?: boolean;
+  overridden?: boolean;
+  partial?: boolean;
+  overrides?: string[];
 };
+
+export function fieldKind(field: CategoryMetaField): CategoryMetaFieldKind {
+  return field.type || field.kind || "text";
+}
+
+export function fieldHelp(field: CategoryMetaField): string {
+  return field.help_text?.trim() || "";
+}
 
 export const LISTING_KIND_OPTIONS: {
   value: ListingKind;
@@ -295,43 +315,160 @@ export const CATEGORY_META_FIELD_KEY_OPTIONS: { value: string; label: string }[]
   { value: "unit", label: "Unit / quantity" },
 ];
 
-/** Category metadata: merges admin-configured DB metadata for the top-level
- *  category (or the in-code defaults, when none is configured) with any
- *  extra fields configured on the specific subcategory. Subcategory fields
- *  win on key collisions so a subcategory can override a shared field. */
+const FIELD_KINDS = new Set<CategoryMetaFieldKind>([
+  "text",
+  "number",
+  "select",
+  "date",
+  "boolean",
+]);
+
+function asFieldKind(value: unknown): CategoryMetaFieldKind {
+  const v = String(value ?? "text").toLowerCase();
+  if (v === "textarea" || v === "string") return "text";
+  if (v === "int" || v === "integer" || v === "float") return "number";
+  if (v === "bool" || v === "checkbox") return "boolean";
+  if (v === "datetime") return "date";
+  if (v === "enum" || v === "dropdown") return "select";
+  return FIELD_KINDS.has(v as CategoryMetaFieldKind) ? (v as CategoryMetaFieldKind) : "text";
+}
+
+function asFieldOptions(
+  raw: unknown,
+): { value: string; label: string }[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const options = raw.flatMap((item) => {
+    if (typeof item === "string" && item.trim()) {
+      return [{ value: item.trim(), label: item.trim() }];
+    }
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const value = String(row.value ?? row.key ?? "").trim();
+    if (!value) return [];
+    const label = String(row.label ?? row.name ?? value).trim() || value;
+    return [{ value, label }];
+  });
+  return options.length ? options : undefined;
+}
+
+function fieldFromRecord(row: Record<string, unknown>, fallbackKey?: string): CategoryMetaField | null {
+  const key = String(row.key ?? row.name ?? fallbackKey ?? "").trim();
+  if (!key) return null;
+  const label = String(row.label ?? row.title ?? key).trim() || key;
+  const helpRaw = row.help_text ?? row.helpText ?? row.help ?? row.hint;
+  const kind = asFieldKind(row.type ?? row.kind);
+  const field: CategoryMetaField = {
+    key,
+    label,
+    type: kind,
+    kind,
+  };
+  if (row.required != null) {
+    field.required = row.required === true || row.required === "true" || row.required === 1;
+  }
+  const placeholder = String(row.placeholder ?? "").trim();
+  if (placeholder) field.placeholder = placeholder;
+  if (typeof helpRaw === "string" && helpRaw.trim()) field.help_text = helpRaw.trim();
+  const options = asFieldOptions(row.options);
+  if (options) field.options = options;
+  if (row.inherited === true) field.inherited = true;
+  if (row.overridden === true) field.overridden = true;
+  if (row.partial === true) field.partial = true;
+  if (Array.isArray(row.overrides)) {
+    field.overrides = row.overrides.map((item) => String(item));
+  }
+  return field;
+}
+
+/** Accept the API array, a JSON string, `{ fields }`, or a key→spec map. */
+export function normalizeCategoryFields(raw: unknown): CategoryMetaField[] {
+  let value = raw;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      value = JSON.parse(trimmed) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>;
+    if (Array.isArray(obj.fields)) value = obj.fields;
+    else if (Array.isArray(obj.items)) value = obj.items;
+    else {
+      value = Object.entries(obj).map(([key, spec]) =>
+        spec && typeof spec === "object" ? { key, ...(spec as object) } : { key, label: key },
+      );
+    }
+  }
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const field = fieldFromRecord(item as Record<string, unknown>);
+    return field ? [field] : [];
+  });
+}
+
+/** Parent fields, then subcategory fields. A child row with the same key overrides. */
+export function mergeCategoryFields(
+  parent: CategoryMetaField[],
+  child: CategoryMetaField[],
+): CategoryMetaField[] {
+  const merged = parent.map((field) => ({ ...field }));
+  for (const field of child) {
+    const idx = merged.findIndex((row) => row.key === field.key);
+    if (idx < 0) {
+      merged.push(field);
+      continue;
+    }
+    const base = merged[idx];
+    merged[idx] = {
+      ...base,
+      ...field,
+      label: field.label || base.label,
+      type: field.type || field.kind || base.type || base.kind,
+      kind: field.kind || field.type || base.kind,
+      required: field.required !== undefined ? field.required : base.required,
+      help_text: field.help_text ?? base.help_text,
+      placeholder: field.placeholder ?? base.placeholder,
+      options: field.options?.length ? field.options : base.options,
+    };
+  }
+  return merged;
+}
+
+/** Category metadata: DB fields for the parent, else the in-code defaults, plus subcategory overrides. */
 export function categoryMetaFieldsFromItems(
   parentLabel: string | null | undefined,
   items: {
     slug: string;
     label: string;
     parent_slug?: string | null;
-    metadata?: CategoryMetaField[];
+    metadata?: unknown;
+    fields?: unknown;
+    effective_fields?: unknown;
   }[],
   subcategoryLabel?: string | null,
 ): CategoryMetaField[] {
   const p = (parentLabel ?? "").trim();
   if (!p) return [];
   const parentItem = items.find((i) => !i.parent_slug && i.label === p);
-  const parentFields =
-    parentItem?.metadata && parentItem.metadata.length > 0
-      ? parentItem.metadata
-      : categoryMetaFields(parentLabel);
-
   const sub = (subcategoryLabel ?? "").trim();
-  if (!sub) return parentFields;
-  const childItem = items.find(
-    (i) => i.label === sub && (!parentItem || i.parent_slug === parentItem.slug),
-  );
-  const childFields = childItem?.metadata ?? [];
-  if (childFields.length === 0) return parentFields;
-
-  const merged = [...parentFields];
-  for (const field of childFields) {
-    const idx = merged.findIndex((f) => f.key === field.key);
-    if (idx >= 0) merged[idx] = field;
-    else merged.push(field);
+  const childItem = sub
+    ? items.find((i) => i.label === sub && (!parentItem || i.parent_slug === parentItem.slug))
+    : undefined;
+  const target = childItem ?? parentItem;
+  if (target && target.effective_fields !== undefined) {
+    return normalizeCategoryFields(target.effective_fields);
   }
-  return merged;
+
+  const storedParent = normalizeCategoryFields(parentItem?.metadata ?? parentItem?.fields);
+  const parentFields = storedParent.length > 0 ? storedParent : categoryMetaFields(parentLabel);
+  if (!sub) return parentFields;
+  const childFields = normalizeCategoryFields(childItem?.metadata ?? childItem?.fields);
+  if (childFields.length === 0) return parentFields;
+  return mergeCategoryFields(parentFields, childFields);
 }
 
 /** Require a real written description: length + at least two sentences. */
@@ -389,6 +526,7 @@ export function cleanListingMeta(
   kind: ListingKind,
   raw: ListingMeta,
   parentLabel?: string | null,
+  extraFields?: CategoryMetaField[],
 ): ListingMeta {
   const out: ListingMeta = {};
   if (kind === "product") {
@@ -403,9 +541,13 @@ export function cleanListingMeta(
     if (raw.compensation) out.compensation = raw.compensation;
     if (raw.deadline?.trim()) out.deadline = raw.deadline.trim();
     if (raw.requirements?.trim()) out.requirements = raw.requirements.trim();
+    if (raw.urgency?.trim()) out.urgency = raw.urgency.trim();
+    if (raw.employment_type?.trim()) out.employment_type = raw.employment_type.trim();
+    if (raw.employment?.trim()) out.employment = raw.employment.trim();
   }
 
-  for (const field of categoryMetaFields(parentLabel)) {
+  const fields = extraFields ?? categoryMetaFields(parentLabel);
+  for (const field of fields) {
     copyTrimmed(out, raw, field.key);
   }
   return out;
@@ -442,6 +584,72 @@ export function listingCardLabel(
     return `${kindLabel} · ${categoryLabel}`;
   }
   return kindLabel || categoryLabel || "Opportunity";
+}
+
+function titleCaseChip(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function urgencyChip(meta: ListingMeta): string | null {
+  const raw = String(meta.urgency ?? meta.urgent ?? "").trim().toLowerCase();
+  if (!raw || raw === "false" || raw === "no" || raw === "normal" || raw === "0") return null;
+  if (raw === "true" || raw === "yes" || raw === "urgent" || raw === "1") return "Urgent";
+  return titleCaseChip(raw);
+}
+
+function deadlineChip(raw: string | undefined): string | null {
+  const t = raw?.trim();
+  if (!t) return null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+  const date = iso
+    ? new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]))
+    : Number.isNaN(Date.parse(t))
+      ? null
+      : new Date(Date.parse(t));
+  if (!date || Number.isNaN(date.getTime())) {
+    if (/^(closes|deadline|urgent)/i.test(t)) return t;
+    return `Deadline ${t}`;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+  if (days < 0) return "Deadline passed";
+  if (days === 0) return "Closes today";
+  if (days === 1) return "Closes in 1 day";
+  if (days <= 30) return `Closes in ${days} days`;
+  const formatted = due.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return `Deadline ${formatted}`;
+}
+
+/** Short facts for a text-only service or opportunity card. */
+export function textListingChips(kind: ListingKind, meta: ListingMeta): string[] {
+  if (kind === "service") {
+    const chips: string[] = [];
+    const pricing = optionLabel(PRICING_MODEL_OPTIONS, meta.pricing_model);
+    if (pricing) chips.push(pricing);
+    if (meta.availability?.trim()) chips.push(meta.availability.trim());
+    if (meta.service_area?.trim()) chips.push(meta.service_area.trim());
+    return chips;
+  }
+  if (kind !== "opportunity") return [];
+  const chips: string[] = [];
+  const urgency = urgencyChip(meta);
+  if (urgency) chips.push(urgency);
+  const deadline = deadlineChip(meta.deadline);
+  if (deadline) chips.push(deadline);
+  const employment = (meta.employment_type || meta.employment || "").trim();
+  if (employment) chips.push(titleCaseChip(employment));
+  const pay = optionLabel(COMPENSATION_OPTIONS, meta.compensation);
+  if (pay) chips.push(pay);
+  return chips;
 }
 
 function pushIf(
@@ -482,7 +690,7 @@ export function listingMetaDisplayRows(
     if (field.key === "brand" && kind === "product" && meta.brand) continue;
     const raw = meta[field.key];
     if (raw == null || raw === "") continue;
-    if (field.kind === "select" && field.options) {
+    if (fieldKind(field) === "select" && field.options) {
       const label = optionLabel(
         field.options as readonly { value: string; label: string }[],
         String(raw),

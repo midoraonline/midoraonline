@@ -267,7 +267,9 @@ export default function ProductsBrowsePage({
               </p>
               <div className={browseProductGridClass}>
                 {displayItems.map((p) => (
-                  <ProductCard key={p.id} product={p} />
+                  <div key={p.id} className="h-full">
+                    <ProductCard product={p} />
+                  </div>
                 ))}
               </div>
               {isSearching && search.hasMore ? (

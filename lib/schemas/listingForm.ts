@@ -7,6 +7,7 @@ import {
   PRICING_MODEL_OPTIONS,
   categoryMetaFields,
   descriptionMeetsStandard,
+  fieldKind,
   hasRequiredListingImage,
   photosRequiredForKind,
 } from "@/lib/listingMeta";
@@ -250,12 +251,21 @@ export function validateListingDraft(
     errors.meta = "Select how you price this service.";
   }
 
-  for (const field of ctx.metaFields ?? categoryMetaFields(ctx.parentCategoryLabel)) {
-    if (!field.required) continue;
-    const v = draft.meta[field.key];
-    if (v == null || String(v).trim() === "") {
-      errors.meta = `${field.label} is required for this category.`;
-      break;
+  if (draft.is_published) {
+    for (const field of ctx.metaFields ?? categoryMetaFields(ctx.parentCategoryLabel)) {
+      if (!field.required) continue;
+      const v = draft.meta[field.key];
+      if (fieldKind(field) === "boolean") {
+        if (v !== "true") {
+          errors.meta = `${field.label} is required for this category.`;
+          break;
+        }
+        continue;
+      }
+      if (v == null || String(v).trim() === "") {
+        errors.meta = `${field.label} is required for this category.`;
+        break;
+      }
     }
   }
 
