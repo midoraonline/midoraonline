@@ -33,16 +33,32 @@ export async function fetchCategoryFields(
   }
 }
 
-export function missingListingFields(err: unknown): MissingListingField[] | null {
+function errorBody(err: unknown): { code: string; data: Record<string, unknown> } | null {
   if (!(err instanceof ApiError) || err.status !== 422) return null;
-  const data = err.data ?? {};
+  const data = (err.data ?? {}) as Record<string, unknown>;
   const nested =
     data.detail && typeof data.detail === "object"
-      ? (data.detail as { code?: string; missing_fields?: unknown })
+      ? (data.detail as Record<string, unknown>)
       : null;
-  const code = data.code || nested?.code;
-  if (code !== "listing_fields_required") return null;
-  const raw = data.missing_fields ?? nested?.missing_fields;
+  const code = String(data.code || nested?.code || err.code || "");
+  return { code, data: { ...nested, ...data } };
+}
+
+export function mediaUnreachableMessage(err: unknown): string | null {
+  const body = errorBody(err);
+  if (!body || body.code !== "media_unreachable") return null;
+  const detail = body.data.detail;
+  if (typeof detail === "string" && detail.trim() && detail !== "media_unreachable") {
+    return detail.trim();
+  }
+  return "A photo on this listing could not be opened. Remove it and upload the photo again.";
+}
+
+export function missingListingFields(err: unknown): MissingListingField[] | null {
+  const body = errorBody(err);
+  if (!body || body.code !== "listing_fields_required") return null;
+  const data = body.data;
+  const raw = data.missing_fields;
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
     if (!item || typeof item !== "object") return [];

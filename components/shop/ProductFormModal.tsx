@@ -3,8 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Clock, Video as VideoIcon, X } from "lucide-react";
 import { toast } from "sonner";
-import { ApiError } from "@/lib/api/base";
 import { apiProducts } from "@/lib/api";
+import { mediaUnreachableMessage, missingListingFields } from "@/lib/api/categoryFields";
+import {
+  confirmCreatedListing,
+  confirmUpdatedListing,
+  isAmbiguousSaveError,
+  listingMetaWithSaveId,
+} from "@/lib/api/listingSave";
 import {
   isVideoUrl,
   productImageUrls,
@@ -16,7 +22,6 @@ import CategoryPicker from "@/components/CategoryPicker";
 import FormModal from "@/components/FormModal";
 import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
-import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import {
@@ -214,11 +219,13 @@ export default function ProductFormModal({
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
-  // Track media the user added *this session* (for cancel-cleanup) and
-  // media they X-ed off the grid (for save-cleanup). UploadThing charges
-  // for storage, so we reap orphaned files as soon as intent is clear.
-  const [sessionUploaded, setSessionUploaded] = useState<string[]>([]);
-  const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
+  const [serverNotice, setServerNotice] = useState<string | null>(null);
+  const submitLock = useRef(false);
+  const clientSaveIdRef = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `save-${Date.now()}`,
+  );
   const { items: categoryItems, tree: categoryTree } = useCategoryItems();
   const initialRef = useRef(initialDraft);
 
@@ -315,18 +322,16 @@ export default function ProductFormModal({
           : window.confirm("Discard your changes?");
       if (!ok) return;
     }
-    // Any media the user uploaded this session but never saved is now
-    // orphaned — drop it from UploadThing. Persisted media (sessionRemoved)
-    // is left alone because the DB row still points at it.
-    if (sessionUploaded.length) {
-      void deleteUploadThingFiles(sessionUploaded);
-    }
     onClose();
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitLock.current) return;
+    submitLock.current = true;
     setShowErrors(true);
+    setServerNotice(null);
+    try {
     if (!canSubmit) {
       toast.error("Fix the required fields before saving.");
       return;
@@ -350,7 +355,8 @@ export default function ProductFormModal({
       is_published: draft.is_published,
       is_negotiable: draft.is_negotiable,
       item_type: listingKindToItemType(draft.kind),
-      listing_meta: meta,
+      listing_meta:
+        mode === "add" ? listingMetaWithSaveId(meta, clientSaveIdRef.current) : meta,
     };
     if (draft.kind === "product" && draft.stock_quantity.trim()) {
       body.stock_quantity = Math.max(0, parseInt(draft.stock_quantity, 10) || 0);
@@ -372,43 +378,36 @@ export default function ProductFormModal({
     try {
       await request;
       toast.success(done, { id: toastId });
-      // Save succeeded → media the user X-ed off is truly gone.
-      // Session-uploaded media that survived the save is now persisted,
-      // so it stops being an orphan candidate.
-      if (sessionRemoved.length) {
-        void deleteUploadThingFiles(sessionRemoved);
-      }
-      setSessionRemoved([]);
-      setSessionUploaded([]);
       initialRef.current = draft;
       onSaved();
     } catch (err) {
-      const timedOut =
-        err instanceof ApiError &&
-        (err.code === "timeout" || /timed out/i.test(err.message));
-      if (timedOut && mode === "add") {
-        try {
-          const res = await apiProducts.listShopProducts(shopId, {
-            limit: 30,
-            includeUnpublished: true,
-          });
-          const title = body.title.trim().toLowerCase();
-          const match = (res.items ?? []).find(
-            (item) => (item.title || "").trim().toLowerCase() === title,
-          );
-          if (match) {
-            toast.success("Listing submitted — check status on your listings page", {
-              id: toastId,
-            });
-            if (sessionRemoved.length) void deleteUploadThingFiles(sessionRemoved);
-            setSessionRemoved([]);
-            setSessionUploaded([]);
-            initialRef.current = draft;
-            onSaved();
-            return;
-          }
-        } catch {
-          /* fall through */
+      const missing = missingListingFields(err);
+      if (missing) {
+        const notice = missing.length
+          ? missing.map((field) => `${field.label} is required for this category.`).join(" ")
+          : "Add the required category fields.";
+        setServerNotice(notice);
+        toast.error(notice, { id: toastId });
+        return;
+      }
+      const unreachable = mediaUnreachableMessage(err);
+      if (unreachable) {
+        setServerNotice(unreachable);
+        toast.error(unreachable, { id: toastId });
+        return;
+      }
+      if (isAmbiguousSaveError(err)) {
+        const saved =
+          mode === "add"
+            ? await confirmCreatedListing(body, clientSaveIdRef.current)
+            : product
+              ? await confirmUpdatedListing(product.id, body)
+              : null;
+        if (saved) {
+          toast.success(done, { id: toastId });
+          initialRef.current = draft;
+          onSaved();
+          return;
         }
       }
       toast.error(
@@ -417,6 +416,9 @@ export default function ProductFormModal({
       );
     } finally {
       setSaving(false);
+    }
+    } finally {
+      submitLock.current = false;
     }
   }
 
@@ -467,6 +469,11 @@ export default function ProductFormModal({
         noValidate
         className="space-y-5"
       >
+        {serverNotice ? (
+          <p className="text-xs text-[color:var(--error)]" role="alert">
+            {serverNotice}
+          </p>
+        ) : null}
         {/* Moderation status banner — covers three cases:
             1. rejected + notes  → explain why + how to fix
             2. pending_review + notes → reviewer flagged something, needs edit
@@ -579,18 +586,10 @@ export default function ProductFormModal({
             <MediaGrid
               urls={draft.image_urls}
               onRemove={(i) =>
-                setDraft((d) => {
-                  const gone = d.image_urls[i];
-                  if (gone) {
-                    setSessionRemoved((prev) =>
-                      prev.includes(gone) ? prev : [...prev, gone],
-                    );
-                  }
-                  return {
-                    ...d,
-                    image_urls: d.image_urls.filter((_, j) => j !== i),
-                  };
-                })
+                setDraft((d) => ({
+                  ...d,
+                  image_urls: d.image_urls.filter((_, j) => j !== i),
+                }))
               }
             />
             <div className="flex flex-wrap items-center gap-3">
@@ -600,7 +599,6 @@ export default function ProductFormModal({
                 label="Add photos"
                 watermarkLogoUrl={shopLogoUrl}
                 onUploadManyComplete={(newUrls) => {
-                  setSessionUploaded((prev) => [...prev, ...newUrls]);
                   setDraft((d) => ({
                     ...d,
                     image_urls: [...d.image_urls, ...newUrls],
@@ -611,7 +609,6 @@ export default function ProductFormModal({
                 endpoint="productVideo"
                 label="Add video"
                 onUploadManyComplete={(newUrls) => {
-                  setSessionUploaded((prev) => [...prev, ...newUrls]);
                   setDraft((d) => ({
                     ...d,
                     image_urls: [...d.image_urls, ...newUrls],

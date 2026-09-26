@@ -6,8 +6,13 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
-import { ApiError } from "@/lib/api/base";
-import { fetchCategoryFields, missingListingFields } from "@/lib/api/categoryFields";
+import { fetchCategoryFields, mediaUnreachableMessage, missingListingFields } from "@/lib/api/categoryFields";
+import {
+  confirmCreatedListing,
+  confirmUpdatedListing,
+  isAmbiguousSaveError,
+  listingMetaWithSaveId,
+} from "@/lib/api/listingSave";
 import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
@@ -19,7 +24,6 @@ import {
 import CategoryPicker from "@/components/CategoryPicker";
 import { MediaDropzone } from "@/components/shop/MediaDropzone";
 import CategoryMetaInputs from "@/components/shop/CategoryMetaInputs";
-import { deleteUploadThingFiles } from "@/lib/uploadthing";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import {
@@ -240,6 +244,7 @@ export default function ProductFormPage({
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});
+  const [mediaError, setMediaError] = useState<string | null>(null);
   const [remoteFields, setRemoteFields] = useState<ReturnType<typeof normalizeCategoryFields> | null>(
     null,
   );
@@ -255,8 +260,12 @@ export default function ProductFormPage({
     category?: boolean;
   }>({});
 
-  const [sessionUploaded, setSessionUploaded] = useState<string[]>([]);
-  const [sessionRemoved, setSessionRemoved] = useState<string[]>([]);
+  const submitLock = useRef(false);
+  const clientSaveIdRef = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `save-${Date.now()}`,
+  );
 
   useEffect(() => {
     if (!shopId) return;
@@ -436,20 +445,21 @@ export default function ProductFormPage({
   }
 
   function handleCancel() {
-    if (saving) return;
+    if (saving || submitLock.current) return;
     if (isDirty) {
       const ok = window.confirm("Discard your changes?");
       if (!ok) return;
-    }
-    if (sessionUploaded.length) {
-      void deleteUploadThingFiles(sessionUploaded);
     }
     router.push(backUrl);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitLock.current) return;
+    submitLock.current = true;
     setShowErrors(true);
+    setMediaError(null);
+    try {
     if (!canSubmit) {
       toast.error("Fix the required fields before saving.");
       return;
@@ -514,7 +524,8 @@ export default function ProductFormPage({
       is_negotiable: draft.is_negotiable,
       ...listingPlaceFields(draft.location_name, shopLocationLabel),
       item_type: listingKindToItemType(draft.kind),
-      listing_meta: meta,
+      listing_meta:
+        mode === "add" ? listingMetaWithSaveId(meta, clientSaveIdRef.current) : meta,
     };
     if (draft.kind === "product" && draft.stock_quantity.trim()) {
       body.stock_quantity = Math.max(0, parseInt(draft.stock_quantity, 10) || 0);
@@ -536,11 +547,6 @@ export default function ProductFormPage({
     try {
       await request;
       toast.success(done, { id: toastId });
-      if (sessionRemoved.length) {
-        void deleteUploadThingFiles(sessionRemoved);
-      }
-      setSessionRemoved([]);
-      setSessionUploaded([]);
       initialRef.current = draft;
       router.push(afterSaveHref());
     } catch (err) {
@@ -566,36 +572,25 @@ export default function ProductFormPage({
         );
         return;
       }
-      // Client timeout can fire while the API already saved + queued moderation.
-      // Confirm by listing; never leave the merchant thinking publish failed.
-      const timedOut =
-        err instanceof ApiError &&
-        (err.code === "timeout" || /timed out/i.test(err.message));
-      if (timedOut && mode === "add") {
-        try {
-          const res = shopId
-            ? await apiProducts.listShopProducts(shopId, {
-                limit: 30,
-                includeUnpublished: true,
-              })
-            : await apiProducts.listMyProducts({ limit: 30 });
-          const title = body.title.trim().toLowerCase();
-          const match = (res.items ?? []).find(
-            (p) => (p.title || "").trim().toLowerCase() === title,
-          );
-          if (match) {
-            toast.success("Listing submitted — check status on your listings page", {
-              id: toastId,
-            });
-            if (sessionRemoved.length) void deleteUploadThingFiles(sessionRemoved);
-            setSessionRemoved([]);
-            setSessionUploaded([]);
-            initialRef.current = draft;
-            router.push(afterSaveHref());
-            return;
-          }
-        } catch {
-          /* fall through to error */
+      const unreachable = mediaUnreachableMessage(err);
+      if (unreachable) {
+        setMediaError(unreachable);
+        setShowErrors(true);
+        toast.error(unreachable, { id: toastId });
+        return;
+      }
+      if (isAmbiguousSaveError(err)) {
+        const saved =
+          mode === "add"
+            ? await confirmCreatedListing(body, clientSaveIdRef.current)
+            : product
+              ? await confirmUpdatedListing(product.id, body)
+              : null;
+        if (saved) {
+          toast.success(done, { id: toastId });
+          initialRef.current = draft;
+          router.push(afterSaveHref());
+          return;
         }
       }
       toast.error(
@@ -604,6 +599,9 @@ export default function ProductFormPage({
       );
     } finally {
       setSaving(false);
+    }
+    } finally {
+      submitLock.current = false;
     }
   }
 
@@ -831,14 +829,10 @@ export default function ProductFormPage({
             photosRequired={draft.kind === "product"}
             urls={draft.image_urls}
             onRemove={(index) => {
-              const target = draft.image_urls[index];
               setDraft((d) => ({
                 ...d,
                 image_urls: d.image_urls.filter((_, i) => i !== index),
               }));
-              if (target) {
-                setSessionRemoved((prev) => [...prev, target]);
-              }
             }}
             onSetCover={(index) => {
               if (index <= 0) return;
@@ -854,19 +848,22 @@ export default function ProductFormPage({
                 ...d,
                 image_urls: [...d.image_urls, url],
               }));
-              setSessionUploaded((prev) => [...prev, url]);
             }}
             onVideoUploaded={(url) => {
               setDraft((d) => ({
                 ...d,
                 image_urls: [...d.image_urls, url],
               }));
-              setSessionUploaded((prev) => [...prev, url]);
             }}
           />
 
           {showErrors && errors.images ? (
             <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
+          ) : null}
+          {mediaError ? (
+            <p className="text-xs text-[color:var(--error)]" role="alert">
+              {mediaError}
+            </p>
           ) : null}
         </section>
 

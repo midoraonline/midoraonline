@@ -1,6 +1,9 @@
 import { apiFetch } from "./base";
 import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
 
+/** Stay under the API platform limit so a killed request can still be confirmed. */
+export const LISTING_SAVE_TIMEOUT_MS = 55_000;
+
 function productBase(productId: string) {
   return `/api/v1/products/${encodeURIComponent(productId)}`;
 }
@@ -149,8 +152,7 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.is_online !== undefined) o.is_online = body.is_online;
   if (body.listing_meta !== undefined) o.listing_meta = body.listing_meta;
   if (body.image_urls !== undefined) {
-    const imgs = normalizeImageUrlsForApi(body.image_urls);
-    if (imgs?.length) o.image_urls = imgs;
+    o.image_urls = normalizeImageUrlsForApi(body.image_urls) ?? [];
   }
   return o;
 }
@@ -251,7 +253,7 @@ export function createListing(body: CreateProductRequest, token?: string | null)
     method: "POST",
     token,
     body: buildCreatePayload(body),
-    timeoutMs: 90_000,
+    timeoutMs: LISTING_SAVE_TIMEOUT_MS,
   });
 }
 
@@ -267,7 +269,7 @@ export function createProduct(
     method: "POST",
     token,
     body: buildCreatePayload(body),
-    timeoutMs: 90_000,
+    timeoutMs: LISTING_SAVE_TIMEOUT_MS,
   });
 }
 
@@ -349,7 +351,7 @@ export function updateProduct(
     method: "PATCH",
     token,
     body: buildPatchPayload(body),
-    timeoutMs: 90_000,
+    timeoutMs: LISTING_SAVE_TIMEOUT_MS,
   });
 }
 

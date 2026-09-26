@@ -30,15 +30,16 @@ function extractFileKey(url: string): string | null {
  * POST /api/uploadthing/delete
  * Body: { urls: string[] }  (or { keys: string[] })
  *
- * Auth: requires a Bearer token so anonymous callers can't wipe files.
- * Anything that isn't a valid UploadThing URL is silently ignored — the
- * merchant modal happily calls us with mixed http URLs and we shouldn't
- * error out just because one entry isn't ours.
+ * Auth: admin only. Listing and avatar cleanup is reference-counted on the API.
+ * Anything that isn't a valid UploadThing URL is silently ignored.
  */
 export async function POST(req: Request) {
   const auth = await verifyUploadBearer(req);
   if (!auth) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (auth.role !== "admin") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   let payload: { urls?: unknown; keys?: unknown };

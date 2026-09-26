@@ -28,7 +28,7 @@ import {
   type ProductStatus,
 } from "@/lib/api/products";
 import { isTextOnlyListing } from "@/lib/listingMeta";
-import { deleteUploadThingFiles } from "@/lib/uploadthing";
+import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
@@ -179,7 +179,6 @@ export default function MerchantListingsClient({
 
   async function handleDelete(p: Product) {
     setDeleting(true);
-    const media = productImageUrls(p);
     const request = apiProducts.deleteProduct(p.id);
     toast.promise(request, {
       loading: "Removing listing…",
@@ -188,7 +187,6 @@ export default function MerchantListingsClient({
     });
     try {
       await request;
-      if (media.length) void deleteUploadThingFiles(media);
       setPendingDelete(null);
       await reload();
     } catch {
@@ -359,11 +357,17 @@ export default function MerchantListingsClient({
                       title="Edit listing"
                     >
                       {cover ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- CDN
-                        <img
-                          src={cover}
+                        <FallbackImage
+                          urls={media.filter((url) => !isVideoUrl(url))}
                           alt=""
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                          fallback={
+                            <div className="flex h-full items-center justify-center text-[10px] text-muted">
+                              {media.some((url) => isVideoUrl(url)) ? "Video" : "No image"}
+                            </div>
+                          }
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-[10px] text-muted">
@@ -487,8 +491,18 @@ export default function MerchantListingsClient({
                             className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle"
                           >
                             {cover ? (
-                              // eslint-disable-next-line @next/next/no-img-element -- CDN
-                              <img src={cover} alt="" className="h-full w-full object-cover" />
+                              <FallbackImage
+                                urls={media.filter((url) => !isVideoUrl(url))}
+                                alt=""
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                                fallback={
+                                  <div className="flex h-full items-center justify-center text-[9px] text-muted">
+                                    {media.some((url) => isVideoUrl(url)) ? "Video" : "—"}
+                                  </div>
+                                }
+                              />
                             ) : (
                               <div className="flex h-full items-center justify-center text-[9px] text-muted">
                                 {media.some((u) => isVideoUrl(u)) ? "Video" : "—"}

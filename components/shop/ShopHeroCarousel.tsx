@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -10,6 +9,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import FallbackImage from "@/components/media/FallbackImage";
 import {
   analyzeImageTone,
   defaultTone,
@@ -97,6 +97,7 @@ export default function ShopHeroCarousel({
   children,
   minHeightClass = "min-h-[15rem] sm:min-h-[19rem] lg:min-h-[22rem]",
 }: Props) {
+  const [failed, setFailed] = useState<string[]>([]);
   const normalized = useMemo(() => {
     const seen = new Set<string>();
     const out: HeroMedia[] = [];
@@ -107,8 +108,12 @@ export default function ShopHeroCarousel({
       seen.add(m.src);
       out.push(m);
     }
-    return out;
-  }, [media]);
+    return out.filter((item) => !failed.includes(item.src));
+  }, [media, failed]);
+
+  const markFailed = useCallback((src: string) => {
+    setFailed((prev) => (prev.includes(src) ? prev : [...prev, src]));
+  }, []);
 
   const count = normalized.length;
   const [current, setCurrent] = useState(0);
@@ -278,7 +283,8 @@ export default function ShopHeroCarousel({
                   loop
                   playsInline
                   preload="metadata"
-                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={() => markFailed(m.src)}
+                  className="absolute inset-0 h-full w-full object-cover bg-surface-subtle"
                   style={{
                     transform: isCurrent ? transformActive : "scale(1)",
                     transition: "transform 10000ms linear",
@@ -286,13 +292,14 @@ export default function ShopHeroCarousel({
                   }}
                 />
               ) : (
-                <Image
-                  src={m.src}
+                <FallbackImage
+                  urls={[m.src]}
                   alt=""
                   fill
                   priority={i === 0}
                   sizes="100vw"
                   className="object-cover"
+                  onExhausted={() => markFailed(m.src)}
                   style={{
                     transform: isCurrent ? transformActive : "scale(1)",
                     transition: "transform 10000ms linear",

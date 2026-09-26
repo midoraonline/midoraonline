@@ -96,6 +96,21 @@ function sellerCardFields(shop: {
   };
 }
 
+function orderedMediaUrls(
+  primary: string | null | undefined,
+  urls: readonly (string | null | undefined)[] | null | undefined,
+): string[] {
+  const out: string[] = [];
+  const push = (value: string | null | undefined) => {
+    const trimmed = value?.trim();
+    if (!trimmed || out.includes(trimmed)) return;
+    out.push(trimmed);
+  };
+  push(primary);
+  for (const url of urls ?? []) push(url);
+  return out;
+}
+
 function anyVideoInUrls(urls: readonly (string | null | undefined)[] | null | undefined): boolean {
   if (!urls) return false;
   for (const u of urls) {
@@ -118,7 +133,8 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
         ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
         : 0,
     imageUrl: p.primary_image,
-    hasVideo: anyVideoInUrls([p.primary_image]),
+    imageUrls: orderedMediaUrls(p.primary_image, p.image_urls),
+    hasVideo: anyVideoInUrls(p.image_urls?.length ? p.image_urls : [p.primary_image]),
     shopLogoUrl: p.shop.logo_url ?? undefined,
     stockQuantity: p.stock_quantity,
     viewCount: p.view_count,
@@ -169,6 +185,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
         ? Math.round((1 - item.discount_price / item.price_ugx) * 100)
         : 0,
     imageUrl: item.primary_image ?? item.image_urls?.[0] ?? undefined,
+    imageUrls: orderedMediaUrls(item.primary_image, item.image_urls),
     hasVideo: anyVideoInUrls(item.image_urls ?? [item.primary_image]),
     shopLogoUrl: item.shop.logo_url ?? undefined,
     stockQuantity: null,
@@ -221,6 +238,7 @@ export function productToCard(
     discountPriceUGX: product.discount_price ?? null,
     discountPercent: productIsDiscounted(product) ? productDiscountPercent(product) : 0,
     imageUrl: productPrimaryImage(product),
+    imageUrls: productImageUrls(product),
     hasVideo: productImageUrls(product).some(isVideoUrl),
     shopLogoUrl: shop.logo_url ?? undefined,
     stockQuantity: product.stock_quantity ?? null,
@@ -270,6 +288,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
         ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
         : 0,
     imageUrl: p.image_urls?.[0] ?? undefined,
+    imageUrls: orderedMediaUrls(undefined, p.image_urls),
     hasVideo: anyVideoInUrls(p.image_urls),
     stockQuantity: null,
     viewCount: p.view_count,
@@ -319,6 +338,7 @@ export function likedProductToCard(p: LikedProduct): ProductCardData {
         ? Math.round((1 - p.discount_price / p.price_ugx) * 100)
         : 0,
     imageUrl: p.image_urls?.[0] ?? undefined,
+    imageUrls: orderedMediaUrls(undefined, p.image_urls),
     hasVideo: anyVideoInUrls(p.image_urls),
     stockQuantity: null,
     viewCount: p.view_count,

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
@@ -15,7 +14,8 @@ import {
   productImageUrls,
   productPriceUgx,
 } from "@/lib/api/products";
-import { isTextOnlyListing } from "@/lib/listingMeta";
+import { isTextOnlyListing, normalizeListingKind } from "@/lib/listingMeta";
+import FallbackImage from "@/components/media/FallbackImage";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import UserAvatar from "@/components/UserAvatar";
 import { useKeyboardInset } from "@/lib/hooks/useKeyboardInset";
@@ -101,26 +101,34 @@ function autosize(el: HTMLTextAreaElement) {
 /** Compact product summary shown at the top of a product-scoped conversation. */
 function ProductContextCard({ product }: { product: Product }) {
   const urls = productImageUrls(product);
-  const cover = urls.find((u) => !isVideoUrl(u));
-  const textOnly = isTextOnlyListing(product.item_type, urls.length);
+  const images = urls.filter((url) => !isVideoUrl(url));
+  const [coverFailed, setCoverFailed] = useState(false);
+  const textKind = normalizeListingKind(product.item_type) !== "product";
+  const textOnly =
+    isTextOnlyListing(product.item_type, urls.length) || (coverFailed && textKind);
   const price = productPriceUgx(product);
+  const placeholder = (
+    <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent">
+      <MaterialSymbol name={urls.some((url) => isVideoUrl(url)) ? "play_circle" : "sell"} className="!text-lg" />
+    </span>
+  );
   return (
     <Link
       href={`/products/${product.id}`}
       className="dm-focus mx-3 mt-2 flex items-center gap-3 rounded-xl border border-border bg-surface-subtle p-2 transition-colors hover:bg-foreground/[0.05]"
     >
-      {textOnly ? null : cover ? (
-        <Image
-          src={cover}
+      {textOnly ? null : images.length && !coverFailed ? (
+        <FallbackImage
+          urls={images}
           alt={product.title}
           width={44}
           height={44}
-          className="size-11 shrink-0 rounded-lg object-cover"
+          className="size-11 shrink-0 rounded-lg bg-surface-subtle object-cover"
+          onExhausted={() => setCoverFailed(true)}
+          fallback={placeholder}
         />
       ) : (
-        <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent">
-          <MaterialSymbol name={urls.length ? "play_circle" : "sell"} className="!text-lg" />
-        </span>
+        placeholder
       )}
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">

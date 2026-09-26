@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
+import FallbackImage from "@/components/media/FallbackImage";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { track } from "@/lib/analytics";
 import { notifyFeedEngagement } from "@/lib/engagementEvents";
@@ -37,6 +38,8 @@ export type ProductCardData = {
   discountPriceUGX?: number | null;
   discountPercent?: number;
   imageUrl?: string;
+  /** Every media URL, cover first, so a dead file can fall through. */
+  imageUrls?: string[];
   /** True when any media attached to the listing is a video URL. */
   hasVideo?: boolean;
   shopLogoUrl?: string;
@@ -128,41 +131,59 @@ function formatListingRate(
   return base;
 }
 
-function ListingCover({
-  url,
-  title,
-  sizes,
-}: {
-  url: string;
-  title: string;
-  sizes: string;
-}) {
-  if (isVideoUrl(url)) {
-    return (
-      <video
-        src={url}
-        className="absolute inset-0 h-full w-full object-cover"
-        muted
-        playsInline
-        preload="metadata"
-        aria-label={title}
-      />
-    );
-  }
+function coverMediaUrls(product: ProductCardData): string[] {
+  const listed = (product.imageUrls ?? []).map((url) => url.trim()).filter(Boolean);
+  if (listed.length) return listed;
+  const single = product.imageUrl?.trim();
+  return single ? [single] : [];
+}
+
+function CoverPlaceholder() {
   return (
-    <Image
-      src={url}
-      alt={title}
-      fill
-      className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-      sizes={sizes}
-      unoptimized={userMediaUnoptimized(url)}
-    />
+    <div className="absolute inset-0 grid place-items-center bg-surface-subtle text-muted">
+      <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
+    </div>
   );
 }
 
-function userMediaUnoptimized(src: string) {
-  return /ufs\.sh|utfs\.io/i.test(src) || /\.svg(\?|$)/i.test(src);
+function ListingCover({
+  urls,
+  title,
+  sizes,
+  onExhausted,
+}: {
+  urls: string[];
+  title: string;
+  sizes: string;
+  onExhausted: () => void;
+}) {
+  const images = urls.filter((url) => !isVideoUrl(url));
+  const video = urls.find((url) => isVideoUrl(url));
+  return (
+    <FallbackImage
+      urls={images}
+      alt={title}
+      fill
+      sizes={sizes}
+      className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+      onExhausted={video ? undefined : onExhausted}
+      fallback={
+        video ? (
+          <video
+            src={video}
+            className="absolute inset-0 h-full w-full object-cover bg-surface-subtle"
+            muted
+            playsInline
+            preload="metadata"
+            aria-label={title}
+            onError={onExhausted}
+          />
+        ) : (
+          <CoverPlaceholder />
+        )
+      }
+    />
+  );
 }
 
 /** Freshness / trust cue from listing time. */
@@ -310,9 +331,26 @@ export default function ProductCard({
   const ratingValue = product.rating ?? 0;
   const listingKind = normalizeListingKind(product.item_type);
   const showKindBadge = listingKind !== "product";
-  const coverUrl = product.imageUrl?.trim() || "";
-  const hasMedia = Boolean(coverUrl) || product.hasVideo === true;
-  const textFirst = !hasMedia && listingKind !== "product";
+  const coverUrls = coverMediaUrls(product);
+  const [trackedId, setTrackedId] = useState(product.id);
+  const [coverFailed, setCoverFailed] = useState(false);
+  if (trackedId !== product.id) {
+    setTrackedId(product.id);
+    setCoverFailed(false);
+  }
+  const hasMedia = coverUrls.length > 0;
+  const textFirst = listingKind !== "product" && (!hasMedia || coverFailed);
+  const coverFrame = (sizes: string) =>
+    coverFailed || coverUrls.length === 0 ? (
+      <CoverPlaceholder />
+    ) : (
+      <ListingCover
+        urls={coverUrls}
+        title={product.title}
+        sizes={sizes}
+        onExhausted={() => setCoverFailed(true)}
+      />
+    );
 
   const imageBadges = (
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
@@ -507,13 +545,7 @@ export default function ProductCard({
       >
         <div className="group relative w-2/5 shrink-0 overflow-hidden bg-surface-subtle sm:w-[42%]">
           <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">
-            {coverUrl ? (
-              <ListingCover url={coverUrl} title={product.title} sizes="(max-width: 640px) 40vw, 25vw" />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center text-muted">
-                <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
-              </div>
-            )}
+            {coverFrame("(max-width: 640px) 40vw, 25vw")}
           </Link>
           {imageBadges}
           {likeFloating}
@@ -564,17 +596,7 @@ export default function ProductCard({
     >
       <div className="group relative aspect-square w-full overflow-hidden bg-surface-subtle sm:aspect-[4/3]">
         <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">
-          {coverUrl ? (
-            <ListingCover
-              url={coverUrl}
-              title={product.title}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            />
-          ) : (
-            <div className="absolute inset-0 grid place-items-center text-muted">
-              <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
-            </div>
-          )}
+          {coverFrame("(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw")}
         </Link>
         {imageBadges}
         {likeFloating}
