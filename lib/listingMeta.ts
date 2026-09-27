@@ -563,7 +563,7 @@ function optionLabel<T extends string>(
   value: T | undefined,
 ): string | null {
   if (!value) return null;
-  return options.find((o) => o.value === value)?.label ?? value;
+  return options.find((o) => o.value === value)?.label ?? titleCaseChip(String(value));
 }
 
 /** One short label for a text listing card: type, category, or both when they differ. */
@@ -587,10 +587,8 @@ export function listingCardLabel(
 }
 
 function titleCaseChip(value: string): string {
-  return value
-    .replace(/[_-]+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const text = value.replace(/[_-]+/g, " ").trim().toLowerCase();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
 function urgencyChip(meta: ListingMeta): string | null {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import ProductCard, { type ProductCardData } from "@/components/productcard";
+import ProductCard, { productCardSlotClass, type ProductCardData } from "@/components/productcard";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import { publicSiteOrigin } from "@/lib/publicSite";
@@ -158,10 +158,11 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
     <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
       {displayProducts.map((p) => {
         const isUnpublished = p.is_published === false;
+        const card = toCard(p, shop, listingBase);
         return (
-          <div key={p.id} className="relative group">
+          <div key={p.id} className={`group relative ${productCardSlotClass(card)}`}>
             <div className={isUnpublished ? "opacity-45" : ""}>
-              <ProductCard product={toCard(p, shop, listingBase)} />
+              <ProductCard product={card} />
             </div>
             {isOwner && (
               <button

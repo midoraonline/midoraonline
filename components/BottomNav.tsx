@@ -28,6 +28,11 @@ export default function BottomNav() {
   const postHref = session.isAuthenticated
     ? "/post-item"
     : `/login?next=${encodeURIComponent("/post-item")}`;
+  const messagesHref = session.isAuthenticated
+    ? "/chat"
+    : `/login?next=${encodeURIComponent("/chat")}`;
+  const accountReturn =
+    pathname && pathname !== "/login" ? pathname : "/";
 
   const tabs: Tab[] = useMemo(() => {
     const shopsTab: Tab = isMerchant
@@ -45,7 +50,11 @@ export default function BottomNav() {
 
     let accountTab: Tab;
     if (!session.isAuthenticated) {
-      accountTab = { label: "Account", href: "/login", icon: "account_circle" };
+      accountTab = {
+        label: "Account",
+        href: `/login?next=${encodeURIComponent(accountReturn)}`,
+        icon: "account_circle",
+      };
     } else if (role === "admin") {
       accountTab = {
         label: "Dashboard",
@@ -82,9 +91,10 @@ export default function BottomNav() {
       },
       {
         label: "Messages",
-        href: "/chat",
+        href: messagesHref,
         icon: "chat",
         badge: session.isAuthenticated ? unread : 0,
+        isActive: (p) => p.startsWith("/chat"),
       },
       {
         label: "Post Item",
@@ -96,7 +106,7 @@ export default function BottomNav() {
       shopsTab,
       accountTab,
     ];
-  }, [isMerchant, postHref, role, session.isAuthenticated, unread]);
+  }, [accountReturn, isMerchant, messagesHref, postHref, role, session.isAuthenticated, unread]);
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">

@@ -151,6 +151,7 @@ function buildPatchPayload(body: Partial<CreateProductRequest>): Record<string, 
   if (body.location_name !== undefined) o.location_name = body.location_name;
   if (body.is_online !== undefined) o.is_online = body.is_online;
   if (body.listing_meta !== undefined) o.listing_meta = body.listing_meta;
+  if (body.status !== undefined) o.status = body.status;
   if (body.image_urls !== undefined) {
     o.image_urls = normalizeImageUrlsForApi(body.image_urls) ?? [];
   }

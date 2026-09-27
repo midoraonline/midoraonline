@@ -18,6 +18,12 @@ import UserAvatar from "@/components/UserAvatar";
 
 import { LogOut } from "lucide-react";
 
+function signInHref(): string {
+  const path = window.location.pathname;
+  const returnTo = path === "/login" ? "/" : `${path}${window.location.search}`;
+  return `/login?next=${encodeURIComponent(returnTo || "/")}`;
+}
+
 function ProfileDropdown({
   displayName,
   avatarUrl,
@@ -25,6 +31,9 @@ function ProfileDropdown({
   role,
   ownedShopIds,
   onNavigate,
+  allowHomeRedirect,
+  onSignOutStart,
+  onSignOutSettled,
 }: {
   displayName: string;
   avatarUrl?: string | null;
@@ -32,6 +41,9 @@ function ProfileDropdown({
   role: string | null;
   ownedShopIds: string[];
   onNavigate?: () => void;
+  allowHomeRedirect: () => boolean;
+  onSignOutStart?: () => void;
+  onSignOutSettled?: () => void;
 }) {
   const [ddOpen, setDdOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -55,6 +67,7 @@ function ProfileDropdown({
 
   const handleSignOut = async () => {
     close();
+    onSignOutStart?.();
     useSessionStore.getState().resetSession();
     try {
       await apiAuth.logout();
@@ -62,7 +75,9 @@ function ProfileDropdown({
       /* ignore */
     } finally {
       notifyAuthChanged();
-      router.replace("/");
+      onSignOutSettled?.();
+      // A Sign in click during logout opts out so this replace cannot cancel it.
+      if (allowHomeRedirect()) router.replace("/");
     }
   };
 
@@ -224,6 +239,8 @@ export default function Navbar({
   }, []);
 
   const session = useAppSession();
+  const allowHomeAfterLogout = useRef(true);
+  const logoutSettled = useRef(true);
   const onlineCount = usePresenceStore((s) => s.onlineCount);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -434,16 +451,38 @@ export default function Navbar({
                 role={role}
                 ownedShopIds={session.ownedShopIds ?? []}
                 onNavigate={() => setOpen(false)}
+                allowHomeRedirect={() => allowHomeAfterLogout.current}
+                onSignOutStart={() => {
+                  allowHomeAfterLogout.current = true;
+                  logoutSettled.current = false;
+                }}
+                onSignOutSettled={() => {
+                  logoutSettled.current = true;
+                }}
               />
             ) : authLoading ? (
               <span className="inline-flex size-9 shrink-0 rounded-full" aria-hidden />
             ) : (
-              <Link
+              <a
                 href="/login"
-                className="dm-btn-accent dm-focus inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm"
+                className="dm-btn-accent dm-focus inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm"
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                  e.preventDefault();
+                  allowHomeAfterLogout.current = false;
+                  const href = signInHref();
+                  const go = () => window.location.assign(href);
+                  // Full load skips a client-router redirect cached while the
+                  // access cookie was still present immediately after sign-out.
+                  if (logoutSettled.current) {
+                    go();
+                    return;
+                  }
+                  void apiAuth.logout().finally(go);
+                }}
               >
                 Sign in
-              </Link>
+              </a>
             )}
 
             <button

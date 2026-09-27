@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiProducts } from "@/lib/api";
 import type { SimilarProduct } from "@/lib/api/products";
-import ProductCard from "@/components/productcard";
+import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import { browseProductGridClass } from "@/lib/browseCategories";
 import { similarProductToCard } from "@/lib/productCardMap";
 
@@ -37,11 +37,14 @@ export default function SimilarProducts({ productId, initialItems }: Props) {
     <div className="dm-card p-4 sm:p-6">
       <h2 className="text-sm font-semibold tracking-tight">Similar products</h2>
       <div className={`mt-4 ${browseProductGridClass}`}>
-        {items.map((p) => (
-          <div key={p.id} className="h-full">
-            <ProductCard product={similarProductToCard(p)} />
-          </div>
-        ))}
+        {items.map((p) => {
+          const card = similarProductToCard(p);
+          return (
+            <div key={p.id} className={productCardSlotClass(card)}>
+              <ProductCard product={card} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

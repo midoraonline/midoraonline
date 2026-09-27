@@ -5,7 +5,7 @@ import Link from "next/link";
 import { apiProducts } from "@/lib/api";
 import type { LikedProduct } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import ProductCard from "@/components/productcard";
+import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import { likedProductToCard } from "@/lib/productCardMap";
 
 type Props = {
@@ -59,9 +59,14 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {items.map((p) => (
-            <ProductCard key={p.id} product={likedProductToCard(p)} />
-          ))}
+          {items.map((p) => {
+            const card = likedProductToCard(p);
+            return (
+              <div key={p.id} className={productCardSlotClass(card)}>
+                <ProductCard product={card} />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
