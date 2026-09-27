@@ -12,9 +12,33 @@ export type FeatureSwitch = {
 const KNOWN: Record<string, { label: string; description: string }> = {
   analytics: {
     label: "Analytics",
-    description: "Seller analytics on shop pages and the merchant dashboard.",
+    description: "Seller and admin analytics. Off stops new events and hides analytics.",
+  },
+  signups_allowed: {
+    label: "Sign-ups",
+    description: "New email and Google accounts. Existing sign-in still works when this is off.",
+  },
+  listings_require_review: {
+    label: "Listings need review",
+    description: "Clean listings stay in review instead of going live immediately.",
+  },
+  ai_moderation: {
+    label: "AI moderation",
+    description: "Gemini and OpenAI checks on listings. Basic checks still run when this is off.",
+  },
+  maintenance_mode: {
+    label: "Maintenance",
+    description: "Pauses new shops, new listings, and edits. Marking a listing sold or closed still works.",
   },
 };
+
+const SWITCH_ORDER = [
+  "analytics",
+  "signups_allowed",
+  "listings_require_review",
+  "ai_moderation",
+  "maintenance_mode",
+];
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -67,7 +91,7 @@ export function parseFeatureSwitches(data: unknown): FeatureSwitch[] {
       const parsed = switchFrom(key, row);
       if (parsed) out.push(parsed);
     }
-    return out;
+    return sortSwitches(out);
   }
   const record = asRecord(bag);
   if (!record) return out;
@@ -76,7 +100,15 @@ export function parseFeatureSwitches(data: unknown): FeatureSwitch[] {
     const parsed = switchFrom(key, value);
     if (parsed) out.push(parsed);
   }
-  return out;
+  return sortSwitches(out);
+}
+
+function sortSwitches(items: FeatureSwitch[]): FeatureSwitch[] {
+  return [...items].sort((a, b) => {
+    const ai = SWITCH_ORDER.indexOf(a.key);
+    const bi = SWITCH_ORDER.indexOf(b.key);
+    return (ai === -1 ? SWITCH_ORDER.length : ai) - (bi === -1 ? SWITCH_ORDER.length : bi);
+  });
 }
 
 export function parsePublicSettings(data: unknown): { analytics: boolean; flags: Record<string, boolean> } {

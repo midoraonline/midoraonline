@@ -14,6 +14,7 @@ import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import { hoursAreBlank, hoursDraftError, hoursDraftFromShop, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
 import type { LatLng } from "@/lib/geo";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 const STARTER_PROMPTS = [
   "I bake cakes and pastries in Kampala — home delivery available",
@@ -292,7 +293,7 @@ export default function CreateShopConcierge({
       notifyAuthChanged();
       onShopCreated(shop);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create shop.");
+      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not create shop.");
     } finally {
       setCreating(false);
     }

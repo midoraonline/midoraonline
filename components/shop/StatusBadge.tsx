@@ -47,6 +47,21 @@ export const STATUS_CONFIG: Record<ProductStatus, StatusMeta> = {
     pillClass:
       "bg-foreground/[0.06] text-foreground/60 ring-1 ring-inset ring-foreground/10",
   },
+  unavailable: {
+    label: "Unavailable",
+    pillClass:
+      "bg-foreground/[0.06] text-foreground/60 ring-1 ring-inset ring-foreground/10",
+  },
+  filled: {
+    label: "Filled",
+    pillClass:
+      "bg-foreground/[0.06] text-foreground/60 ring-1 ring-inset ring-foreground/10",
+  },
+  closed: {
+    label: "Closed",
+    pillClass:
+      "bg-foreground/[0.06] text-foreground/60 ring-1 ring-inset ring-foreground/10",
+  },
 };
 
 export default function StatusBadge({

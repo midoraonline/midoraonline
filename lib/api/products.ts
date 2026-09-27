@@ -10,7 +10,17 @@ function productBase(productId: string) {
 
 export type ItemType = "product" | "service" | "property" | "job" | "opportunity";
 
-export type ProductStatus = "draft" | "pending_review" | "active" | "hidden" | "rejected" | "expired" | "sold";
+export type ProductStatus =
+  | "draft"
+  | "pending_review"
+  | "active"
+  | "hidden"
+  | "rejected"
+  | "expired"
+  | "sold"
+  | "unavailable"
+  | "filled"
+  | "closed";
 
 export type Product = {
   id: string;

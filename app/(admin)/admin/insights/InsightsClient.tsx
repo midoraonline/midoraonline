@@ -16,6 +16,7 @@ import {
 } from "recharts";
 
 import { apiAnalytics } from "@/lib/api";
+import { platformActionMessage } from "@/lib/platformMessages";
 import type {
   CategoryFillRateResponse,
   DiscountEngagementResponse,
@@ -71,7 +72,7 @@ function useLoader<T>(
       const res = await fetcher();
       setData(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Request failed");
+      setError(platformActionMessage(e, "Request failed"));
     } finally {
       setLoading(false);
     }

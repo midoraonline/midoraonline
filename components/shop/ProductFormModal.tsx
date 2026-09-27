@@ -5,6 +5,7 @@ import { AlertTriangle, Clock, Video as VideoIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import { mediaUnreachableMessage, missingListingFields } from "@/lib/api/categoryFields";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 import {
   confirmCreatedListing,
   confirmUpdatedListing,
@@ -381,6 +382,10 @@ export default function ProductFormModal({
       initialRef.current = draft;
       onSaved();
     } catch (err) {
+      if (isMaintenanceMode(err)) {
+        toast.error(MAINTENANCE_MESSAGE, { id: toastId });
+        return;
+      }
       const missing = missingListingFields(err);
       if (missing) {
         const notice = missing.length

@@ -18,13 +18,17 @@ import {
   type Product,
 } from "@/lib/api/products";
 import { isTextOnlyListing, LISTING_KIND_LABEL, normalizeListingKind } from "@/lib/listingMeta";
+import { ApiError } from "@/lib/api/base";
 import {
   categoryNeedsStock,
+  isRestockStatus,
+  primaryCloseAction,
   reactivateListingPatch,
   showsStock,
   stockLabel,
   withdrawListingPatch,
 } from "@/lib/listingStatus";
+import { isStockRequired, STOCK_REQUIRED_MESSAGE } from "@/lib/platformMessages";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -63,7 +67,7 @@ export default function ListingManageCard({
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [confirmSold, setConfirmSold] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [stockAsk, setStockAsk] = useState<"available" | "show" | null>(null);
   const [stockValue, setStockValue] = useState("");
   const [stockError, setStockError] = useState<string | null>(null);
@@ -106,7 +110,7 @@ export default function ListingManageCard({
     }
   }
 
-  function withdraw(next: "sold" | "hidden", ok: string) {
+  function withdraw(next: "sold" | "unavailable" | "filled" | "closed" | "hidden", ok: string) {
     return run(ok, async () => {
       const updated = await apiProducts.updateProduct(product.id, withdrawListingPatch(next));
       return {
@@ -114,7 +118,7 @@ export default function ListingManageCard({
         ...updated,
         status: next,
         is_published: false,
-        stock_quantity: null,
+        stock_quantity: 0,
       };
     });
   }
@@ -135,6 +139,10 @@ export default function ListingManageCard({
       if (live) toast.success(mode === "available" ? "Marked available" : "Listing published");
       else toast.message("Stock saved. This listing stays off the public feed until it can go live again.");
     } catch (e) {
+      if (isStockRequired(e) || (e instanceof ApiError && e.status === 400 && e.code === "stock_required")) {
+        toast.error(STOCK_REQUIRED_MESSAGE);
+        return;
+      }
       toast.error(e instanceof Error ? e.message : "Could not update listing.");
     } finally {
       setBusy(false);
@@ -163,6 +171,7 @@ export default function ListingManageCard({
     if (mode) void reactivate(mode, qty);
   }
 
+  const closeAction = primaryCloseAction(product.item_type);
   const items: { key: string; label: string; onSelect: () => void; danger?: boolean }[] = [
     {
       key: "preview",
@@ -183,7 +192,7 @@ export default function ListingManageCard({
       },
     });
   }
-  if (status === "sold") {
+  if (isRestockStatus(status)) {
     items.push({
       key: "available",
       label: "Mark available",
@@ -191,21 +200,21 @@ export default function ListingManageCard({
     });
   } else if (status === "active") {
     items.push({
-      key: "sold",
-      label: "Mark sold",
+      key: "close",
+      label: closeAction.label,
       onSelect: () => {
         setOpen(false);
-        setConfirmSold(true);
+        setConfirmClose(true);
       },
     });
   }
-  if (published && status !== "sold" && status !== "pending_review" && status !== "rejected") {
+  if (published && !isRestockStatus(status) && status !== "pending_review" && status !== "rejected") {
     items.push({
       key: "hide",
       label: "Hide",
       onSelect: () => void withdraw("hidden", "Listing hidden"),
     });
-  } else if (status === "hidden" || status === "draft" || product.is_published === false) {
+  } else if (!isRestockStatus(status) && (status === "hidden" || status === "draft" || product.is_published === false)) {
     items.push({
       key: "show",
       label: "Show",
@@ -341,19 +350,19 @@ export default function ListingManageCard({
         </div>
       </div>
       </article>
-      {confirmSold ? (
+      {confirmClose ? (
         <ConfirmDialog
-          title="Mark this listing sold?"
-          message="It leaves the public feed, and stock is cleared."
-          confirmLabel="Mark sold"
+          title={closeAction.title}
+          message={closeAction.message}
+          confirmLabel={closeAction.label}
           destructive
           busy={busy}
           onConfirm={() => {
-            setConfirmSold(false);
-            void withdraw("sold", "Marked sold");
+            setConfirmClose(false);
+            void withdraw(closeAction.status, closeAction.done);
           }}
           onClose={() => {
-            if (!busy) setConfirmSold(false);
+            if (!busy) setConfirmClose(false);
           }}
         />
       ) : null}

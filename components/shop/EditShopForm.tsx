@@ -17,6 +17,7 @@ import VerifyContactButton from "@/components/VerifyContactButton";
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 import {
   buildShopLocationPayload,
   locationCoords as readLocationCoords,
@@ -294,7 +295,7 @@ function DetailsTab({
       setJustSaved(true);
       toast.success("Saved");
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Could not save changes. Please try again.");
+      setSaveError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not save changes. Please try again.");
     } finally {
       setSaving(false);
     }

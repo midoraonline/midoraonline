@@ -1,14 +1,68 @@
 import type { Product, ProductStatus } from "@/lib/api/products";
 import { fetchCategoryFields } from "@/lib/api/categoryFields";
-import { normalizeListingKind } from "@/lib/listingMeta";
 
 const STOCK_KEYS = new Set(["stock", "stock_quantity", "quantity"]);
+const NO_STOCK_TYPES = new Set(["service", "job", "opportunity", "property"]);
 
-export function withdrawListingPatch(status: Extract<ProductStatus, "sold" | "hidden">) {
+export type CloseStatus = Extract<ProductStatus, "sold" | "unavailable" | "filled" | "closed" | "hidden">;
+
+export function listingRequiresStock(itemType?: string | null): boolean {
+  return !NO_STOCK_TYPES.has((itemType ?? "product").toLowerCase());
+}
+
+export function primaryCloseAction(itemType?: string | null): {
+  status: Exclude<CloseStatus, "hidden">;
+  label: string;
+  done: string;
+  title: string;
+  message: string;
+} {
+  const kind = (itemType ?? "product").toLowerCase();
+  if (kind === "service") {
+    return {
+      status: "unavailable",
+      label: "Mark unavailable",
+      done: "Marked unavailable",
+      title: "Mark this service unavailable?",
+      message: "It leaves the public feed.",
+    };
+  }
+  if (kind === "job" || kind === "opportunity") {
+    return {
+      status: "filled",
+      label: "Mark filled",
+      done: "Marked filled",
+      title: "Mark this opportunity filled?",
+      message: "It leaves the public feed.",
+    };
+  }
+  if (kind === "property") {
+    return {
+      status: "closed",
+      label: "Mark closed",
+      done: "Marked closed",
+      title: "Mark this listing closed?",
+      message: "It leaves the public feed.",
+    };
+  }
+  return {
+    status: "sold",
+    label: "Mark sold",
+    done: "Marked sold",
+    title: "Mark this listing sold?",
+    message: "It leaves the public feed, and stock is set to 0.",
+  };
+}
+
+export function isRestockStatus(status: string | null | undefined): boolean {
+  return status === "sold" || status === "unavailable" || status === "filled" || status === "closed" || status === "expired";
+}
+
+export function withdrawListingPatch(status: CloseStatus) {
   return {
     status,
-    is_published: false,
-    stock_quantity: null as number | null,
+    is_published: false as const,
+    stock_quantity: 0,
   };
 }
 
@@ -28,12 +82,12 @@ export function stockLabel(quantity: number | null | undefined): string {
 }
 
 export function showsStock(product: Pick<Product, "item_type">): boolean {
-  return normalizeListingKind(product.item_type) === "product";
+  return listingRequiresStock(product.item_type);
 }
 
 /** Physical products ask for stock unless the category fields say otherwise. */
 export async function categoryNeedsStock(product: Pick<Product, "item_type" | "category">): Promise<boolean> {
-  if (!showsStock(product)) return false;
+  if (!listingRequiresStock(product.item_type)) return false;
   const slug = product.category?.trim();
   if (!slug) return true;
   try {

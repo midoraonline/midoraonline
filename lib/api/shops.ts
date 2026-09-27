@@ -322,6 +322,12 @@ export type MerchantAnalytics = {
   pool_mix: Array<{ label: string; value: number }>;
 };
 
+export function isAnalyticsDisabledBody(data: unknown): boolean {
+  if (!data || typeof data !== "object") return false;
+  const row = data as { enabled?: unknown; code?: unknown; summary?: unknown };
+  return row.enabled === false && row.code === "analytics_disabled" && row.summary == null;
+}
+
 export function myAnalytics(days = 30) {
   return apiFetch<MerchantAnalytics>(
     `/api/v1/shops/me/analytics?days=${encodeURIComponent(days)}`,

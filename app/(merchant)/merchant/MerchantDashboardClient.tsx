@@ -84,6 +84,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [stats, setStats] = useState<MerchantStats | null>(initialStats);
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [analyticsLocked, setAnalyticsLocked] = useState(false);
+  const [analyticsEndpointOff, setAnalyticsEndpointOff] = useState(false);
   const [windowDays, setWindowDays] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
   const canAnalytics = planHasAnalytics(session.user?.plan_tier);
@@ -103,6 +104,10 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         apiShops.myStats().catch(() => null),
         analyticsOn && canAnalytics
           ? apiShops.myAnalytics(windowDays).catch((err) => {
+              if (err instanceof ApiError && err.code === "analytics_disabled") {
+                setAnalyticsEndpointOff(true);
+                return null;
+              }
               if (err instanceof ApiError && (err.status === 403 || err.code === "plan_upgrade_required")) {
                 setAnalyticsLocked(true);
                 return null;
@@ -117,7 +122,11 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       ]);
       setShops(shopsRes.items ?? []);
       if (statsRes) setStats(statsRes);
-      if (analyticsRes) {
+      if (analyticsRes && apiShops.isAnalyticsDisabledBody(analyticsRes)) {
+        setAnalytics(null);
+        setAnalyticsEndpointOff(true);
+      } else if (analyticsRes) {
+        setAnalyticsEndpointOff(false);
         setAnalyticsLocked(false);
         setAnalytics(analyticsRes);
       }
@@ -303,7 +312,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       </section>
 
       {/* ── Analytics: impressions, trends, funnel, per-shop, top products ── */}
-      {platformAnalytics.ready && !platformAnalytics.enabled && (
+      {(analyticsEndpointOff || (platformAnalytics.ready && !platformAnalytics.enabled)) && (
         <section className="dm-card p-5 sm:p-6">
           <h2 className="font-display text-base font-semibold">Analytics is turned off</h2>
         </section>

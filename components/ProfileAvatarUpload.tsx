@@ -15,7 +15,6 @@ import UserAvatar from "@/components/UserAvatar";
 
 type Props = { className?: string };
 
-const PROXY_AVATAR_MAX = 4 * 1024 * 1024;
 const AVATAR_MAX = 16 * 1024 * 1024;
 
 function avatarErrorMessage(err: unknown): string {
@@ -34,11 +33,6 @@ function avatarErrorMessage(err: unknown): string {
   }
   if (err instanceof Error && err.message.trim()) return err.message;
   return "We couldn't save that photo. Please try again.";
-}
-
-function canRetryViaUploadThing(err: unknown): boolean {
-  if (!(err instanceof ApiError)) return false;
-  return err.status === 404 || err.status === 405 || err.status === 413 || err.status === 502 || err.status === 503;
 }
 
 export default function ProfileAvatarUpload({ className = "" }: Props) {
@@ -65,7 +59,7 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
     });
   }
 
-  const { startUpload, isUploading } = useUploadThing("avatarImage", {
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
     headers: getUploadThingAuthHeaders,
     onUploadProgress: (pct) => setProgress(Math.round(pct)),
     onClientUploadComplete: (res) => {
@@ -122,18 +116,6 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
       const prepared = await avatarFileForUpload(file);
       if (prepared.size > AVATAR_MAX) {
         throw new Error("This photo is larger than 16MB. Choose a smaller file.");
-      }
-      if (prepared.size <= PROXY_AVATAR_MAX) {
-        try {
-          const me = await apiAuth.uploadAvatar(prepared, setProgress);
-          useSessionStore.getState().setSession({ user: me });
-          notifyAuthChanged();
-          toast.success("Profile photo updated");
-          setProgress(100);
-          return;
-        } catch (err) {
-          if (!canRetryViaUploadThing(err)) throw err;
-        }
       }
       await uploadViaUploadThing(prepared);
     } catch (err) {

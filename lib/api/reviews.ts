@@ -116,6 +116,14 @@ export function createProductReview(
 export function reviewFailureMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return "Sign in to leave a review.";
+    if (err.code === "invalid_rating") return "Choose a rating from 1 to 5 stars.";
+    if (err.code === "rating_required") return "Add a star rating before you submit.";
+    if (err.code === "review_trigger") {
+      return "We couldn't save your review because of a temporary problem. Please try again in a moment.";
+    }
+    if (err.code === "review_schema") {
+      return "Reviews aren't available right now. Please try again later.";
+    }
     if (err.status >= 500 || err.code === "internal_error") {
       return "We couldn't save your review. Please try again in a moment.";
     }

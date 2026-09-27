@@ -14,6 +14,7 @@ import {
   listingMetaWithSaveId,
 } from "@/lib/api/listingSave";
 import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
@@ -550,6 +551,10 @@ export default function ProductFormPage({
       initialRef.current = draft;
       router.push(afterSaveHref());
     } catch (err) {
+      if (isMaintenanceMode(err)) {
+        toast.error(MAINTENANCE_MESSAGE, { id: toastId });
+        return;
+      }
       if (err instanceof ShopRequiredError) {
         toast.message("Choose a shop", {
           id: toastId,

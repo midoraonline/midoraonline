@@ -12,6 +12,7 @@ import PresenceTracker from "@/components/PresenceTracker";
 import PushSubscriptionSync from "@/components/chat/PushSubscriptionSync";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { AnalyticsProvider } from "@/providers/analyticsProvider";
+import MaintenanceNotice from "@/components/MaintenanceNotice";
 import "./globals.css";
 
 // Runs in <head> before hydration so the correct theme class is on <html>
@@ -85,6 +86,7 @@ export default function RootLayout({
             <AppStateProvider>
               <AuthProvider>
                 <AnalyticsProvider>
+                  <MaintenanceNotice />
                   <MerchantPresenceHeartbeat />
                   <PresenceTracker />
                   <PushSubscriptionSync />

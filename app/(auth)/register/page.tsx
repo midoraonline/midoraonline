@@ -11,6 +11,7 @@ import {
   establishClientSession,
   establishSessionFromGoogleCode,
 } from "@/lib/auth/establish-session";
+import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
 
 function RegisterPageInner() {
   const router = useRouter();
@@ -45,11 +46,7 @@ function RegisterPageInner() {
       })
       .catch((err: unknown) => {
         if (!active) return;
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to complete Google sign-up."
-        );
+        setError(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : err instanceof Error ? err.message : "Unable to complete Google sign-up.");
       })
       .finally(() => {
         if (active) setGoogleLoading(false);
@@ -74,9 +71,11 @@ function RegisterPageInner() {
       router.push("/");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to create account. Please check your details."
+        isSignupsClosed(err)
+          ? SIGNUPS_CLOSED_MESSAGE
+          : err instanceof Error
+            ? err.message
+            : "Unable to create account. Please check your details."
       );
     } finally {
       setLoading(false);

@@ -15,6 +15,7 @@ import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import { blankHoursDraft, hoursAreBlank, hoursDraftError, shopHoursWritePayload } from "@/lib/shopHours";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 function slugFromName(name: string): string {
   return name
@@ -87,7 +88,7 @@ export default function OpenShopWizard() {
       // Immediately redirect to verification
       router.push(`/merchant/shops/${shop.id}/verification`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create your shop. Please try again.");
+      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not create your shop. Please try again.");
     } finally {
       setCreating(false);
     }

@@ -21,6 +21,7 @@ import {
 } from "@/lib/bgRemoval";
 import { inspectImageMetadata } from "@/lib/imageMetadata";
 import {
+  avatarFileForUpload,
   fitImagesForUpload,
   UPLOAD_IMAGE_MAX_BYTES,
 } from "@/lib/imageFitForUpload";
@@ -180,7 +181,19 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
         // Keep originals that already fit. HEIC is converted; only over-limit files are resized.
         const maxBytes = UPLOAD_IMAGE_MAX_BYTES[endpoint];
         try {
-          processed = await fitImagesForUpload(processed, maxBytes);
+          if (endpoint === "imageUploader") {
+            const originals: File[] = [];
+            for (const file of processed) {
+              const next = await avatarFileForUpload(file);
+              if (next.size > maxBytes) {
+                throw new Error("This photo is larger than 16MB. Choose a smaller file.");
+              }
+              originals.push(next);
+            }
+            processed = originals;
+          } else {
+            processed = await fitImagesForUpload(processed, maxBytes);
+          }
         } catch (err) {
           const description =
             err instanceof Error
