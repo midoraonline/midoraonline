@@ -19,18 +19,21 @@ export async function POST(req: Request) {
   const paths = ["/", "/api/v1/auth", "/api/dev-proxy/api/v1/auth"] as const;
   const sameSites = ["lax", "none", "strict"] as const;
 
+  // cookies.set keeps one entry per name, so Path=/ would never be cleared.
   for (const name of names) {
     for (const path of paths) {
       for (const sameSite of sameSites) {
         for (const secure of [true, false]) {
-          // SameSite=None requires Secure in modern browsers; still try both.
-          res.cookies.set(name, "", {
-            httpOnly: true,
-            path,
-            maxAge: 0,
-            sameSite,
-            secure,
-          });
+          const parts = [
+            `${name}=`,
+            `Path=${path}`,
+            "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+            "Max-Age=0",
+            "HttpOnly",
+            `SameSite=${sameSite}`,
+          ];
+          if (secure) parts.push("Secure");
+          res.headers.append("Set-Cookie", parts.join("; "));
         }
       }
     }
