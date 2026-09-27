@@ -97,10 +97,10 @@ export default async function ShopLayout({
       {!skipShopViewPing ? <ShopPageEffects shopId={shop.id} /> : null}
       <div className="border-b border-primary/20 bg-primary text-primary-foreground">
         <div className="dm-container flex h-9 items-center justify-center sm:justify-between">
-          <div className="hidden items-center gap-4 text-xs text-white/75 sm:flex">
+          <div className="hidden items-center gap-4 text-xs text-primary-foreground/75 sm:flex">
             <a
               href="mailto:midoraonline@gmail.com"
-              className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-primary-foreground"
             >
               <Mail className="size-3.5 text-accent" />
               midoraonline@gmail.com
@@ -110,7 +110,7 @@ export default async function ShopLayout({
               Kampala, Uganda
             </span>
           </div>
-          <div className="text-xs text-white/80">
+          <div className="text-xs text-primary-foreground/80">
             Rent a shop for{" "}
             <span className="font-semibold text-accent">5,000 UGX/month</span>
           </div>

@@ -85,6 +85,26 @@
       max(var(--bottom-nav-fab-overhang), var(--bottom-nav-status)) + var(--bottom-nav-gap)
   );
 
+  /* Photo heroes sit on a fixed slate so the scrim stays dark in both themes. */
+  --hero-scrim: 11, 17, 28;
+  --hero-media-base: #0b111c;
+  --hero-fallback-from: #e7eef6;
+  --hero-fallback-via: #f4f0ea;
+  --hero-fallback-to: #e3ebe6;
+  --hero-fallback-text: #0f172a;
+  --hero-fallback-text-soft: rgba(15, 23, 42, 0.78);
+  --hero-fallback-text-muted: rgba(15, 23, 42, 0.64);
+  --hero-fallback-text-quiet: rgba(15, 23, 42, 0.48);
+  --hero-fallback-chip-bg: rgba(15, 23, 42, 0.06);
+  --hero-fallback-chip-border: rgba(15, 23, 42, 0.14);
+  --hero-fallback-icon: #0f172a;
+  --hero-fallback-overlay: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.05) 0%,
+    transparent 42%,
+    rgba(15, 23, 42, 0.08) 100%
+  );
+
   /*
    * Stacking layers (document.body portals for modals)
    *   fab     — Ask Midora, shop chat, feedback tab, back-to-top
@@ -147,6 +167,23 @@
   --glass-bg-strong: rgba(19, 27, 42, 0.85);
   --glass-bg-soft: rgba(19, 27, 42, 0.7);
   --glass-border: rgba(37, 48, 68, 0.9);
+
+  --hero-fallback-from: #1c2942;
+  --hero-fallback-via: #152033;
+  --hero-fallback-to: #0e1626;
+  --hero-fallback-text: #f8fafc;
+  --hero-fallback-text-soft: rgba(241, 245, 249, 0.88);
+  --hero-fallback-text-muted: rgba(241, 245, 249, 0.74);
+  --hero-fallback-text-quiet: rgba(241, 245, 249, 0.56);
+  --hero-fallback-chip-bg: rgba(248, 250, 252, 0.1);
+  --hero-fallback-chip-border: rgba(248, 250, 252, 0.2);
+  --hero-fallback-icon: #f8fafc;
+  --hero-fallback-overlay: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.22) 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.42) 100%
+  );
 }
 
 /*
@@ -217,6 +254,16 @@ body {
 /* ── Stacking helpers (see --z-* in :root) ───────────────── */
 .z-fab {
   z-index: var(--z-fab);
+}
+
+/* Ask Midora and shop concierge share this offset so both clear the mobile tab bar. */
+.fab-above-bottom-nav {
+  bottom: var(--bottom-nav-clearance);
+}
+@media (min-width: 768px) {
+  .fab-above-bottom-nav {
+    bottom: 1.5rem;
+  }
 }
 .z-sticky {
   z-index: var(--z-sticky);

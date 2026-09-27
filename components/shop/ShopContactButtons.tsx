@@ -84,8 +84,17 @@ export default function ShopContactButtons({
               onClick={open}
               className={
                 immersive
-                  ? "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/18"
+                  ? "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-semibold backdrop-blur-sm transition hover:brightness-110"
                   : "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-2.5 text-xs font-semibold text-foreground transition hover:bg-foreground/[0.04]"
+              }
+              style={
+                immersive
+                  ? {
+                      borderColor: "var(--hero-chip-border)",
+                      background: "var(--hero-chip-bg)",
+                      color: "var(--hero-text-strong)",
+                    }
+                  : undefined
               }
             >
               <MessageCircle className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />

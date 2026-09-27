@@ -51,7 +51,7 @@ export default function ShopHeroToolbar({
 
   const analyticsClass =
     tone === "immersive"
-      ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/35 bg-primary/18 px-3 py-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-[filter] hover:brightness-110 dm-focus sm:text-sm"
+      ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/35 bg-primary/18 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm backdrop-blur-sm transition-[filter] hover:brightness-110 dm-focus sm:text-sm"
       : "inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-primary/14 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 dm-focus sm:text-sm";
 
   return (
