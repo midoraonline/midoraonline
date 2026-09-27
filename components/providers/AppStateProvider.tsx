@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect } from "react";
 import { SWRConfig } from "swr";
 import { apiAuth, apiShops } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import { currentSessionEpoch, isCurrentSessionWrite } from "@/lib/auth/session-epoch";
 import {
   AUTH_CHANGED_EVENT,
@@ -18,8 +19,10 @@ const REALTIME_REFRESH_MS = 30 * 60 * 1000;
 export default function AppStateProvider({ children }: { children: React.ReactNode }) {
   const runHydrate = useCallback(async (accessToken?: string) => {
     const started = currentSessionEpoch();
-    const { setSession, isAuthenticated } = useSessionStore.getState();
+    const { setSession, isAuthenticated, user: existing } = useSessionStore.getState();
     if (!isCurrentSessionWrite(started)) return;
+    // Login already stored this user. Another /me here only delays the next paint.
+    if (accessToken && isAuthenticated && existing) return;
 
     // Do not wipe an authenticated user to `undefined` before /me returns —
     // that race made post-login UI flash as signed-out on Vercel.
@@ -29,16 +32,15 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
       setSession({ profileError: null });
     }
 
+    const shopsPromise = apiShops
+      .myShops()
+      .then((mine) => mine.items.map((s) => s.id))
+      .catch(() => [] as string[]);
+
     try {
       const user = await apiAuth.me(accessToken);
       if (!isCurrentSessionWrite(started)) return;
-      let ownedShopIds: string[] = [];
-      try {
-        const mine = await apiShops.myShops();
-        ownedShopIds = mine.items.map((s) => s.id);
-      } catch {
-        /* non-merchants or API error */
-      }
+      const ownedShopIds = await shopsPromise;
       if (!isCurrentSessionWrite(started)) return;
       setRealtimeAuth(user.supabase_realtime_token ?? null);
       setSession({
@@ -48,8 +50,15 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
         ownedShopIds,
         profileError: null,
       });
-    } catch {
+    } catch (err) {
       if (!isCurrentSessionWrite(started)) return;
+      const current = useSessionStore.getState();
+      const transient =
+        err instanceof ApiError && (err.status === 0 || err.status >= 500);
+      if (current.isAuthenticated && current.user && transient) {
+        setSession({ hydrated: true, profileError: null });
+        return;
+      }
       setRealtimeAuth(null);
       setSession({
         hydrated: true,

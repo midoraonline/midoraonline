@@ -1,5 +1,15 @@
 import { apiFetch, apiHttp } from "./base";
 
+const AUTH_TIMEOUT_MS = 45_000;
+
+function authCall<T>(path: string, opts: Parameters<typeof apiFetch>[1] = {}) {
+  return apiFetch<T>(path, {
+    timeoutMs: AUTH_TIMEOUT_MS,
+    coldStartRetry: true,
+    ...opts,
+  });
+}
+
 export type RegisterRequest = {
   email: string;
   password: string;
@@ -52,21 +62,21 @@ export type GoogleExchangeRequest = {
 };
 
 export function register(body: RegisterRequest) {
-  return apiFetch<TokenPair>("/api/v1/auth/register", {
+  return authCall<TokenPair>("/api/v1/auth/register", {
     method: "POST",
     body,
   });
 }
 
 export function login(body: LoginRequest) {
-  return apiFetch<TokenPair>("/api/v1/auth/login", {
+  return authCall<TokenPair>("/api/v1/auth/login", {
     method: "POST",
     body,
   });
 }
 
 export function refresh() {
-  return apiFetch<TokenPair>("/api/v1/auth/refresh", {
+  return authCall<TokenPair>("/api/v1/auth/refresh", {
     method: "POST",
     body: {},
     skipAuthRefresh: true,
@@ -74,7 +84,7 @@ export function refresh() {
 }
 
 export function me(token?: string) {
-  return apiFetch<MeResponse>("/api/v1/auth/me", token ? { token } : undefined);
+  return authCall<MeResponse>("/api/v1/auth/me", token ? { token } : undefined);
 }
 
 export async function logout() {
@@ -172,11 +182,11 @@ export function confirmPhoneVerificationCode(code: string) {
 }
 
 export function getGoogleAuthUrl() {
-  return apiFetch<GoogleAuthUrlResponse>("/api/v1/auth/google/url");
+  return authCall<GoogleAuthUrlResponse>("/api/v1/auth/google/url");
 }
 
 export function exchangeGoogleCode(body: GoogleExchangeRequest) {
-  return apiFetch<TokenPair>("/api/v1/auth/google/exchange", {
+  return authCall<TokenPair>("/api/v1/auth/google/exchange", {
     method: "POST",
     body,
   });

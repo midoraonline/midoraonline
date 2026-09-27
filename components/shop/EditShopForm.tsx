@@ -10,6 +10,7 @@ import { apiShops } from "@/lib/api";
 import type { Shop } from "@/lib/api/shops";
 import { ImageUpload } from "@/components/image-upload";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
+import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import VerifyContactButton from "@/components/VerifyContactButton";
@@ -21,6 +22,12 @@ import {
   locationCoords as readLocationCoords,
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
+import {
+  hoursDraftError,
+  hoursDraftFromShop,
+  shopHoursWritePayload,
+  type HoursDraft,
+} from "@/lib/shopHours";
 
 type EditTab = "details" | "products" | "services" | "opportunities";
 
@@ -31,8 +38,7 @@ type FormState = {
   logoUrl: string;
   shopEmail: string;
   whatsappNumber: string;
-  availabilityDays: string;
-  availabilityHours: string;
+  hours: HoursDraft;
   location: string;
   locationCoords: LatLng | null;
   shopType: apiShops.ShopType;
@@ -49,8 +55,7 @@ function shopToFormState(shop: Shop): FormState {
     logoUrl: shop.logo_url ?? "",
     shopEmail: shop.shop_email ?? "",
     whatsappNumber: shop.whatsapp_number ?? "",
-    availabilityDays: shop.availability?.days ?? "",
-    availabilityHours: shop.availability?.hours ?? "",
+    hours: hoursDraftFromShop(shop),
     location:
       typeof loc === "string"
         ? loc
@@ -72,8 +77,7 @@ function formsEqual(a: FormState, b: FormState): boolean {
     a.logoUrl === b.logoUrl &&
     a.shopEmail === b.shopEmail &&
     a.whatsappNumber === b.whatsappNumber &&
-    a.availabilityDays === b.availabilityDays &&
-    a.availabilityHours === b.availabilityHours &&
+    JSON.stringify(a.hours) === JSON.stringify(b.hours) &&
     a.location === b.location &&
     a.locationCoords?.lat === b.locationCoords?.lat &&
     a.locationCoords?.lng === b.locationCoords?.lng &&
@@ -252,9 +256,13 @@ function DetailsTab({
     }
     if (!canSubmit) return;
 
-    const hasAvailability =
-      Boolean(form.availabilityDays.trim()) ||
-      Boolean(form.availabilityHours.trim());
+    const hoursError = hoursDraftError(form.hours);
+    if (hoursError) {
+      toast.error(hoursError);
+      return;
+    }
+    const hoursChanged = JSON.stringify(form.hours) !== JSON.stringify(hoursDraftFromShop(shop));
+    const hoursPayload = hoursChanged ? shopHoursWritePayload(form.hours) : null;
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || null,
@@ -262,12 +270,9 @@ function DetailsTab({
       logo_url: form.logoUrl.trim() || null,
       shop_email: form.shopEmail.trim() || null,
       whatsapp_number: form.whatsappNumber.trim() || null,
-      availability: hasAvailability
-        ? {
-            days: form.availabilityDays.trim() || null,
-            hours: form.availabilityHours.trim() || null,
-          }
-        : null,
+      ...(hoursPayload
+        ? { availability: hoursPayload.availability }
+        : { availability: shop.availability ?? null }),
       location: buildShopLocationPayload(form.location, form.locationCoords),
       shop_type: form.shopType,
       category: form.category.trim() || undefined,
@@ -460,33 +465,9 @@ function DetailsTab({
       </section>
 
       <section className="dm-card space-y-4 p-5 sm:p-6">
-        <h2 className="text-sm font-semibold tracking-tight">Availability</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="edit-shop-days" className="text-sm font-medium text-foreground">
-              Open days
-            </label>
-            <input
-              id="edit-shop-days"
-              className="dm-input"
-              placeholder="e.g. Mon – Fri"
-              value={form.availabilityDays}
-              onChange={(e) => onChange("availabilityDays", e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="edit-shop-hours" className="text-sm font-medium text-foreground">
-              Hours
-            </label>
-            <input
-              id="edit-shop-hours"
-              className="dm-input"
-              placeholder="e.g. 9 AM – 6 PM"
-              value={form.availabilityHours}
-              onChange={(e) => onChange("availabilityHours", e.target.value)}
-            />
-          </div>
-        </div>
+        <h2 className="text-sm font-semibold tracking-tight">Opening hours</h2>
+        <p className="text-xs text-muted">Times are in Kampala (EAT).</p>
+        <ShopHoursEditor value={form.hours} onChange={(hours) => onChange("hours", hours)} />
       </section>
 
       <section className="dm-card p-5 sm:p-6">

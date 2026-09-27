@@ -23,6 +23,7 @@ import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
 import { toCatalogQuery } from "@/lib/catalogQuery";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
+import { ProductCardSkeleton } from "@/components/skeletons/Skeleton";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
 import { HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
@@ -123,13 +124,14 @@ export default function HomeLanding({
     nextCursorRef.current = next.cursor;
   }, [initialProducts, initialHasMore, initialCursor]);
 
-  // Category and sheet filters are applied by the API. Reset to the first page.
-  const catalogBootRef = useRef(true);
+  // Category and sheet filters are applied by the API. Skip the SSR catalog,
+  // including a StrictMode effect replay that would otherwise fetch it again.
+  const seenCatalogKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (catalogBootRef.current) {
-      catalogBootRef.current = false;
-      if (!catalogQueryActive(catalogRef.current)) return;
-    }
+    const firstSight = seenCatalogKeyRef.current === null;
+    if (seenCatalogKeyRef.current === catalogKey) return;
+    seenCatalogKeyRef.current = catalogKey;
+    if (firstSight && !catalogQueryActive(catalogRef.current)) return;
     const requestId = ++feedRequestRef.current;
     let cancelled = false;
     async function reloadFiltered() {
@@ -200,6 +202,11 @@ export default function HomeLanding({
     }
   }, []);
 
+  const prefetchedRef = useRef<{
+    cursor: string;
+    promise: ReturnType<typeof apiProducts.getHomeFeed>;
+  } | null>(null);
+
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMoreRef.current) return;
     const cursor = nextCursorRef.current;
@@ -212,11 +219,26 @@ export default function HomeLanding({
     setLoadingMore(true);
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed({
-        limit: FEED_PAGE_SIZE,
-        cursor,
-        catalog: catalogRef.current,
-      });
+      const cached = prefetchedRef.current;
+      const pending =
+        cached?.cursor === cursor
+          ? cached.promise
+          : apiProducts.getHomeFeed({
+              limit: FEED_PAGE_SIZE,
+              cursor,
+              catalog: catalogRef.current,
+            });
+      if (cached?.cursor === cursor) prefetchedRef.current = null;
+      let data;
+      try {
+        data = await pending;
+      } catch {
+        data = await apiProducts.getHomeFeed({
+          limit: FEED_PAGE_SIZE,
+          cursor,
+          catalog: catalogRef.current,
+        });
+      }
       if (requestId !== feedRequestRef.current) return;
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       const fresh = cards.filter((c) => !seenIdsRef.current.has(c.id));
@@ -230,6 +252,16 @@ export default function HomeLanding({
       const more = Boolean(data.has_more && data.next_cursor);
       nextCursorRef.current = data.next_cursor ?? null;
       setHasMore(more);
+      if (more && data.next_cursor && prefetchedRef.current?.cursor !== data.next_cursor) {
+        prefetchedRef.current = {
+          cursor: data.next_cursor,
+          promise: apiProducts.getHomeFeed({
+            limit: FEED_PAGE_SIZE,
+            cursor: data.next_cursor,
+            catalog: catalogRef.current,
+          }),
+        };
+      }
     } catch {
       if (requestId === feedRequestRef.current) setHasMore(false);
     } finally {
@@ -255,7 +287,7 @@ export default function HomeLanding({
       },
       {
         root: null,
-        rootMargin: "400px 0px",
+        rootMargin: "1200px 0px",
         threshold: 0,
       },
     );
@@ -264,12 +296,29 @@ export default function HomeLanding({
     return () => observer.disconnect();
   }, [hasMore, isSearching, products.length]);
 
+  const filledEmptyRef = useRef(false);
   useEffect(() => {
     if (!session.hydrated) return;
     if (products.length > 0 || feedLoading) return;
     if (catalogQueryActive(catalogRef.current)) return;
+    if (filledEmptyRef.current) return;
+    filledEmptyRef.current = true;
     void fillEmptyFeed();
   }, [session.hydrated, products.length, feedLoading, fillEmptyFeed]);
+
+  useEffect(() => {
+    if (isSearching || !hasMore) return;
+    const cursor = nextCursorRef.current;
+    if (!cursor || prefetchedRef.current?.cursor === cursor) return;
+    prefetchedRef.current = {
+      cursor,
+      promise: apiProducts.getHomeFeed({
+        limit: FEED_PAGE_SIZE,
+        cursor,
+        catalog: catalogRef.current,
+      }),
+    };
+  }, [hasMore, isSearching, products.length]);
 
   useEffect(() => {
     function onEngagement() {
@@ -387,7 +436,11 @@ export default function HomeLanding({
           ) : null}
 
           {feedLoading && !isSearching && displayProducts.length === 0 ? (
-            <EmptyState message="Loading listings…" />
+            <div className={browseProductGridClass}>
+              {Array.from({ length: 8 }, (_, i) => (
+                <ProductCardSkeleton key={i} delay={i + 1} />
+              ))}
+            </div>
           ) : feedEmpty && !feedError ? (
             <EmptyState
               message={
@@ -408,6 +461,7 @@ export default function HomeLanding({
                       layout="vertical"
                       impressionPool={p.boosted ? "boosted" : "organic"}
                       impressionPosition={idx + 1}
+                      imagePriority={!isSearching && idx < 4}
                     />
                   </div>
                 ))}

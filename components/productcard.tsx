@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ImageIcon, MapPin, Play, Zap } from "lucide-react";
-import StarRating from "@/components/StarRating";
+import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -139,6 +138,30 @@ function coverMediaUrls(product: ProductCardData): string[] {
   return single ? [single] : [];
 }
 
+function CardRating({
+  rating,
+  count,
+}: {
+  rating?: number | null;
+  count?: number | null;
+}) {
+  if (rating == null || !(rating > 0)) return null;
+  const score = Math.min(5, rating).toFixed(1);
+  const reviews = count != null && count > 0 ? ` (${count})` : "";
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap font-medium tabular-nums text-foreground/80"
+      aria-label={`Rated ${score} out of 5${count && count > 0 ? `, ${count} reviews` : ""}`}
+    >
+      <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden />
+      <span>
+        {score}
+        {reviews}
+      </span>
+    </span>
+  );
+}
+
 function CoverPlaceholder() {
   return (
     <div className="absolute inset-0 grid place-items-center bg-surface-subtle text-muted">
@@ -151,11 +174,13 @@ function ListingCover({
   urls,
   title,
   sizes,
+  priority,
   onExhausted,
 }: {
   urls: string[];
   title: string;
   sizes: string;
+  priority?: boolean;
   onExhausted: () => void;
 }) {
   const images = urls.filter((url) => !isVideoUrl(url));
@@ -166,6 +191,7 @@ function ListingCover({
       alt={title}
       fill
       sizes={sizes}
+      priority={priority}
       className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
       onExhausted={video ? undefined : onExhausted}
       fallback={
@@ -289,11 +315,13 @@ export default function ProductCard({
   layout = "vertical",
   impressionPool,
   impressionPosition,
+  imagePriority = false,
 }: {
   product: ProductCardData;
   layout?: "vertical" | "horizontal";
   impressionPool?: ImpressionPool;
   impressionPosition?: number;
+  imagePriority?: boolean;
 }) {
   const impressionRef = useImpressionTracker<HTMLElement>({
     listingId: product.id,
@@ -348,6 +376,7 @@ export default function ProductCard({
         urls={coverUrls}
         title={product.title}
         sizes={sizes}
+        priority={imagePriority}
         onExhausted={() => setCoverFailed(true)}
       />
     );
@@ -439,15 +468,7 @@ export default function ProductCard({
         <span className="truncate font-medium text-foreground/80">{locationLabel}</span>
       </span>
       {listingKind === "product" || textFirst ? trustMark : null}
-      {product.rating != null && product.rating > 0 ? (
-        <span className="shrink-0">
-          <StarRating rating={product.rating} count={product.reviewCount} size="xs" />
-        </span>
-      ) : (
-        <span className="shrink-0 whitespace-nowrap text-[10px] font-medium text-muted sm:text-[11px]">
-          No reviews yet
-        </span>
-      )}
+      <CardRating rating={product.rating} count={product.reviewCount} />
     </div>
   );
 
