@@ -200,7 +200,7 @@ export default function DashboardHeader({
   }
 
   const settingsHref =
-    role === "admin" ? "/admin" : role === "customer" ? "/customer/settings" : "/merchant/settings";
+    role === "admin" ? "/admin/settings" : role === "customer" ? "/customer/settings" : "/merchant/settings";
 
   return (
     <>

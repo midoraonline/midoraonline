@@ -1,5 +1,5 @@
 import AccountSettings from "@/components/settings/AccountSettings";
 
-export default function MerchantSettingsPage() {
+export default function AdminSettingsPage() {
   return <AccountSettings />;
 }

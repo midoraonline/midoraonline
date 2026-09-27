@@ -83,6 +83,7 @@ async function encodeBitmapFullQuality(
   bitmap: ImageBitmap,
   baseName: string,
   maxBytes: number,
+  quality = HEIC_JPEG_QUALITY,
 ): Promise<File> {
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, bitmap.width);
@@ -96,11 +97,11 @@ async function encodeBitmapFullQuality(
   } catch {
     // PNG encode can fail; JPEG below is the displayable fallback.
   }
-  const jpeg = await canvasToBlob(canvas, "image/jpeg", HEIC_JPEG_QUALITY);
+  const jpeg = await canvasToBlob(canvas, "image/jpeg", quality);
   return fileFromBlob(jpeg, `${baseName}.jpg`, "image/jpeg");
 }
 
-async function convertWithHeic2Any(file: File, maxBytes: number): Promise<File> {
+async function convertWithHeic2Any(file: File, maxBytes: number, quality = HEIC_JPEG_QUALITY): Promise<File> {
   const mod = await import("heic2any");
   const convert = mod.default;
   const base = stemName(file.name);
@@ -114,7 +115,7 @@ async function convertWithHeic2Any(file: File, maxBytes: number): Promise<File> 
   const jpegResult = await convert({
     blob: file,
     toType: "image/jpeg",
-    quality: HEIC_JPEG_QUALITY,
+    quality,
   });
   const jpeg = Array.isArray(jpegResult) ? jpegResult[0] : jpegResult;
   if (!jpeg) throw new Error(DECODE_ERROR);
@@ -122,21 +123,31 @@ async function convertWithHeic2Any(file: File, maxBytes: number): Promise<File> 
 }
 
 /** HEIC/HEIF only: full-resolution JPEG at 0.95, or PNG when the lossless file fits. */
-async function convertHeicFullQuality(file: File, maxBytes: number): Promise<File> {
+async function convertHeicFullQuality(
+  file: File,
+  maxBytes: number,
+  quality = HEIC_JPEG_QUALITY,
+): Promise<File> {
   try {
     const bitmap = await decodeBitmap(file);
     try {
-      return await encodeBitmapFullQuality(bitmap, stemName(file.name), maxBytes);
+      return await encodeBitmapFullQuality(bitmap, stemName(file.name), maxBytes, quality);
     } finally {
       bitmap.close();
     }
   } catch {
     try {
-      return await convertWithHeic2Any(file, maxBytes);
+      return await convertWithHeic2Any(file, maxBytes, quality);
     } catch {
       throw new Error(DECODE_ERROR);
     }
   }
+}
+
+/** Profile photos: original file, or HEIC as a full-size JPEG at quality 1. */
+export async function avatarFileForUpload(file: File): Promise<File> {
+  if (!isHeicOrHeif(file)) return file;
+  return convertHeicFullQuality(file, Number.POSITIVE_INFINITY, 1);
 }
 
 /**

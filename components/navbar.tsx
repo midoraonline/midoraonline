@@ -179,7 +179,7 @@ function ProfileDropdown({
             ) : null}
 
             <Link
-              href={role === "merchant" ? "/merchant/settings" : role === "admin" ? "/admin" : "/customer/settings"}
+              href={role === "merchant" ? "/merchant/settings" : role === "admin" ? "/admin/settings" : "/customer/settings"}
               onClick={close}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
             >

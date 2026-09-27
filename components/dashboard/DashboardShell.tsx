@@ -67,6 +67,7 @@ const SCREEN_NAMES: Record<string, string> = {
   "/admin/chat":             "Chat monitoring",
   "/admin/subscriptions":    "Pesapal subscriptions",
   "/admin/feedback":         "Platform feedback",
+  "/admin/settings":         "Settings",
 };
 
 function resolveScreenName(pathname: string): string {
