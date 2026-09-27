@@ -10,7 +10,7 @@ import ProductFilters, {
   DEFAULT_FILTERS,
   type FilterState,
 } from "@/components/browse/ProductFilters";
-import ProductCard from "@/components/productcard";
+import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import {
   browseProductGridClass,
@@ -455,7 +455,7 @@ export default function HomeLanding({
             <>
               <div className={browseProductGridClass}>
                 {displayProducts.map((p, idx) => (
-                  <div key={p.id} className="h-full">
+                  <div key={p.id} className={productCardSlotClass(p)}>
                     <ProductCard
                       product={p}
                       layout="vertical"

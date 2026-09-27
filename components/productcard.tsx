@@ -21,6 +21,7 @@ import {
 import {
   COMPENSATION_OPTIONS,
   LISTING_KIND_LABEL,
+  isTextOnlyListing,
   listingCardLabel,
   normalizeListingKind,
   parseListingMeta,
@@ -129,6 +130,15 @@ function formatListingRate(
     if (meta.pricing_model === "starting_at") return `From ${base}`;
   }
   return base;
+}
+
+/** Text-only slots stay content-height; photo cards still stretch with the row. */
+export function productCardSlotClass(
+  product: Pick<ProductCardData, "item_type" | "imageUrl" | "imageUrls">,
+): string {
+  const listed = (product.imageUrls ?? []).map((url) => url.trim()).filter(Boolean);
+  const count = listed.length || (product.imageUrl?.trim() ? 1 : 0);
+  return isTextOnlyListing(product.item_type, count) ? "self-start" : "h-full";
 }
 
 function coverMediaUrls(product: ProductCardData): string[] {
@@ -480,9 +490,9 @@ export default function ProductCard({
     return (
       <article
         ref={impressionRef as React.RefObject<HTMLElement>}
-        className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden"
+        className="dm-product-card dm-card-hover flex w-full flex-col self-start overflow-hidden"
       >
-        <div className="flex h-full min-h-0 flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
+        <div className="flex w-full flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="min-w-0 truncate pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
               {listingCardLabel(listingKind, meta, product.category)}
@@ -534,11 +544,11 @@ export default function ProductCard({
             ) : null}
           </div>
           {description ? (
-            <p className="line-clamp-3 flex-1 text-[11px] leading-snug text-muted sm:text-xs">
+            <p className="line-clamp-3 text-[11px] leading-snug text-muted sm:text-xs">
               {description}
             </p>
           ) : null}
-          <div className={`${description ? "" : "mt-auto "}space-y-1.5`}>
+          <div className="space-y-1.5">
             {metaRow}
             <WhatsAppCta
               waHref={waHref}
@@ -609,7 +619,7 @@ export default function ProductCard({
   return (
     <article
       ref={impressionRef as React.RefObject<HTMLElement>}
-      className="dm-product-card dm-card-hover flex w-full flex-col overflow-hidden"
+      className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden"
     >
       <div className="group relative aspect-square w-full overflow-hidden bg-surface-subtle sm:aspect-[4/3]">
         <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">

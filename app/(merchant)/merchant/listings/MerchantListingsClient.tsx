@@ -7,29 +7,17 @@ import {
   BarChart3,
   CheckCircle2,
   Clock,
-  Eye,
   ImagePlus,
   Loader2,
   Package,
-  Pencil,
   Search,
-  Trash2,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
-import {
-  isVideoUrl,
-  productImageUrls,
-  productPrimaryImage,
-  productPriceUgx,
-  type Product,
-  type ProductStatus,
-} from "@/lib/api/products";
-import { isTextOnlyListing } from "@/lib/listingMeta";
-import FallbackImage from "@/components/media/FallbackImage";
-import StatusBadge from "@/components/shop/StatusBadge";
+import { type Product, type ProductStatus } from "@/lib/api/products";
+import ListingManageCard from "@/components/shop/ListingManageCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
 
@@ -50,14 +38,6 @@ const TAB_META: {
     test: (s) => s === "draft" || s === "hidden" || s === "expired" || s === "sold",
   },
 ];
-
-function formatUGX(n: number) {
-  return new Intl.NumberFormat("en-UG", {
-    style: "currency",
-    currency: "UGX",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
 
 function sortListings(items: Product[]): Product[] {
   return [...items].sort((a, b) => {
@@ -97,21 +77,6 @@ async function loadOwnerListings(shops: ListingShopSummary[]): Promise<Product[]
     );
     return sortListings(perShop.flatMap((res) => res.items ?? []));
   }
-}
-
-function relativeTime(iso?: string | null): string {
-  if (!iso) return "just now";
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "just now";
-  const diffMs = Date.now() - t;
-  const s = Math.max(0, Math.round(diffMs / 1000));
-  if (s < 60) return `${s}s ago`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  return `${d}d ago`;
 }
 
 export default function MerchantListingsClient({
@@ -198,6 +163,10 @@ export default function MerchantListingsClient({
 
   function openAdd() {
     router.push("/post-item");
+  }
+
+  function applyProduct(next: Product) {
+    setItems((prev) => prev.map((p) => (p.id === next.id ? { ...p, ...next } : p)));
   }
 
   const showMultipleShops = shops.length > 1;
@@ -330,253 +299,23 @@ export default function MerchantListingsClient({
         </div>
       </div>
 
-      {/* Listing rows: cards on mobile, table on md+ */}
       {filtered.length === 0 ? (
         <EmptyState tab={tab} hasShops={shops.length > 0} onAdd={openAdd} />
       ) : (
-        <>
-          <ul className="flex flex-col gap-2 md:hidden">
-            {filtered.map((p) => {
-              const media = productImageUrls(p);
-              const cover = productPrimaryImage(p);
-              const mediaCount = media.length;
-              const textOnly = isTextOnlyListing(p.item_type, mediaCount);
-              const shopMeta = shopById.get(p.shop_id);
-              const reviewing = p.status === "pending_review";
-              const rejected = p.status === "rejected";
-              return (
-                <li
-                  key={p.id}
-                  className="dm-card group relative overflow-hidden p-3 transition-all hover:border-accent/40 hover:shadow-md"
-                >
-                  <div className="flex gap-3">
-                    {textOnly ? null : (
-                    <Link
-                      href={`/merchant/listings/${p.id}/edit`}
-                      className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle"
-                      title="Edit listing"
-                    >
-                      {cover ? (
-                        <FallbackImage
-                          urls={media.filter((url) => !isVideoUrl(url))}
-                          alt=""
-                          fill
-                          sizes="80px"
-                          className="object-cover"
-                          fallback={
-                            <div className="flex h-full items-center justify-center text-[10px] text-muted">
-                              {media.some((url) => isVideoUrl(url)) ? "Video" : "No image"}
-                            </div>
-                          }
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-[10px] text-muted">
-                          {media.some((u) => isVideoUrl(u)) ? "Video" : "No image"}
-                        </div>
-                      )}
-                      {mediaCount > 1 ? (
-                        <span className="absolute bottom-1 right-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                          +{mediaCount - 1}
-                        </span>
-                      ) : null}
-                    </Link>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <Link
-                            href={`/merchant/listings/${p.id}/edit`}
-                            className="block truncate text-sm font-bold text-foreground hover:text-accent"
-                          >
-                            {p.title || "Untitled"}
-                          </Link>
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
-                            <StatusBadge status={p.status} is_published={p.is_published} />
-                            {showMultipleShops && shopMeta ? (
-                              <span className="truncate text-[10px]">{shopMeta.name}</span>
-                            ) : null}
-                            <span className="inline-flex items-center gap-1 text-[10px]">
-                              <Eye className="size-3" aria-hidden />
-                              {p.view_count ?? 0}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="whitespace-nowrap text-sm font-semibold">
-                          {formatUGX(productPriceUgx(p))}
-                        </p>
-                      </div>
-                      {reviewing && !p.review_notes ? (
-                        <p className="text-[11px] text-[color:var(--warning)]">
-                          <span className="font-semibold">In review</span>
-                          <span className="opacity-80"> · awaiting review</span>
-                        </p>
-                      ) : null}
-                      {(reviewing || rejected) && p.review_notes ? (
-                        <p
-                          className={`line-clamp-2 text-[11px] ${
-                            rejected ? "text-[color:var(--error)]" : "text-[color:var(--warning)]"
-                          }`}
-                        >
-                          {rejected ? "Not approved: " : "Note: "}
-                          {p.review_notes}
-                        </p>
-                      ) : null}
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <Link
-                          href={`/merchant/listings/${p.id}/edit`}
-                          className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-foreground/75 hover:bg-foreground/[0.06]"
-                        >
-                          <Pencil className="size-3" />
-                          Edit
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => setPendingDelete(p)}
-                          className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[color:var(--error)] hover:bg-[color:var(--error-subtle)]"
-                        >
-                          <Trash2 className="size-3" />
-                          Delete
-                        </button>
-                        {rejected ? (
-                          <Link
-                            href={`/merchant/listings/${p.id}/edit`}
-                            className="dm-btn dm-btn-primary dm-btn-sm ml-auto"
-                          >
-                            Resubmit
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/products/${p.id}`}
-                            className="ml-auto text-[11px] font-medium text-foreground/60"
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            Preview
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="dm-card hidden overflow-hidden md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-surface-subtle/80 text-[11px] uppercase tracking-wider text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Listing</th>
-                  <th className="px-3 py-3 font-semibold">Status</th>
-                  <th className="px-3 py-3 font-semibold">Price</th>
-                  <th className="px-3 py-3 font-semibold">Views</th>
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((p) => {
-                  const media = productImageUrls(p);
-                  const cover = productPrimaryImage(p);
-                  const textOnly = isTextOnlyListing(p.item_type, media.length);
-                  const shopMeta = shopById.get(p.shop_id);
-                  const reviewing = p.status === "pending_review";
-                  const rejected = p.status === "rejected";
-                  return (
-                    <tr key={p.id} className="hover:bg-foreground/[0.02]">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          {textOnly ? null : (
-                          <Link
-                            href={`/merchant/listings/${p.id}/edit`}
-                            className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle"
-                          >
-                            {cover ? (
-                              <FallbackImage
-                                urls={media.filter((url) => !isVideoUrl(url))}
-                                alt=""
-                                fill
-                                sizes="48px"
-                                className="object-cover"
-                                fallback={
-                                  <div className="flex h-full items-center justify-center text-[9px] text-muted">
-                                    {media.some((url) => isVideoUrl(url)) ? "Video" : "—"}
-                                  </div>
-                                }
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-[9px] text-muted">
-                                {media.some((u) => isVideoUrl(u)) ? "Video" : "—"}
-                              </div>
-                            )}
-                          </Link>
-                          )}
-                          <div className="min-w-0">
-                            <Link
-                              href={`/merchant/listings/${p.id}/edit`}
-                              className="block truncate font-semibold text-foreground hover:text-accent"
-                            >
-                              {p.title || "Untitled"}
-                            </Link>
-                            <p className="truncate text-[11px] text-muted">
-                              {showMultipleShops && shopMeta ? shopMeta.name : relativeTime(p.created_at)}
-                              {reviewing && !p.review_notes ? " · Awaiting review" : ""}
-                              {p.review_notes ? ` · ${p.review_notes}` : ""}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <StatusBadge status={p.status} is_published={p.is_published} />
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap font-medium tabular-nums">
-                        {formatUGX(productPriceUgx(p))}
-                      </td>
-                      <td className="px-3 py-3 tabular-nums text-muted">
-                        {p.view_count ?? 0}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <Link
-                            href={`/merchant/listings/${p.id}/edit`}
-                            className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-foreground/[0.06]"
-                          >
-                            <Pencil className="size-3.5" />
-                            Edit
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => setPendingDelete(p)}
-                            className="dm-focus inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[color:var(--error)] hover:bg-[color:var(--error-subtle)]"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                          {rejected ? (
-                            <Link
-                              href={`/merchant/listings/${p.id}/edit`}
-                              className="dm-btn dm-btn-primary dm-btn-sm"
-                            >
-                              Resubmit
-                            </Link>
-                          ) : (
-                            <Link
-                              href={`/products/${p.id}`}
-                              className="dm-focus rounded-lg px-2 py-1.5 text-xs font-medium text-foreground/60 hover:text-foreground"
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              Preview
-                            </Link>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {filtered.map((p) => (
+            <li key={p.id}>
+              <ListingManageCard
+                product={p}
+                shopName={showMultipleShops ? shopById.get(p.shop_id)?.name : null}
+                onDelete={() => setPendingDelete(p)}
+                onUpdated={applyProduct}
+              />
+            </li>
+          ))}
+        </ul>
       )}
+
 
       {/* Delete confirmation */}
       {pendingDelete ? (

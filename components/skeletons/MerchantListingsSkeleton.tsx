@@ -69,10 +69,9 @@ export default function MerchantListingsSkeleton() {
                   </div>
                   <Skeleton className="h-5 w-20" rounded="md" />
                 </div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  <Skeleton className="h-6 w-14" rounded="lg" />
-                  <Skeleton className="h-6 w-16" rounded="lg" />
-                  <Skeleton className="ml-auto h-6 w-20" rounded="lg" />
+                <div className="mt-1 flex items-center gap-2">
+                  <Skeleton className="h-9 w-16" rounded="lg" />
+                  <Skeleton className="ml-auto size-9" rounded="lg" />
                 </div>
               </div>
             </div>

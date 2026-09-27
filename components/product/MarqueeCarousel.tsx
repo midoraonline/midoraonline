@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import ProductCard from "@/components/productcard";
+import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 
 type Props = {
@@ -80,7 +80,7 @@ export default function MarqueeCarousel({ items, speed = 50 }: Props) {
         {doubled.map((p, i) => (
           <motion.div
             key={`${p.id}-${i}`}
-            className="w-[var(--marquee-card,46%)] shrink-0"
+            className={`w-[var(--marquee-card,46%)] shrink-0 ${productCardSlotClass(p)}`}
             variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 },

@@ -78,7 +78,7 @@ export default async function ShopListing() {
         </div>
       </main>
       <Footer />
-      <MidoraInfoChatWidget />
+      <MidoraInfoChatWidget aboveBottomNav />
     </div>
   );
 }
