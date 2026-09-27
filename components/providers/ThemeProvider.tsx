@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { remotePreferencesBlocked } from "@/lib/accountPreferences";
 import { useSessionStore } from "@/lib/state/session-store";
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -94,6 +95,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const accountTheme = useSessionStore((s) => s.user?.preferences?.theme);
   useEffect(() => {
+    // Missing preferences, or migration 049 not applied: keep the local theme.
+    if (remotePreferencesBlocked()) return;
     if (accountTheme !== "light" && accountTheme !== "dark" && accountTheme !== "system") return;
     if (readStoredMode() === accountTheme) return;
     setMode(accountTheme);

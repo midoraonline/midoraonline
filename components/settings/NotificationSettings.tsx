@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import SettingsSwitch from "@/components/settings/SettingsSwitch";
 import type { NotificationPreferences } from "@/lib/api/auth";
-import {
-  notificationsFromUser,
-  saveAccountPreferences,
-  writeLocalNotifications,
-} from "@/lib/accountPreferences";
+import { notificationsFromUser, saveAccountPreferences } from "@/lib/accountPreferences";
 import { usePushNotifications } from "@/lib/hooks/usePushNotifications";
 import { useAppSession } from "@/lib/state";
 
@@ -33,7 +29,6 @@ export default function NotificationSettings() {
 
   async function commit(next: NotificationPreferences, patch: Partial<NotificationPreferences>) {
     setPrefs(next);
-    writeLocalNotifications(next);
     setBusy(true);
     try {
       const where = await saveAccountPreferences({ notifications: patch });

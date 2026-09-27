@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiAuth } from "@/lib/api";
+import { migrationRequired } from "@/lib/accountPreferences";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
@@ -11,6 +12,7 @@ import VerifyContactButton from "@/components/VerifyContactButton";
 export default function ProfileSettings() {
   const session = useAppSession();
   const [fullName, setFullName] = useState("");
+  const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -20,6 +22,7 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (!session.user) return;
     setFullName(session.user.full_name ?? "");
+    setBio(session.user.bio ?? "");
     setPhone(session.user.phone_number ?? "");
     setPhoneVerified(Boolean(session.user.phone_verified));
   }, [session.user]);
@@ -29,11 +32,24 @@ export default function ProfileSettings() {
     setSaving(true);
     setMessage(null);
     setError(null);
+    const profile = {
+      full_name: fullName.trim(),
+      phone_number: phone.trim(),
+      bio: bio.trim(),
+    };
     try {
-      await apiAuth.updateProfile({
-        full_name: fullName.trim(),
-        phone_number: phone.trim(),
-      });
+      try {
+        await apiAuth.updateProfile(profile);
+      } catch (err) {
+        if (!migrationRequired(err)) throw err;
+        await apiAuth.updateProfile({
+          full_name: profile.full_name,
+          phone_number: profile.phone_number,
+        });
+        notifyAuthChanged();
+        setMessage("Name and phone saved. Bio isn’t available until the account update is applied.");
+        return;
+      }
       notifyAuthChanged();
       setMessage("Profile saved.");
     } catch (err) {
@@ -47,7 +63,7 @@ export default function ProfileSettings() {
     <section className="dm-card space-y-5 p-4 sm:p-6">
       <div>
         <h2 className="text-sm font-semibold">Profile</h2>
-        <p className="mt-0.5 text-xs text-muted">Your name, phone, and photo.</p>
+        <p className="mt-0.5 text-xs text-muted">Your name, bio, phone, and photo.</p>
       </div>
       <ProfileAvatarUpload />
       <form onSubmit={handleSave} className="space-y-4">
@@ -73,6 +89,21 @@ export default function ProfileSettings() {
             disabled
             className="dm-input disabled:opacity-60"
           />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="settings-bio" className="block text-sm font-medium">
+            Bio
+          </label>
+          <textarea
+            id="settings-bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value.slice(0, 500))}
+            maxLength={500}
+            rows={3}
+            placeholder="A short line about you"
+            className="dm-textarea"
+          />
+          <p className="text-xs text-muted">{bio.length}/500</p>
         </div>
         <div className="space-y-1.5">
           <label htmlFor="settings-phone" className="block text-sm font-medium">

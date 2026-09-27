@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api/base";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { avatarFileForUpload } from "@/lib/imageFitForUpload";
 import { useAppSession } from "@/lib/state";
+import { useSessionStore } from "@/lib/state/session-store";
 import { getUploadThingAuthHeaders, useUploadThing } from "@/lib/uploadthing";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import UserAvatar from "@/components/UserAvatar";
@@ -50,7 +51,14 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await apiAuth.updateProfile({ avatar_url: url ?? "" });
+      const me = await apiAuth.updateProfile({ avatar_url: url ?? "" });
+      if (!url) {
+        setPreview((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
+      }
+      useSessionStore.getState().setSession({ user: me });
       notifyAuthChanged();
       toast.success(url ? "Profile photo updated" : "Profile photo removed");
     } catch (err) {
@@ -165,7 +173,7 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
               </button>
             ) : null}
           </div>
-          {error ? <p className="text-xs text-rose-600">{error}</p> : null}
+          {error ? <p className="text-xs text-[color:var(--error)]">{error}</p> : null}
         </div>
       </div>
     </div>
