@@ -587,10 +587,8 @@ export function listingCardLabel(
 }
 
 function titleCaseChip(value: string): string {
-  return value
-    .replace(/[_-]+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const text = value.replace(/[_-]+/g, " ").trim().toLowerCase();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
 function urgencyChip(meta: ListingMeta): string | null {
