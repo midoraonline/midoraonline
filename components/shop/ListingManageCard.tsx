@@ -7,6 +7,8 @@ import { MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import FormModal from "@/components/FormModal";
 import { apiProducts } from "@/lib/api";
 import {
   isVideoUrl,
@@ -14,9 +16,19 @@ import {
   productPriceUgx,
   productPrimaryImage,
   type Product,
-  type ProductStatus,
 } from "@/lib/api/products";
 import { isTextOnlyListing, LISTING_KIND_LABEL, normalizeListingKind } from "@/lib/listingMeta";
+import { ApiError } from "@/lib/api/base";
+import {
+  categoryNeedsStock,
+  isRestockStatus,
+  primaryCloseAction,
+  reactivateListingPatch,
+  showsStock,
+  stockLabel,
+  withdrawListingPatch,
+} from "@/lib/listingStatus";
+import { isStockRequired, STOCK_REQUIRED_MESSAGE } from "@/lib/platformMessages";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -55,6 +67,10 @@ export default function ListingManageCard({
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [stockAsk, setStockAsk] = useState<"available" | "show" | null>(null);
+  const [stockValue, setStockValue] = useState("");
+  const [stockError, setStockError] = useState<string | null>(null);
   const media = productImageUrls(product);
   const cover = productPrimaryImage(product);
   const textOnly = isTextOnlyListing(product.item_type, media.length);
@@ -94,15 +110,68 @@ export default function ListingManageCard({
     }
   }
 
-  function setStatus(next: ProductStatus, ok: string) {
-    return run(ok, () =>
-      apiProducts.updateProduct(product.id, {
+  function withdraw(next: "sold" | "unavailable" | "filled" | "closed" | "hidden", ok: string) {
+    return run(ok, async () => {
+      const updated = await apiProducts.updateProduct(product.id, withdrawListingPatch(next));
+      return {
+        ...product,
+        ...updated,
         status: next,
-        ...(next === "active" ? { is_published: true } : {}),
-      }),
-    );
+        is_published: false,
+        stock_quantity: 0,
+      };
+    });
   }
 
+  async function reactivate(mode: "available" | "show", stock: number | null) {
+    setBusy(true);
+    setOpen(false);
+    try {
+      const updated = await apiProducts.updateProduct(product.id, reactivateListingPatch(stock));
+      const live = (updated.status ?? "active") === "active" && updated.is_published !== false;
+      onUpdated({
+        ...product,
+        ...updated,
+        status: live ? "active" : (updated.status ?? product.status),
+        is_published: live,
+        stock_quantity: stock ?? updated.stock_quantity ?? null,
+      });
+      if (live) toast.success(mode === "available" ? "Marked available" : "Listing published");
+      else toast.message("Stock saved. This listing stays off the public feed until it can go live again.");
+    } catch (e) {
+      if (isStockRequired(e) || (e instanceof ApiError && e.status === 400 && e.code === "stock_required")) {
+        toast.error(STOCK_REQUIRED_MESSAGE);
+        return;
+      }
+      toast.error(e instanceof Error ? e.message : "Could not update listing.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function askOrReactivate(mode: "available" | "show") {
+    setOpen(false);
+    if (await categoryNeedsStock(product)) {
+      setStockValue("");
+      setStockError(null);
+      setStockAsk(mode);
+      return;
+    }
+    await reactivate(mode, null);
+  }
+
+  function submitStock() {
+    const qty = Number(stockValue.trim());
+    if (!Number.isInteger(qty) || qty < 1) {
+      setStockError("Enter how many are in stock.");
+      return;
+    }
+    const mode = stockAsk;
+    setStockAsk(null);
+    if (mode) void reactivate(mode, qty);
+  }
+
+  const closeAction = primaryCloseAction(product.item_type);
   const items: { key: string; label: string; onSelect: () => void; danger?: boolean }[] = [
     {
       key: "preview",
@@ -123,32 +192,33 @@ export default function ListingManageCard({
       },
     });
   }
-  if (status === "sold") {
+  if (isRestockStatus(status)) {
     items.push({
       key: "available",
       label: "Mark available",
-      onSelect: () => void setStatus("active", "Marked available"),
+      onSelect: () => void askOrReactivate("available"),
     });
   } else if (status === "active") {
     items.push({
-      key: "sold",
-      label: "Mark sold",
-      onSelect: () => void setStatus("sold", "Marked sold"),
+      key: "close",
+      label: closeAction.label,
+      onSelect: () => {
+        setOpen(false);
+        setConfirmClose(true);
+      },
     });
   }
-  if (published && status !== "sold" && status !== "pending_review" && status !== "rejected") {
+  if (published && !isRestockStatus(status) && status !== "pending_review" && status !== "rejected") {
     items.push({
       key: "hide",
       label: "Hide",
-      onSelect: () =>
-        void run("Listing hidden", () => apiProducts.toggleAvailability(product.id)),
+      onSelect: () => void withdraw("hidden", "Listing hidden"),
     });
-  } else if (status === "hidden" || status === "draft" || product.is_published === false) {
+  } else if (!isRestockStatus(status) && (status === "hidden" || status === "draft" || product.is_published === false)) {
     items.push({
       key: "show",
       label: "Show",
-      onSelect: () =>
-        void run("Listing published", () => apiProducts.toggleAvailability(product.id)),
+      onSelect: () => void askOrReactivate("show"),
     });
   }
   if (status === "active" && product.is_published !== false) {
@@ -170,6 +240,7 @@ export default function ListingManageCard({
   });
 
   return (
+    <>
     <article className="dm-card flex gap-3 p-3 sm:gap-4 sm:p-4">
       {textOnly ? null : (
         <Link
@@ -216,6 +287,9 @@ export default function ListingManageCard({
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           <StatusBadge status={product.status} is_published={product.is_published} />
+          {showsStock(product) ? (
+            <span className="text-[11px] text-muted">Stock: {stockLabel(product.stock_quantity)}</span>
+          ) : null}
           {shopName ? <span className="truncate text-[11px] text-muted">{shopName}</span> : null}
         </div>
         {stats ? <p className="mt-1 text-[11px] text-muted">{stats}</p> : null}
@@ -275,6 +349,56 @@ export default function ListingManageCard({
           </div>
         </div>
       </div>
-    </article>
+      </article>
+      {confirmClose ? (
+        <ConfirmDialog
+          title={closeAction.title}
+          message={closeAction.message}
+          confirmLabel={closeAction.label}
+          destructive
+          busy={busy}
+          onConfirm={() => {
+            setConfirmClose(false);
+            void withdraw(closeAction.status, closeAction.done);
+          }}
+          onClose={() => {
+            if (!busy) setConfirmClose(false);
+          }}
+        />
+      ) : null}
+      {stockAsk ? (
+        <FormModal
+          title="How many are in stock?"
+          onClose={() => {
+            if (!busy) setStockAsk(null);
+          }}
+          footer={
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" className="dm-btn dm-btn-ghost dm-btn-sm" onClick={() => setStockAsk(null)}>
+                Cancel
+              </button>
+              <button type="button" className="dm-btn dm-btn-primary dm-btn-sm" disabled={busy} onClick={submitStock}>
+                Publish
+              </button>
+            </div>
+          }
+        >
+          <label className="block text-sm text-foreground" htmlFor={`${menuId}-stock`}>
+            Stock quantity
+          </label>
+          <input
+            id={`${menuId}-stock`}
+            inputMode="numeric"
+            className="dm-input mt-2"
+            value={stockValue}
+            onChange={(e) => {
+              setStockValue(e.target.value);
+              setStockError(null);
+            }}
+          />
+          {stockError ? <p className="mt-2 text-xs text-[color:var(--error)]">{stockError}</p> : null}
+        </FormModal>
+      ) : null}
+    </>
   );
 }

@@ -6,7 +6,6 @@ import {
   Heart,
   MapPin,
   Package,
-  Star,
   Store,
 } from "lucide-react";
 import {
@@ -32,6 +31,7 @@ import ReportListing from "@/components/product/ReportListing";
 import SellerTrustActions from "@/components/product/SellerTrustActions";
 import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import ProductOwnerActions from "@/components/product/ProductOwnerActions";
+import ProductRatingRow from "@/components/product/ProductRatingRow";
 import ProductReviews from "@/components/product/ProductReviews";
 import {
   LISTING_KIND_LABEL,
@@ -316,19 +316,11 @@ export default async function ProductDetails({
 
             {/* Decision meta: rating · location · trust */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
-              <a
-                href="#reviews"
-                className="inline-flex items-center gap-1 font-medium text-foreground transition-colors hover:text-accent"
-              >
-                <Star
-                  className={`size-3.5 ${ratingAvg > 0 ? "fill-amber-400 text-amber-400" : "text-muted"}`}
-                  aria-hidden
-                />
-                <span className="tabular-nums">{Number(ratingAvg || 0).toFixed(1)}</span>
-                {ratingCount > 0 ? (
-                  <span className="font-normal text-muted">({ratingCount})</span>
-                ) : null}
-              </a>
+              <ProductRatingRow
+                productId={product.id}
+                rating={Number(ratingAvg || 0)}
+                count={ratingCount}
+              />
 
               {locationOnline ? (
                 <span className="font-medium text-foreground/80">Online</span>

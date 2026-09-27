@@ -79,7 +79,7 @@ export default function ShopHeaderRating({
   const userRating = myReview?.rating ?? 0;
   const displayRating = hovered || (userRating > 0 ? userRating : avg > 0 ? Math.round(avg) : 0);
 
-  const emptyStar = immersive ? "text-white/35" : "text-foreground/20";
+  const emptyStar = immersive ? "text-[color:var(--hero-text-quiet)]" : "text-foreground/20";
   const softText = immersive
     ? { color: "var(--hero-text-soft)" }
     : undefined;

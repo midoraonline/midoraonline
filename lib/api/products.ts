@@ -10,7 +10,17 @@ function productBase(productId: string) {
 
 export type ItemType = "product" | "service" | "property" | "job" | "opportunity";
 
-export type ProductStatus = "draft" | "pending_review" | "active" | "hidden" | "rejected" | "expired" | "sold";
+export type ProductStatus =
+  | "draft"
+  | "pending_review"
+  | "active"
+  | "hidden"
+  | "rejected"
+  | "expired"
+  | "sold"
+  | "unavailable"
+  | "filled"
+  | "closed";
 
 export type Product = {
   id: string;
@@ -86,7 +96,8 @@ export type CreateProductRequest = {
   price_ugx?: number;
   discount_price?: number | null;
   discount_expires_at?: string | null;
-  stock_quantity?: number;
+  /** Null clears stock on PATCH. */
+  stock_quantity?: number | null;
   category?: string;
   item_type?: ItemType;
   image_urls?: string[] | string;

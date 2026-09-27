@@ -5,7 +5,9 @@ import Link from "next/link";
 import UserAvatar from "@/components/UserAvatar";
 import { Star } from "lucide-react";
 import { apiFetch } from "@/lib/api/base";
+import { createProductReview, reviewFailureMessage } from "@/lib/api/reviews";
 import { useAppSession } from "@/lib/state";
+import { bumpReviewStats, publishProductRating } from "@/components/product/ProductRatingRow";
 
 type ProductReview = {
   id: string;
@@ -31,9 +33,11 @@ type Props = {
 function StarInput({
   value,
   onChange,
+  disabled = false,
 }: {
   value: number;
   onChange: (v: number) => void;
+  disabled?: boolean;
 }) {
   const [hovered, setHovered] = useState(0);
   const display = hovered || value;
@@ -49,7 +53,8 @@ function StarInput({
           <button
             key={star}
             type="button"
-            className={`dm-focus rounded p-0.5 transition-transform active:scale-90 ${
+            disabled={disabled}
+            className={`dm-focus rounded p-0.5 transition-transform active:scale-90 disabled:opacity-50 ${
               filled
                 ? "text-amber-400"
                 : "text-foreground/20 hover:text-amber-300/60"
@@ -111,7 +116,20 @@ export default function ProductReviews({ productId, initialStats }: Props) {
             )
           : Promise.resolve(null),
       ]);
-      if (statsRes) setStats(statsRes);
+      if (statsRes) {
+        setStats((prev) => {
+          const next =
+            prev && prev.total_reviews > (statsRes.total_reviews ?? 0) ? prev : statsRes;
+          if (next.total_reviews > 0 && next.average_rating > 0) {
+            publishProductRating({
+              productId,
+              average: next.average_rating,
+              count: next.total_reviews,
+            });
+          }
+          return next;
+        });
+      }
       setReviews(Array.isArray(reviewsRes.items) ? reviewsRes.items : []);
     } catch {
       if (!initialStats) setStats(null);
@@ -147,13 +165,20 @@ export default function ProductReviews({ productId, initialStats }: Props) {
     if (rating < 1 || !session.isAuthenticated) return;
     setSubmitting(true);
     setError(null);
+    const previousRating = myReview?.rating ?? null;
     try {
-      const params = new URLSearchParams({ rating: String(rating) });
-      if (comment.trim()) params.set("comment", comment.trim());
-      await apiFetch(
-        `/api/v1/products/${encodeURIComponent(productId)}/reviews?${params.toString()}`,
-        { method: "POST", body: "{}" },
-      );
+      await createProductReview(productId, rating, comment.trim() || undefined);
+      const next = bumpReviewStats(stats, rating, previousRating);
+      setStats((prev) => ({
+        total_reviews: next.total_reviews,
+        average_rating: next.average_rating,
+        distribution: prev?.distribution ?? {},
+      }));
+      publishProductRating({
+        productId,
+        average: next.average_rating,
+        count: next.total_reviews,
+      });
       setMyReview({
         id: myReview?.id ?? "mine",
         product_id: productId,
@@ -165,7 +190,7 @@ export default function ProductReviews({ productId, initialStats }: Props) {
       setEditing(false);
       await load(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save your review.");
+      setError(reviewFailureMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -189,16 +214,11 @@ export default function ProductReviews({ productId, initialStats }: Props) {
             Rate this listing and share what buyers should know.
           </p>
         </div>
-        {total > 0 ? (
-          <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-3 py-1.5">
-            <span className="text-base font-bold tabular-nums text-foreground">
-              {avg.toFixed(1)}
-            </span>
-            <Stars rating={Math.round(avg)} size="md" />
-            <span className="text-[11px] text-muted">
-              {total} {total === 1 ? "review" : "reviews"}
-            </span>
-          </div>
+        {total > 0 && avg > 0 ? (
+          <p className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-foreground">
+            <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden />
+            {Math.min(5, avg).toFixed(1)} ({total})
+          </p>
         ) : null}
       </div>
 
@@ -280,12 +300,13 @@ export default function ProductReviews({ productId, initialStats }: Props) {
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <span className="text-[11px] text-muted">Your rating</span>
-                      <StarInput value={rating} onChange={setRating} />
+                      <StarInput value={rating} onChange={setRating} disabled={submitting} />
                     </div>
                   </div>
                   <textarea
                     className="dm-textarea min-h-[72px] text-sm"
                     value={comment}
+                    disabled={submitting}
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="What was quality, delivery, or value like? (optional but helpful)"
                     maxLength={500}

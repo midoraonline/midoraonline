@@ -15,6 +15,7 @@ import {
   locationCoords as readLocationCoords,
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 function slugFromName(name: string): string {
   return (
@@ -123,7 +124,7 @@ export default function MerchantShopSettingsPage() {
       });
       setShop(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not save.");
     } finally {
       setSaving(false);
     }

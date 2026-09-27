@@ -87,7 +87,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
       }
       const row = payload.new as Product | undefined;
       if (!row || !row.id) return;
-      if (row.is_published === false) {
+      if (row.is_published === false || (row.status && row.status !== "active")) {
         setProducts((prev) => prev.filter((p) => p.id !== row.id));
         return;
       }
@@ -96,7 +96,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
   );
 
   const visible = useMemo(
-    () => products.filter((p) => p.is_published !== false),
+    () => products.filter((p) => p.is_published !== false && (!p.status || p.status === "active")),
     [products],
   );
 

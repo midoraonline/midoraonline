@@ -17,6 +17,7 @@ import {
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import { planHasAnalytics } from "@/lib/api/payments";
+import { usePlatformAnalytics } from "@/lib/hooks/usePlatformAnalytics";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -31,6 +32,7 @@ function formatNum(n: number) {
 
 export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   const session = useAppSession();
+  const platformAnalytics = usePlatformAnalytics();
   const canManage = canManageShopStorefront(session, shop.id);
   const hydrated = session.hydrated;
 
@@ -75,8 +77,13 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       setLoading(false);
       return;
     }
+    if (!platformAnalytics.ready) return;
+    if (!platformAnalytics.enabled) {
+      setLoading(false);
+      return;
+    }
     void load();
-  }, [hydrated, canManage, load]);
+  }, [hydrated, canManage, load, platformAnalytics.ready, platformAnalytics.enabled]);
 
   const shopBars = useMemo(() => {
     const views = Number(
@@ -143,6 +150,14 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
           <MaterialSymbol name="arrow_back" className="!text-[18px] leading-none" />
           Back to shop
         </Link>
+      </div>
+    );
+  }
+
+  if (platformAnalytics.ready && !platformAnalytics.enabled) {
+    return (
+      <div className="dm-card p-8 text-center sm:p-10">
+        <p className="text-base font-semibold tracking-tight">Analytics is turned off</p>
       </div>
     );
   }

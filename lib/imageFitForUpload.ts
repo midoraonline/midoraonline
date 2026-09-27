@@ -4,7 +4,7 @@
 export const UPLOAD_IMAGE_MAX_BYTES = {
   productImage: 8 * 1024 * 1024,
   shopLogo: 4 * 1024 * 1024,
-  imageUploader: 4 * 1024 * 1024,
+  imageUploader: 16 * 1024 * 1024,
 } as const;
 
 export type UploadImageEndpoint = keyof typeof UPLOAD_IMAGE_MAX_BYTES;

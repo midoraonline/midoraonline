@@ -15,11 +15,32 @@ import UserAvatar from "@/components/UserAvatar";
 
 type Props = { className?: string };
 
+const AVATAR_MAX = 16 * 1024 * 1024;
+
+function avatarErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 413 || err.code === "avatar_too_large") {
+      return "This photo is too large to upload here. Choose a file under 16MB.";
+    }
+    if (err.status === 415) return "Use a JPEG, PNG, WebP, GIF, or HEIC photo.";
+    if (err.status === 401) return "Sign in again to update your profile photo.";
+    if (err.status >= 500 || /internal server error/i.test(err.message)) {
+      return "We couldn't save that photo. Please try again.";
+    }
+    if (err.message.trim() && !/^Request failed/i.test(err.message) && !/^HTTP \d+/.test(err.message)) {
+      return err.message;
+    }
+  }
+  if (err instanceof Error && err.message.trim()) return err.message;
+  return "We couldn't save that photo. Please try again.";
+}
+
 export default function ProfileAvatarUpload({ className = "" }: Props) {
   const session = useAppSession();
   const user = session.user;
   const inputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -31,19 +52,30 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
 
   const avatarUrl = preview || user?.avatar_url || null;
 
+  function clearPreview() {
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }
+
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     headers: getUploadThingAuthHeaders,
+    onUploadProgress: (pct) => setProgress(Math.round(pct)),
     onClientUploadComplete: (res) => {
       const url = res?.[0]?.ufsUrl ?? res?.[0]?.url;
       if (!url) {
-        setError("Upload finished but no URL was returned.");
+        setError("Upload finished but no photo URL was returned.");
+        clearPreview();
         return;
       }
       void persistAvatar(url);
     },
     onUploadError: (e) => {
-      setError(e.message || "Upload failed");
-      toast.error("Upload failed", { description: e.message });
+      const msg = e.message || "We couldn't save that photo. Please try again.";
+      setError(msg);
+      toast.error("Could not save photo", { description: msg });
+      clearPreview();
     },
   });
 
@@ -52,17 +84,13 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
     setError(null);
     try {
       const me = await apiAuth.updateProfile({ avatar_url: url ?? "" });
-      if (!url) {
-        setPreview((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return null;
-        });
-      }
+      if (!url) clearPreview();
       useSessionStore.getState().setSession({ user: me });
       notifyAuthChanged();
       toast.success(url ? "Profile photo updated" : "Profile photo removed");
+      setProgress(100);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not save profile photo.";
+      const msg = avatarErrorMessage(err);
       setError(msg);
       toast.error("Could not save photo", { description: msg });
     } finally {
@@ -70,49 +98,39 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
     }
   }
 
+  async function uploadViaUploadThing(file: File) {
+    setProgress(0);
+    await startUpload([file]);
+  }
+
   async function uploadFile(file: File) {
     setSaving(true);
+    setProgress(0);
+    setError(null);
     const local = URL.createObjectURL(file);
     setPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return local;
     });
-    setError(null);
     try {
-      await apiAuth.uploadAvatar(file);
-      notifyAuthChanged();
-      toast.success("Profile photo updated");
+      const prepared = await avatarFileForUpload(file);
+      if (prepared.size > AVATAR_MAX) {
+        throw new Error("This photo is larger than 16MB. Choose a smaller file.");
+      }
+      await uploadViaUploadThing(prepared);
     } catch (err) {
-      const missing =
-        err instanceof ApiError && (err.status === 404 || err.status === 405 || err.status === 503);
-      if (!missing) {
-        const msg = err instanceof Error ? err.message : "Could not save profile photo.";
-        setError(msg);
-        toast.error("Could not save photo", { description: msg });
-        setPreview((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return null;
-        });
-        return;
-      }
-      try {
-        const prepared = await avatarFileForUpload(file);
-        await startUpload([prepared]);
-      } catch (fallbackErr) {
-        const msg = fallbackErr instanceof Error ? fallbackErr.message : "Could not prepare that photo.";
-        setError(msg);
-        toast.error("Could not save photo", { description: msg });
-        setPreview((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return null;
-        });
-      }
+      const msg = avatarErrorMessage(err);
+      setError(msg);
+      toast.error("Could not save photo", { description: msg });
+      clearPreview();
     } finally {
       setSaving(false);
     }
   }
 
   const busy = isUploading || saving;
+  const progressLabel =
+    progress != null && busy ? `Uploading ${progress}%` : busy ? "Uploading…" : null;
 
   return (
     <div id="profile-photo" className={className}>
@@ -173,6 +191,16 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
               </button>
             ) : null}
           </div>
+          {progressLabel ? (
+            <p className="text-xs text-muted" aria-live="polite">
+              {progressLabel}
+            </p>
+          ) : null}
+          {busy && progress != null ? (
+            <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-foreground/10">
+              <div className="h-full bg-accent" style={{ width: `${progress}%` }} />
+            </div>
+          ) : null}
           {error ? <p className="text-xs text-[color:var(--error)]">{error}</p> : null}
         </div>
       </div>

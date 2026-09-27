@@ -33,6 +33,7 @@ function paletteFromTone(tone: ImageTone): {
   cssVars: CSSProperties;
   topGradient: string;
   bottomGradient: string;
+  centerVeil: string;
   vignette: string;
 } {
   // `scrim` ramps up with image luminance so bright shots stay legible.
@@ -40,10 +41,13 @@ function paletteFromTone(tone: ImageTone): {
   const scrim = 0.32 + (1 - Math.max(0, Math.min(1, 1 - tone.luminance))) * 0.5;
   const topA = Math.min(0.75, scrim * 0.9);
   const bottomA = Math.min(0.88, scrim * 1.15);
+  const midA = Math.min(0.72, 0.34 + scrim * 0.42);
 
-  const topGradient = `linear-gradient(to bottom, rgba(8,14,13,${topA.toFixed(3)}) 0%, rgba(8,14,13,${(topA * 0.45).toFixed(3)}) 26%, transparent 52%)`;
-  const bottomGradient = `linear-gradient(to top, rgba(8,14,13,${bottomA.toFixed(3)}) 0%, rgba(8,14,13,${(bottomA * 0.55).toFixed(3)}) 30%, transparent 62%)`;
-  const vignette = `radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(8,14,13,${(scrim * 0.5).toFixed(3)}) 100%)`;
+  const ink = "var(--hero-scrim)";
+  const topGradient = `linear-gradient(to bottom, rgba(${ink},${topA.toFixed(3)}) 0%, rgba(${ink},${(topA * 0.45).toFixed(3)}) 26%, transparent 52%)`;
+  const bottomGradient = `linear-gradient(to top, rgba(${ink},${bottomA.toFixed(3)}) 0%, rgba(${ink},${(bottomA * 0.55).toFixed(3)}) 30%, transparent 62%)`;
+  const centerVeil = `radial-gradient(ellipse at 50% 58%, rgba(${ink},${midA.toFixed(3)}) 0%, rgba(${ink},${(midA * 0.72).toFixed(3)}) 38%, transparent 76%)`;
+  const vignette = `radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(${ink},${(scrim * 0.5).toFixed(3)}) 100%)`;
 
   const [r, g, b] = tone.averageRgb;
   const tint = `rgba(${r},${g},${b},0.08)`;
@@ -63,7 +67,22 @@ function paletteFromTone(tone: ImageTone): {
     topGradient,
     bottomGradient,
     vignette,
+    centerVeil,
   };
+}
+
+function fallbackVars(): CSSProperties {
+  return {
+    "--hero-text-strong": "var(--hero-fallback-text)",
+    "--hero-text-soft": "var(--hero-fallback-text-soft)",
+    "--hero-text-muted": "var(--hero-fallback-text-muted)",
+    "--hero-text-quiet": "var(--hero-fallback-text-quiet)",
+    "--hero-chip-bg": "var(--hero-fallback-chip-bg)",
+    "--hero-chip-border": "var(--hero-fallback-chip-border)",
+    "--hero-icon": "var(--hero-fallback-icon)",
+    "--hero-icon-hover": "var(--hero-fallback-text)",
+    "--hero-tint": "transparent",
+  } as CSSProperties;
 }
 
 function subscribeReducedMotion(notify: () => void): () => void {
@@ -237,24 +256,25 @@ export default function ShopHeroCarousel({
       <div
         className={["relative isolate w-full overflow-hidden", minHeightClass, className].join(" ")}
         style={{
-          ...paletteFromTone(defaultTone()).cssVars,
+          ...fallbackVars(),
           background:
-            "linear-gradient(160deg, rgba(74,103,103,0.28) 0%, rgba(102,121,143,0.18) 48%, rgba(42,51,49,0.45) 100%)",
+            "linear-gradient(160deg, var(--hero-fallback-from) 0%, var(--hero-fallback-via) 52%, var(--hero-fallback-to) 100%)",
         }}
       >
-        {children}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "var(--hero-fallback-overlay)" }}
+        />
+        <div className="relative">{children}</div>
       </div>
     );
   }
 
   return (
     <div
-      className={[
-        "relative isolate w-full overflow-hidden bg-[#0a1210]",
-        minHeightClass,
-        className,
-      ].join(" ")}
-      style={palette.cssVars}
+      className={["relative isolate w-full overflow-hidden", minHeightClass, className].join(" ")}
+      style={{ ...palette.cssVars, backgroundColor: "var(--hero-media-base)" }}
     >
       <div aria-hidden className="absolute inset-0 -z-10">
         {normalized.map((m, i) => {
@@ -322,7 +342,7 @@ export default function ShopHeroCarousel({
         aria-hidden
         className="absolute inset-0 -z-[8] pointer-events-none transition-[background] duration-[1400ms]"
         style={{
-          background: [palette.topGradient, palette.bottomGradient, palette.vignette].join(", "),
+          background: [palette.topGradient, palette.bottomGradient, palette.centerVeil, palette.vignette].join(", "),
         }}
       />
 

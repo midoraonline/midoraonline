@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { apiAuth } from "@/lib/api";
 import { establishGoogleCallbackSession } from "@/lib/auth/establish-session";
 import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
+import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
 
 type CallbackStatus = "processing" | "success" | "error";
 
@@ -51,10 +52,10 @@ export default function GoogleAuthCallbackPage() {
         }
         router.replace("/");
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (!active) return;
         setStatus("error");
-        setMessage(SIGN_IN_ERROR);
+        setMessage(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : SIGN_IN_ERROR);
       });
 
     return () => {

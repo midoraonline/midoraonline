@@ -68,6 +68,7 @@ const SCREEN_NAMES: Record<string, string> = {
   "/admin/subscriptions":    "Pesapal subscriptions",
   "/admin/feedback":         "Platform feedback",
   "/admin/settings":         "Settings",
+  "/admin/features":         "Features",
 };
 
 function resolveScreenName(pathname: string): string {

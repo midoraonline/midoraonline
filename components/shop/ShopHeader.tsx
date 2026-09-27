@@ -93,9 +93,10 @@ export default async function ShopHeader({
           href={backHref}
           className={
             immersive
-              ? "inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-black/40"
+              ? "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition-colors hover:brightness-110"
               : "inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
           }
+          style={chipStyle}
         >
           <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden />
           {backLabel}
@@ -115,8 +116,16 @@ export default async function ShopHeader({
           <div
             className={
               immersive
-                ? "relative size-16 overflow-hidden rounded-2xl bg-white/15 ring-2 ring-white/35 shadow-lg backdrop-blur-sm sm:size-[4.5rem]"
+                ? "relative size-16 overflow-hidden rounded-2xl shadow-lg backdrop-blur-sm sm:size-[4.5rem]"
                 : "relative size-16 overflow-hidden rounded-2xl bg-surface-subtle ring-2 ring-accent/20 shadow-sm sm:size-[4.5rem]"
+            }
+            style={
+              immersive
+                ? {
+                    background: "var(--hero-chip-bg)",
+                    boxShadow: "0 0 0 2px var(--hero-chip-border)",
+                  }
+                : undefined
             }
           >
             <FallbackImage
@@ -129,8 +138,9 @@ export default async function ShopHeader({
               fallback={
                 <div
                   className={`flex size-full items-center justify-center text-xl font-bold sm:text-2xl ${
-                    immersive ? "text-white" : "text-accent"
+                    immersive ? "" : "text-accent"
                   }`}
+                  style={immersive ? { color: "var(--hero-text-strong)" } : undefined}
                 >
                   {shop.name.charAt(0).toUpperCase()}
                 </div>
@@ -160,12 +170,13 @@ export default async function ShopHeader({
                 className={
                   trustLevel === "business"
                     ? immersive
-                      ? "!text-[13px] text-white"
+                      ? "!text-[13px]"
                       : "!text-[13px] text-accent"
                     : immersive
-                      ? "!text-[13px] text-sky-200"
+                      ? "!text-[13px]"
                       : "!text-[13px] text-sky-600"
                 }
+                style={immersive ? { color: "var(--hero-icon)" } : undefined}
                 size={13}
                 label={SHOP_TRUST_LABEL[trustLevel]}
               />
@@ -177,9 +188,10 @@ export default async function ShopHeader({
             <span
               className={
                 immersive
-                  ? "inline-flex items-center gap-1.5 rounded-md border border-white/30 bg-white/15 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm"
-                  : "inline-flex items-center gap-1.5 rounded-md bg-emerald-600/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20"
+                  ? "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold backdrop-blur-sm"
+                  : "inline-flex items-center gap-1.5 rounded-md bg-emerald-600/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20 dark:text-emerald-300"
               }
+              style={chipStyle}
             >
               <span className="size-1.5 animate-pulse rounded-full bg-current" aria-hidden />
               Live now
@@ -242,7 +254,7 @@ export default async function ShopHeader({
   return immersive ? (
     <ShopHeroCarousel
       media={media}
-      className="border-b border-white/[0.06]"
+      className="border-b border-border"
       minHeightClass="min-h-[14rem] sm:min-h-[17rem] lg:min-h-[19rem]"
     >
       {heroBody}

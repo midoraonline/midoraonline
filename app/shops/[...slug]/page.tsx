@@ -35,7 +35,9 @@ export default async function ShopDetails({
   }
 
   const items = await listShopProducts(shop.id);
-  const publishedCount = items.filter((p) => p.is_published !== false).length;
+  const publishedCount = items.filter(
+    (p) => p.is_published !== false && (!p.status || p.status === "active"),
+  ).length;
 
   const desc = (shop.description ?? "").trim();
   const about = (shop.about ?? "").trim();
