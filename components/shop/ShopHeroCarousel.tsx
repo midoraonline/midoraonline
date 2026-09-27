@@ -33,6 +33,7 @@ function paletteFromTone(tone: ImageTone): {
   cssVars: CSSProperties;
   topGradient: string;
   bottomGradient: string;
+  centerVeil: string;
   vignette: string;
 } {
   // `scrim` ramps up with image luminance so bright shots stay legible.
@@ -40,10 +41,12 @@ function paletteFromTone(tone: ImageTone): {
   const scrim = 0.32 + (1 - Math.max(0, Math.min(1, 1 - tone.luminance))) * 0.5;
   const topA = Math.min(0.75, scrim * 0.9);
   const bottomA = Math.min(0.88, scrim * 1.15);
+  const midA = Math.min(0.72, 0.34 + scrim * 0.42);
 
   const ink = "var(--hero-scrim)";
   const topGradient = `linear-gradient(to bottom, rgba(${ink},${topA.toFixed(3)}) 0%, rgba(${ink},${(topA * 0.45).toFixed(3)}) 26%, transparent 52%)`;
   const bottomGradient = `linear-gradient(to top, rgba(${ink},${bottomA.toFixed(3)}) 0%, rgba(${ink},${(bottomA * 0.55).toFixed(3)}) 30%, transparent 62%)`;
+  const centerVeil = `radial-gradient(ellipse at 50% 58%, rgba(${ink},${midA.toFixed(3)}) 0%, rgba(${ink},${(midA * 0.72).toFixed(3)}) 38%, transparent 76%)`;
   const vignette = `radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(${ink},${(scrim * 0.5).toFixed(3)}) 100%)`;
 
   const [r, g, b] = tone.averageRgb;
@@ -64,6 +67,7 @@ function paletteFromTone(tone: ImageTone): {
     topGradient,
     bottomGradient,
     vignette,
+    centerVeil,
   };
 }
 
@@ -338,7 +342,7 @@ export default function ShopHeroCarousel({
         aria-hidden
         className="absolute inset-0 -z-[8] pointer-events-none transition-[background] duration-[1400ms]"
         style={{
-          background: [palette.topGradient, palette.bottomGradient, palette.vignette].join(", "),
+          background: [palette.topGradient, palette.bottomGradient, palette.centerVeil, palette.vignette].join(", "),
         }}
       />
 
