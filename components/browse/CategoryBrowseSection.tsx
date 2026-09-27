@@ -269,7 +269,11 @@ function CategoryChip({
         strokeWidth={emphasized ? 2 : 1.75}
         aria-hidden
       />
-      <span className={`${prominent ? "sm:whitespace-nowrap" : "whitespace-nowrap"} ${emphasized ? "font-semibold" : "font-medium"}`}>
+      <span
+        className={`${
+          prominent ? "min-w-0 text-balance sm:whitespace-nowrap" : "whitespace-nowrap"
+        } ${emphasized ? "font-semibold" : "font-medium"}`}
+      >
         {label}
       </span>
       {typeof count === "number" && count > 0 ? (
