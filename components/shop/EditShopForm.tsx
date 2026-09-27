@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, BarChart2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -217,13 +217,15 @@ function DetailsTab({
   onChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
   onLogoStaged: (url: string) => void;
   onLogoRemove: () => void;
-  onSaved: (savedForm: FormState) => void;
+  onSaved: (savedForm: FormState, updated?: Shop) => void;
   whatsappVerified: boolean;
   onWhatsappVerifiedChange: (verified: boolean) => void;
 }) {
   const router = useRouter();
   const session = useAppSession();
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
 
   const errors = useMemo(() => {
@@ -245,20 +247,25 @@ function DetailsTab({
     router.push(`/shops/${shop.slug}`);
   }, [isDirty, router, shop.slug]);
 
+  function change<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setJustSaved(false);
+    setSaveError(null);
+    onChange(key, value);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setShowErrors(true);
+    setSaveError(null);
     if (!session.isAuthenticated) {
-      toast.error("Sign in required", {
-        description: "Log in again to save your changes.",
-      });
+      setSaveError("Sign in again to save your changes.");
       return;
     }
     if (!canSubmit) return;
 
     const hoursError = hoursDraftError(form.hours);
     if (hoursError) {
-      toast.error(hoursError);
+      setSaveError(hoursError);
       return;
     }
     const hoursChanged = JSON.stringify(form.hours) !== JSON.stringify(hoursDraftFromShop(shop));
@@ -280,21 +287,14 @@ function DetailsTab({
     };
 
     setSaving(true);
-    const request = apiShops.updateShop(shop.id, payload);
-    toast.promise(request, {
-      loading: "Saving changes…",
-      success: "Shop updated",
-      error: (err) =>
-        err instanceof Error
-          ? err.message
-          : "Could not save changes. Please try again.",
-    });
+    setJustSaved(false);
     try {
-      await request;
-      onSaved(form);
-      router.push(`/shops/${shop.slug}`);
-    } catch {
-      /* handled by sonner */
+      const updated = await apiShops.updateShop(shop.id, payload);
+      onSaved(form, updated);
+      setJustSaved(true);
+      toast.success("Saved");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Could not save changes. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -317,7 +317,7 @@ function DetailsTab({
               className="dm-input"
               placeholder="e.g. My Coffee Shop"
               value={form.name}
-              onChange={(e) => onChange("name", e.target.value)}
+              onChange={(e) => change("name", e.target.value)}
               aria-invalid={showErrors && Boolean(errors.name)}
               aria-describedby={errorId("name")}
             />
@@ -339,7 +339,7 @@ function DetailsTab({
               className="dm-input"
               placeholder="Tagline shown on the shop page"
               value={form.description}
-              onChange={(e) => onChange("description", e.target.value)}
+              onChange={(e) => change("description", e.target.value)}
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
@@ -352,7 +352,7 @@ function DetailsTab({
               placeholder="Longer description of your shop"
               rows={3}
               value={form.about}
-              onChange={(e) => onChange("about", e.target.value)}
+              onChange={(e) => change("about", e.target.value)}
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
@@ -360,7 +360,7 @@ function DetailsTab({
             <div className="dm-card p-3 sm:p-4">
               <CategoryPicker
                 value={form.category}
-                onChange={(val) => onChange("category", val)}
+                onChange={(val) => change("category", val)}
                 compact
                 idPrefix="edit-shop-category"
               />
@@ -374,7 +374,7 @@ function DetailsTab({
               id="edit-shop-type"
               className="dm-input appearance-none pr-9"
               value={form.shopType}
-              onChange={(e) => onChange("shopType", e.target.value as apiShops.ShopType)}
+              onChange={(e) => change("shopType", e.target.value as apiShops.ShopType)}
             >
               <option value="product">Products</option>
               <option value="service">Services</option>
@@ -385,9 +385,9 @@ function DetailsTab({
             <p className="text-sm font-medium text-foreground">Location</p>
             <LocationInput
               value={form.location}
-              onChange={(val) => onChange("location", val)}
+              onChange={(val) => change("location", val)}
               onResolved={(place) =>
-                onChange(
+                change(
                   "locationCoords",
                   place ? { lat: place.lat, lng: place.lng } : null,
                 )
@@ -410,11 +410,11 @@ function DetailsTab({
           stagedUrl={stagedLogo}
           onStaged={(url) => {
             onLogoStaged(url);
-            onChange("logoUrl", url);
+            change("logoUrl", url);
           }}
           onRemove={() => {
             onLogoRemove();
-            onChange("logoUrl", "");
+            change("logoUrl", "");
           }}
         />
       </section>
@@ -432,7 +432,7 @@ function DetailsTab({
               className="dm-input"
               placeholder="hello@shop.com"
               value={form.shopEmail}
-              onChange={(e) => onChange("shopEmail", e.target.value)}
+              onChange={(e) => change("shopEmail", e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
@@ -445,7 +445,7 @@ function DetailsTab({
             <PhoneNumberInput
               id="edit-shop-whatsapp"
               value={form.whatsappNumber}
-              onChange={(val) => onChange("whatsappNumber", val)}
+              onChange={(val) => change("whatsappNumber", val)}
               placeholder="700 000 000"
             />
             <VerifyContactButton
@@ -456,7 +456,7 @@ function DetailsTab({
               confirmCode={async (code) => {
                 const updated = await apiShops.confirmShopWhatsAppCode(shop.id, code);
                 const nextNumber = updated.whatsapp_number ?? form.whatsappNumber;
-                onSaved({ ...form, whatsappNumber: nextNumber });
+                onSaved({ ...form, whatsappNumber: nextNumber }, updated);
                 onWhatsappVerifiedChange(Boolean(updated.whatsapp_verified));
               }}
             />
@@ -467,7 +467,7 @@ function DetailsTab({
       <section className="dm-card space-y-4 p-5 sm:p-6">
         <h2 className="text-sm font-semibold tracking-tight">Opening hours</h2>
         <p className="text-xs text-muted">Times are in Kampala (EAT).</p>
-        <ShopHoursEditor value={form.hours} onChange={(hours) => onChange("hours", hours)} />
+        <ShopHoursEditor value={form.hours} onChange={(hours) => change("hours", hours)} />
       </section>
 
       <section className="dm-card p-5 sm:p-6">
@@ -485,7 +485,7 @@ function DetailsTab({
             role="switch"
             aria-checked={form.isActive}
             aria-label="Shop is active"
-            onClick={() => onChange("isActive", !form.isActive)}
+            onClick={() => change("isActive", !form.isActive)}
             className="dm-toggle"
           >
             <span className="dm-toggle-thumb" />
@@ -493,6 +493,11 @@ function DetailsTab({
         </div>
       </section>
 
+      {saveError ? (
+        <p role="alert" className="text-sm text-[color:var(--error)]">
+          {saveError}
+        </p>
+      ) : null}
       <div className="flex items-center justify-between gap-4 pb-4">
         <button
           type="button"
@@ -507,7 +512,7 @@ function DetailsTab({
           disabled={saving || (showErrors && !canSubmit)}
           className="dm-btn dm-btn-primary"
         >
-          {saving ? "Saving…" : "Save changes"}
+          {saving ? "Saving…" : justSaved ? "Saved" : "Save changes"}
         </button>
       </div>
     </form>
@@ -518,6 +523,7 @@ function DetailsTab({
 export default function EditShopForm({ shop }: { shop: Shop }) {
   const router = useRouter();
   const session = useAppSession();
+  const [shopState, setShopState] = useState(shop);
 
   const [tab, setTab] = useState<EditTab>("details");
   const [initialForm, setInitialForm] = useState<FormState>(() =>
@@ -527,16 +533,35 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
   const [stagedLogo, setStagedLogo] = useState("");
   const [whatsappVerified, setWhatsappVerified] = useState(Boolean(shop.whatsapp_verified));
 
+  const seenShopId = useRef(shop.id);
+  useEffect(() => {
+    if (seenShopId.current === shop.id) return;
+    seenShopId.current = shop.id;
+    setShopState(shop);
+    const next = shopToFormState(shop);
+    setInitialForm(next);
+    setForm(next);
+    setStagedLogo("");
+    setWhatsappVerified(Boolean(shop.whatsapp_verified));
+  }, [shop]);
+
   const isDirty = !formsEqual(form, initialForm);
 
   function onChange<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function onSaved(savedForm: FormState) {
+  function onSaved(savedForm: FormState, updated?: Shop) {
     setInitialForm(savedForm);
     setForm(savedForm);
     setStagedLogo("");
+    if (updated) {
+      setShopState(updated);
+      setWhatsappVerified(Boolean(updated.whatsapp_verified));
+    }
+    startTransition(() => {
+      router.refresh();
+    });
   }
 
   // Warn on hard navigation / refresh while dirty.
@@ -597,7 +622,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           : window.confirm("Discard your changes?");
       if (!ok) return;
     }
-    router.push(`/shops/${shop.slug}`);
+    router.push(`/shops/${shopState.slug}`);
   }
 
   return (
@@ -606,7 +631,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>
           <p className="mt-0.5 text-sm text-muted">
-            Manage {shop.name}&apos;s details, products, and services.
+            Manage {shopState.name}&apos;s details, products, and services.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -619,7 +644,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
             Add product
           </button>
           <Link
-            href={`/shops/${shop.slug}/analytics`}
+            href={`/shops/${shopState.slug}/analytics`}
             className="dm-btn dm-btn-secondary dm-btn-sm"
           >
             <BarChart2 className="size-3.5" aria-hidden="true" />
@@ -662,7 +687,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
 
       {tab === "details" && (
         <DetailsTab
-          shop={shop}
+          shop={shopState}
           form={form}
           stagedLogo={stagedLogo}
           isDirty={isDirty}
