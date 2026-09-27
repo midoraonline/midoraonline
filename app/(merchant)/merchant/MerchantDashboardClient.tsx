@@ -12,6 +12,7 @@ import {
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import { planHasAnalytics } from "@/lib/api/payments";
+import { usePlatformAnalytics } from "@/lib/hooks/usePlatformAnalytics";
 import type { MerchantAnalytics, MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { useAppSession } from "@/lib/state";
@@ -86,19 +87,21 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [windowDays, setWindowDays] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
   const canAnalytics = planHasAnalytics(session.user?.plan_tier);
+  const platformAnalytics = usePlatformAnalytics();
+  const analyticsOn = platformAnalytics.ready && platformAnalytics.enabled;
 
   const load = useCallback(async () => {
     if (!session.hydrated) return;
     setError(null);
-    if (!canAnalytics) {
-      setAnalyticsLocked(true);
+    if (!analyticsOn || !canAnalytics) {
+      setAnalyticsLocked(!analyticsOn ? false : !canAnalytics);
       setAnalytics(null);
     }
     try {
       const [shopsRes, statsRes, analyticsRes] = await Promise.all([
         apiShops.myShops(),
         apiShops.myStats().catch(() => null),
-        canAnalytics
+        analyticsOn && canAnalytics
           ? apiShops.myAnalytics(windowDays).catch((err) => {
               if (err instanceof ApiError && (err.status === 403 || err.code === "plan_upgrade_required")) {
                 setAnalyticsLocked(true);
@@ -125,7 +128,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       }
       setError(err instanceof Error ? err.message : "Failed to load your shops");
     }
-  }, [windowDays, session.hydrated, canAnalytics]);
+  }, [windowDays, session.hydrated, canAnalytics, analyticsOn, platformAnalytics.ready]);
 
   useEffect(() => { void load(); }, [load]);
   useRealtimeTable({ table: "shops", channel: "merchant-shops-overview" }, () => { void load(); });
@@ -300,7 +303,12 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       </section>
 
       {/* ── Analytics: impressions, trends, funnel, per-shop, top products ── */}
-      {analyticsLocked && (
+      {platformAnalytics.ready && !platformAnalytics.enabled && (
+        <section className="dm-card p-5 sm:p-6">
+          <h2 className="font-display text-base font-semibold">Analytics is turned off</h2>
+        </section>
+      )}
+      {analyticsOn && analyticsLocked && (
         <section className="dm-card flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div>
             <h2 className="font-display text-base font-semibold">Shop analytics locked</h2>
@@ -316,7 +324,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
           </Link>
         </section>
       )}
-      {analytics && (
+      {analyticsOn && analytics && (
         <>
           <section className="dm-card p-5 sm:p-6">
             <div className="flex flex-wrap items-end justify-between gap-3">

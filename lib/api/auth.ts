@@ -181,13 +181,15 @@ export function updateProfile(body: UpdateProfileRequest) {
   });
 }
 
-/** Server stores the file as received. HEIC is converted there at full size. */
-export function uploadAvatar(file: File) {
+/** Multipart field is `file`. Content-Type is left unset so the boundary is added. */
+export function uploadAvatar(file: File, onProgress?: (percent: number) => void) {
   const body = new FormData();
   body.append("file", file);
   return apiFetch<MeResponse>("/api/v1/auth/me/avatar", {
     method: "POST",
     body,
+    timeoutMs: 60_000,
+    onUploadProgress: onProgress,
   });
 }
 

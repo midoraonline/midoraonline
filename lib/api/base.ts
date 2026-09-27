@@ -23,6 +23,8 @@ export type ApiFetchOptions = {
   keepalive?: boolean;
   /** One retry on timeout, network loss, or a gateway cold start. */
   coldStartRetry?: boolean;
+  /** Browser upload progress, 0–100. Used for multipart profile photos. */
+  onUploadProgress?: (percent: number) => void;
 };
 
 export type ApiErrorPayload = {
@@ -241,6 +243,7 @@ export async function apiFetch<T>(
     signal,
     keepalive = false,
     coldStartRetry = false,
+    onUploadProgress,
   } = opts;
 
   const explicitToken = typeof token === "string" && token.length > 0 ? token : null;
@@ -287,6 +290,12 @@ export async function apiFetch<T>(
     withCredentials,
     signal,
     validateStatus: () => true,
+    onUploadProgress: onUploadProgress
+      ? (event) => {
+          const total = event.total ?? 0;
+          if (total > 0) onUploadProgress(Math.min(100, Math.round((event.loaded / total) * 100)));
+        }
+      : undefined,
   };
 
   let status = 0;

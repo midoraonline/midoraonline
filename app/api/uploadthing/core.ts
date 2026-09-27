@@ -36,6 +36,14 @@ export const ourFileRouter = {
       return { uploadedBy: metadata.userId, url: file.ufsUrl };
     }),
 
+  avatarImage: f({
+    image: { maxFileSize: "16MB", maxFileCount: 1 },
+  })
+    .middleware(async ({ req }) => requireUser(req))
+    .onUploadComplete(async ({ file }) => {
+      return { url: file.ufsUrl };
+    }),
+
   productVideo: f({
     video: { maxFileSize: "32MB", maxFileCount: 4 },
   })

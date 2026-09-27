@@ -86,7 +86,8 @@ export type CreateProductRequest = {
   price_ugx?: number;
   discount_price?: number | null;
   discount_expires_at?: string | null;
-  stock_quantity?: number;
+  /** Null clears stock on PATCH. */
+  stock_quantity?: number | null;
   category?: string;
   item_type?: ItemType;
   image_urls?: string[] | string;

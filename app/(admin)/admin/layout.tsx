@@ -20,6 +20,7 @@ const SECONDARY: DashboardNavItem[] = [
   { href: "/admin/chat", label: "Chat", icon: <IconChat /> },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: <IconReceipt /> },
   { href: "/admin/feedback", label: "Feedback", icon: <IconFeedback /> },
+  { href: "/admin/features", label: "Features", icon: <IconTune /> },
   { href: "/admin/settings", label: "Settings", icon: <IconSettings /> },
 ];
 

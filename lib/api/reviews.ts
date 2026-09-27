@@ -1,4 +1,4 @@
-import { apiFetch } from "./base";
+import { ApiError, apiFetch } from "./base";
 
 export type Review = {
   id: string;
@@ -94,12 +94,41 @@ export function createProductReview(
   comment?: string,
   token?: string | null,
 ) {
-  const params = new URLSearchParams({ rating: String(rating) });
-  if (comment) params.set("comment", comment);
-  return apiFetch<ProductReview | { error: string }>(
+  const score = Math.round(rating);
+  const trimmed = comment?.trim() || "";
+  const params = new URLSearchParams({ rating: String(score) });
+  if (trimmed) params.set("comment", trimmed);
+  return apiFetch<ProductReview | { error?: string }>(
     `/api/v1/products/${encodeURIComponent(productId)}/reviews?${params.toString()}`,
-    { method: "POST", token, body: "{}" },
-  );
+    {
+      method: "POST",
+      token,
+      body: trimmed ? { rating: score, comment: trimmed } : { rating: score },
+    },
+  ).then((res) => {
+    if (res && typeof res === "object" && "error" in res && res.error && !("id" in res)) {
+      throw new ApiError(String(res.error), 400, { detail: String(res.error), code: "review_rejected" });
+    }
+    return res as ProductReview;
+  });
+}
+
+export function reviewFailureMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401) return "Sign in to leave a review.";
+    if (err.status >= 500 || err.code === "internal_error") {
+      return "We couldn't save your review. Please try again in a moment.";
+    }
+    const detail = err.message?.trim() ?? "";
+    if (/internal server error/i.test(detail) || /^HTTP \d+/.test(detail) || /^Request failed/i.test(detail)) {
+      return "We couldn't save your review. Please try again in a moment.";
+    }
+    if (detail) return detail;
+  }
+  if (err instanceof Error && err.message.trim() && !/internal server error/i.test(err.message)) {
+    return err.message;
+  }
+  return "We couldn't save your review. Please try again in a moment.";
 }
 
 export function getMyProductReview(productId: string, token?: string | null) {
