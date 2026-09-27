@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useSessionStore } from "@/lib/state/session-store";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
@@ -90,6 +91,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     setModeState(m);
   }, []);
+
+  const accountTheme = useSessionStore((s) => s.user?.preferences?.theme);
+  useEffect(() => {
+    if (accountTheme !== "light" && accountTheme !== "dark" && accountTheme !== "system") return;
+    if (readStoredMode() === accountTheme) return;
+    setMode(accountTheme);
+  }, [accountTheme, setMode]);
 
   const toggle = useCallback(() => {
     // Cycle light → dark → system → light

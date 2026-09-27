@@ -14,7 +14,11 @@ const OPTIONS: { mode: ThemeMode; label: string; icon: string; hint: string }[] 
  * localStorage key ("midora-theme") the pre-hydration script reads, so the
  * chosen mode survives reloads with zero flash.
  */
-export default function ThemeSelector() {
+export default function ThemeSelector({
+  onChange,
+}: {
+  onChange?: (mode: ThemeMode) => void;
+}) {
   const { mode, setMode } = useTheme();
 
   return (
@@ -25,7 +29,10 @@ export default function ThemeSelector() {
           <button
             key={opt.mode}
             type="button"
-            onClick={() => setMode(opt.mode)}
+            onClick={() => {
+              setMode(opt.mode);
+              onChange?.(opt.mode);
+            }}
             aria-pressed={active}
             className={[
               "dm-focus flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors",

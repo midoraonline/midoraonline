@@ -28,6 +28,23 @@ export type LoginRequest = {
   password: string;
 };
 
+export type ThemePreference = "light" | "dark" | "system";
+
+export type NotificationPreferences = {
+  push: boolean;
+  email: boolean;
+  messages: boolean;
+  listing_approved: boolean;
+  listing_rejected: boolean;
+  reviews: boolean;
+  reports: boolean;
+};
+
+export type UserPreferences = {
+  theme: ThemePreference;
+  notifications: NotificationPreferences;
+};
+
 export type MeResponse = {
   id: string;
   email?: string | null;
@@ -35,10 +52,12 @@ export type MeResponse = {
   avatar_url?: string | null;
   phone_number?: string | null;
   phone_verified?: boolean | null;
+  bio?: string | null;
   user_role?: "customer" | "merchant" | "admin" | "staff" | null;
   email_verified?: boolean | null;
   plan_tier?: "basic" | "standard" | "premium" | null;
   plan_expires_at?: string | null;
+  preferences?: UserPreferences | null;
   /**
    * Short-lived JWT (role="authenticated") for Supabase Realtime subscriptions.
    * Passed to `supabase.realtime.setAuth()` so RLS policies bind to `auth.uid()`.
@@ -142,6 +161,12 @@ export type UpdateProfileRequest = {
   phone_number?: string;
   /** Empty string clears the avatar. */
   avatar_url?: string | null;
+  /** Empty string clears the bio. */
+  bio?: string | null;
+  preferences?: {
+    theme?: ThemePreference;
+    notifications?: Partial<NotificationPreferences>;
+  };
 };
 
 export type ChangePasswordRequest = {
@@ -152,6 +177,16 @@ export type ChangePasswordRequest = {
 export function updateProfile(body: UpdateProfileRequest) {
   return apiFetch<MeResponse>("/api/v1/auth/me", {
     method: "PATCH",
+    body,
+  });
+}
+
+/** Server stores the file as received. HEIC is converted there at full size. */
+export function uploadAvatar(file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return apiFetch<MeResponse>("/api/v1/auth/me/avatar", {
+    method: "POST",
     body,
   });
 }
