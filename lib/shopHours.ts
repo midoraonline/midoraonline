@@ -13,12 +13,16 @@ export const WEEKDAY_LABEL: Record<Weekday, string> = {
 
 export type TimeRange = { open: string; close: string };
 
-export type OpeningHours = {
-  timezone?: string;
-  open_24_hours?: boolean;
-  by_appointment?: boolean;
-  note?: string | null;
-  days?: Partial<Record<Weekday, TimeRange[]>>;
+export type DayHours = { closed: boolean; ranges: TimeRange[] };
+
+/** Stored on `shops.availability`. `days` is null when the schedule is unknown. */
+export type ShopAvailability = {
+  timezone: "Africa/Kampala";
+  open_24_hours: boolean;
+  by_appointment: boolean;
+  note: string | null;
+  legacy_text: string | null;
+  days: Record<Weekday, DayHours> | null;
 };
 
 export type DayDraft = { open: boolean; ranges: TimeRange[] };
@@ -26,11 +30,15 @@ export type DayDraft = { open: boolean; ranges: TimeRange[] };
 export type HoursDraft = {
   mode: "weekly" | "always" | "appointment";
   note: string;
+  legacyText: string;
+  /** False while the shop only has free text and the week has not been edited. */
+  daysKnown: boolean;
   days: Record<Weekday, DayDraft>;
 };
 
 const DEFAULT_RANGE: TimeRange = { open: "08:00", close: "18:00" };
 const KAMPALA = "Africa/Kampala";
+const KAMPALA_SHIFT_MS = 3 * 60 * 60 * 1000;
 
 const DAY_INDEX: Record<string, Weekday> = {
   mon: "mon",
@@ -58,11 +66,8 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 export function weekdayKey(value: unknown): Weekday | null {
-  if (typeof value === "number" && value >= 0 && value <= 6) {
-    return WEEKDAYS[value === 0 ? 6 : value - 1] ?? null;
-  }
   if (typeof value !== "string") return null;
-  return DAY_INDEX[value.trim().toLowerCase().slice(0, 9)] ?? null;
+  return DAY_INDEX[value.trim().toLowerCase()] ?? null;
 }
 
 export function parseClock(value: unknown): string | null {
@@ -80,12 +85,6 @@ function clockMinutes(clock: string): number {
   return hour * 60 + minute;
 }
 
-function formatMinutes(total: number): string {
-  const hour = Math.floor(total / 60) % 24;
-  const minute = total % 60;
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
 function parseRanges(value: unknown): TimeRange[] {
   if (!Array.isArray(value)) return [];
   const ranges: TimeRange[] = [];
@@ -94,7 +93,7 @@ function parseRanges(value: unknown): TimeRange[] {
     if (!row) continue;
     const open = parseClock(row.open ?? row.start ?? row.from);
     const close = parseClock(row.close ?? row.end ?? row.to);
-    if (open && close && close > open) ranges.push({ open, close });
+    if (open && close && open !== close) ranges.push({ open, close });
   }
   return ranges;
 }
@@ -102,20 +101,17 @@ function parseRanges(value: unknown): TimeRange[] {
 function dayFromUnknown(value: unknown): DayDraft | null {
   if (Array.isArray(value)) {
     const ranges = parseRanges(value);
-    return {
-      open: ranges.length > 0,
-      ranges: ranges.length ? ranges : [{ ...DEFAULT_RANGE }],
-    };
+    return { open: ranges.length > 0, ranges: ranges.length ? ranges : [{ ...DEFAULT_RANGE }] };
   }
   const row = asRecord(value);
   if (!row) return null;
-  const ranges = parseRanges(row.ranges ?? row.slots ?? row.hours ?? row.periods);
-  if (!ranges.length) {
-    const open = parseClock(row.open ?? row.start);
-    const close = parseClock(row.close ?? row.end);
-    if (open && close && close > open) ranges.push({ open, close });
+  const ranges = parseRanges(row.ranges ?? row.slots);
+  const closed = row.closed === true || row.is_closed === true;
+  if (!ranges.length && !closed) {
+    const open = parseClock(row.open);
+    const close = parseClock(row.close);
+    if (open && close && open !== close) ranges.push({ open, close });
   }
-  const closed = row.closed === true || row.is_closed === true || row.open === false;
   return {
     open: !closed && ranges.length > 0,
     ranges: ranges.length ? ranges : [{ ...DEFAULT_RANGE }],
@@ -124,36 +120,52 @@ function dayFromUnknown(value: unknown): DayDraft | null {
 
 export function blankHoursDraft(): HoursDraft {
   const days = {} as HoursDraft["days"];
-  for (const day of WEEKDAYS) {
-    days[day] = { open: false, ranges: [{ ...DEFAULT_RANGE }] };
-  }
-  return { mode: "weekly", note: "", days };
+  for (const day of WEEKDAYS) days[day] = { open: false, ranges: [{ ...DEFAULT_RANGE }] };
+  return { mode: "weekly", note: "", legacyText: "", daysKnown: false, days };
 }
 
-function flag(row: Record<string, unknown>, keys: string[]): boolean {
-  return keys.some((key) => row[key] === true);
+function textFromUnknown(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  return "";
 }
 
-/** Accept the new JSON shape and a few nearby spellings the API may ship. */
-export function readOpeningHours(raw: unknown): HoursDraft | null {
-  if (typeof raw === "string" && raw.trim()) {
+/** Old free-text rows, plus `{ days, hours }` objects from the previous API. */
+function legacyFromAvailability(raw: unknown): string {
+  if (typeof raw === "string") return raw.trim();
+  const row = asRecord(raw);
+  if (!row) return "";
+  if (typeof row.legacy_text === "string" && row.legacy_text.trim()) return row.legacy_text.trim();
+  const days = typeof row.days === "string" ? row.days.trim() : "";
+  const hours = typeof row.hours === "string" ? row.hours.trim() : "";
+  return [days, hours].filter(Boolean).join(" · ");
+}
+
+function readDraft(raw: unknown): HoursDraft | null {
+  if (typeof raw === "string") {
     const draft = blankHoursDraft();
-    draft.note = raw.trim().slice(0, 160);
-    return draft;
+    draft.legacyText = raw.trim();
+    return draft.legacyText ? draft : null;
   }
   const row = asRecord(raw);
   if (!row) return null;
+  const nested = asRecord(row.opening_hours);
+  const source = nested ?? row;
   const draft = blankHoursDraft();
-  const note = row.note ?? row.notes;
+  const note = source.note ?? source.notes;
   if (typeof note === "string") draft.note = note.trim().slice(0, 160);
-  const always = flag(row, ["open_24_hours", "always_open", "is_24_hours"]);
-  const appointment = flag(row, ["by_appointment", "appointment_only"]);
-  const daysRaw = row.days ?? row.week ?? row.schedule;
+  draft.legacyText = legacyFromAvailability(raw);
+  const always = source.open_24_hours === true || source.always_open === true;
+  const appointment = source.by_appointment === true || source.appointment_only === true;
+  const daysRaw = source.days ?? source.week ?? source.schedule;
+  if (daysRaw == null || typeof daysRaw === "string") {
+    if (always) draft.mode = "always";
+    else if (appointment) draft.mode = "appointment";
+    return draft;
+  }
   if (Array.isArray(daysRaw)) {
     for (const item of daysRaw) {
       const rec = asRecord(item);
-      if (!rec) continue;
-      const key = weekdayKey(rec.day ?? rec.weekday ?? rec.dow);
+      const key = rec ? weekdayKey(rec.day ?? rec.weekday) : null;
       const parsed = key ? dayFromUnknown(rec) : null;
       if (key && parsed) draft.days[key] = parsed;
     }
@@ -167,204 +179,195 @@ export function readOpeningHours(raw: unknown): HoursDraft | null {
       }
     }
   }
-  const scheduled = WEEKDAYS.some((day) => draft.days[day].open);
+  draft.daysKnown = true;
   if (always) draft.mode = "always";
-  else if (appointment && !scheduled) draft.mode = "appointment";
+  else if (appointment && !WEEKDAYS.some((day) => draft.days[day].open)) draft.mode = "appointment";
   return draft;
 }
 
 export function hoursDraftFromShop(shop: {
-  opening_hours?: unknown;
-  availability?: {
-    days?: string | null;
-    hours?: string | null;
-    opening_hours?: unknown;
-  } | null;
+  availability?: unknown;
+  availability_text?: string | null;
 }): HoursDraft {
-  const structured =
-    readOpeningHours(shop.opening_hours) ??
-    readOpeningHours(shop.availability?.opening_hours);
-  const draft = structured ?? blankHoursDraft();
-  const hasSchedule =
-    draft.mode !== "weekly" || WEEKDAYS.some((day) => draft.days[day].open);
-  if (!hasSchedule && !draft.note) {
-    const text = [shop.availability?.days, shop.availability?.hours]
-      .filter((part) => typeof part === "string" && part.trim())
-      .join(" · ");
-    if (text) draft.note = text.slice(0, 160);
+  const draft = readDraft(shop.availability) ?? blankHoursDraft();
+  if (!draft.legacyText && shop.availability_text?.trim()) {
+    draft.legacyText = shop.availability_text.trim();
   }
   return draft;
 }
 
 export function hoursAreBlank(draft: HoursDraft): boolean {
-  return (
-    draft.mode === "weekly" &&
-    !draft.note.trim() &&
-    WEEKDAYS.every((day) => !draft.days[day].open)
-  );
+  return draft.mode === "weekly" && !draft.daysKnown && !draft.note.trim();
 }
 
 export function copyMondayToWeek(draft: HoursDraft): HoursDraft {
   const source = draft.days.mon;
   const days = { ...draft.days };
   for (const day of WEEKDAYS) {
-    days[day] = {
-      open: source.open,
-      ranges: source.ranges.map((range) => ({ ...range })),
-    };
+    days[day] = { open: source.open, ranges: source.ranges.map((range) => ({ ...range })) };
   }
-  return { ...draft, days };
+  return { ...draft, daysKnown: true, days };
 }
 
-function validRanges(ranges: TimeRange[]): TimeRange[] {
-  return ranges.filter((range) => range.open && range.close && range.close > range.open);
+function spanMinutes(range: TimeRange): [number, number] | null {
+  if (!parseClock(range.open) || !parseClock(range.close)) return null;
+  const start = clockMinutes(range.open);
+  let end = clockMinutes(range.close);
+  if (start === end) return null;
+  if (end < start) end += 24 * 60;
+  return [start, end];
 }
 
-export function toOpeningHours(draft: HoursDraft): OpeningHours {
-  const note = draft.note.trim() || null;
-  if (draft.mode === "always") {
-    return { timezone: KAMPALA, open_24_hours: true, note };
-  }
-  if (draft.mode === "appointment") {
-    return { timezone: KAMPALA, by_appointment: true, note };
-  }
-  const days: OpeningHours["days"] = {};
+/** Same overlap rule as the API: a close before open crosses midnight. */
+export function hoursDraftError(draft: HoursDraft): string | null {
+  if (draft.note.trim().length > 160) return "Note must be 160 characters or fewer.";
+  if (draft.mode !== "weekly" || !draft.daysKnown) return null;
   for (const day of WEEKDAYS) {
     const row = draft.days[day];
-    days[day] = row.open ? validRanges(row.ranges) : [];
+    if (!row.open) continue;
+    const spans: [number, number][] = [];
+    for (const range of row.ranges) {
+      if (!range.open || !range.close) continue;
+      if (range.open === range.close) {
+        return `${WEEKDAY_LABEL[day]} has a range that starts and ends at the same time.`;
+      }
+      const span = spanMinutes(range);
+      if (span) spans.push(span);
+    }
+    spans.sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < spans.length; i += 1) {
+      if (spans[i][0] < spans[i - 1][1]) {
+        return `${WEEKDAY_LABEL[day]} has overlapping hours.`;
+      }
+    }
   }
-  return { timezone: KAMPALA, note, days };
+  return null;
 }
 
-function joinNote(body: string, note: string): string {
-  const extra = note.trim();
-  if (!extra || body.includes(extra)) return body;
-  return `${body} · ${extra}`;
-}
-
-export function summarizeHours(draft: HoursDraft): string | null {
-  if (draft.mode === "always") return joinNote("Open 24 hours", draft.note);
-  if (draft.mode === "appointment") return joinNote("By appointment", draft.note);
-  const parts: string[] = [];
-  let index = 0;
-  while (index < WEEKDAYS.length) {
-    const day = WEEKDAYS[index];
+export function shopHoursWritePayload(draft: HoursDraft): { availability: ShopAvailability } {
+  const note = draft.note.trim().slice(0, 160) || null;
+  const legacy_text = draft.legacyText.trim() || null;
+  if (draft.mode === "always") {
+    return {
+      availability: {
+        timezone: KAMPALA,
+        open_24_hours: true,
+        by_appointment: false,
+        note,
+        legacy_text,
+        days: null,
+      },
+    };
+  }
+  if (draft.mode === "appointment" || !draft.daysKnown) {
+    return {
+      availability: {
+        timezone: KAMPALA,
+        open_24_hours: false,
+        by_appointment: draft.mode === "appointment",
+        note,
+        legacy_text,
+        days: null,
+      },
+    };
+  }
+  const days = {} as Record<Weekday, DayHours>;
+  for (const day of WEEKDAYS) {
     const row = draft.days[day];
-    const ranges = row.open ? validRanges(row.ranges) : [];
-    if (!ranges.length) {
-      index += 1;
-      continue;
-    }
-    const key = ranges.map((range) => `${range.open}-${range.close}`).join(",");
-    let end = index;
-    while (end + 1 < WEEKDAYS.length) {
-      const next = draft.days[WEEKDAYS[end + 1]];
-      const nextKey = next.open
-        ? validRanges(next.ranges).map((range) => `${range.open}-${range.close}`).join(",")
-        : "";
-      if (nextKey !== key) break;
-      end += 1;
-    }
-    const label =
-      end === index
-        ? WEEKDAY_LABEL[day]
-        : `${WEEKDAY_LABEL[day]}–${WEEKDAY_LABEL[WEEKDAYS[end]]}`;
-    const hours = ranges.map((range) => `${range.open}–${range.close}`).join(", ");
-    parts.push(`${label} ${hours}`);
-    index = end + 1;
+    const ranges = row.open
+      ? row.ranges.filter((range) => range.open && range.close && range.open !== range.close)
+      : [];
+    days[day] = { closed: !row.open || ranges.length === 0, ranges: row.open ? ranges : [] };
   }
-  if (!parts.length) return draft.note.trim() || null;
-  return joinNote(parts.join("; "), draft.note);
-}
-
-export function shopHoursWritePayload(draft: HoursDraft): {
-  opening_hours: OpeningHours;
-  availability: {
-    days: null;
-    hours: string | null;
-    opening_hours: OpeningHours;
-  };
-} {
-  const opening_hours = toOpeningHours(draft);
   return {
-    opening_hours,
     availability: {
-      days: null,
-      hours: summarizeHours(draft),
-      opening_hours,
+      timezone: KAMPALA,
+      open_24_hours: false,
+      by_appointment: false,
+      note,
+      legacy_text,
+      days,
     },
   };
 }
 
-function kampalaNow(now: Date): { day: Weekday; minutes: number } {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: KAMPALA,
-      weekday: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    })
-      .formatToParts(now)
-      .map((part) => [part.type, part.value]),
-  );
-  const day = weekdayKey(parts.weekday) ?? "mon";
-  const hour = Number(parts.hour);
-  const minute = Number(parts.minute);
+type KampalaNow = { dayStamp: number; minutes: number; weekday: Weekday };
+
+function kampalaNow(now: Date): KampalaNow {
+  const shifted = new Date(now.getTime() + KAMPALA_SHIFT_MS);
+  const utcDay = shifted.getUTCDay();
   return {
-    day,
-    minutes: (Number.isFinite(hour) ? hour % 24 : 0) * 60 + (Number.isFinite(minute) ? minute : 0),
+    dayStamp: Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()),
+    minutes: shifted.getUTCHours() * 60 + shifted.getUTCMinutes(),
+    weekday: WEEKDAYS[utcDay === 0 ? 6 : utcDay - 1],
   };
 }
 
-function clockInKampala(value: string): string | null {
-  const direct = parseClock(value);
-  if (direct && value.trim().length <= 5) return direct;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return direct;
-  return formatMinutes(kampalaNow(date).minutes);
+function weekdayFromStamp(stamp: number): Weekday {
+  const utcDay = new Date(stamp).getUTCDay();
+  return WEEKDAYS[utcDay === 0 ? 6 : utcDay - 1];
 }
 
-function clauseFromNext(next: unknown, open: boolean): string | null {
-  if (typeof next === "string") {
-    const clock = clockInKampala(next);
-    return clock ? (open ? `Closes ${clock}` : `Opens ${clock}`) : null;
+function formatClock(totalMinutes: number): string {
+  const mins = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+}
+
+function localNextChange(draft: HoursDraft, now: Date): { open: boolean | null; next: string | null } {
+  if (draft.mode === "always") return { open: true, next: "Open 24 hours" };
+  if (!draft.daysKnown) {
+    return draft.mode === "appointment"
+      ? { open: null, next: "By appointment" }
+      : { open: null, next: null };
   }
-  const row = asRecord(next);
-  if (!row) return null;
-  const action = String(row.action ?? row.kind ?? row.type ?? "").toLowerCase();
-  const at = row.at ?? row.time ?? row.when ?? row.datetime;
-  const clock = typeof at === "string" ? clockInKampala(at) : null;
-  const day = weekdayKey(row.weekday ?? row.day);
-  const closes = action.startsWith("close");
-  if (!clock) return null;
-  if (closes || (open && !action.startsWith("open"))) return `Closes ${clock}`;
-  if (day) return `Opens ${WEEKDAY_LABEL[day]} ${clock}`;
-  return `Opens ${clock}`;
-}
-
-function localClause(draft: HoursDraft, now: Date): { open: boolean; clause: string | null } {
-  if (draft.mode === "always") return { open: true, clause: null };
-  if (draft.mode === "appointment") return { open: false, clause: null };
-  const { day, minutes } = kampalaNow(now);
-  const start = WEEKDAYS.indexOf(day);
-  const today = draft.days[day];
-  if (today.open) {
-    for (const range of validRanges(today.ranges)) {
-      if (minutes >= clockMinutes(range.open) && minutes < clockMinutes(range.close)) {
-        return { open: true, clause: `Closes ${range.close}` };
-      }
+  const here = kampalaNow(now);
+  const nowMs = here.dayStamp + here.minutes * 60_000;
+  const intervals: { begin: number; end: number }[] = [];
+  for (let offset = -1; offset <= 7; offset += 1) {
+    const dayStamp = here.dayStamp + offset * 86_400_000;
+    const spec = draft.days[weekdayFromStamp(dayStamp)];
+    if (!spec.open) continue;
+    for (const range of spec.ranges) {
+      const span = spanMinutes(range);
+      if (!span) continue;
+      const begin = dayStamp + span[0] * 60_000;
+      const end = dayStamp + span[1] * 60_000;
+      intervals.push({ begin, end });
     }
-    const later = validRanges(today.ranges).find((range) => clockMinutes(range.open) > minutes);
-    if (later) return { open: false, clause: `Opens ${later.open}` };
   }
-  for (let step = 1; step <= 7; step += 1) {
-    const next = WEEKDAYS[(start + step) % 7];
-    const row = draft.days[next];
-    const first = row.open ? validRanges(row.ranges)[0] : undefined;
-    if (first) return { open: false, clause: `Opens ${WEEKDAY_LABEL[next]} ${first.open}` };
+  intervals.sort((a, b) => a.begin - b.begin);
+  for (const interval of intervals) {
+    if (interval.begin <= nowMs && nowMs < interval.end) {
+      const endStamp = Date.UTC(
+        new Date(interval.end).getUTCFullYear(),
+        new Date(interval.end).getUTCMonth(),
+        new Date(interval.end).getUTCDate(),
+      );
+      const clock = formatClock(Math.floor((interval.end - endStamp) / 60_000));
+      if (endStamp === here.dayStamp) return { open: true, next: `Closes ${clock}` };
+      return { open: true, next: `Closes ${WEEKDAY_LABEL[weekdayFromStamp(endStamp)]} ${clock}` };
+    }
   }
-  return { open: false, clause: null };
+  for (const interval of intervals) {
+    if (interval.begin > nowMs) {
+      const stamp = Date.UTC(
+        new Date(interval.begin).getUTCFullYear(),
+        new Date(interval.begin).getUTCMonth(),
+        new Date(interval.begin).getUTCDate(),
+      );
+      const clock = formatClock(Math.floor((interval.begin - stamp) / 60_000));
+      return { open: false, next: `Opens ${WEEKDAY_LABEL[weekdayFromStamp(stamp)]} ${clock}` };
+    }
+  }
+  if (draft.mode === "appointment") return { open: false, next: "By appointment" };
+  return { open: false, next: null };
+}
+
+function statusLine(open: boolean | null, next: string | null): string | null {
+  if (next === "Open 24 hours" || next === "By appointment") return next;
+  if (open === true) return next ? `Open now · ${next}` : "Open now";
+  if (open === false) return next ? `Closed · ${next}` : "Closed";
+  return null;
 }
 
 export type ShopHoursView = {
@@ -374,74 +377,45 @@ export type ShopHoursView = {
 };
 
 function weekLines(draft: HoursDraft): { label: string; value: string }[] {
+  if (!draft.daysKnown && draft.mode === "weekly") return [];
   return WEEKDAYS.map((day) => {
     if (draft.mode === "always") return { label: WEEKDAY_LABEL[day], value: "Open 24 hours" };
     if (draft.mode === "appointment") return { label: WEEKDAY_LABEL[day], value: "By appointment" };
-    const ranges = draft.days[day].open ? validRanges(draft.days[day].ranges) : [];
+    const ranges = draft.days[day].open
+      ? draft.days[day].ranges.filter((range) => range.open && range.close && range.open !== range.close)
+      : [];
     return {
       label: WEEKDAY_LABEL[day],
-      value: ranges.length
-        ? ranges.map((range) => `${range.open}–${range.close}`).join(", ")
-        : "Closed",
+      value: ranges.length ? ranges.map((range) => `${range.open}–${range.close}`).join(", ") : "Closed",
     };
   });
 }
 
 export function describeShopHours(
   shop: {
-    opening_hours?: unknown;
+    availability?: unknown;
+    availability_text?: string | null;
     is_open_now?: boolean | null;
-    next_change?: unknown;
-    availability?: {
-      days?: string | null;
-      hours?: string | null;
-      opening_hours?: unknown;
-      is_open_now?: boolean | null;
-      next_change?: unknown;
-    } | null;
+    next_change?: string | null;
   },
   now = new Date(),
 ): ShopHoursView {
-  const opening = shop.opening_hours ?? shop.availability?.opening_hours;
-  const draft = readOpeningHours(opening);
-  const freeText = [shop.availability?.days, shop.availability?.hours]
-    .filter((part) => typeof part === "string" && part.trim())
-    .join(" · ");
-  const explicitDays = Boolean(
-    asRecord(opening)?.days ?? asRecord(opening)?.week ?? asRecord(opening)?.schedule,
-  );
-  const hasWeek =
-    draft != null &&
-    (draft.mode !== "weekly" || WEEKDAYS.some((day) => draft.days[day].open) || explicitDays);
-  const apiOpen = shop.is_open_now ?? shop.availability?.is_open_now;
-  if (!draft || !hasWeek) {
-    if (typeof apiOpen === "boolean") {
-      const clause = clauseFromNext(shop.next_change ?? shop.availability?.next_change, apiOpen);
-      return {
-        status: apiOpen
-          ? clause ? `Open now · ${clause}` : "Open now"
-          : clause ? `Closed · ${clause}` : "Closed",
-        week: [],
-        note: draft?.note.trim() || null,
-      };
+  const draft = hoursDraftFromShop(shop);
+  const note = draft.note.trim() || null;
+  const freeText = shop.availability_text?.trim() || draft.legacyText || null;
+  const serverSent = shop.is_open_now !== undefined || shop.next_change !== undefined;
+  if (!draft.daysKnown && draft.mode !== "always") {
+    if (serverSent && (shop.next_change === "Open 24 hours" || shop.next_change === "By appointment")) {
+      return { status: shop.next_change, week: [], note };
     }
-    return { status: freeText || draft?.note || null, week: [], note: null };
+    if (draft.mode === "appointment") return { status: "By appointment", week: [], note };
+    return { status: freeText, week: [], note };
   }
-
-  const local = localClause(draft, now);
-  const open = typeof apiOpen === "boolean" ? apiOpen : local.open;
-  const apiClause = clauseFromNext(shop.next_change ?? shop.availability?.next_change, open);
-  const clause = apiClause ?? (typeof apiOpen === "boolean" && apiOpen !== local.open ? null : local.clause);
-
-  let status: string;
-  if (draft.mode === "always") status = "Open 24 hours";
-  else if (draft.mode === "appointment") status = "By appointment";
-  else if (open) status = clause ? `Open now · ${clause}` : "Open now";
-  else status = clause ? `Closed · ${clause}` : "Closed";
-
-  return {
-    status,
-    week: weekLines(draft),
-    note: draft.note.trim() || null,
-  };
+  if (serverSent) {
+    const next = shop.next_change ?? null;
+    const open = shop.is_open_now ?? null;
+    return { status: statusLine(open, next) ?? freeText, week: weekLines(draft), note };
+  }
+  const local = localNextChange(draft, now);
+  return { status: statusLine(local.open, local.next) ?? freeText, week: weekLines(draft), note };
 }

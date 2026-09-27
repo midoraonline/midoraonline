@@ -12,7 +12,7 @@ import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
-import { hoursAreBlank, hoursDraftFromShop, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
+import { hoursAreBlank, hoursDraftError, hoursDraftFromShop, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
 import type { LatLng } from "@/lib/geo";
 
 const STARTER_PROMPTS = [
@@ -261,6 +261,11 @@ export default function CreateShopConcierge({
     }
     if (!confirmForm.name.trim()) {
       setError("Shop name is required.");
+      return;
+    }
+    const hoursError = hoursDraftError(confirmForm.hours);
+    if (hoursError) {
+      setError(hoursError);
       return;
     }
     setError(null);

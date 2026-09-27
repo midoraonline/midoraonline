@@ -9,6 +9,7 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import ShopHoursStatus from "@/components/shop/ShopHoursStatus";
 import { locationDisplay } from "@/components/shop/shopUtils";
+import { describeShopHours } from "@/lib/shopHours";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export default async function ShopDetails({
@@ -58,7 +59,11 @@ export default async function ShopDetails({
     extraContacts.length > 0 ||
     socials.length > 0 ||
     Boolean(location) ||
-    Boolean(shop.opening_hours || shop.availability?.days || shop.availability?.hours || shop.availability?.opening_hours);
+    Boolean(
+      describeShopHours(shop).status ||
+        shop.availability ||
+        shop.availability_text,
+    );
 
   const productsSection = (
     <>
@@ -147,19 +152,16 @@ export default async function ShopDetails({
             <span className="min-w-0 break-words text-foreground">{location}</span>
           </li>
         ) : null}
-        {shop.opening_hours ||
-        shop.availability?.opening_hours ||
-        shop.availability?.days ||
-        shop.availability?.hours ? (
+        {shop.availability || shop.availability_text || shop.is_open_now != null || shop.next_change ? (
           <li className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-3">
             <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
               Hours
             </span>
             <ShopHoursStatus
-              openingHours={shop.opening_hours}
+              availability={shop.availability}
+              availabilityText={shop.availability_text}
               isOpenNow={shop.is_open_now}
               nextChange={shop.next_change}
-              availability={shop.availability}
             />
           </li>
         ) : null}

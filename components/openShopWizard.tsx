@@ -14,7 +14,7 @@ import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
-import { blankHoursDraft, hoursAreBlank, shopHoursWritePayload } from "@/lib/shopHours";
+import { blankHoursDraft, hoursAreBlank, hoursDraftError, shopHoursWritePayload } from "@/lib/shopHours";
 
 function slugFromName(name: string): string {
   return name
@@ -47,6 +47,11 @@ export default function OpenShopWizard() {
     e.preventDefault();
     if (!name.trim()) {
       setError("Please enter a shop name.");
+      return;
+    }
+    const hoursError = hoursDraftError(hours);
+    if (hoursError) {
+      setError(hoursError);
       return;
     }
     if (!session.isAuthenticated) {

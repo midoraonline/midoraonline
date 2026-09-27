@@ -23,6 +23,7 @@ import {
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import {
+  hoursDraftError,
   hoursDraftFromShop,
   shopHoursWritePayload,
   type HoursDraft,
@@ -255,6 +256,11 @@ function DetailsTab({
     }
     if (!canSubmit) return;
 
+    const hoursError = hoursDraftError(form.hours);
+    if (hoursError) {
+      toast.error(hoursError);
+      return;
+    }
     const hoursChanged = JSON.stringify(form.hours) !== JSON.stringify(hoursDraftFromShop(shop));
     const hoursPayload = hoursChanged ? shopHoursWritePayload(form.hours) : null;
     const payload = {
@@ -265,7 +271,7 @@ function DetailsTab({
       shop_email: form.shopEmail.trim() || null,
       whatsapp_number: form.whatsappNumber.trim() || null,
       ...(hoursPayload
-        ? { opening_hours: hoursPayload.opening_hours, availability: hoursPayload.availability }
+        ? { availability: hoursPayload.availability }
         : { availability: shop.availability ?? null }),
       location: buildShopLocationPayload(form.location, form.locationCoords),
       shop_type: form.shopType,

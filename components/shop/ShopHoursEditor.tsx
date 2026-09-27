@@ -1,6 +1,13 @@
 "use client";
 
-import { WEEKDAYS, WEEKDAY_LABEL, copyMondayToWeek, type HoursDraft, type TimeRange } from "@/lib/shopHours";
+import {
+  WEEKDAYS,
+  WEEKDAY_LABEL,
+  copyMondayToWeek,
+  hoursDraftError,
+  type HoursDraft,
+  type TimeRange,
+} from "@/lib/shopHours";
 
 type Props = {
   value: HoursDraft;
@@ -10,6 +17,7 @@ type Props = {
 function setDay(draft: HoursDraft, day: (typeof WEEKDAYS)[number], patch: Partial<HoursDraft["days"]["mon"]>): HoursDraft {
   return {
     ...draft,
+    daysKnown: true,
     days: { ...draft.days, [day]: { ...draft.days[day], ...patch } },
   };
 }
@@ -21,6 +29,8 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
     );
     onChange(setDay(value, day, { ranges }));
   }
+
+  const rangeError = hoursDraftError(value);
 
   return (
     <div className="space-y-3">
@@ -47,6 +57,10 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
           </button>
         ))}
       </div>
+
+      {value.legacyText && !value.daysKnown && value.mode === "weekly" ? (
+        <p className="text-xs text-muted">{value.legacyText}</p>
+      ) : null}
 
       {value.mode === "weekly" ? (
         <div className="space-y-2">
@@ -147,12 +161,17 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
         <input
           id="shop-hours-note"
           value={value.note}
-          maxLength={120}
+          maxLength={160}
           onChange={(e) => onChange({ ...value, note: e.target.value })}
           placeholder="e.g. Kitchen closes 30 minutes early"
           className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
         />
       </div>
+      {rangeError ? (
+        <p role="alert" className="text-xs font-medium text-[color:var(--error)]">
+          {rangeError}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { apiFetch } from "./base";
 import type { Product } from "./products";
-import type { OpeningHours } from "@/lib/shopHours";
+import type { ShopAvailability } from "@/lib/shopHours";
 import { realShops } from "@/lib/shop/realShops";
 
 export type ShopType = "product" | "service" | "both";
@@ -16,13 +16,12 @@ export type SocialLink = {
   url: string;
 };
 
-export type Availability = {
+/** New object, or the previous free-text / `{ days, hours }` value. */
+export type Availability = ShopAvailability | string | {
   days?: string | null;
   hours?: string | null;
-  /** Structured hours, kept on this JSON so the current API still stores them. */
-  opening_hours?: OpeningHours | null;
-  is_open_now?: boolean | null;
-  next_change?: unknown;
+  legacy_text?: string | null;
+  note?: string | null;
 };
 
 export type ShopLocation = {
@@ -53,9 +52,9 @@ export type Shop = {
   contacts?: Contact[] | null;
   social_links?: SocialLink[] | null;
   availability?: Availability | null;
-  opening_hours?: OpeningHours | null;
+  availability_text?: string | null;
   is_open_now?: boolean | null;
-  next_change?: unknown;
+  next_change?: string | null;
   theme_config?: ThemeConfig | null;
   logo_url?: string | null;
   subscription_end_date?: string | null;
@@ -342,8 +341,7 @@ export type CreateShopRequest = {
   contacts?: Contact[];
   social_links?: SocialLink[];
   location?: ShopLocation;
-  availability?: Availability;
-  opening_hours?: OpeningHours | null;
+  availability?: Availability | null;
   theme_config?: ThemeConfig;
   shop_type?: ShopType;
   category?: string;
@@ -375,7 +373,6 @@ export type UpdateShopRequest = Partial<
   whatsapp_number?: string | null;
   location?: ShopLocation | null;
   availability?: Availability | null;
-  opening_hours?: OpeningHours | null;
   is_active?: boolean;
 };
 
