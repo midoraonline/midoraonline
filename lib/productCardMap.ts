@@ -10,6 +10,7 @@ import {
   productPrimaryImage,
 } from "@/lib/api/products";
 import type { SearchProductItem } from "@/lib/api/search";
+import { readCardRating } from "@/lib/cardRating";
 import { productPageSlug } from "@/lib/productUrl";
 
 type ShopLike = {
@@ -67,11 +68,6 @@ export const SHOP_TRUST_LABEL: Record<ShopTrustLevel, string> = {
   identity: "Identity Verified",
   registered: "Registered",
 };
-
-function ratingFromAverage(avg?: number | null): number {
-  if (avg == null || Number.isNaN(Number(avg))) return 0;
-  return Number(avg);
-}
 
 function normalizeTrustBadges(raw: unknown): string[] {
   if (!Array.isArray(raw)) return ["shop_listed"];
@@ -163,8 +159,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
     updated_at: p.updated_at ?? p.created_at ?? null,
     location_name: p.location_name ?? null,
     item_type: p.item_type ?? null,
-    rating: ratingFromAverage(p.average_rating),
-    reviewCount: p.review_count ?? 0,
+    ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
   };
@@ -215,8 +210,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     updated_at: item.updated_at ?? item.created_at ?? null,
     location_name: item.location_name ?? null,
     item_type: item.item_type ?? null,
-    rating: ratingFromAverage(item.average_rating),
-    reviewCount: item.review_count ?? 0,
+    ...readCardRating(item),
     negotiable: item.is_negotiable !== false,
     listing_meta: item.listing_meta ?? null,
   };
@@ -268,8 +262,7 @@ export function productToCard(
     updated_at: product.updated_at ?? product.created_at ?? null,
     location_name: product.location_name ?? null,
     item_type: product.item_type ?? null,
-    rating: ratingFromAverage(product.average_rating),
-    reviewCount: product.review_count ?? 0,
+    ...readCardRating(product),
     negotiable: product.is_negotiable !== false,
     listing_meta: product.listing_meta ?? null,
   };
@@ -318,8 +311,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
     boosted: false,
     updated_at: p.created_at ?? null,
     item_type: p.item_type ?? null,
-    rating: ratingFromAverage(p.average_rating),
-    reviewCount: p.review_count ?? 0,
+    ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
   };
@@ -364,8 +356,7 @@ export function likedProductToCard(p: LikedProduct): ProductCardData {
     boosted: false,
     updated_at: p.created_at ?? null,
     item_type: p.item_type ?? null,
-    rating: ratingFromAverage(p.average_rating),
-    reviewCount: p.review_count ?? 0,
+    ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
   };

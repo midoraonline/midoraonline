@@ -320,6 +320,7 @@ export default function HomeLanding({
           onSelectionChange={setCategoryFilter}
           showHeader={false}
           browseAllHref="/products"
+          showCreateShop
         />
         <ProductFilters
           products={products}

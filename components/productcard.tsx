@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
+import { ImageIcon, MapPin, Play, Zap } from "lucide-react";
+import StarRating from "@/components/StarRating";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -75,8 +76,8 @@ export type ProductCardData = {
   item_type?: string | null;
   likeCount?: number;
   isLiked?: boolean;
-  rating?: number;
-  reviewCount?: number;
+  rating?: number | null;
+  reviewCount?: number | null;
   negotiable?: boolean;
   listing_meta?: Record<string, unknown> | null;
 };
@@ -328,7 +329,6 @@ export default function ProductCard({
     : 0;
   const price = isDiscounted ? product.discountPriceUGX! : product.priceUGX;
   const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
-  const ratingValue = product.rating ?? 0;
   const listingKind = normalizeListingKind(product.item_type);
   const showKindBadge = listingKind !== "product";
   const coverUrls = coverMediaUrls(product);
@@ -439,19 +439,15 @@ export default function ProductCard({
         <span className="truncate font-medium text-foreground/80">{locationLabel}</span>
       </span>
       {listingKind === "product" || textFirst ? trustMark : null}
-      <span className="inline-flex shrink-0 items-center gap-0.5">
-        <Star
-          className={`size-3 ${ratingValue > 0 ? "fill-amber-400 text-amber-400" : "text-muted"}`}
-          aria-hidden
-        />
-        <span
-          className={`font-semibold tabular-nums ${
-            ratingValue > 0 ? "text-foreground" : "text-muted"
-          }`}
-        >
-          {ratingValue.toFixed(1)}
+      {product.rating != null && product.rating > 0 ? (
+        <span className="shrink-0">
+          <StarRating rating={product.rating} count={product.reviewCount} size="xs" />
         </span>
-      </span>
+      ) : (
+        <span className="shrink-0 whitespace-nowrap text-[10px] font-medium text-muted sm:text-[11px]">
+          No reviews yet
+        </span>
+      )}
     </div>
   );
 
