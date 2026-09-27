@@ -11,8 +11,10 @@ import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
+import { blankHoursDraft, hoursAreBlank, shopHoursWritePayload } from "@/lib/shopHours";
 
 function slugFromName(name: string): string {
   return name
@@ -39,6 +41,7 @@ export default function OpenShopWizard() {
   const [locationCoords, setLocationCoords] = useState<LatLng | null>(null);
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
   const [category, setCategory] = useState("");
+  const [hours, setHours] = useState(blankHoursDraft);
 
   async function handleCreateShop(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +71,7 @@ export default function OpenShopWizard() {
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
         location: buildShopLocationPayload(locationDisplay, locationCoords) ?? undefined,
+        ...(hoursAreBlank(hours) ? {} : shopHoursWritePayload(hours)),
         shop_type: shopType,
         category: category.trim() || undefined,
         contacts: [],
@@ -225,6 +229,14 @@ export default function OpenShopWizard() {
               onChange={setWhatsappNumber}
               placeholder="700 000 000"
             />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Opening hours
+            </p>
+            <p className="text-xs text-muted">Times are in Kampala (EAT).</p>
+            <ShopHoursEditor value={hours} onChange={setHours} />
           </div>
 
           {/* Location */}

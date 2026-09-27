@@ -61,6 +61,7 @@ export default function FallbackImage({
       height={fill ? undefined : height}
       sizes={sizes}
       priority={priority}
+      loading={priority ? undefined : "lazy"}
       className={className}
       style={style}
       unoptimized={userMediaUnoptimized(src)}

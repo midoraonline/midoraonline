@@ -21,6 +21,8 @@ export type ApiFetchOptions = {
   cache?: RequestCache;
   /** fetch keepalive — survives reload. Keep the body under 64KB. */
   keepalive?: boolean;
+  /** One retry on timeout, network loss, or a gateway cold start. */
+  coldStartRetry?: boolean;
 };
 
 export type ApiErrorPayload = {
@@ -162,18 +164,45 @@ async function tryRefreshCookie(): Promise<boolean> {
   if (!inflightRefresh) {
     inflightRefresh = (async () => {
       try {
-        const res = await apiHttp.request({
+        let res = await apiHttp.request({
           url: "/api/dev-proxy/api/v1/auth/refresh",
           method: "POST",
           data: {},
           headers: { "Content-Type": "application/json" },
           withCredentials: true,
-          timeout: 8_000,
+          timeout: 25_000,
         });
+        if (
+          epoch === refreshEpoch &&
+          (res.status === 408 || res.status === 502 || res.status === 503 || res.status === 504)
+        ) {
+          res = await apiHttp.request({
+            url: "/api/dev-proxy/api/v1/auth/refresh",
+            method: "POST",
+            data: {},
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+            timeout: 25_000,
+          });
+        }
         if (epoch !== refreshEpoch) return false;
         return res.status >= 200 && res.status < 300;
       } catch {
-        return false;
+        if (epoch !== refreshEpoch) return false;
+        try {
+          const res = await apiHttp.request({
+            url: "/api/dev-proxy/api/v1/auth/refresh",
+            method: "POST",
+            data: {},
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+            timeout: 25_000,
+          });
+          if (epoch !== refreshEpoch) return false;
+          return res.status >= 200 && res.status < 300;
+        } catch {
+          return false;
+        }
       } finally {
         if (epoch === refreshEpoch) inflightRefresh = null;
       }
@@ -182,9 +211,22 @@ async function tryRefreshCookie(): Promise<boolean> {
   return inflightRefresh;
 }
 
+function isColdStartError(err: unknown): boolean {
+  if (!axios.isAxiosError(err)) return false;
+  if (err.code === "ERR_CANCELED" && err.config?.signal?.aborted) return false;
+  return (
+    err.code === "ECONNABORTED" ||
+    err.code === "ERR_NETWORK" ||
+    err.code === "ECONNRESET" ||
+    err.code === "ETIMEDOUT" ||
+    err.code === "ERR_CANCELED"
+  );
+}
+
 export async function apiFetch<T>(
   path: string,
   opts: ApiFetchOptions = {},
+  attempt = 0,
 ): Promise<T> {
   const {
     token,
@@ -198,6 +240,7 @@ export async function apiFetch<T>(
     method = "GET",
     signal,
     keepalive = false,
+    coldStartRetry = false,
   } = opts;
 
   const explicitToken = typeof token === "string" && token.length > 0 ? token : null;
@@ -256,6 +299,9 @@ export async function apiFetch<T>(
     responseData = dispatched.responseData;
     contentType = dispatched.contentType;
   } catch (e) {
+    if (coldStartRetry && attempt < 1 && isColdStartError(e)) {
+      return apiFetch<T>(path, opts, attempt + 1);
+    }
     if (axios.isCancel(e) || (e instanceof AxiosError && e.code === "ERR_CANCELED")) {
       throw new ApiError("Request timed out", 0, { code: "timeout" });
     }
@@ -267,6 +313,14 @@ export async function apiFetch<T>(
       0,
       { code: "network_error" },
     );
+  }
+
+  if (
+    coldStartRetry &&
+    attempt < 1 &&
+    (status === 408 || status === 502 || status === 503 || status === 504)
+  ) {
+    return apiFetch<T>(path, opts, attempt + 1);
   }
 
   if (

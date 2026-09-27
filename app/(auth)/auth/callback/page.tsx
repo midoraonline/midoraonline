@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { apiAuth } from "@/lib/api";
 import { establishGoogleCallbackSession } from "@/lib/auth/establish-session";
 import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
@@ -96,7 +97,10 @@ export default function GoogleAuthCallbackPage() {
       <p className="mt-2 text-sm text-muted">{message}</p>
 
       {status === "processing" ? (
-        <p className="mt-4 text-sm text-muted">Please wait a moment...</p>
+        <p className="mt-4 inline-flex items-center gap-2 text-sm text-muted">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          Please wait a moment...
+        </p>
       ) : null}
 
       {status === "error" ? (

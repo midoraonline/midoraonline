@@ -10,7 +10,9 @@ import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
+import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
+import { hoursAreBlank, hoursDraftFromShop, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
 import type { LatLng } from "@/lib/geo";
 
 const STARTER_PROMPTS = [
@@ -43,8 +45,11 @@ type ConfirmForm = {
   locationDisplay: string;
   category: string;
   availability: string;
+  hours: HoursDraft;
   shop_type: string;
 };
+
+type TextField = Exclude<keyof ConfirmForm, "hours">;
 
 function fromSuggestion(s: SuggestedShop): ConfirmForm {
   return {
@@ -58,6 +63,9 @@ function fromSuggestion(s: SuggestedShop): ConfirmForm {
     locationDisplay: s.location ?? "",
     category: s.category ?? "",
     availability: s.availability ?? "",
+    hours: hoursDraftFromShop({
+      availability: s.availability ? { hours: s.availability } : null,
+    }),
     shop_type: s.shop_type ?? "product",
   };
 }
@@ -157,7 +165,7 @@ export default function CreateShopConcierge({
   const [confirmForm, setConfirmForm] = useState<ConfirmForm | null>(null);
   const [locationCoords, setLocationCoords] = useState<LatLng | null>(null);
   const [pendingSuggestions, setPendingSuggestions] = useState<
-    Set<keyof ConfirmForm>
+    Set<TextField>
   >(new Set());
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -219,14 +227,14 @@ export default function CreateShopConcierge({
         const form = fromSuggestion(s);
         setConfirmForm(form);
         setLocationCoords(null);
-        const suggested: Set<keyof ConfirmForm> = new Set();
+        const suggested: Set<TextField> = new Set();
         (
           [
             "description",
             "about",
             "category",
             "availability",
-          ] as (keyof ConfirmForm)[]
+          ] as (TextField)[]
         ).forEach((key) => {
           if (form[key]?.toString().trim()) suggested.add(key);
         });
@@ -270,9 +278,7 @@ export default function CreateShopConcierge({
           confirmForm.locationDisplay,
           locationCoords,
         ) ?? undefined,
-        availability: confirmForm.availability.trim()
-          ? { hours: confirmForm.availability.trim() }
-          : undefined,
+        ...(hoursAreBlank(confirmForm.hours) ? {} : shopHoursWritePayload(confirmForm.hours)),
         shop_type: confirmForm.shop_type as apiShops.ShopType,
         category: confirmForm.category.trim() || undefined,
         contacts: [],
@@ -287,7 +293,7 @@ export default function CreateShopConcierge({
     }
   }
 
-  function acceptSuggestion(field: keyof ConfirmForm) {
+  function acceptSuggestion(field: TextField) {
     setPendingSuggestions((prev) => {
       const next = new Set(prev);
       next.delete(field);
@@ -295,7 +301,7 @@ export default function CreateShopConcierge({
     });
   }
 
-  function dismissSuggestion(field: keyof ConfirmForm) {
+  function dismissSuggestion(field: TextField) {
     setConfirmForm((f) => (f ? { ...f, [field]: "" } : f));
     setPendingSuggestions((prev) => {
       const next = new Set(prev);
@@ -304,7 +310,7 @@ export default function CreateShopConcierge({
     });
   }
 
-  function field(key: keyof ConfirmForm, value: string) {
+  function field(key: TextField, value: string) {
     setConfirmForm((f) => (f ? { ...f, [key]: value } : f));
     setPendingSuggestions((prev) => {
       const next = new Set(prev);
@@ -511,25 +517,22 @@ export default function CreateShopConcierge({
                 className="pt-1"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2 sm:col-span-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Hours / availability
+                Opening hours
               </label>
-              {pendingSuggestions.has("availability") ? (
+              {pendingSuggestions.has("availability") && f.availability.trim() ? (
                 <AISuggestion
                   label="availability"
                   value={f.availability}
                   onAccept={() => acceptSuggestion("availability")}
                   onEdit={() => dismissSuggestion("availability")}
                 />
-              ) : (
-                <input
-                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
-                  value={f.availability}
-                  onChange={(e) => field("availability", e.target.value)}
-                  placeholder="e.g. Mon–Fri 9am–6pm"
-                />
-              )}
+              ) : null}
+              <ShopHoursEditor
+                value={f.hours}
+                onChange={(hours) => setConfirmForm((current) => (current ? { ...current, hours } : current))}
+              />
             </div>
           </div>
 

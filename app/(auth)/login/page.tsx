@@ -71,7 +71,6 @@ function LoginPageInner() {
           ? err.message
           : "Unable to sign in. Please check your details."
       );
-    } finally {
       setLoading(false);
     }
   }

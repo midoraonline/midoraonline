@@ -2,7 +2,7 @@ import axios from "axios";
 
 import { apiAuth, apiShops } from "@/lib/api";
 import type { MeResponse, TokenPair } from "@/lib/api/auth";
-import { ApiError, apiFetch, apiHttp } from "@/lib/api/base";
+import { apiFetch, apiHttp } from "@/lib/api/base";
 import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
 import {
   claimSessionWrite,
@@ -15,38 +15,38 @@ import { useSessionStore } from "@/lib/state/session-store";
 
 const SESSION_ERROR = "Could not establish your session. Please try again.";
 
-function isTransient(err: unknown): boolean {
-  return (
-    err instanceof ApiError &&
-    (err.status === 0 || err.status === 408 || err.status === 429 || err.status >= 500)
-  );
-}
-
 async function readMe(token?: string): Promise<MeResponse> {
   return apiFetch<MeResponse>("/api/v1/auth/me", {
     skipAuthRefresh: true,
+    timeoutMs: 45_000,
+    coldStartRetry: true,
     ...(token ? { token } : {}),
   });
 }
 
 async function rememberUser(user: MeResponse, accessToken?: string): Promise<void> {
-  let ownedShopIds: string[] = [];
-  try {
-    const mine = await apiShops.myShops();
-    ownedShopIds = mine.items.map((shop) => shop.id);
-  } catch {
-    /* non-merchants or API error */
-  }
   claimSessionWrite();
+  const epoch = currentSessionEpoch();
   setRealtimeAuth(user.supabase_realtime_token ?? null);
   useSessionStore.getState().setSession({
     hydrated: true,
     isAuthenticated: true,
     user,
-    ownedShopIds,
+    ownedShopIds: useSessionStore.getState().ownedShopIds,
     profileError: null,
   });
   notifyAuthChanged(accessToken ? { accessToken } : undefined);
+  void apiShops
+    .myShops()
+    .then((mine) => {
+      if (!isCurrentSessionWrite(epoch)) return;
+      useSessionStore.getState().setSession({
+        ownedShopIds: mine.items.map((shop) => shop.id),
+      });
+    })
+    .catch(() => {
+      /* non-merchants or API error */
+    });
 }
 
 /**
@@ -68,11 +68,10 @@ export async function establishClientSession(tokens: TokenPair): Promise<void> {
 
   let user: MeResponse;
   try {
-    user = await apiAuth.me(tokens.access_token);
+    user = await readMe(tokens.access_token);
   } catch (err) {
     if (!isCurrentSessionWrite(started)) return;
-    if (!isTransient(err)) throw err;
-    user = await apiAuth.me(tokens.access_token);
+    throw err;
   }
   if (!isCurrentSessionWrite(started)) return;
   if (!user?.id) throw new Error(SESSION_ERROR);
@@ -144,6 +143,8 @@ async function refreshFromApiHost(): Promise<TokenPair | null> {
       method: "POST",
       body: {},
       skipAuthRefresh: true,
+      timeoutMs: 45_000,
+      coldStartRetry: true,
     });
     if (!tokens?.access_token || !tokens.refresh_token) return null;
     return tokens;
