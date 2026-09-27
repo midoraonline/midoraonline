@@ -4,7 +4,12 @@ import Image from "next/image";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 export function userMediaUnoptimized(src: string): boolean {
-  return /ufs\.sh|utfs\.io/i.test(src) || /\.svg(\?|$)/i.test(src);
+  return (
+    /ufs\.sh|utfs\.io/i.test(src) ||
+    /\.svg(\?|$)/i.test(src) ||
+    src.startsWith("blob:") ||
+    src.startsWith("data:")
+  );
 }
 
 type Props = {
