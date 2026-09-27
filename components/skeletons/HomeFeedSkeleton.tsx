@@ -17,7 +17,7 @@ export default function HomeFeedSkeleton() {
       </div>
 
       <div className="mb-3 space-y-2 sm:mb-4">
-        <CategoryBrowseSectionSkeleton />
+        <CategoryBrowseSectionSkeleton pinnedCount={3} />
         <div className="flex gap-1 overflow-hidden py-0.5 sm:gap-1.5">
           {Array.from({ length: 5 }, (_, i) => (
             <Skeleton key={i} className="h-7 w-[4.25rem] shrink-0 sm:h-8" rounded="md" />

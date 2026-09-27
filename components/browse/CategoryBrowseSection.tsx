@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { X } from "lucide-react";
+import { Store, X } from "lucide-react";
+import { useAppSession } from "@/lib/state";
 import {
   ALL_CATEGORIES_ICON,
   resolveCategoryIcon,
@@ -21,6 +22,8 @@ type Props = {
   onSelectionChange: (next: CategoryFilterSelection) => void;
   showHeader?: boolean;
   browseAllHref?: string;
+  /** Home only: shop creation sits with Services and Opportunities. */
+  showCreateShop?: boolean;
 };
 
 export default function CategoryBrowseSection({
@@ -28,8 +31,14 @@ export default function CategoryBrowseSection({
   onSelectionChange,
   showHeader = true,
   browseAllHref,
+  showCreateShop = false,
 }: Props) {
   const { tree, counts } = useCategoryItems();
+  const session = useAppSession();
+  const createShopHref =
+    session.hydrated && !session.isAuthenticated
+      ? `/login?next=${encodeURIComponent("/open-shop")}`
+      : "/open-shop";
 
   const listingEntries = useMemo(() => {
     const pinned = tree.filter((g) => listingEntryRank(g.parent.label) >= 0);
@@ -73,8 +82,8 @@ export default function CategoryBrowseSection({
         </div>
       )}
 
-      {listingEntries.length > 0 ? (
-        <div className="mb-2 grid grid-cols-2 gap-2 sm:flex">
+      {listingEntries.length > 0 || showCreateShop ? (
+        <div className="mb-2 flex items-stretch gap-1.5 sm:gap-2">
           {listingEntries.map(({ parent }) => (
             <CategoryChip
               key={parent.slug}
@@ -92,6 +101,16 @@ export default function CategoryBrowseSection({
               }
             />
           ))}
+          {showCreateShop ? (
+            <CategoryChip
+              label="Create an online shop"
+              icon={Store}
+              selected={false}
+              active={false}
+              prominent
+              href={createShopHref}
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -218,31 +237,31 @@ function CategoryChip({
   onClick,
   count,
   prominent = false,
+  href,
 }: {
   label: string;
   icon: LucideIcon;
   selected: boolean;
   active: boolean;
-  onClick: () => void;
+  onClick?: () => void;
   count?: number;
   prominent?: boolean;
+  href?: string;
 }) {
   const emphasized = active || selected;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={emphasized}
-      className={`inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-2.5 text-[11px] transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
-        prominent ? "h-11 w-full justify-center text-xs sm:w-auto" : "h-9"
-      } ${
-        active
-          ? "bg-accent text-white shadow-md shadow-accent/30"
-          : selected
-            ? "bg-accent/15 text-accent ring-1 ring-accent/30"
-            : "bg-white/80 text-foreground/75 ring-1 ring-accent/15 hover:bg-accent/10 hover:text-accent hover:ring-accent/25 dark:bg-surface"
-      }`}
-    >
+  const className = `inline-flex items-center gap-1 rounded-full transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
+    prominent
+      ? "min-h-11 min-w-0 flex-1 justify-center px-1.5 text-center text-[10px] leading-tight sm:w-auto sm:flex-none sm:px-3 sm:text-xs"
+      : "h-9 shrink-0 snap-start px-2.5 text-[11px]"
+  } ${
+    active
+      ? "bg-accent text-white shadow-md shadow-accent/30"
+      : selected
+        ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+        : "bg-white/80 text-foreground/75 ring-1 ring-accent/15 hover:bg-accent/10 hover:text-accent hover:ring-accent/25 dark:bg-surface"
+  }`;
+  const inner = (
+    <>
       <Icon
         className={`size-3.5 shrink-0 sm:size-4 ${
           active ? "text-white" : selected ? "text-accent" : "text-accent/80"
@@ -250,7 +269,7 @@ function CategoryChip({
         strokeWidth={emphasized ? 2 : 1.75}
         aria-hidden
       />
-      <span className={`whitespace-nowrap ${emphasized ? "font-semibold" : "font-medium"}`}>
+      <span className={`${prominent ? "sm:whitespace-nowrap" : "whitespace-nowrap"} ${emphasized ? "font-semibold" : "font-medium"}`}>
         {label}
       </span>
       {typeof count === "number" && count > 0 ? (
@@ -262,6 +281,18 @@ function CategoryChip({
           {count > 999 ? "999+" : count}
         </span>
       ) : null}
+    </>
+  );
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} aria-pressed={emphasized} className={className}>
+      {inner}
     </button>
   );
 }
