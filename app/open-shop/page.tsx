@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles, PenLine, Store, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Sparkles, Store, CheckCircle2, ShieldCheck } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import CreateShopConcierge from "@/components/createShopConcierge";
@@ -16,7 +16,7 @@ type CreationMode = "quick" | "manual";
 export default function OpenShopPage() {
   const router = useRouter();
   const session = useAppSession();
-  const [mode, setMode] = useState<CreationMode>("quick");
+  const [mode, setMode] = useState<CreationMode>("manual");
   const [createdShop, setCreatedShop] = useState<apiShops.Shop | null>(null);
 
   const stillResolving =
@@ -46,15 +46,32 @@ export default function OpenShopPage() {
 
   return (
     <StandaloneShell eyebrow="Merchant Studio">
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <div
+        className={
+          createdShop || mode === "quick"
+            ? "mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+            : ""
+        }
+      >
         {createdShop ? (
           <CreatedSuccessCard shop={createdShop} onCreateAnother={() => setCreatedShop(null)} />
         ) : (
-          <div className="space-y-8">
-            <IntroHeader />
-            <ModeSwitcher mode={mode} onChange={setMode} />
-            <ActiveModeSection mode={mode} onShopCreated={setCreatedShop} />
-          </div>
+          <>
+            <div className={mode === "manual" ? "hidden" : "space-y-8"}>
+              <IntroHeader />
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                className="dm-focus min-h-11 text-sm font-semibold text-accent"
+              >
+                Use the step-by-step form
+              </button>
+              <ActiveModeSection onShopCreated={setCreatedShop} />
+            </div>
+            <div className={mode === "manual" ? "" : "hidden"}>
+              <OpenShopWizard onPreferAi={() => setMode("quick")} />
+            </div>
+          </>
         )}
       </div>
     </StandaloneShell>
@@ -72,87 +89,35 @@ function IntroHeader() {
         Start selling on Midora
       </h1>
       <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-        Describe your business once — our AI assistant drafts the store name, story, and details for you. Prefer full control? Switch to manual.
+        Describe your business once — our AI assistant drafts the store name, story, and details for you.
       </p>
     </div>
   );
 }
 
-function ModeSwitcher({
-  mode,
-  onChange,
-}: {
-  mode: CreationMode;
-  onChange: (m: CreationMode) => void;
-}) {
-  return (
-    <div
-      role="tablist"
-      aria-label="Shop creation mode"
-      className="grid max-w-lg grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-subtle p-1"
-    >
-      {(
-        [
-          { key: "quick" as const, label: "Create with AI", icon: Sparkles },
-          { key: "manual" as const, label: "Manual setup", icon: PenLine },
-        ]
-      ).map(({ key, label, icon: Icon }) => {
-        const active = mode === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(key)}
-            className={[
-              "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-colors sm:text-sm",
-              active
-                ? "bg-surface text-foreground shadow-sm"
-                : "text-muted hover:text-foreground",
-            ].join(" ")}
-          >
-            <Icon className="size-4 shrink-0" />
-            {label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function ActiveModeSection({
-  mode,
   onShopCreated,
 }: {
-  mode: CreationMode;
   onShopCreated: (s: apiShops.Shop) => void;
 }) {
-  if (mode === "quick") {
-    return (
-      <section className="dm-card overflow-hidden p-6 sm:p-8">
-        <div className="flex items-start gap-4 border-b border-border pb-5">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-white shadow-sm">
-            <Sparkles className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
-              AI Shop Concierge
-            </h2>
-            <p className="mt-0.5 text-xs text-muted sm:text-sm">
-              Chat in plain English, Swahili, or Luganda. Review the draft, then launch.
-            </p>
-          </div>
-        </div>
-        <div className="mt-6">
-          <CreateShopConcierge onShopCreated={onShopCreated} />
-        </div>
-      </section>
-    );
-  }
   return (
-    <section className="dm-card p-6 sm:p-8">
-      <OpenShopWizard />
+    <section className="dm-card overflow-hidden p-6 sm:p-8">
+      <div className="flex items-start gap-4 border-b border-border pb-5">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-white shadow-sm">
+          <Sparkles className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+            AI Shop Concierge
+          </h2>
+          <p className="mt-0.5 text-xs text-muted sm:text-sm">
+            Chat in plain English, Swahili, or Luganda. Review the draft, then launch.
+          </p>
+        </div>
+      </div>
+      <div className="mt-6">
+        <CreateShopConcierge onShopCreated={onShopCreated} />
+      </div>
     </section>
   );
 }

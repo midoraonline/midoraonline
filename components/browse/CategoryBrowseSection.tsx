@@ -16,6 +16,11 @@ import {
   isCategoryFilterActive,
 } from "@/lib/browseCategories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
+import {
+  listingToneClass,
+  listingToneRing,
+  type ListingTone,
+} from "@/components/ListingTypeTag";
 
 type Props = {
   selection: CategoryFilterSelection;
@@ -221,6 +226,14 @@ export default function CategoryBrowseSection({
   );
 }
 
+function prominentChipTone(label: string): ListingTone | null {
+  const key = label.trim().toLowerCase();
+  if (key === "services") return "service";
+  if (key === "opportunities") return "opportunity";
+  if (key === "create an online shop") return "shop";
+  return null;
+}
+
 /** Services and Opportunities stay above the scrolling category row. */
 function listingEntryRank(label: string): number {
   const key = label.trim().toLowerCase();
@@ -249,22 +262,27 @@ function CategoryChip({
   href?: string;
 }) {
   const emphasized = active || selected;
+  const tone = prominent ? prominentChipTone(label) : null;
   const className = `inline-flex items-center gap-1 rounded-full transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
     prominent
       ? "min-h-11 min-w-0 flex-1 justify-center px-1.5 text-center text-[10px] leading-tight sm:w-auto sm:flex-none sm:px-3 sm:text-xs"
       : "h-9 shrink-0 snap-start px-2.5 text-[11px]"
   } ${
-    active
-      ? "bg-accent text-white shadow-md shadow-accent/30"
-      : selected
-        ? "bg-accent/15 text-accent ring-1 ring-accent/30"
-        : "bg-white/80 text-foreground/75 ring-1 ring-accent/15 hover:bg-accent/10 hover:text-accent hover:ring-accent/25 dark:bg-surface"
+    tone
+      ? `${listingToneClass(tone)} ring-1 ${listingToneRing(tone)} ${
+          emphasized ? "ring-2 shadow-sm" : "hover:brightness-95"
+        }`
+      : active
+        ? "bg-accent text-white shadow-md shadow-accent/30"
+        : selected
+          ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+          : "bg-white/80 text-foreground/75 ring-1 ring-accent/15 hover:bg-accent/10 hover:text-accent hover:ring-accent/25 dark:bg-surface"
   }`;
   const inner = (
     <>
       <Icon
         className={`size-3.5 shrink-0 sm:size-4 ${
-          active ? "text-white" : selected ? "text-accent" : "text-accent/80"
+          tone ? "text-current" : active ? "text-white" : selected ? "text-accent" : "text-accent/80"
         }`}
         strokeWidth={emphasized ? 2 : 1.75}
         aria-hidden
@@ -279,7 +297,11 @@ function CategoryChip({
       {typeof count === "number" && count > 0 ? (
         <span
           className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold tabular-nums ${
-            active ? "bg-white/20 text-white" : "bg-accent/10 text-accent"
+            tone
+              ? "bg-black/10 text-current dark:bg-white/20"
+              : active
+                ? "bg-white/20 text-white"
+                : "bg-accent/10 text-accent"
           }`}
         >
           {count > 999 ? "999+" : count}

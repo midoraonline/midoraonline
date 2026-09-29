@@ -7,13 +7,18 @@ export default function StepFrame({
   title,
   subtitle,
   onBack,
+  step,
+  total,
   children,
 }: {
   title: string;
   subtitle: string;
   onBack: () => void;
+  step?: number;
+  total?: number;
   children: ReactNode;
 }) {
+  const showProgress = Boolean(step && total && total > 0);
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-6 sm:py-12">
       <div className="sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:p-6 sm:shadow-md">
@@ -25,6 +30,25 @@ export default function StepFrame({
           <ArrowLeft className="size-4" aria-hidden />
           Back
         </button>
+        {showProgress ? (
+          <div className="mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Step {step} of {total}
+            </p>
+            <div
+              className="mt-2 h-1 overflow-hidden rounded-full bg-border"
+              role="progressbar"
+              aria-valuemin={1}
+              aria-valuemax={total}
+              aria-valuenow={step}
+            >
+              <div
+                className="h-full rounded-full bg-accent"
+                style={{ width: `${Math.round((step! / total!) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
         <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">{title}</h1>
         <p className="mt-1.5 text-sm leading-relaxed text-muted">{subtitle}</p>
         <div className="mt-5 space-y-4">{children}</div>

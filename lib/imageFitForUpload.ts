@@ -3,7 +3,7 @@
 /** UploadThing productImage / shopLogo / imageUploader caps (keep in sync with app/api/uploadthing/core.ts). */
 export const UPLOAD_IMAGE_MAX_BYTES = {
   productImage: 8 * 1024 * 1024,
-  shopLogo: 4 * 1024 * 1024,
+  shopLogo: 16 * 1024 * 1024,
   imageUploader: 16 * 1024 * 1024,
 } as const;
 
