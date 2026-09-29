@@ -492,9 +492,11 @@ export default function ProductCard({
     const meta = listingMeta;
     const categoryLine = listingCardLabel(listingKind, meta, product.category);
     const rate = formatListingRate(price, listingKind, meta);
-    const chips = textListingChips(listingKind, meta).filter(
-      (chip) => chip !== "Urgent" || !headline.toLowerCase().includes("urgent"),
-    );
+    const chips = textListingChips(listingKind, meta).filter((chip) => {
+      if (chip === "Urgent" && headline.toLowerCase().includes("urgent")) return false;
+      if (price <= 0 && chip.toLowerCase() === rate.toLowerCase()) return false;
+      return true;
+    });
     const description = product.description?.trim() || "";
     return (
       <article

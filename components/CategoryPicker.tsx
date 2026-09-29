@@ -14,6 +14,11 @@ type Props = {
   idPrefix?: string;
   /** Compact mode used inside modals / narrower containers */
   compact?: boolean;
+  /** Caller already shows the field label. */
+  hideLabel?: boolean;
+  /** Skip the selected-category summary chip. */
+  hideSummary?: boolean;
+  selectClassName?: string;
   /** Force a specific top-level category (e.g. "services", "opportunities").
    *  When set, the parent dropdown is hidden and only the subcategory picker shows. */
   lockedParentSlug?: string;
@@ -34,6 +39,9 @@ export default function CategoryPicker({
   className = "",
   idPrefix = "category",
   compact = false,
+  hideLabel = false,
+  hideSummary = false,
+  selectClassName,
   lockedParentSlug,
   excludeParentSlugs,
 }: Props) {
@@ -116,19 +124,21 @@ export default function CategoryPicker({
     ? "text-xs font-medium text-foreground"
     : "text-sm font-medium text-foreground";
 
-  const selectClass = "dm-input appearance-none pr-9";
+  const selectClass = selectClassName ?? "dm-input appearance-none pr-9";
 
   return (
     <div className={`space-y-3 ${className}`}>
       {/* Parent category dropdown — hidden when the parent is locked by kind */}
       {!lockedParentSlug ? (
         <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
-            Category{" "}
-            {required ? (
-              <span className="text-[color:var(--error)]">*</span>
-            ) : null}
-          </label>
+          {hideLabel ? null : (
+            <label htmlFor={`${idPrefix}-parent`} className={labelClass}>
+              Category{" "}
+              {required ? (
+                <span className="text-[color:var(--error)]">*</span>
+              ) : null}
+            </label>
+          )}
           <div className="relative">
             <select
               id={`${idPrefix}-parent`}
@@ -203,7 +213,7 @@ export default function CategoryPicker({
       ) : null}
 
       {/* Selection summary */}
-      {parentSlug && activeGroup ? (
+      {!hideSummary && parentSlug && activeGroup ? (
         <div
           className={
             "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs leading-snug " +

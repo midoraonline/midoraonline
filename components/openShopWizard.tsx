@@ -206,9 +206,14 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
             </select>
           </Field>
           <Field label="Category">
-            <div className="rounded-xl border border-border bg-background p-3">
-              <CategoryPicker value={category} onChange={setCategory} compact idPrefix="open-shop-wizard-category" />
-            </div>
+            <CategoryPicker
+              value={category}
+              onChange={setCategory}
+              hideLabel
+              hideSummary
+              selectClassName={`${FIELD} appearance-none pr-9`}
+              idPrefix="open-shop-wizard-category"
+            />
           </Field>
           <Field label="Short description" htmlFor="wizard-shop-desc">
             <input
