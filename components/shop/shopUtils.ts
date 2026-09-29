@@ -33,6 +33,15 @@ export function shopQuickNavFlags(shop: Shop): ShopQuickNavFlags {
   };
 }
 
+/** Cover image stored on the existing theme_config JSON, not a new column. */
+export function shopBannerUrl(theme: Shop["theme_config"]): string | null {
+  if (!theme) return null;
+  const meta = theme.metadata;
+  if (!meta || typeof meta !== "object") return null;
+  const url = (meta as { banner_url?: unknown }).banner_url;
+  return typeof url === "string" && url.trim() ? url.trim() : null;
+}
+
 export function locationDisplay(loc: Shop["location"]): string {
   if (typeof loc === "string") return loc;
   if (loc && typeof loc === "object" && "display" in loc)

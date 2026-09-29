@@ -591,7 +591,26 @@ function titleCaseChip(value: string): string {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
-function urgencyChip(meta: ListingMeta): string | null {
+/** Bold card line from the title and the existing urgency field. */
+export function needHeadline(
+  title: string,
+  meta?: { urgency?: string; urgent?: string } | null,
+): string {
+  const name = title.trim();
+  if (!name) return name;
+  const label = urgencyChip(meta ?? {});
+  if (!label) return name;
+  const lower = name.toLowerCase();
+  if (label === "Urgent") {
+    if (/\burgent/.test(lower)) return name;
+    if (/\bneeded\b/.test(lower)) return `${name} urgently`;
+    return `${name} needed urgently`;
+  }
+  if (lower.includes(label.toLowerCase())) return name;
+  return `${name} · ${label}`;
+}
+
+function urgencyChip(meta: { urgency?: string; urgent?: string }): string | null {
   const raw = String(meta.urgency ?? meta.urgent ?? "").trim().toLowerCase();
   if (!raw || raw === "false" || raw === "no" || raw === "normal" || raw === "0") return null;
   if (raw === "true" || raw === "yes" || raw === "urgent" || raw === "1") return "Urgent";

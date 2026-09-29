@@ -61,6 +61,10 @@
   --listing-job-bg: #ffedd5;
   --listing-job-fg: #7c2d12;
   --listing-job-accent: #c2410c;
+  /* Shop chip uses the theme navy so it does not sit on the product green. */
+  --listing-shop-bg: #0f172a;
+  --listing-shop-fg: #f8fafc;
+  --listing-shop-accent: #334155;
 
   /* ── Shadows (intentional elevation hierarchy) ──────────── */
   --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 1px 0 rgb(15 23 42 / 0.02);
@@ -180,6 +184,9 @@
   --listing-job-bg: #7c2d12;
   --listing-job-fg: #ffedd5;
   --listing-job-accent: #fb923c;
+  --listing-shop-bg: #e2e8f0;
+  --listing-shop-fg: #0f172a;
+  --listing-shop-accent: #64748b;
 
   /* ── Shadows — higher opacity so they read on dark surfaces ── */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35), 0 1px 1px 0 rgb(0 0 0 / 0.25);
@@ -245,6 +252,9 @@
   --color-listing-job: var(--listing-job-bg);
   --color-listing-job-foreground: var(--listing-job-fg);
   --color-listing-job-accent: var(--listing-job-accent);
+  --color-listing-shop: var(--listing-shop-bg);
+  --color-listing-shop-foreground: var(--listing-shop-fg);
+  --color-listing-shop-accent: var(--listing-shop-accent);
   --font-sans: var(--font-plus-jakarta);
   --font-mono: var(--font-ibm-plex-mono);
   --radius-lg: var(--radius);

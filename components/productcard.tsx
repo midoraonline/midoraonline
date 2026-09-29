@@ -24,6 +24,7 @@ import {
   COMPENSATION_OPTIONS,
   isTextOnlyListing,
   listingCardLabel,
+  needHeadline,
   normalizeListingKind,
   parseListingMeta,
   textListingChips,
@@ -372,6 +373,12 @@ export default function ProductCard({
   const listingMeta = parseListingMeta(product.listing_meta);
   const listingKind = normalizeListingKind(product.item_type);
   const typeKind = listingTypeTagKind(product.item_type, listingMeta);
+  const headline =
+    listingKind === "product" ? product.title : needHeadline(product.title, listingMeta);
+  const titleClass =
+    listingKind === "product"
+      ? "line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm"
+      : "line-clamp-2 text-[13px] font-bold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm";
   const coverUrls = coverMediaUrls(product);
   const [trackedId, setTrackedId] = useState(product.id);
   const [coverFailed, setCoverFailed] = useState(false);
@@ -485,7 +492,9 @@ export default function ProductCard({
     const meta = listingMeta;
     const categoryLine = listingCardLabel(listingKind, meta, product.category);
     const rate = formatListingRate(price, listingKind, meta);
-    const chips = textListingChips(listingKind, meta);
+    const chips = textListingChips(listingKind, meta).filter(
+      (chip) => chip !== "Urgent" || !headline.toLowerCase().includes("urgent"),
+    );
     const description = product.description?.trim() || "";
     return (
       <article
@@ -494,14 +503,9 @@ export default function ProductCard({
       >
         <div className="flex w-full flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5 pt-1">
-              <ListingTypeTag kind={typeKind} />
-              {categoryLine.toLowerCase() === typeKind ? null : (
-                <p className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
-                  {categoryLine}
-                </p>
-              )}
-            </div>
+            <Link href={productHref} className="dm-focus min-w-0 flex-1 outline-none">
+              <h3 className={titleClass}>{headline}</h3>
+            </Link>
             <ProductLikeButton
               productId={product.id}
               variant="floating"
@@ -509,11 +513,14 @@ export default function ProductCard({
               initialLikeCount={product.likeCount}
             />
           </div>
-          <Link href={productHref} className="dm-focus block outline-none">
-            <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm">
-              {product.title}
-            </h3>
-          </Link>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <ListingTypeTag kind={typeKind} />
+            {categoryLine.toLowerCase() === typeKind ? null : (
+              <p className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
+                {categoryLine}
+              </p>
+            )}
+          </div>
           <PersonalSellerLine shop={product.shop} />
           {isBoosted || shopLive || isDiscounted ? (
             <div className="flex flex-wrap gap-1">
@@ -587,9 +594,7 @@ export default function ProductCard({
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3 sm:p-3.5">
           <div className="space-y-1.5">
             <Link href={productHref} className="dm-focus block outline-none">
-              <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-[15px]">
-                {product.title}
-              </h3>
+              <h3 className={titleClass}>{headline}</h3>
             </Link>
             <PersonalSellerLine shop={product.shop} />
             <div className="flex flex-wrap items-baseline gap-1.5">
@@ -637,9 +642,7 @@ export default function ProductCard({
 
       <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
         <Link href={productHref} className="dm-focus block outline-none">
-          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm">
-            {product.title}
-          </h3>
+          <h3 className={titleClass}>{headline}</h3>
         </Link>
         <PersonalSellerLine shop={product.shop} />
 
