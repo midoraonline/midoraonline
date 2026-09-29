@@ -38,8 +38,7 @@ export default function ListingTypeStep({
               }`}
             >
               <ListingTypeTag kind={opt.value} />
-              <span className="mt-2 block text-sm font-semibold text-foreground">{opt.label}</span>
-              <span className="mt-1 block text-xs leading-relaxed text-muted">{opt.hint}</span>
+              <span className="mt-2 block text-xs leading-relaxed text-muted">{opt.hint}</span>
             </button>
           );
         })}
