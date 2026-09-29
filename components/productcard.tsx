@@ -14,13 +14,14 @@ import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
+import ListingTypeTag from "@/components/ListingTypeTag";
+import { listingTypeTagKind } from "@/lib/listingType";
 import {
   resolveShopTrustLevel,
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
 import {
   COMPENSATION_OPTIONS,
-  LISTING_KIND_LABEL,
   isTextOnlyListing,
   listingCardLabel,
   normalizeListingKind,
@@ -138,7 +139,8 @@ export function productCardSlotClass(
 ): string {
   const listed = (product.imageUrls ?? []).map((url) => url.trim()).filter(Boolean);
   const count = listed.length || (product.imageUrl?.trim() ? 1 : 0);
-  return isTextOnlyListing(product.item_type, count) ? "self-start" : "h-full";
+  const width = "w-full min-w-0 max-w-full justify-self-stretch";
+  return isTextOnlyListing(product.item_type, count) ? `${width} self-start` : `${width} h-full`;
 }
 
 function coverMediaUrls(product: ProductCardData): string[] {
@@ -367,8 +369,9 @@ export default function ProductCard({
     : 0;
   const price = isDiscounted ? product.discountPriceUGX! : product.priceUGX;
   const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
+  const listingMeta = parseListingMeta(product.listing_meta);
   const listingKind = normalizeListingKind(product.item_type);
-  const showKindBadge = listingKind !== "product";
+  const typeKind = listingTypeTagKind(product.item_type, listingMeta);
   const coverUrls = coverMediaUrls(product);
   const [trackedId, setTrackedId] = useState(product.id);
   const [coverFailed, setCoverFailed] = useState(false);
@@ -394,11 +397,7 @@ export default function ProductCard({
   const imageBadges = (
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
       <div className="flex max-w-[75%] flex-wrap gap-1">
-        {showKindBadge && (
-          <Badge className="bg-white/90 text-foreground">
-            {LISTING_KIND_LABEL[listingKind]}
-          </Badge>
-        )}
+        <ListingTypeTag kind={typeKind} />
         {isBoosted && (
           <Badge className="bg-accent text-white">
             <Zap className="size-2.5" strokeWidth={2.5} aria-hidden />
@@ -483,20 +482,26 @@ export default function ProductCard({
   );
 
   if (textFirst) {
-    const meta = parseListingMeta(product.listing_meta);
+    const meta = listingMeta;
+    const categoryLine = listingCardLabel(listingKind, meta, product.category);
     const rate = formatListingRate(price, listingKind, meta);
     const chips = textListingChips(listingKind, meta);
     const description = product.description?.trim() || "";
     return (
       <article
         ref={impressionRef as React.RefObject<HTMLElement>}
-        className="dm-product-card dm-card-hover flex w-full flex-col self-start overflow-hidden"
+        className="dm-product-card dm-card-hover flex w-full min-w-0 max-w-full flex-col self-start overflow-hidden"
       >
         <div className="flex w-full flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 truncate pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
-              {listingCardLabel(listingKind, meta, product.category)}
-            </p>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 pt-1">
+              <ListingTypeTag kind={typeKind} />
+              {categoryLine.toLowerCase() === typeKind ? null : (
+                <p className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  {categoryLine}
+                </p>
+              )}
+            </div>
             <ProductLikeButton
               productId={product.id}
               variant="floating"
@@ -619,7 +624,7 @@ export default function ProductCard({
   return (
     <article
       ref={impressionRef as React.RefObject<HTMLElement>}
-      className="dm-product-card dm-card-hover flex h-full w-full flex-col overflow-hidden"
+      className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
     >
       <div className="group relative aspect-square w-full overflow-hidden bg-surface-subtle sm:aspect-[4/3]">
         <Link href={productHref} className="dm-focus relative block h-full w-full outline-none">

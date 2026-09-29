@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import { mediaUnreachableMessage, missingListingFields } from "@/lib/api/categoryFields";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { isVerificationRequired, verificationMessage } from "@/lib/verification";
+import ListingTypeTag from "@/components/ListingTypeTag";
+import { listingTypeTagKind } from "@/lib/listingType";
 import {
   confirmCreatedListing,
   confirmUpdatedListing,
@@ -386,6 +389,10 @@ export default function ProductFormModal({
         toast.error(MAINTENANCE_MESSAGE, { id: toastId });
         return;
       }
+      if (isVerificationRequired(err)) {
+        toast.error(verificationMessage(err), { id: toastId });
+        return;
+      }
       const missing = missingListingFields(err);
       if (missing) {
         const notice = missing.length
@@ -560,9 +567,7 @@ export default function ProductFormModal({
             </div>
           </div>
         ) : (
-          <p className="text-xs font-medium text-muted">
-            Type: {LISTING_KIND_LABEL[draft.kind]}
-          </p>
+          <ListingTypeTag kind={listingTypeTagKind(draft.kind, draft.meta)} />
         )}
 
         {/* Media */}

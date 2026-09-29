@@ -17,7 +17,10 @@ import {
   productPrimaryImage,
   type Product,
 } from "@/lib/api/products";
-import { isTextOnlyListing, LISTING_KIND_LABEL, normalizeListingKind } from "@/lib/listingMeta";
+import { isTextOnlyListing, parseListingMeta } from "@/lib/listingMeta";
+import ListingTypeTag from "@/components/ListingTypeTag";
+import { listingTypeTagKind } from "@/lib/listingType";
+import { isVerificationRequired, verificationMessage } from "@/lib/verification";
 import { ApiError } from "@/lib/api/base";
 import {
   categoryNeedsStock,
@@ -74,7 +77,7 @@ export default function ListingManageCard({
   const media = productImageUrls(product);
   const cover = productPrimaryImage(product);
   const textOnly = isTextOnlyListing(product.item_type, media.length);
-  const kind = normalizeListingKind(product.item_type);
+  const typeKind = listingTypeTagKind(product.item_type, parseListingMeta(product.listing_meta));
   const editHref = `/merchant/listings/${product.id}/edit`;
   const status = product.status;
   const published = product.is_published !== false && status !== "hidden" && status !== "draft";
@@ -141,6 +144,10 @@ export default function ListingManageCard({
     } catch (e) {
       if (isStockRequired(e) || (e instanceof ApiError && e.status === 400 && e.code === "stock_required")) {
         toast.error(STOCK_REQUIRED_MESSAGE);
+        return;
+      }
+      if (isVerificationRequired(e)) {
+        toast.error(verificationMessage(e));
         return;
       }
       toast.error(e instanceof Error ? e.message : "Could not update listing.");
@@ -269,11 +276,7 @@ export default function ListingManageCard({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {textOnly ? (
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-            {LISTING_KIND_LABEL[kind]}
-          </p>
-        ) : null}
+        {textOnly ? <ListingTypeTag kind={typeKind} /> : null}
         <div className="flex items-start justify-between gap-2">
           <Link
             href={editHref}

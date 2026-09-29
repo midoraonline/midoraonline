@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import OtpCodeField from "@/components/OtpCodeField";
 
 type Props = {
   /** Current value of the phone/WhatsApp field being verified. */
@@ -91,22 +92,17 @@ export default function VerifyContactButton({
     return (
       // Nested inside settings forms — use a div (not <form>) to avoid invalid nested-form HTML.
       <div className="flex flex-wrap items-center gap-2">
-        <input
+        <OtpCodeField
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleConfirm(e);
-          }}
-          placeholder="6-digit code"
-          inputMode="numeric"
-          maxLength={6}
+          onChange={setCode}
+          disabled={stage === "confirming"}
           autoFocus
-          className="dm-input dm-focus !h-9 !w-32 !py-1 text-sm"
+          className="!h-9 !w-36 !py-1 text-sm tracking-[0.3em]"
         />
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={stage === "confirming" || code.trim().length < 4}
+          disabled={stage === "confirming" || code.trim().length < 6}
           className="dm-pill dm-focus bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
         >
           {stage === "confirming" ? "Checking…" : "Confirm"}
