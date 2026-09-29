@@ -43,6 +43,8 @@ type ImageUploadProps = {
   multiple?: boolean;
   allowBackgroundRemoval?: boolean;
   watermarkLogoUrl?: string | null;
+  /** Keep the original file. HEIC/HEIF is converted at full size and quality 1. */
+  preserveQuality?: boolean;
 };
 
 export type ImageUploadHandle = {
@@ -71,6 +73,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
   multiple = false,
   allowBackgroundRemoval,
   watermarkLogoUrl,
+  preserveQuality = false,
 }, ref) {
   const [uploadPct, setUploadPct] = useState(0);
   const [preparing, setPreparing] = useState<
@@ -80,7 +83,8 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
   const [bgColor, setBgColor] = useState("#ffffff");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const bgEnabled = allowBackgroundRemoval ?? endpointDefaultsAllowBg(endpoint);
+  const bgEnabled =
+    !preserveQuality && (allowBackgroundRemoval ?? endpointDefaultsAllowBg(endpoint));
   const shouldWatermark =
     endpoint === "productImage" && Boolean(watermarkLogoUrl?.trim());
 
@@ -181,12 +185,13 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
         // Keep originals that already fit. HEIC is converted; only over-limit files are resized.
         const maxBytes = UPLOAD_IMAGE_MAX_BYTES[endpoint];
         try {
-          if (endpoint === "imageUploader") {
+          if (preserveQuality || endpoint === "imageUploader") {
             const originals: File[] = [];
+            const limitMb = (maxBytes / (1024 * 1024)).toFixed(0);
             for (const file of processed) {
               const next = await avatarFileForUpload(file);
               if (next.size > maxBytes) {
-                throw new Error("This photo is larger than 16MB. Choose a smaller file.");
+                throw new Error(`This photo is larger than ${limitMb}MB. Choose a smaller file.`);
               }
               originals.push(next);
             }
@@ -238,6 +243,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
       watermarkLogoUrl,
       startUpload,
       endpoint,
+      preserveQuality,
     ],
   );
 

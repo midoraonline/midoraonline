@@ -12,7 +12,8 @@ async function requireUser(req: Request): Promise<{ userId: string }> {
 
 export const ourFileRouter = {
   shopLogo: f({
-    image: { maxFileSize: "4MB", maxFileCount: 1 },
+    // 16MB matches imageUploader so full-resolution logos are not recompressed.
+    image: { maxFileSize: "16MB", maxFileCount: 1 },
   })
     .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ file }) => {

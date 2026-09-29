@@ -5,7 +5,7 @@ import type { Shop } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { productMediaItems } from "@/lib/api/products";
 import ShopHeroCarousel, { type HeroMedia } from "./ShopHeroCarousel";
-import { locationDisplay } from "./shopUtils";
+import { locationDisplay, shopBannerUrl } from "./shopUtils";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
@@ -53,11 +53,14 @@ export default async function ShopHeader({
       m.kind === "video" ? { kind: "video", src: m.src } : { kind: "image", src: m.src },
     ),
   );
+  const bannerUrl = shopBannerUrl(shop.theme_config);
   const media: HeroMedia[] = productMedia.length
     ? productMedia
-    : shop.logo_url
-      ? [{ kind: "image", src: shop.logo_url }]
-      : [];
+    : bannerUrl
+      ? [{ kind: "image", src: bannerUrl }]
+      : shop.logo_url
+        ? [{ kind: "image", src: shop.logo_url }]
+        : [];
 
   const trustLevel = resolveShopTrustLevel(shop.trust_badges);
   const showTrust = shop.is_active !== false && trustLevel !== "registered";
