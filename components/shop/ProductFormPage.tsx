@@ -15,6 +15,7 @@ import {
 } from "@/lib/api/listingSave";
 import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { isVerificationRequired, verificationMessage } from "@/lib/verification";
 import { checkListingQuality, type ListingQualityResponse } from "@/lib/api/aiListing";
 import {
   productImageUrls,
@@ -25,6 +26,7 @@ import {
 import CategoryPicker from "@/components/CategoryPicker";
 import { MediaDropzone } from "@/components/shop/MediaDropzone";
 import CategoryMetaInputs from "@/components/shop/CategoryMetaInputs";
+import ListingTypeSummary from "@/components/shop/ListingTypeSummary";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import {
@@ -36,7 +38,6 @@ import {
   indefiniteArticle,
   LISTING_KIND_LABEL,
   normalizeCategoryFields,
-  LISTING_KIND_OPTIONS,
   listingKindToItemType,
   normalizeListingKind,
   parseListingMeta,
@@ -215,6 +216,11 @@ export default function ProductFormPage({
   product,
   shopId,
   itemType = "product",
+  listingKind,
+  shopLabel,
+  onChangeType,
+  onChangeShop,
+  onVerificationRequired,
   backUrl = "/merchant/listings",
   hasBottomNav = true,
   flush = false,
@@ -225,6 +231,12 @@ export default function ProductFormPage({
   /** Omit on create so the API attaches a personal profile or the only real shop. */
   shopId?: string;
   itemType?: ItemType;
+  /** Set by the post-item type step. Changing it keeps the rest of the draft. */
+  listingKind?: ListingKind;
+  shopLabel?: string | null;
+  onChangeType?: () => void;
+  onChangeShop?: () => void;
+  onVerificationRequired?: () => void;
   backUrl?: string;
   /** Several shops: parent shows the picker. The draft stays mounted. */
   onShopRequired?: () => void;
@@ -235,7 +247,7 @@ export default function ProductFormPage({
 }) {
   const router = useRouter();
   const initialKind = normalizeListingKind(
-    mode === "edit" && product ? product.item_type : itemType,
+    mode === "edit" && product ? product.item_type : listingKind ?? itemType,
   );
   const initialDraft = useMemo(
     () => (mode === "edit" && product ? productToDraft(product) : emptyDraft(initialKind)),
@@ -294,7 +306,12 @@ export default function ProductFormPage({
 
   const isDirty = !draftsEqual(draft, initialRef.current);
   const sale = evaluateSalePrice(draft.price_ugx, draft.sale_price);
-  const allowTypePick = mode === "add";
+  useEffect(() => {
+    if (!listingKind) return;
+    setDraft((d) =>
+      d.kind === listingKind ? d : { ...d, kind: listingKind, category: "", meta: {} },
+    );
+  }, [listingKind]);
 
   useEffect(() => {
     if (mode !== "edit" || !product) return;
@@ -555,6 +572,11 @@ export default function ProductFormPage({
         toast.error(MAINTENANCE_MESSAGE, { id: toastId });
         return;
       }
+      if (isVerificationRequired(err)) {
+        toast.error(verificationMessage(err), { id: toastId });
+        onVerificationRequired?.();
+        return;
+      }
       if (err instanceof ShopRequiredError) {
         toast.message("Choose a shop", {
           id: toastId,
@@ -766,51 +788,13 @@ export default function ProductFormPage({
           </div>
         ) : null}
 
-        {/* Listing type is chosen before media — photo rules depend on it. */}
-        <section className="dm-card p-5 sm:p-6 space-y-4">
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">1. Listing Type</h2>
-            <p className="text-xs text-muted">Choose what type of offering you are posting to Midora.</p>
-          </div>
-
-          {allowTypePick ? (
-            <div className="grid gap-3 sm:grid-cols-3">
-              {LISTING_KIND_OPTIONS.map((opt) => {
-                const active = draft.kind === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        kind: opt.value,
-                        category: "",
-                        meta: {},
-                      }))
-                    }
-                    className={`rounded-2xl border p-4 text-left transition-all ${
-                      active
-                        ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-xs"
-                        : "border-border bg-surface hover:border-accent/40"
-                    }`}
-                  >
-                    <span className="block text-base font-bold text-foreground">
-                      {opt.label}
-                    </span>
-                    <span className="mt-1 block text-xs leading-relaxed text-muted">
-                      {opt.hint}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-xs font-semibold text-foreground bg-surface-subtle border border-border px-3 py-2 rounded-xl inline-block">
-              Listing Kind: {LISTING_KIND_LABEL[draft.kind]}
-            </p>
-          )}
-        </section>
+        <ListingTypeSummary
+          kind={draft.kind}
+          meta={draft.meta}
+          shopLabel={shopLabel}
+          onChangeType={onChangeType}
+          onChangeShop={onChangeShop}
+        />
 
         <section className="dm-card p-5 sm:p-6 space-y-4">
           <div>

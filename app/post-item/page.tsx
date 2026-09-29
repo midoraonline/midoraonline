@@ -2,92 +2,43 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
+import ListingTypeStep from "@/components/post/ListingTypeStep";
+import ShopPickStep from "@/components/post/ShopPickStep";
+import VerifyChannelStep from "@/components/post/VerifyChannelStep";
 import ProductFormPage from "@/components/shop/ProductFormPage";
 import { useAppSession } from "@/lib/state";
-import {
-  fetchMyShopSummaries,
-  type UserShopSummary,
-} from "@/lib/shop/personalShop";
-import type { ItemType } from "@/lib/api/products";
+import { fetchMyShopSummaries, type UserShopSummary } from "@/lib/shop/personalShop";
+import { normalizeListingKind, type ListingKind } from "@/lib/listingMeta";
+import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
 
-function ShopPicker({
-  shops,
-  onSelect,
-}: {
-  shops: UserShopSummary[];
-  onSelect: (shopId: string) => void;
-}) {
-  return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-10 sm:py-14">
-      <div className="space-y-1.5 text-center">
-        <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-          Which shop is this for?
-        </h1>
-        <p className="text-sm text-muted">
-          You have more than one shop. Pick the storefront that owns this listing.
-        </p>
-      </div>
+type Step = "verify" | "shop" | "type" | "form";
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {shops.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => onSelect(s.id)}
-            className="dm-card dm-focus flex items-center gap-3.5 p-4 text-left transition-all hover:border-accent/40 hover:shadow-md"
-          >
-            {s.logo_url ? (
-              <Image
-                src={s.logo_url}
-                alt=""
-                width={40}
-                height={40}
-                className="size-10 shrink-0 rounded-full object-cover"
-              />
-            ) : (
-              <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/10 text-sm font-bold text-accent">
-                {s.name.substring(0, 2).toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-foreground">{s.name}</p>
-              <p className="truncate text-xs text-muted">Shop storefront</p>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className="pt-2 text-center">
-        <Link
-          href="/merchant/listings"
-          className="dm-focus inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Cancel and return
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function NewListingContent() {
+function PostItemFlow() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const session = useAppSession();
 
   const paramShopId = searchParams.get("shop_id") || searchParams.get("shopId");
-  const paramItemType = (searchParams.get("item_type") || searchParams.get("itemType") || "product") as ItemType;
+  const paramType = searchParams.get("item_type") || searchParams.get("itemType");
 
   const [shops, setShops] = useState<UserShopSummary[]>([]);
-  const [loadingShops, setLoadingShops] = useState(true);
-  const [selectedShopId, setSelectedShopId] = useState<string | null>(paramShopId);
-  const [formMounted, setFormMounted] = useState(Boolean(paramShopId));
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [status, setStatus] = useState<VerificationStatus | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState<Step | null>(null);
+  const [shopId, setShopId] = useState<string | null>(paramShopId);
+  const [kind, setKind] = useState<ListingKind | null>(
+    paramType ? normalizeListingKind(paramType) : null,
+  );
+  const [formReady, setFormReady] = useState(false);
+
+  const backUrl =
+    session.user?.user_role === "merchant" || session.user?.user_role === "admin"
+      ? "/merchant/listings"
+      : "/";
 
   useEffect(() => {
     if (!session.hydrated || session.isAuthenticated) return;
@@ -95,51 +46,61 @@ function NewListingContent() {
   }, [session.hydrated, session.isAuthenticated, router]);
 
   useEffect(() => {
+    if (!session.hydrated || !session.isAuthenticated) return;
     let active = true;
-    fetchMyShopSummaries()
-      .then((list) => {
+    setLoading(true);
+    Promise.all([
+      fetchMyShopSummaries().catch(() => [] as UserShopSummary[]),
+      fetchVerificationStatus(),
+    ])
+      .then(([list, verification]) => {
         if (!active) return;
         setShops(list);
-        if (paramShopId) {
-          setSelectedShopId(paramShopId);
-          setFormMounted(true);
-          return;
-        }
-        // One real shop is attached by POST /api/v1/products. Several need a pick.
-        if (list.length > 1) setPickerOpen(true);
-        else setFormMounted(true);
+        setStatus(verification);
+        setLoadError(null);
+        if (!verification.can_post) setStep("verify");
+        else if (list.length > 1 && !paramShopId) setStep("shop");
+        else if (!paramType) setStep("type");
+        else setStep("form");
       })
       .catch(() => {
-        if (active) setFormMounted(true);
+        if (!active) return;
+        setLoadError("We couldn't check verification. Try again.");
       })
       .finally(() => {
-        if (active) setLoadingShops(false);
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [paramShopId]);
+  }, [session.hydrated, session.isAuthenticated, paramShopId, paramType]);
 
-  async function openPicker() {
-    if (shops.length === 0) {
-      try {
-        const list = await fetchMyShopSummaries();
-        setShops(list);
-      } catch {
-        /* picker still opens with whatever we have */
-      }
-    }
-    setPickerOpen(true);
-    setFormMounted(true);
+  useEffect(() => {
+    if (step === "form") setFormReady(true);
+  }, [step]);
+
+  function afterVerify(next: VerificationStatus) {
+    setStatus(next);
+    if (shops.length > 1 && !shopId) setStep("shop");
+    else if (!kind) setStep("type");
+    else setStep("form");
   }
 
-  function chooseShop(shopId: string) {
-    setSelectedShopId(shopId);
-    setPickerOpen(false);
-    setFormMounted(true);
+  function backFromShop() {
+    if (status && !status.can_post) setStep("verify");
+    else router.push(backUrl);
   }
 
-  if (!session.hydrated || !session.isAuthenticated || loadingShops) {
+  function backFromType() {
+    if (shops.length > 1 && !paramShopId) setStep("shop");
+    else if (status && !status.can_post) setStep("verify");
+    else router.push(backUrl);
+  }
+
+  const shop = shops.find((s) => s.id === shopId) ?? (shops.length === 1 ? shops[0] : null);
+  const showShopChange = shops.length > 1;
+
+  if (!session.hydrated || !session.isAuthenticated || (loading && !status)) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
         <Loader2 className="size-6 animate-spin text-accent" />
@@ -148,29 +109,73 @@ function NewListingContent() {
     );
   }
 
-  const showPicker = pickerOpen || (!formMounted && shops.length > 1);
+  if (loadError && !status) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <p className="text-sm text-[color:var(--error)]">{loadError}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="dm-btn dm-btn-primary mt-4 min-h-11"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
-      {formMounted ? (
-        <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+      {step === "verify" && status ? (
+        <VerifyChannelStep status={status} onVerified={afterVerify} onBack={() => router.push(backUrl)} />
+      ) : null}
+      {step === "shop" ? (
+        <ShopPickStep
+          shops={shops}
+          onSelect={(id) => {
+            setShopId(id);
+            setStep(kind ? "form" : "type");
+          }}
+          onBack={backFromShop}
+        />
+      ) : null}
+      {step === "type" ? (
+        <ListingTypeStep
+          selected={kind}
+          onSelect={(next) => {
+            setKind(next);
+            setStep("form");
+          }}
+          onBack={backFromType}
+        />
+      ) : null}
+      {formReady && kind ? (
+        <div className={step === "form" ? "w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10" : "hidden"}>
           <ProductFormPage
             mode="add"
-            shopId={selectedShopId ?? undefined}
-            itemType={paramItemType}
-            backUrl={
-              session.user?.user_role === "merchant" || session.user?.user_role === "admin"
-                ? "/merchant/listings"
-                : "/"
-            }
+            shopId={shopId ?? undefined}
+            itemType={kind}
+            listingKind={kind}
+            shopLabel={shop?.name ?? null}
+            onChangeType={() => setStep("type")}
+            onChangeShop={showShopChange ? () => setStep("shop") : undefined}
+            onVerificationRequired={() => {
+              setStatus((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      can_post: false,
+                      phone_verified: false,
+                      email_verified: false,
+                      required_channel: prev.phone ? "phone" : "email",
+                    }
+                  : prev,
+              );
+              setStep("verify");
+            }}
+            backUrl={backUrl}
             hasBottomNav={false}
-            onShopRequired={() => void openPicker()}
           />
-        </div>
-      ) : null}
-      {showPicker ? (
-        <div className={formMounted ? "fixed inset-0 z-50 overflow-y-auto bg-background" : undefined}>
-          <ShopPicker shops={shops} onSelect={chooseShop} />
         </div>
       ) : null}
     </>
@@ -188,7 +193,7 @@ export default function PostItemPage() {
           </div>
         }
       >
-        <NewListingContent />
+        <PostItemFlow />
       </Suspense>
     </StandaloneShell>
   );

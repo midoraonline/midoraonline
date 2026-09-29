@@ -34,12 +34,13 @@ import ProductOwnerActions from "@/components/product/ProductOwnerActions";
 import ProductRatingRow from "@/components/product/ProductRatingRow";
 import ProductReviews from "@/components/product/ProductReviews";
 import {
-  LISTING_KIND_LABEL,
   isTextOnlyListing,
   listingMetaDisplayRows,
   normalizeListingKind,
   parseListingMeta,
 } from "@/lib/listingMeta";
+import ListingTypeTag from "@/components/ListingTypeTag";
+import { listingTypeTagKind } from "@/lib/listingType";
 import {
   buildCanonicalCategoryItems,
   resolveCategoryParts,
@@ -277,15 +278,7 @@ export default async function ProductDetails({
                   {freshness}
                 </span>
               ) : null}
-              {listingKind !== "product" ? (
-                <span
-                  className={`rounded-md px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white ${
-                    listingKind === "opportunity" ? "bg-sky-600" : "bg-violet-600"
-                  }`}
-                >
-                  {LISTING_KIND_LABEL[listingKind]}
-                </span>
-              ) : null}
+              <ListingTypeTag kind={listingTypeTagKind(product.item_type, listingMeta)} />
             </div>
 
             <h1 className="font-display text-xl font-semibold tracking-tight text-balance text-foreground sm:text-2xl">
