@@ -409,7 +409,7 @@ export default function Navbar({
                 {/* Chat — desktop only; mobile uses bottom Messages tab */}
                 <Link
                   href="/chat"
-                  className={`relative hidden size-9 place-items-center rounded-full transition-colors dm-focus md:grid ${
+                  className={`relative hidden size-9 place-items-center rounded-full transition-colors dm-focus lg:grid ${
                     onChatPage
                       ? "bg-accent text-white shadow-sm"
                       : "text-foreground/60 hover:bg-foreground/[0.06] hover:text-foreground"

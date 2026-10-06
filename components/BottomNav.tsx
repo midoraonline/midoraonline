@@ -115,7 +115,7 @@ export default function BottomNav() {
   }, [accountReturn, isMerchant, postHref, role, session.isAuthenticated, unread]);
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">
+    <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md lg:hidden">
       {onlineCount > 0 ? (
         // Left-aligned so the centered Post Item FAB does not cover the status.
         <div className="flex h-[var(--bottom-nav-status)] items-center justify-start gap-1.5 overflow-hidden border-b border-accent/15 bg-accent/5 pl-3 pr-16 text-[10px] font-semibold leading-none text-accent">

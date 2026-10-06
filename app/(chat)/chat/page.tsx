@@ -145,7 +145,7 @@ function ChatPageInner() {
           <div className="flex h-12 shrink-0 items-center border-b border-border px-4">
             <h1 className="text-sm font-semibold tracking-tight">Messages</h1>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-2 md:pb-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-2 lg:pb-2">
             <ChatList activeId={convId ?? undefined} onSelect={handleSelect} />
           </div>
         </aside>

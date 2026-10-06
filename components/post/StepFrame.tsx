@@ -22,7 +22,7 @@ export default function StepFrame({
 }) {
   const showProgress = Boolean(step && total && total > 0);
   return (
-    <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-lg"} px-4 py-6 sm:py-12`}>
+    <div className={`mx-auto w-full ${wide ? "max-w-7xl" : "max-w-lg"} px-4 py-6 sm:py-12`}>
       <div className="sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:p-6 sm:shadow-md lg:p-8">
         <button
           type="button"

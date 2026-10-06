@@ -811,8 +811,8 @@ export default function ProductFormPage({
               {draft.kind === "opportunity"
                 ? "Photos are optional. You can still add up to 3 photos or a short video."
                 : draft.kind === "service"
-                  ? "Photos are optional for services. Add up to 3 if they help clients trust your work — tap Set cover when you do."
-                  : "Up to 3 photos (or short videos). At least 2 photos to publish — tap Set cover to choose which shows on your listing card."}
+                  ? "Photos are optional for services. Add up to 3 if they help clients trust your work. The first photo is the cover; use Set cover to change it."
+                  : "Add up to 3 photos or a short video. At least 2 photos are required to publish. The first photo is the cover; use Set cover to change it."}
             </p>
           </div>
 

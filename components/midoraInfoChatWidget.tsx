@@ -12,7 +12,9 @@ export default function MidoraInfoChatWidget({
   aboveBottomNav?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const position = aboveBottomNav ? "fab-above-bottom-nav" : "bottom-20 md:bottom-6";
+  const position = aboveBottomNav
+    ? "bottom-[var(--bottom-nav-clearance)] lg:bottom-6"
+    : "bottom-20 md:bottom-6";
 
   return (
     <div className={`z-fab fixed right-6 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3 ${position}`}>

@@ -114,10 +114,11 @@ export function MediaDropzone({
   };
 
   const grid = useMemo(
-    () =>
-      urls.map((url, i) => {
+    () => {
+      const firstImageIndex = urls.findIndex((url) => !isVideoUrl(url));
+      return urls.map((url, i) => {
         const video = isVideoUrl(url);
-        const isCover = i === 0 && !video;
+        const isCover = i === firstImageIndex;
         return (
           <li
             key={`${url}-${i}`}
@@ -142,17 +143,17 @@ export function MediaDropzone({
               </span>
             ) : null}
             {isCover ? (
-              <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
-                <Star className="size-3 fill-current" aria-hidden />
+              <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md border border-border bg-surface/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground shadow-sm backdrop-blur-xs">
+                <Star className="size-3 fill-accent text-accent" aria-hidden />
                 Cover
               </span>
             ) : null}
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
-              {!video && i > 0 && onSetCover ? (
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              {!video && !isCover && onSetCover ? (
                 <button
                   type="button"
                   onClick={() => onSetCover(i)}
-                  className="inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm"
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-surface/95 px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm backdrop-blur-xs transition-colors hover:border-accent/50"
                 >
                   <Star className="size-3" aria-hidden />
                   Set cover
@@ -171,7 +172,8 @@ export function MediaDropzone({
             </div>
           </li>
         );
-      }),
+      });
+    },
     [urls, onRemove, onSetCover],
   );
 
@@ -251,7 +253,7 @@ export function MediaDropzone({
 
           <p className="pt-1 text-[11px] text-muted">
             <ImagePlus className="mr-1 inline size-3" aria-hidden />
-            {photosRequired ? "At least 2 photos to publish" : "Photos optional"} · Max {maxItems} · First / Set cover = listing card
+            {photosRequired ? "At least 2 photos to publish" : "Photos optional"} · Max {maxItems} · First photo is the cover; use Set cover to change it
           </p>
         </div>
       </div>
