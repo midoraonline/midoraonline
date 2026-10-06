@@ -206,6 +206,7 @@ function ProfileDropdown({
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/shops", label: "Shops" },
+  { href: "/onboarding", label: "How it works" },
   { href: "/aboutus", label: "About" },
   { href: "/contactus", label: "Contact" },
 ] as const;

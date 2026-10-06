@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { type ReactNode } from "react";
 
-const softCard = "rounded-3xl border border-neutral-200/60 bg-white p-6 sm:p-8 shadow-xs transition-all hover:shadow-md hover:border-orange-200/50";
+const softCard = "rounded-lg border border-border bg-surface p-6 sm:p-8 shadow-xs transition-all hover:shadow-md hover:border-accent/40";
 
 function Reveal({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) {
   return (
@@ -33,7 +33,7 @@ function Reveal({ children, delayMs = 0 }: { children: ReactNode; delayMs?: numb
 
 export default function OnboardingPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-12 sm:space-y-16 lg:space-y-20 pb-12">
+    <div className="w-full space-y-12 pb-12 sm:space-y-16 lg:space-y-20">
 
       {/* Hero Section */}
       <Reveal>
@@ -92,11 +92,11 @@ export default function OnboardingPage() {
           <div>
             <h2
               id="why-midora-heading"
-              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             >
               Why Midora Online
             </h2>
-            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
+            <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
               Generic marketplaces optimize for the cheapest click. We optimize for{" "}
               <span className="font-semibold text-orange-600">brand memory</span>—so repeat customers know exactly who they bought from.
             </p>
@@ -126,15 +126,15 @@ export default function OnboardingPage() {
               <motion.article 
                 whileHover={{ y: -4, scale: 1.01 }}
                 transition={{ duration: 0.2 }}
-                className={`flex h-full flex-col p-6 bg-white border border-neutral-200/70 rounded-3xl shadow-xs`}
+                className="flex h-full flex-col rounded-lg border border-border bg-surface p-6 shadow-xs"
               >
-                <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl w-fit">
+                <div className="w-fit rounded-xl bg-accent/10 p-3 text-accent">
                   <item.icon className="size-6 shrink-0" aria-hidden />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-850 text-sm">
+                <h3 className="mt-4 text-sm font-bold text-foreground">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-xs leading-relaxed text-neutral-500">{item.body}</p>
+                <p className="mt-2 text-xs leading-relaxed text-muted">{item.body}</p>
               </motion.article>
             </Reveal>
           ))}
@@ -147,11 +147,11 @@ export default function OnboardingPage() {
           <div>
             <h2
               id="how-heading"
-              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             >
               How to use Midora
             </h2>
-            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
+            <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
               Same platform, two simple paths—whether you sell or shop.
             </p>
           </div>
@@ -160,7 +160,7 @@ export default function OnboardingPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Reveal delayMs={50}>
             <div className={`${softCard}`}>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md w-fit">
+              <p className="w-fit rounded-md bg-accent/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-accent">
                 Merchants
               </p>
               <ol className="mt-5 space-y-4">
@@ -172,10 +172,10 @@ export default function OnboardingPage() {
                   "Complete the publishing checks, then share your shop or listing with buyers.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-orange-50 border border-orange-100 text-sm font-bold text-orange-600">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-accent/20 bg-accent/10 text-sm font-bold text-accent">
                       {idx + 1}
                     </span>
-                    <span className="pt-1 text-xs sm:text-sm leading-relaxed text-neutral-600">
+                    <span className="pt-1 text-xs leading-relaxed text-foreground/80 sm:text-sm">
                       {step}
                     </span>
                   </li>
@@ -186,7 +186,7 @@ export default function OnboardingPage() {
           
           <Reveal delayMs={100}>
             <div className={`${softCard}`}>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md w-fit">
+              <p className="w-fit rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
                 Shoppers
               </p>
               <ol className="mt-5 space-y-4">
@@ -197,10 +197,10 @@ export default function OnboardingPage() {
                   "Agree on payment and delivery directly with the seller; Midora does not process checkout.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-sm font-bold text-emerald-600">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       {idx + 1}
                     </span>
-                    <span className="pt-1 text-xs sm:text-sm leading-relaxed text-neutral-600">
+                    <span className="pt-1 text-xs leading-relaxed text-foreground/80 sm:text-sm">
                       {step}
                     </span>
                   </li>
@@ -209,7 +209,7 @@ export default function OnboardingPage() {
             </div>
           </Reveal>
         </div>
-        <p className="border-l-2 border-orange-300 pl-4 text-xs leading-relaxed text-neutral-600 sm:text-sm">
+        <p className="border-l-2 border-accent/50 pl-4 text-xs leading-relaxed text-foreground/80 sm:text-sm">
           Account contact verification is shared between opening a shop and posting listings. Shop identity or business verification is a separate, optional process for trust badges and some plan benefits; it is not the account OTP step.
         </p>
       </section>
@@ -254,11 +254,11 @@ export default function OnboardingPage() {
           <div>
             <h2
               id="stats-heading"
-              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             >
               Track your performance
             </h2>
-            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
+            <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
               Analytics are available on eligible plans, with views into shop activity and listing engagement.
             </p>
           </div>
@@ -286,22 +286,22 @@ export default function OnboardingPage() {
               <motion.article 
                 whileHover={{ y: -4, scale: 1.01 }}
                 transition={{ duration: 0.2 }}
-                className={`flex h-full flex-col p-6 bg-white border border-neutral-200/70 rounded-3xl shadow-xs`}
+                className="flex h-full flex-col rounded-lg border border-border bg-surface p-6 shadow-xs"
               >
-                <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl w-fit">
+                <div className="w-fit rounded-xl bg-accent/10 p-3 text-accent">
                   <item.icon className="size-6 shrink-0" aria-hidden />
                 </div>
-                <h3 className="mt-4 font-bold text-neutral-850 text-sm">
+                <h3 className="mt-4 text-sm font-bold text-foreground">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-xs leading-relaxed text-neutral-500">{item.body}</p>
+                <p className="mt-2 text-xs leading-relaxed text-muted">{item.body}</p>
               </motion.article>
             </Reveal>
           ))}
         </div>
         
         <Reveal>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-muted">
             Access your analytics from{" "}
             <Link
               href="/merchant"
@@ -320,11 +320,11 @@ export default function OnboardingPage() {
           <div>
             <h2
               id="value-heading"
-              className="font-display text-2xl font-bold tracking-tight text-neutral-850 sm:text-3xl"
+              className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             >
               Value we add
             </h2>
-            <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
+            <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
               One neutral mall, two audiences—each gets structure that respects their goals.
             </p>
           </div>
@@ -333,13 +333,13 @@ export default function OnboardingPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Reveal>
             <div className={`${softCard}`}>
-              <div className="flex items-center gap-2.5 text-neutral-850">
-                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+              <div className="flex items-center gap-2.5 text-foreground">
+                <div className="rounded-lg bg-accent/10 p-2 text-accent">
                   <Store className="size-5 shrink-0" aria-hidden />
                 </div>
                 <h3 className="font-bold text-sm sm:text-base">For merchants</h3>
               </div>
-              <ul className="mt-4 space-y-3 text-xs sm:text-sm leading-relaxed text-neutral-600">
+              <ul className="mt-4 space-y-3 text-xs leading-relaxed text-foreground/80 sm:text-sm">
                 <li className="pl-1">
                   Faster launch than a bespoke site; stronger brand than a lone listing.
                 </li>
@@ -358,13 +358,13 @@ export default function OnboardingPage() {
           
           <Reveal delayMs={80}>
             <div className={`${softCard}`}>
-              <div className="flex items-center gap-2.5 text-neutral-850">
-                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <div className="flex items-center gap-2.5 text-foreground">
+                <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-700 dark:text-emerald-300">
                   <ShoppingBag className="size-5 shrink-0" aria-hidden />
                 </div>
                 <h3 className="font-bold text-sm sm:text-base">For shoppers</h3>
               </div>
-              <ul className="mt-4 space-y-3 text-xs sm:text-sm leading-relaxed text-neutral-600">
+              <ul className="mt-4 space-y-3 text-xs leading-relaxed text-foreground/80 sm:text-sm">
                 <li className="pl-1">See who you&apos;re buying from before you commit.</li>
                 <li className="pl-1">
                   Browse products, services and opportunities with context—less guesswork, fewer regrets.
@@ -383,17 +383,17 @@ export default function OnboardingPage() {
 
       {/* Final contact CTA */}
       <Reveal>
-        <section className={`flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between bg-white border border-neutral-200/70 rounded-3xl shadow-xs`}>
+        <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-xs sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-orange-50 text-orange-600 rounded-xl shrink-0">
+            <div className="shrink-0 rounded-lg bg-accent/10 p-2 text-accent">
               <MessageCircle className="size-5" aria-hidden />
             </div>
-            <p className="text-xs sm:text-sm text-neutral-600">
+            <p className="text-xs text-foreground/80 sm:text-sm">
               <span className="font-bold">Need a hand?</span>{" "}
-              <span className="text-neutral-500">Use the floating assistant or </span>
+              <span className="text-muted">Use the floating assistant or </span>
               <Link
                 href="/contactus"
-                className="font-bold text-orange-600 underline-offset-2 hover:underline"
+                className="font-bold text-accent underline-offset-2 hover:underline"
               >
                 contact us
               </Link>
@@ -403,7 +403,7 @@ export default function OnboardingPage() {
           <div className="flex flex-wrap gap-3 sm:shrink-0 justify-end">
             <Link
               href="/shops"
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-100 hover:bg-neutral-200 px-5 py-2.5 text-xs font-bold text-neutral-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-surface-subtle px-5 py-2.5 text-xs font-bold text-foreground transition-colors hover:bg-border"
             >
               Browse shops
             </Link>

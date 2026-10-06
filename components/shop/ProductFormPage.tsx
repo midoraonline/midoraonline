@@ -651,7 +651,7 @@ export default function ProductFormPage({
   return (
     <div
       className={`w-full space-y-6 pt-2 ${
-        flush ? "" : "mx-auto max-w-5xl"
+        flush ? "" : "mx-auto max-w-7xl"
       } ${
         hasBottomNav
           ? "pb-[calc(9rem+env(safe-area-inset-bottom,0px))] md:pb-32"
@@ -1340,7 +1340,7 @@ export default function ProductFormPage({
             : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
         }`}
       >
-        <div className={`mx-auto flex w-full items-center justify-between gap-3 px-4 ${flush ? "" : "max-w-5xl"}`}>
+        <div className={`mx-auto flex w-full items-center justify-between gap-3 px-4 ${flush ? "" : "max-w-7xl"}`}>
           <button
             type="button"
             onClick={handleCancel}

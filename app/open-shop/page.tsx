@@ -109,7 +109,7 @@ export default function OpenShopPage() {
       <div
         className={
           createdShop || mode === "quick"
-            ? "mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+            ? "mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
             : ""
         }
       >

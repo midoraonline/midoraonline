@@ -469,7 +469,7 @@ export default function CreateShopConcierge({
                   onEdit={() => dismissSuggestion("category")}
                 />
               ) : (
-                <div className="rounded-xl border border-border bg-white p-3 sm:p-4">
+                <div className="rounded-xl border border-border bg-surface p-3 sm:p-4">
                   <CategoryPicker
                     value={f.category}
                     onChange={(v) => field("category", v)}
