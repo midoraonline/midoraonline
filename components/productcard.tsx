@@ -376,6 +376,10 @@ export default function ProductCard({
   const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
   const listingMeta = parseListingMeta(product.listing_meta);
   const listingKind = normalizeListingKind(product.item_type);
+  const displayPrice =
+    listingKind === "product"
+      ? formatUGX(price)
+      : formatListingRate(price, listingKind, listingMeta);
   const typeKind = listingTypeTagKind(product.item_type, listingMeta);
   const headline =
     listingKind === "product" ? product.title : needHeadline(product.title, listingMeta);
@@ -495,7 +499,7 @@ export default function ProductCard({
   if (textFirst) {
     const meta = listingMeta;
     const categoryLine = listingCardLabel(listingKind, meta, product.category);
-    const rate = formatListingRate(price, listingKind, meta);
+    const rate = displayPrice;
     const chips = textListingChips(listingKind, meta).filter((chip) => {
       if (chip === "Urgent" && headline.toLowerCase().includes("urgent")) return false;
       if (price <= 0 && chip.toLowerCase() === rate.toLowerCase()) return false;
@@ -527,6 +531,11 @@ export default function ProductCard({
             )}
           </div>
           <PersonalSellerLine shop={product.shop} />
+          {product.description?.trim() ? (
+            <p className="line-clamp-3 text-xs leading-relaxed text-foreground/80">
+              {product.description.trim()}
+            </p>
+          ) : null}
           {isBoosted || shopLive || isDiscounted ? (
             <div className="flex flex-wrap gap-1">
               {isBoosted ? <Badge className="bg-accent text-white">Hot</Badge> : null}
@@ -597,16 +606,19 @@ export default function ProductCard({
               <h3 className={titleClass}>{headline}</h3>
             </Link>
             <PersonalSellerLine shop={product.shop} />
+            {listingKind !== "product" && product.description?.trim() ? (
+              <p className="line-clamp-2 text-xs leading-relaxed text-foreground/80">
+                {product.description.trim()}
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-baseline gap-1.5">
-              <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">
-                {formatUGX(price)}
-              </span>
+              <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">{displayPrice}</span>
               {isDiscounted && (
                 <span className="text-xs font-medium text-muted line-through tabular-nums">
                   {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
                 </span>
               )}
-              {product.negotiable !== false && (
+              {price > 0 && product.negotiable !== false && (
                 <span className="text-[10px] font-medium text-muted">· Negotiable</span>
               )}
             </div>
@@ -645,17 +657,20 @@ export default function ProductCard({
           <h3 className={titleClass}>{headline}</h3>
         </Link>
         <PersonalSellerLine shop={product.shop} />
+        {listingKind !== "product" && product.description?.trim() ? (
+          <p className="line-clamp-2 text-xs leading-relaxed text-foreground/80">
+            {product.description.trim()}
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-baseline gap-1.5">
-          <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
-            {formatUGX(price)}
-          </span>
+          <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">{displayPrice}</span>
           {isDiscounted && (
             <span className="text-[11px] font-medium text-muted line-through tabular-nums">
               {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
             </span>
           )}
-          {product.negotiable !== false && (
+          {price > 0 && product.negotiable !== false && (
             <span className="text-[10px] font-medium text-muted">· Negotiable</span>
           )}
         </div>

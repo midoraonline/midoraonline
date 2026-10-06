@@ -23,7 +23,13 @@ export default function StepFrame({
   const showProgress = Boolean(step && total && total > 0);
   return (
     <div className={`mx-auto w-full ${wide ? "max-w-7xl" : "max-w-lg"} px-4 py-6 sm:py-12`}>
-      <div className="sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:p-6 sm:shadow-md lg:p-8">
+      <div
+        className={
+          wide
+            ? ""
+            : "sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:p-6 sm:shadow-md lg:p-8"
+        }
+      >
         <button
           type="button"
           onClick={onBack}
@@ -51,7 +57,9 @@ export default function StepFrame({
             </div>
           </div>
         ) : null}
-        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+        <h1 className={`font-display text-2xl font-bold tracking-tight text-foreground ${wide ? "sm:text-3xl" : ""}`}>
+          {title}
+        </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-muted">{subtitle}</p>
         <div className="mt-5 space-y-4">{children}</div>
       </div>

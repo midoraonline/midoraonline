@@ -85,12 +85,12 @@ export const LISTING_KIND_OPTIONS: {
   {
     value: "service",
     label: "Service",
-    hint: "Work you offer — delivery, design, repairs…",
+    hint: "Describe what you offer, who it helps, and where or when you work. Set a pricing model; photos are optional.",
   },
   {
     value: "opportunity",
     label: "Opportunity",
-    hint: "Jobs, gigs, collaborations, openings",
+    hint: "Share the role or offer, who can apply, requirements, compensation, and deadline. Photos are optional.",
   },
 ];
 

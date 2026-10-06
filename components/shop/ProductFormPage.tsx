@@ -647,6 +647,13 @@ export default function ProductFormPage({
     mode === "add"
       ? `Post ${indefiniteArticle(kindName)} ${kindName}`
       : "Edit listing";
+  const descriptionPrompt =
+    draft.kind === "service"
+      ? "Explain what the service includes, who it is for, and what customers can expect. Pricing model, availability, and service area are collected separately."
+      : draft.kind === "opportunity"
+        ? "Describe the role or offer, who can apply, responsibilities, requirements, location, and how to respond. Add compensation and deadline below when relevant."
+        : "Describe the item, its condition, what is included, location, and any requirements.";
+  const descriptionTip = `${descriptionPrompt} Write at least two clear sentences.`;
 
   return (
     <div
@@ -914,12 +921,12 @@ export default function ProductFormPage({
               rows={5}
               value={draft.description}
               onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-              placeholder="Write at least two clear sentences. Include condition, what’s included, location, or requirements."
+              placeholder={descriptionPrompt}
               aria-invalid={showErrors && Boolean(errors.description)}
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted">
-                Tip: Detailed descriptions receive 3x more buyer inquiries and higher search ranking.
+                {descriptionTip}
               </p>
               <button
                 type="button"
@@ -1279,29 +1286,70 @@ export default function ProductFormPage({
           ) : null}
 
           {draft.kind === "opportunity" ? (
-            <div className="space-y-1.5 sm:max-w-xs">
-              <label className="text-xs font-semibold text-foreground">Compensation</label>
-              <select
-                className="dm-input"
-                value={draft.meta.compensation ?? ""}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    meta: {
-                      ...d.meta,
-                      compensation: (e.target.value ||
-                        undefined) as ListingMeta["compensation"],
-                    },
-                  }))
-                }
-              >
-                <option value="">Select compensation…</option>
-                {COMPENSATION_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Compensation</label>
+                <select
+                  className="dm-input"
+                  value={draft.meta.compensation ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: {
+                        ...d.meta,
+                        compensation: (e.target.value ||
+                          undefined) as ListingMeta["compensation"],
+                      },
+                    }))
+                  }
+                >
+                  <option value="">Select compensation…</option>
+                  {COMPENSATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {!catFields.some((field) => field.key === "deadline") ? (
+                <div className="space-y-1.5">
+                  <label htmlFor="opportunity-deadline" className="text-xs font-semibold text-foreground">
+                    Application deadline <span className="font-normal text-muted">(optional)</span>
+                  </label>
+                  <input
+                    id="opportunity-deadline"
+                    className="dm-input"
+                    type="date"
+                    value={draft.meta.deadline ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        meta: { ...d.meta, deadline: e.target.value || undefined },
+                      }))
+                    }
+                  />
+                </div>
+              ) : null}
+              {!catFields.some((field) => field.key === "requirements") ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="opportunity-requirements" className="text-xs font-semibold text-foreground">
+                    Applicant requirements <span className="font-normal text-muted">(optional)</span>
+                  </label>
+                  <textarea
+                    id="opportunity-requirements"
+                    className="dm-textarea"
+                    rows={3}
+                    value={draft.meta.requirements ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        meta: { ...d.meta, requirements: e.target.value || undefined },
+                      }))
+                    }
+                    placeholder="Experience, qualifications, documents, or availability applicants need"
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
 
