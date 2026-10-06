@@ -167,7 +167,7 @@ export default function OnboardingPage() {
                 {[
                   "Create your account and choose merchant.",
                   "Open a shop—name, story, logo, and policies.",
-                  "Add products and publish your storefront.",
+                  "Add listings and publish your storefront.",
                   "Share your shop link; customers browse you first.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
@@ -363,7 +363,7 @@ export default function OnboardingPage() {
               <ul className="mt-4 space-y-3 text-xs sm:text-sm leading-relaxed text-neutral-600">
                 <li className="pl-1">See who you&apos;re buying from before you commit.</li>
                 <li className="pl-1">
-                  Browse products with context—less guesswork, fewer regrets.
+                  Browse products, services and opportunities with context—less guesswork, fewer regrets.
                 </li>
                 <li className="pl-1">
                   A calmer, more legible alternative to chaotic marketplaces.

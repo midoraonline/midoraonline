@@ -523,15 +523,15 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-lg font-semibold tracking-tight">
-                Most viewed products
+                Most viewed listings
               </h2>
               <p className="mt-1 text-xs text-muted sm:text-sm">
-                Top 10 by product detail views.
+                Top 10 by listing detail views.
               </p>
             </div>
           </div>
           {topProductsChart.length === 0 ? (
-            <p className="mt-6 text-sm text-muted">No product views yet.</p>
+            <p className="mt-6 text-sm text-muted">No listing views yet.</p>
           ) : (
             <div
               className="mt-6 w-full"

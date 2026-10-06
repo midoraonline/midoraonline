@@ -788,13 +788,15 @@ export default function ProductFormPage({
           </div>
         ) : null}
 
-        <ListingTypeSummary
-          kind={draft.kind}
-          meta={draft.meta}
-          shopLabel={shopLabel}
-          onChangeType={onChangeType}
-          onChangeShop={onChangeShop}
-        />
+        <div className="lg:col-span-2">
+          <ListingTypeSummary
+            kind={draft.kind}
+            meta={draft.meta}
+            shopLabel={shopLabel}
+            onChangeType={onChangeType}
+            onChangeShop={onChangeShop}
+          />
+        </div>
 
         <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
           <div>

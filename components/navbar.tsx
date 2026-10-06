@@ -375,7 +375,7 @@ export default function Navbar({
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
                 </span>
-                <span>{onlineCount.toLocaleString()} online</span>
+                <span>{onlineCount.toLocaleString()} people online</span>
               </span>
             ) : null}
 
@@ -545,6 +545,21 @@ export default function Navbar({
 
             {session.isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-0.5 px-2">
+                <Link
+                  href="/chat"
+                  onClick={() => setOpen(false)}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors dm-focus hover:bg-foreground/[0.04]"
+                >
+                  <span className="flex items-center gap-3">
+                    <MaterialSymbol name="chat" className="!text-lg text-muted" />
+                    Messages
+                  </span>
+                  {unread > 0 ? (
+                    <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  ) : null}
+                </Link>
                 <Link
                   href="/post-item"
                   onClick={() => setOpen(false)}

@@ -154,16 +154,16 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
     { label: "Shop views",      value: stats.total_shop_views,       color: PALETTE[0] },
     { label: "Followers",       value: stats.total_followers,         color: PALETTE[1] },
     { label: "Shop likes",      value: stats.total_shop_likes,        color: PALETTE[4] },
-    { label: "Products",        value: stats.total_products,          color: PALETTE[2] },
-    { label: "Product views",   value: stats.total_product_views,     color: PALETTE[3] },
-    { label: "Product likes",   value: stats.total_product_likes,     color: PALETTE[4] },
+    { label: "Listings",        value: stats.total_products,          color: PALETTE[2] },
+    { label: "Listing views",   value: stats.total_product_views,     color: PALETTE[3] },
+    { label: "Listing likes",   value: stats.total_product_likes,     color: PALETTE[4] },
     { label: "WhatsApp clicks", value: stats.total_whatsapp_clicks,   color: PALETTE[5] },
     { label: "Messages",        value: stats.total_messages,          color: PALETTE[0] },
   ] : [];
 
   const donutData = [
     { name: "Shop Views",    value: stats?.total_shop_views       ?? 0, fill: PALETTE[0] },
-    { name: "Product Views", value: stats?.total_product_views    ?? 0, fill: PALETTE[3] },
+    { name: "Listing Views", value: stats?.total_product_views    ?? 0, fill: PALETTE[3] },
     { name: "Followers",     value: stats?.total_followers        ?? 0, fill: PALETTE[1] },
     { name: "Shop Likes",    value: stats?.total_shop_likes       ?? 0, fill: PALETTE[4] },
     { name: "WhatsApp",      value: stats?.total_whatsapp_clicks  ?? 0, fill: PALETTE[5] },
@@ -361,7 +361,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: "Impressions", value: analytics.summary.total_impressions, color: PALETTE[0] },
-                { label: "Product views", value: analytics.summary.total_product_views, color: PALETTE[3] },
+                { label: "Listing views", value: analytics.summary.total_product_views, color: PALETTE[3] },
                 { label: "WhatsApp clicks", value: analytics.summary.total_whatsapp_clicks, color: PALETTE[5] },
                 { label: "Messages", value: analytics.summary.total_messages, color: PALETTE[1] },
               ].map(({ label, value, color }) => (
@@ -415,7 +415,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
               <div className="mt-5 space-y-3">
                 {[
                   { label: "Impressions",       value: analytics.funnel.impressions,       rate: 1 },
-                  { label: "Product views",     value: analytics.funnel.views,             rate: analytics.funnel.view_rate },
+                  { label: "Listing views",     value: analytics.funnel.views,             rate: analytics.funnel.view_rate },
                   { label: "WhatsApp clicks",   value: analytics.funnel.whatsapp_clicks,   rate: analytics.funnel.wa_rate },
                   { label: "Messages",          value: analytics.funnel.messages,          rate: analytics.funnel.msg_rate },
                 ].map((row, i) => {

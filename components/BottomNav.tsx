@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 import { useAppSession, usePresenceStore } from "@/lib/state";
 
 type Tab = {
@@ -19,7 +18,6 @@ type Tab = {
 export default function BottomNav() {
   const pathname = usePathname();
   const session = useAppSession();
-  const unread = useChatUnreadCount("bottomnav-unread");
 
   const role = session.user?.user_role ?? null;
   const isMerchant = role === "merchant" || role === "admin";
@@ -28,9 +26,6 @@ export default function BottomNav() {
   const postHref = session.isAuthenticated
     ? "/post-item"
     : `/login?next=${encodeURIComponent("/post-item")}`;
-  const messagesHref = session.isAuthenticated
-    ? "/chat"
-    : `/login?next=${encodeURIComponent("/chat")}`;
   const accountReturn =
     pathname && pathname !== "/login" ? pathname : "/";
 
@@ -90,11 +85,10 @@ export default function BottomNav() {
         isActive: (p) => p === "/",
       },
       {
-        label: "Messages",
-        href: messagesHref,
-        icon: "chat",
-        badge: session.isAuthenticated ? unread : 0,
-        isActive: (p) => p.startsWith("/chat"),
+        label: "Search",
+        href: "/products",
+        icon: "search",
+        isActive: (p) => p.startsWith("/products"),
       },
       {
         label: "Post Item",
@@ -106,7 +100,7 @@ export default function BottomNav() {
       shopsTab,
       accountTab,
     ];
-  }, [accountReturn, isMerchant, messagesHref, postHref, role, session.isAuthenticated, unread]);
+  }, [accountReturn, isMerchant, postHref, role, session.isAuthenticated]);
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">

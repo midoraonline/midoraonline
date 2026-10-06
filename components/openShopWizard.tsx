@@ -151,7 +151,7 @@ export default function OpenShopWizard({
         social_links: [],
       });
       notifyAuthChanged();
-      router.push(`/merchant/shops/${shop.id}/verification`);
+      router.push(`/merchant/shops/${shop.id}`);
     } catch (err) {
       setError(
         isMaintenanceMode(err)

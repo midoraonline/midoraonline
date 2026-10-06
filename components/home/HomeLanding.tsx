@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Package } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Package, Store, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -31,6 +31,7 @@ import { HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
 import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
+import type { ListingKind } from "@/lib/listingMeta";
 
 const FEED_PAGE_SIZE = HOME_FEED_PAGE_SIZE;
 
@@ -366,12 +367,34 @@ export default function HomeLanding({
     <div className="relative w-full">
       <GuestGetNoticedBanner visible={session.hydrated && !session.isAuthenticated} />
       <div className="mb-3 space-y-2 sm:mb-4">
+        <ListingTypeTabs
+          selected={filters.listingKind}
+          onSelect={(listingKind) => {
+            setCategoryFilter(EMPTY_CATEGORY_FILTER);
+            setFilters((current) => ({
+              ...current,
+              listingKind,
+              opportunityKind: null,
+              compensation: null,
+              pricingModel: null,
+            }));
+          }}
+        />
         <CategoryBrowseSection
           selection={categoryFilter}
-          onSelectionChange={setCategoryFilter}
+          onSelectionChange={(selection) => {
+            setCategoryFilter(selection);
+            setFilters((current) => ({
+              ...current,
+              listingKind: null,
+              opportunityKind: null,
+              compensation: null,
+              pricingModel: null,
+            }));
+          }}
           showHeader={false}
           browseAllHref="/products"
-          showCreateShop
+          showListingShortcuts={false}
         />
         <ProductFilters
           products={products}
@@ -497,6 +520,52 @@ export default function HomeLanding({
       </div>
 
       <HomeFeedbackWidget />
+    </div>
+  );
+}
+
+function ListingTypeTabs({
+  selected,
+  onSelect,
+}: {
+  selected: ListingKind | null;
+  onSelect: (kind: ListingKind | null) => void;
+}) {
+  const tabs = [
+    { label: "All", kind: null, icon: Package },
+    { label: "Products", kind: "product" as const, icon: Package },
+    { label: "Services", kind: "service" as const, icon: Wrench },
+    { label: "Opportunities", kind: "opportunity" as const, icon: BriefcaseBusiness },
+  ];
+
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto border-b border-border scrollbar-none" role="group" aria-label="Browse listing types">
+      {tabs.map(({ label, kind, icon: Icon }) => {
+        const active = selected === kind;
+        return (
+          <button
+            key={label}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onSelect(kind)}
+            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
+              active
+                ? "border-accent text-accent"
+                : "border-transparent text-muted hover:text-foreground"
+            }`}
+          >
+            <Icon className="size-4" aria-hidden />
+            {label}
+          </button>
+        );
+      })}
+      <Link
+        href="/shops"
+        className="ml-auto inline-flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-3 text-xs font-semibold text-muted transition-colors hover:text-foreground sm:px-4 sm:text-sm"
+      >
+        <Store className="size-4" aria-hidden />
+        Shops
+      </Link>
     </div>
   );
 }

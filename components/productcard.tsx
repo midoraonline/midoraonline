@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
+import { ArrowRight, ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -277,11 +277,15 @@ function WhatsAppCta({
   hasDiscount?: boolean;
   compact?: boolean;
 }) {
-  const className = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-xs font-bold text-white transition-colors hover:bg-[#22c35e] active:bg-[#1fae53] ${
+  const className = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white transition-colors ${
+    waHref
+      ? "bg-[#25D366] hover:bg-[#22c35e] active:bg-[#1fae53]"
+      : "bg-accent hover:bg-accent-hover active:scale-[0.98]"
+  } ${
     compact ? "py-2" : "py-2.5"
   }`;
 
-  const inner = (
+  const whatsappLabel = (
     <>
       <WhatsAppIcon className="size-3.5 shrink-0 text-white sm:size-4" />
       WhatsApp
@@ -308,7 +312,7 @@ function WhatsAppCta({
       >
         {(open) => (
           <button type="button" onClick={open} className={`${className} cursor-pointer`}>
-            {inner}
+            {whatsappLabel}
           </button>
         )}
       </TradeDisclaimer>
@@ -317,7 +321,8 @@ function WhatsAppCta({
 
   return (
     <Link href={productHref} className={className}>
-      {inner}
+      View details
+      <ArrowRight className="size-3.5" aria-hidden />
     </Link>
   );
 }

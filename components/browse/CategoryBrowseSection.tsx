@@ -29,6 +29,8 @@ type Props = {
   browseAllHref?: string;
   /** Home only: shop creation sits with Services and Opportunities. */
   showCreateShop?: boolean;
+  /** Hide type shortcuts when the page provides a dedicated type tab bar. */
+  showListingShortcuts?: boolean;
 };
 
 export default function CategoryBrowseSection({
@@ -37,6 +39,7 @@ export default function CategoryBrowseSection({
   showHeader = true,
   browseAllHref,
   showCreateShop = false,
+  showListingShortcuts = true,
 }: Props) {
   const { tree, counts } = useCategoryItems();
   const session = useAppSession();
@@ -87,7 +90,7 @@ export default function CategoryBrowseSection({
         </div>
       )}
 
-      {listingEntries.length > 0 || showCreateShop ? (
+      {showListingShortcuts && (listingEntries.length > 0 || showCreateShop) ? (
         <div className="mb-2 flex items-stretch gap-1.5 sm:gap-2">
           {listingEntries.map(({ parent }) => (
             <CategoryChip

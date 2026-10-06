@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2, ShieldCheck, Sparkles, Store } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, Store } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import CreateShopConcierge from "@/components/createShopConcierge";
@@ -216,21 +216,13 @@ function CreatedSuccessCard({
           {shop.name}
         </h1>
         <p className="relative mt-2 text-sm leading-relaxed text-muted">
-          Your storefront is live. Complete verification next to unlock trust badges and boost your placement in feeds.
+          Your storefront is live. Add listings or customize your shop whenever you&apos;re ready.
         </p>
 
         <div className="relative mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link
-            href={`/merchant/shops/${shop.id}/verification`}
-            className="dm-btn dm-btn-primary inline-flex gap-2"
-          >
-            <ShieldCheck className="size-4" />
-            Verify shop
-            <ArrowRight className="size-4" />
-          </Link>
-          <Link
             href={`/merchant/shops/${shop.id}`}
-            className="dm-btn dm-btn-secondary"
+            className="dm-btn dm-btn-primary"
           >
             Manage shop
           </Link>
