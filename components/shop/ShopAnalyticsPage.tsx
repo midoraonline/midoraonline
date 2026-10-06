@@ -303,13 +303,13 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
 
           <section className="dm-card p-5 sm:p-8">
             <h2 className="text-base font-semibold tracking-tight sm:text-lg">
-              Product views
+              Listing views
             </h2>
             <p className="mt-1 text-xs text-muted sm:text-sm">
-              Top listings by recorded product views (merchant view includes all products).
+              Top listings by recorded views across products, services and opportunities.
             </p>
             {productViewRows.length === 0 ? (
-              <p className="mt-6 text-sm text-muted">No products yet.</p>
+              <p className="mt-6 text-sm text-muted">No listings yet.</p>
             ) : (
               <div
                 className="mt-6 w-full"

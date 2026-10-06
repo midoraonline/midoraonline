@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles, Store, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, ShieldCheck, Sparkles, Store } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import CreateShopConcierge from "@/components/createShopConcierge";
 import OpenShopWizard from "@/components/openShopWizard";
+import VerifyChannelStep from "@/components/post/VerifyChannelStep";
 import { useAppSession } from "@/lib/state";
 import type { apiShops } from "@/lib/api";
+import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
 
 type CreationMode = "quick" | "manual";
 
@@ -18,6 +20,8 @@ export default function OpenShopPage() {
   const session = useAppSession();
   const [mode, setMode] = useState<CreationMode>("manual");
   const [createdShop, setCreatedShop] = useState<apiShops.Shop | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const stillResolving =
     !session.hydrated || (session.isAuthenticated && session.user === undefined);
@@ -28,6 +32,21 @@ export default function OpenShopPage() {
       router.replace("/login?next=/open-shop");
     }
   }, [stillResolving, session.isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!session.hydrated || !session.isAuthenticated) return;
+    let active = true;
+    fetchVerificationStatus()
+      .then((status) => {
+        if (active) setVerificationStatus(status);
+      })
+      .catch(() => {
+        if (active) setVerificationError("We couldn't check verification. Try again.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [session.hydrated, session.isAuthenticated]);
 
   if (stillResolving) {
     return (
@@ -43,6 +62,47 @@ export default function OpenShopPage() {
   }
 
   if (!session.isAuthenticated) return null;
+
+  if (!verificationStatus) {
+    return (
+      <StandaloneShell eyebrow="Merchant Studio">
+        <div className="grid min-h-[calc(100dvh-64px)] place-items-center p-6">
+          <div className="flex flex-col items-center gap-3 text-center text-muted">
+            {verificationError ? (
+              <>
+                <p className="text-sm" role="alert">{verificationError}</p>
+                <button type="button" onClick={() => window.location.reload()} className="dm-btn dm-btn-secondary min-h-11">
+                  Try again
+                </button>
+              </>
+            ) : (
+              <>
+                <Loader2 className="size-5 animate-spin text-accent" aria-hidden />
+                <p className="text-sm font-medium">Checking verified contact…</p>
+              </>
+            )}
+          </div>
+        </div>
+      </StandaloneShell>
+    );
+  }
+
+  if (!verificationStatus.can_post) {
+    return (
+      <StandaloneShell eyebrow="Merchant Studio">
+        <VerifyChannelStep
+          status={verificationStatus}
+          onVerified={setVerificationStatus}
+          onBack={() => router.push("/")}
+        />
+      </StandaloneShell>
+    );
+  }
+
+  const verifiedContacts = {
+    email: verificationStatus.email_verified ? verificationStatus.email : null,
+    phone: verificationStatus.phone_verified ? verificationStatus.phone : null,
+  };
 
   return (
     <StandaloneShell eyebrow="Merchant Studio">
@@ -66,10 +126,16 @@ export default function OpenShopPage() {
               >
                 Use the step-by-step form
               </button>
-              <ActiveModeSection onShopCreated={setCreatedShop} />
+              <ActiveModeSection
+                onShopCreated={setCreatedShop}
+                verifiedContacts={verifiedContacts}
+              />
             </div>
             <div className={mode === "manual" ? "" : "hidden"}>
-              <OpenShopWizard onPreferAi={() => setMode("quick")} />
+              <OpenShopWizard
+                onPreferAi={() => setMode("quick")}
+                verifiedContacts={verifiedContacts}
+              />
             </div>
           </>
         )}
@@ -97,8 +163,10 @@ function IntroHeader() {
 
 function ActiveModeSection({
   onShopCreated,
+  verifiedContacts,
 }: {
   onShopCreated: (s: apiShops.Shop) => void;
+  verifiedContacts: { email: string | null; phone: string | null };
 }) {
   return (
     <section className="dm-card overflow-hidden p-6 sm:p-8">
@@ -116,7 +184,10 @@ function ActiveModeSection({
         </div>
       </div>
       <div className="mt-6">
-        <CreateShopConcierge onShopCreated={onShopCreated} />
+        <CreateShopConcierge
+          onShopCreated={onShopCreated}
+          verifiedContacts={verifiedContacts}
+        />
       </div>
     </section>
   );

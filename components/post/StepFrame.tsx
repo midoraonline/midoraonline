@@ -9,6 +9,7 @@ export default function StepFrame({
   onBack,
   step,
   total,
+  wide = false,
   children,
 }: {
   title: string;
@@ -16,12 +17,13 @@ export default function StepFrame({
   onBack: () => void;
   step?: number;
   total?: number;
+  wide?: boolean;
   children: ReactNode;
 }) {
   const showProgress = Boolean(step && total && total > 0);
   return (
-    <div className="mx-auto w-full max-w-lg px-4 py-6 sm:py-12">
-      <div className="sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:p-6 sm:shadow-md">
+    <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-lg"} px-4 py-6 sm:py-12`}>
+      <div className="sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:p-6 sm:shadow-md lg:p-8">
         <button
           type="button"
           onClick={onBack}

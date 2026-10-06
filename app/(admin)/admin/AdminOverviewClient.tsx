@@ -597,14 +597,14 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
       <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
         <section className="dm-card p-5 sm:p-6">
           <h2 className="font-display text-lg font-semibold tracking-tight">
-            Product categories
+            Listing categories
           </h2>
           <p className="mt-1 text-xs text-muted sm:text-sm">
-            Share of each category across the catalogue.
+            Share of each category across products, services and opportunities.
           </p>
           <DistributionChart
             slices={data.distributions.product_categories}
-            emptyLabel="No products yet"
+            emptyLabel="No listings yet"
           />
         </section>
         <section className="dm-card p-5 sm:p-6">

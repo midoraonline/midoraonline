@@ -33,7 +33,7 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-muted">Messages from buyers interested in your products.</p>
+        <p className="text-sm text-muted">Messages from buyers interested in your listings.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -51,7 +51,7 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
 
       {sellerConvs.length === 0 ? (
         <div className="dm-card p-8 text-center text-sm text-muted">
-          No customer conversations yet. Buyers can message you from product pages.
+          No customer conversations yet. Buyers can message you from listing pages.
         </div>
       ) : (
         <div className="space-y-2">

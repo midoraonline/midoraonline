@@ -1,11 +1,16 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import type { Metadata } from "next";
 
 import ProductsBrowsePage from "@/components/product/ProductsBrowsePage";
 import ProductsBrowseSkeleton from "@/components/skeletons/ProductsBrowseSkeleton";
 import { loadLatestFeed } from "@/lib/productFeed";
 
 export const revalidate = 60;
+export const metadata: Metadata = {
+  title: "Products, Services & Opportunities | Midora Online",
+  description: "Discover products, services and opportunities from local shops on Midora Online.",
+};
 
 async function ProductsContent({ initialQuery }: { initialQuery: string }) {
   const items = await loadLatestFeed();
@@ -28,10 +33,10 @@ export default async function ProductListing({
         <div className="relative z-10 flex h-full flex-col justify-center dm-container">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Shop</p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
-            Browse Products
+            Products, Services & Opportunities
           </h1>
           <p className="mt-2 max-w-md text-sm text-white/75">
-            Handcrafted goods, local fashion, and everyday essentials from verified Ugandan sellers.
+            Discover goods, local services and opportunities from Ugandan sellers.
           </p>
         </div>
       </div>

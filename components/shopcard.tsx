@@ -24,7 +24,7 @@ export type ShopCardData = {
 
 export default function ShopCard({ shop, className = "" }: { shop: ShopCardData; className?: string }) {
   const shopTypeLabel =
-    shop.shopType === "both" ? "Products & Services"
+    shop.shopType === "both" ? "Products, services & opportunities"
     : shop.shopType === "service" ? "Services"
     : shop.shopType === "product" ? "Products"
     : null;

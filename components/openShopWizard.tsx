@@ -32,7 +32,7 @@ const FIELD =
 const SHOP_TYPE_LABEL: Record<apiShops.ShopType, string> = {
   product: "Products",
   service: "Services",
-  both: "Products and services",
+  both: "Products, services and opportunities",
 };
 
 function slugFromName(name: string): string {
@@ -66,7 +66,13 @@ function hoursSummary(draft: HoursDraft): string {
   return "Weekly hours";
 }
 
-export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void }) {
+export default function OpenShopWizard({
+  onPreferAi,
+  verifiedContacts,
+}: {
+  onPreferAi?: () => void;
+  verifiedContacts: { email: string | null; phone: string | null };
+}) {
   const session = useAppSession();
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -78,8 +84,8 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
   const [about, setAbout] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
-  const [shopEmail, setShopEmail] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [shopEmail, setShopEmail] = useState(verifiedContacts.email ?? "");
+  const [whatsappNumber, setWhatsappNumber] = useState(verifiedContacts.phone ?? "");
   const [locationDisplay, setLocationDisplay] = useState("");
   const [locationCoords, setLocationCoords] = useState<LatLng | null>(null);
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
@@ -169,6 +175,7 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
       onBack={back}
       step={step + 1}
       total={STEPS.length}
+      wide
     >
       {error ? (
         <div className="flex items-start gap-2 rounded-xl border border-[color:var(--error)]/30 bg-[color:var(--error)]/10 px-3 py-2.5 text-sm text-[color:var(--error)]">
@@ -193,28 +200,30 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
               </p>
             ) : null}
           </Field>
-          <Field label="What you sell">
-            <select
-              id="wizard-shop-type"
-              className={FIELD}
-              value={shopType}
-              onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
-            >
-              <option value="product">Products</option>
-              <option value="service">Services</option>
-              <option value="both">Both products and services</option>
-            </select>
-          </Field>
-          <Field label="Category">
-            <CategoryPicker
-              value={category}
-              onChange={setCategory}
-              hideLabel
-              hideSummary
-              selectClassName={`${FIELD} appearance-none pr-9`}
-              idPrefix="open-shop-wizard-category"
-            />
-          </Field>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Field label="What you sell">
+              <select
+                id="wizard-shop-type"
+                className={FIELD}
+                value={shopType}
+                onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
+              >
+                <option value="product">Products</option>
+                <option value="service">Services</option>
+                <option value="both">Products, services and opportunities</option>
+              </select>
+            </Field>
+            <Field label="Category">
+              <CategoryPicker
+                value={category}
+                onChange={setCategory}
+                hideLabel
+                hideSummary
+                selectClassName={`${FIELD} appearance-none pr-9`}
+                idPrefix="open-shop-wizard-category"
+              />
+            </Field>
+          </div>
           <Field label="Short description" htmlFor="wizard-shop-desc">
             <input
               id="wizard-shop-desc"
@@ -243,16 +252,18 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
       ) : null}
 
       {step === 1 ? (
-        <>
-          <Field label="Town or address">
-            <LocationInput
-              value={locationDisplay}
-              onChange={setLocationDisplay}
-              onResolved={(place) => setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)}
-              placeholder="e.g. Ntinda, Kampala"
-            />
-          </Field>
-          <Field label="Business email" htmlFor="wizard-shop-email">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="lg:col-span-2">
+            <Field label="Town or address">
+              <LocationInput
+                value={locationDisplay}
+                onChange={setLocationDisplay}
+                onResolved={(place) => setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)}
+                placeholder="e.g. Ntinda, Kampala"
+              />
+            </Field>
+          </div>
+          <Field label="Business email (optional)" htmlFor="wizard-shop-email">
             <input
               id="wizard-shop-email"
               type="email"
@@ -262,14 +273,14 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
               onChange={(e) => setShopEmail(e.target.value)}
             />
           </Field>
-          <Field label="WhatsApp number">
+          <Field label="WhatsApp number (optional)">
             <PhoneNumberInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="700 000 000" />
           </Field>
-        </>
+        </div>
       ) : null}
 
       {step === 2 ? (
-        <>
+        <div className="grid gap-4 lg:grid-cols-2">
           <Field label="Logo">
             <ImageUpload
               endpoint="shopLogo"
@@ -290,13 +301,13 @@ export default function OpenShopWizard({ onPreferAi }: { onPreferAi?: () => void
               previewUrl={bannerUrl || undefined}
             />
           </Field>
-        </>
+        </div>
       ) : null}
 
       {step === 3 ? <ShopHoursEditor value={hours} onChange={setHours} /> : null}
 
       {step === 4 ? (
-        <dl className="divide-y divide-border rounded-xl border border-border">
+        <dl className="grid divide-y divide-border rounded-xl border border-border md:grid-cols-2">
           <ReviewRow label="Name" value={name.trim()} onChange={() => setStep(0)} />
           <ReviewRow label="Sells" value={SHOP_TYPE_LABEL[shopType]} />
           <ReviewRow label="Category" value={category.trim() || "Not set"} onChange={() => setStep(0)} />

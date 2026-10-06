@@ -131,7 +131,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
       <div className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.02] px-6 py-10 text-center sm:px-10">
         <p className="text-sm font-medium text-foreground">No listings yet</p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">
-          This shop hasn&apos;t published products or services. Check back later, or message the owner if
+          This shop hasn&apos;t published products, services or opportunities. Check back later, or message the owner if
           you&apos;d like to enquire.
         </p>
         {shopWa ? (

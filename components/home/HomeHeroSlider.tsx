@@ -66,7 +66,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             href="/products"
             className="px-6 py-3 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs rounded-full transition-all shadow-lg hover:shadow-orange-600/10 active:scale-95 cursor-pointer"
           >
-            Browse Products
+            Browse listings
           </Link>
           <Link
             href="/post-item"

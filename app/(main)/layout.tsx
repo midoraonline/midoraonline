@@ -28,7 +28,7 @@ export default function MainLayout({
             </span>
           </div>
           <div className="text-xs text-primary-foreground/80">
-            Create your shop space and post your Items
+            Create your shop space and post a listing
           </div>
         </div>
       </div>

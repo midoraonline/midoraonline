@@ -131,7 +131,7 @@ export default function Footer() {
               </Link>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
                 The marketplace where African brands and shoppers connect —
-                discover local shops, products and services in one place.
+                discover local shops, products, services and opportunities in one place.
               </p>
 
               <div className="mt-5 space-y-2.5">

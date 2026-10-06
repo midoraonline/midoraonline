@@ -111,7 +111,7 @@ export default function ShopOverviewClient({
         </div>
         {products.length === 0 ? (
           <p className="mt-4 text-sm text-muted">
-            No products yet. Add your first product to start selling.
+            No listings yet. Add your first listing to start selling.
           </p>
         ) : (
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">

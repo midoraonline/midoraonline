@@ -102,7 +102,7 @@ export default function VerifyChannelStep({
         ? `We sent a 6-digit code by SMS to ${phone}.`
         : `We sent a 6-digit code to ${email}.`
       : channel === "phone"
-        ? "Confirm a phone number before you post. We'll text you a code."
+        ? "Confirm a phone number before you continue. We'll text you a code."
         : "No phone number is on this account, so we'll email you a code instead.";
 
   return (

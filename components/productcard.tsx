@@ -41,9 +41,7 @@ export type ProductCardData = {
   discountPriceUGX?: number | null;
   discountPercent?: number;
   imageUrl?: string;
-  /** Every media URL, cover first, so a dead file can fall through. */
   imageUrls?: string[];
-  /** True when any media attached to the listing is a video URL. */
   hasVideo?: boolean;
   shopLogoUrl?: string;
   stockQuantity?: number | null;
@@ -141,7 +139,8 @@ export function productCardSlotClass(
   const listed = (product.imageUrls ?? []).map((url) => url.trim()).filter(Boolean);
   const count = listed.length || (product.imageUrl?.trim() ? 1 : 0);
   const width = "w-full min-w-0 max-w-full justify-self-stretch";
-  return isTextOnlyListing(product.item_type, count) ? `${width} self-start` : `${width} h-full`;
+  const textOnly = isTextOnlyListing(product.item_type, count);
+  return `${width} h-full${textOnly ? " self-stretch" : ""}`;
 }
 
 function coverMediaUrls(product: ProductCardData): string[] {
@@ -404,7 +403,7 @@ export default function ProductCard({
   const imageBadges = (
     <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
       <div className="flex max-w-[75%] flex-wrap gap-1">
-        <ListingTypeTag kind={typeKind} />
+        <ListingTypeTag kind={typeKind} className="px-2 py-1 text-[11px]" />
         {isBoosted && (
           <Badge className="bg-accent text-white">
             <Zap className="size-2.5" strokeWidth={2.5} aria-hidden />
@@ -497,13 +496,12 @@ export default function ProductCard({
       if (price <= 0 && chip.toLowerCase() === rate.toLowerCase()) return false;
       return true;
     });
-    const description = product.description?.trim() || "";
     return (
       <article
         ref={impressionRef as React.RefObject<HTMLElement>}
-        className="dm-product-card dm-card-hover flex w-full min-w-0 max-w-full flex-col self-start overflow-hidden"
+        className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
       >
-        <div className="flex w-full flex-col gap-1.5 p-2.5 sm:p-3">
+        <div className="flex w-full flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-2">
             <Link href={productHref} className="dm-focus min-w-0 flex-1 outline-none">
               <h3 className={titleClass}>{headline}</h3>
@@ -516,7 +514,7 @@ export default function ProductCard({
             />
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <ListingTypeTag kind={typeKind} />
+            <ListingTypeTag kind={typeKind} className="px-2 py-1 text-[11px]" />
             {categoryLine.toLowerCase() === typeKind ? null : (
               <p className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
                 {categoryLine}
@@ -557,12 +555,7 @@ export default function ProductCard({
               <span className="text-[10px] font-medium text-muted">· Negotiable</span>
             ) : null}
           </div>
-          {description ? (
-            <p className="line-clamp-3 text-[11px] leading-snug text-muted sm:text-xs">
-              {description}
-            </p>
-          ) : null}
-          <div className="space-y-1.5">
+          <div className="mt-auto space-y-1.5">
             {metaRow}
             <WhatsAppCta
               waHref={waHref}

@@ -220,12 +220,12 @@ export default function ProductsBrowsePage({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-                {isSearching ? "Search results" : `Latest Listings${filterHint}`}
+                {isSearching ? "Search results" : `Products, Services & Opportunities${filterHint}`}
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 {isSearching
                   ? "Semantic matches from shops on Midora Online."
-                  : "Newest products from shops on Midora Online."}
+                  : "Discover products, services and opportunities from shops on Midora Online."}
               </p>
             </div>
             <Link
@@ -243,7 +243,7 @@ export default function ProductsBrowsePage({
           ) : items.length === 0 && !isSearching && !catalogQueryActive(catalog) ? (
             <div className="dm-card mt-6 p-8 sm:p-10">
               <p className="text-sm leading-relaxed text-muted">
-                No products are available yet. Open a{" "}
+                No products, services or opportunities are available yet. Open a{" "}
                 <Link href="/shops" className="font-semibold text-foreground underline-offset-2 hover:underline">
                   shop
                 </Link>{" "}

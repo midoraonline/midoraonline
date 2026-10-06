@@ -151,8 +151,10 @@ function ShopPreview({ form }: { form: ConfirmForm }) {
 
 export default function CreateShopConcierge({
   onShopCreated,
+  verifiedContacts,
 }: {
   onShopCreated: (shop: apiShops.Shop) => void;
+  verifiedContacts: { email: string | null; phone: string | null };
 }) {
   const appSession = useAppSession();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -226,6 +228,8 @@ export default function CreateShopConcierge({
         const s = res.suggested_shop;
         setSuggestedShop(s);
         const form = fromSuggestion(s);
+        form.shopEmail = verifiedContacts.email ?? form.shopEmail;
+        form.whatsappNumber = verifiedContacts.phone ?? form.whatsappNumber;
         setConfirmForm(form);
         setLocationCoords(null);
         const suggested: Set<TextField> = new Set();
@@ -447,7 +451,7 @@ export default function CreateShopConcierge({
               >
                 <option value="product">Products</option>
                 <option value="service">Services</option>
-                <option value="both">Products & services</option>
+                <option value="both">Products, services &amp; opportunities</option>
               </select>
             </div>
 
@@ -488,7 +492,7 @@ export default function CreateShopConcierge({
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Shop email
+                Shop email (optional)
               </label>
               <input
                 type="email"
@@ -500,7 +504,7 @@ export default function CreateShopConcierge({
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                WhatsApp
+                WhatsApp number (optional)
               </label>
               <PhoneNumberInput
                 value={f.whatsappNumber}

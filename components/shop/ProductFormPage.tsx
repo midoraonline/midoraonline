@@ -718,7 +718,7 @@ export default function ProductFormPage({
         id="product-form-page"
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        className="space-y-6"
+        className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0"
       >
         {/* Moderation status banner */}
         {mode === "edit" && product
@@ -747,7 +747,7 @@ export default function ProductFormPage({
               return (
                 <div
                   role="status"
-                  className={`flex gap-3 rounded-2xl border p-4 text-sm shadow-xs ${tone}`}
+                  className={`flex gap-3 rounded-2xl border p-4 text-sm shadow-xs lg:col-span-2 ${tone}`}
                 >
                   <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
                   <div className="space-y-1">
@@ -765,7 +765,7 @@ export default function ProductFormPage({
         {mode === "add" && !sessionUser?.avatar_url && !profileNudgeDismissed ? (
           <div
             role="status"
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm lg:col-span-2"
           >
             <p className="min-w-0 flex-1 text-xs leading-relaxed text-foreground/85">
               Add a profile photo so buyers know who they&apos;re messaging. It builds trust — you can skip for now.
@@ -796,7 +796,7 @@ export default function ProductFormPage({
           onChangeShop={onChangeShop}
         />
 
-        <section className="dm-card p-5 sm:p-6 space-y-4">
+        <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
               {draft.kind === "opportunity"
@@ -857,7 +857,7 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 2: Basic Info (Title & Description) */}
-        <section className="dm-card p-5 sm:p-6 space-y-5">
+        <section className="dm-card p-5 sm:p-6 space-y-5 lg:col-span-2">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">3. Listing Details</h2>
             <p className="text-xs text-muted">Write a clear title and detailed description for buyers.</p>
@@ -1096,7 +1096,7 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 5: Category */}
-        <section className="dm-card p-5 sm:p-6 space-y-4">
+        <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">5. Category</h2>
             <p className="text-xs text-muted">
@@ -1162,7 +1162,7 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 6: Additional Attributes */}
-        <section className="dm-card p-5 sm:p-6 space-y-4">
+        <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted">6. Additional Attributes</h2>
             <p className="text-xs text-muted">

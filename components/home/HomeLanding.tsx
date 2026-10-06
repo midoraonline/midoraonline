@@ -23,6 +23,7 @@ import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
 import { toCatalogQuery } from "@/lib/catalogQuery";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
+import GuestGetNoticedBanner from "@/components/home/GuestGetNoticedBanner";
 import { ProductCardSkeleton } from "@/components/skeletons/Skeleton";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
@@ -363,6 +364,7 @@ export default function HomeLanding({
 
   return (
     <div className="relative w-full">
+      <GuestGetNoticedBanner visible={session.hydrated && !session.isAuthenticated} />
       <div className="mb-3 space-y-2 sm:mb-4">
         <CategoryBrowseSection
           selection={categoryFilter}
@@ -382,7 +384,7 @@ export default function HomeLanding({
       <div id="products-feed" className="space-y-4 sm:space-y-5">
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground sm:text-base">
+            <h2 className="min-w-0 flex-1 text-sm font-semibold tracking-tight text-foreground sm:text-base">
               {isSearching
                 ? search.loading
                   ? `Searching “${query.trim()}”…`
@@ -391,7 +393,7 @@ export default function HomeLanding({
                   ? "Loading listings…"
                   : filters.nearMe
                     ? "Closest to you"
-                    : `Products${filterHint}`}
+                    : `Products, services & opportunities${filterHint}`}
             </h2>
             <div className="flex shrink-0 items-center gap-3">
               {isSearching ? (
@@ -445,10 +447,10 @@ export default function HomeLanding({
             <EmptyState
               message={
                 isSearching
-                  ? `No products match “${query.trim()}”. Try another search.`
+                  ? `No products, services or opportunities match “${query.trim()}”. Try another search.`
                   : anyFiltersActive
-                    ? "No products match your filters. Try a different category or clear filters."
-                    : "No products yet — check back soon."
+                    ? "No products, services or opportunities match your filters. Try a different category or clear filters."
+                    : "No products, services or opportunities yet — check back soon."
               }
             />
           ) : (
