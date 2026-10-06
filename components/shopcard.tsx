@@ -32,13 +32,13 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className={`dm-focus group flex flex-col rounded-2xl border border-border bg-background shadow-sm transition-all hover:border-border-strong hover:shadow-md ${className}`}
+      className={`dm-focus group flex min-w-0 flex-col rounded-xl border border-border bg-background shadow-sm transition-colors hover:border-border-strong ${className}`}
     >
       {/* Card body */}
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex flex-1 flex-col p-2.5 sm:p-3.5">
         {/* Top row: logo + identity */}
-        <div className="flex items-start gap-3">
-          <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-surface ring-1 ring-border sm:size-16">
+        <div className="flex min-w-0 items-start gap-2">
+          <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-surface ring-1 ring-border sm:size-12">
             {shop.logoUrl ? (
               <img
                 src={shop.logoUrl}
@@ -51,25 +51,25 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
                 alt="Midora Online"
                 fill
                 className="object-contain p-1.5"
-                sizes="64px"
+                sizes="48px"
               />
             )}
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-accent sm:text-base">
+            <div className="flex min-w-0 flex-col items-start gap-1">
+              <h3 className="w-full truncate text-xs font-semibold text-foreground transition-colors group-hover:text-accent sm:text-sm">
                 {shop.name}
               </h3>
               {shop.verified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
-                  <MaterialSymbol name="verified" className="!text-xs" filled />
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:text-emerald-300">
+                  <MaterialSymbol name="verified" className="!text-[11px]" filled />
                   Verified
                 </span>
               )}
             </div>
 
-            <div className="mt-0.5">
+            <div className="mt-1 truncate text-[10px] sm:text-[11px]">
               <CategoryDisplay label={shop.category} variant="compact" />
             </div>
 
@@ -77,61 +77,48 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
               {shop.rating != null && shop.rating > 0 ? (
                 <StarRating rating={shop.rating} count={shop.reviewCount} size="xs" />
               ) : (
-                <StarRating size="xs" placeholder rating={0} />
+                null
               )}
             </div>
 
-            <p className="mt-1 flex items-center gap-1 text-[11px] text-muted sm:text-xs">
+            <p className="mt-1 flex min-w-0 items-center gap-1 text-[10px] text-muted sm:text-[11px]">
               <MaterialSymbol name="location_on" className="!text-sm shrink-0" />
               <span className="truncate">{shop.location}</span>
             </p>
           </div>
         </div>
 
-        {/* Tagline */}
-        <p className={`mt-3 line-clamp-2 text-xs leading-relaxed sm:text-sm ${shop.tagline ? "text-muted" : "italic text-muted/40"}`}>
-          {shop.tagline || "No description yet"}
-        </p>
+        {shop.tagline ? (
+          <p className="mt-2 line-clamp-1 text-[10px] leading-relaxed text-muted sm:text-xs">
+            {shop.tagline}
+          </p>
+        ) : null}
 
-        {/* Contact badges — pinned to bottom of body to fill whitespace */}
         {(shop.whatsappNumber || shop.email) && (
-          <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {shop.whatsappNumber && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366]/10 px-2.5 py-1 text-[10px] font-semibold text-[#1a9e4e]">
-                <WhatsAppIcon className="size-3 shrink-0" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#25D366]/10 px-2 py-0.5 text-[9px] font-semibold text-[#1a9e4e]">
+                <WhatsAppIcon className="size-2.5 shrink-0" />
                 WhatsApp
               </span>
             )}
             {shop.email && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-semibold text-accent">
-                <MaterialSymbol name="mail" className="!text-xs" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
+                <MaterialSymbol name="mail" className="!text-[11px]" />
                 Email
               </span>
             )}
           </div>
         )}
       </div>
-
-      {/* Card footer: meta + visit CTA */}
-      <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-2">
-          {shopTypeLabel && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted">
-              <MaterialSymbol name="storefront" className="!text-xs" />
-              {shopTypeLabel}
-            </span>
-          )}
-          {shop.viewCount != null && shop.viewCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted">
-              <span>Views: {shop.viewCount}</span>
-            </span>
-          )}
+      {shopTypeLabel ? (
+        <div className="border-t border-border/60 px-2.5 py-1.5 text-[9px] text-muted sm:px-3.5">
+          <span className="inline-flex items-center gap-1">
+            <MaterialSymbol name="storefront" className="!text-[11px]" />
+            {shopTypeLabel}
+          </span>
         </div>
-        <span className="flex items-center gap-1 text-[11px] font-medium text-muted transition-colors group-hover:text-accent">
-          Visit shop
-          <MaterialSymbol name="arrow_forward" className="!text-sm transition-transform group-hover:translate-x-0.5" />
-        </span>
-      </div>
+      ) : null}
     </Link>
   );
 }

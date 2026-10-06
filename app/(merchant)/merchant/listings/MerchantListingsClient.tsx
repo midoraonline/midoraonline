@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BarChart3,
   CheckCircle2,
   Clock,
   ImagePlus,
@@ -171,11 +170,6 @@ export default function MerchantListingsClient({
 
   const showMultipleShops = shops.length > 1;
 
-  const totalViews = useMemo(
-    () => items.reduce((sum, p) => sum + (p.view_count ?? 0), 0),
-    [items],
-  );
-
   return (
     <div className="flex w-full flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6">
       {/* Header */}
@@ -210,53 +204,6 @@ export default function MerchantListingsClient({
         </div>
       </header>
 
-      {/* Stats overview */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        <StatCard
-          icon={<Package className="size-4" aria-hidden />}
-          label="Total"
-          value={counts.all}
-          tone="neutral"
-          active={tab === "all"}
-          onClick={() => setTab("all")}
-        />
-        <StatCard
-          icon={<CheckCircle2 className="size-4" aria-hidden />}
-          label="Live"
-          value={counts.live}
-          tone="success"
-          active={tab === "live"}
-          onClick={() => setTab("live")}
-        />
-        <StatCard
-          icon={<Clock className="size-4" aria-hidden />}
-          label="In review"
-          value={counts.reviewing}
-          tone="warning"
-          active={tab === "reviewing"}
-          onClick={() => setTab("reviewing")}
-          pulse={counts.reviewing > 0}
-        />
-        <StatCard
-          icon={<XCircle className="size-4" aria-hidden />}
-          label="Not approved"
-          value={counts.rejected}
-          tone="error"
-          active={tab === "rejected"}
-          onClick={() => setTab("rejected")}
-        />
-      </div>
-
-      {items.length > 0 ? (
-        <div className="flex items-center gap-1.5 text-[11px] text-muted">
-          <BarChart3 className="size-3.5" aria-hidden />
-          <span>
-            {totalViews.toLocaleString()} total view
-            {totalViews === 1 ? "" : "s"} across your listings
-          </span>
-        </div>
-      ) : null}
-
       {/* Search + Tabs — sticky so filters stay reachable while scrolling long lists */}
       <div className="sticky top-0 z-10 -mx-3 space-y-2 border-b border-border/60 bg-background/85 px-3 pt-1 pb-2 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:px-3 sm:pt-2">
         <div className="relative">
@@ -279,7 +226,7 @@ export default function MerchantListingsClient({
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`shrink-0 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
                   active
                     ? "bg-accent text-white shadow-sm"
                     : "bg-surface-subtle text-foreground/70 hover:bg-foreground/[0.06]"
@@ -302,9 +249,9 @@ export default function MerchantListingsClient({
       {filtered.length === 0 ? (
         <EmptyState tab={tab} hasShops={shops.length > 0} onAdd={openAdd} />
       ) : (
-        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <ul className="divide-y divide-border/70">
           {filtered.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} className="py-2 first:pt-0 last:pb-0">
               <ListingManageCard
                 product={p}
                 shopName={showMultipleShops ? shopById.get(p.shop_id)?.name : null}
@@ -333,8 +280,6 @@ export default function MerchantListingsClient({
     </div>
   );
 }
-
-
 function EmptyState({
   tab,
   hasShops,
@@ -391,64 +336,3 @@ function EmptyState({
   );
 }
 
-type StatTone = "neutral" | "success" | "warning" | "error";
-
-function StatCard({
-  icon,
-  label,
-  value,
-  tone,
-  active,
-  pulse,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  tone: StatTone;
-  active?: boolean;
-  pulse?: boolean;
-  onClick?: () => void;
-}) {
-  const toneStyles: Record<StatTone, string> = {
-    neutral: "text-foreground",
-    success: "text-[color:var(--success)]",
-    warning: "text-[color:var(--warning)]",
-    error: "text-[color:var(--error)]",
-  };
-  const toneBg: Record<StatTone, string> = {
-    neutral: "bg-foreground/5",
-    success: "bg-[color:var(--success)]/10",
-    warning: "bg-[color:var(--warning)]/10",
-    error: "bg-[color:var(--error)]/10",
-  };
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`dm-focus relative flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition-all sm:gap-1.5 sm:p-4 ${
-        active
-          ? "border-accent bg-accent/5 shadow-sm"
-          : "border-border bg-surface hover:border-accent/30 hover:shadow-xs"
-      }`}
-    >
-      <span
-        className={`inline-flex size-8 items-center justify-center rounded-lg ${toneBg[tone]} ${toneStyles[tone]}`}
-      >
-        {icon}
-      </span>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-        {label}
-      </span>
-      <span className={`text-xl font-bold tabular-nums ${toneStyles[tone]}`}>
-        {value}
-      </span>
-      {pulse ? (
-        <span className="absolute right-3 top-3 flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--warning)] opacity-70" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-[color:var(--warning)]" />
-        </span>
-      ) : null}
-    </button>
-  );
-}

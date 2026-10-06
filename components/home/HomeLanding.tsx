@@ -22,7 +22,6 @@ import {
 import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
 import { toCatalogQuery } from "@/lib/catalogQuery";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
-import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 import GuestGetNoticedBanner from "@/components/home/GuestGetNoticedBanner";
 import { ProductCardSkeleton } from "@/components/skeletons/Skeleton";
 import { useAppSession } from "@/lib/state";
@@ -519,7 +518,6 @@ export default function HomeLanding({
         </section>
       </div>
 
-      <HomeFeedbackWidget />
     </div>
   );
 }

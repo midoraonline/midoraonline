@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { submitFeedback } from "@/lib/api/feedback";
@@ -20,16 +20,14 @@ export default function HomeFeedbackWidget() {
 
   return (
     <>
-      <motion.button
-        whileHover={{ x: -2 }}
-        whileTap={{ scale: 0.96 }}
+      <button
         type="button"
         onClick={() => setOpen(true)}
-        className="dm-btn-accent z-fab fixed right-0 top-1/2 flex -translate-y-1/2 cursor-pointer select-none items-center gap-1 rounded-l-2xl px-2.5 py-3.5 text-[10px] font-bold uppercase tracking-wider [writing-mode:vertical-lr] dm-focus"
+        className="dm-focus inline-flex min-h-11 w-full items-center gap-2 text-left text-sm text-muted transition-colors hover:text-accent"
       >
-        <MaterialSymbol name="rate_review" className="!text-sm mb-1" />
+        <MaterialSymbol name="rate_review" className="!text-base" />
         <span>Feedback</span>
-      </motion.button>
+      </button>
 
       <AnimatePresence>
         {open ? (

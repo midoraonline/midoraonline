@@ -34,6 +34,7 @@ import {
   type UserGeo,
 } from "@/lib/geo";
 import { ThemedSelect } from "@/components/browse/ThemedSelect";
+import { listingToneClass, listingToneRing, type ListingTone } from "@/components/ListingTypeTag";
 import type {
   GroupBase,
   OptionProps,
@@ -480,12 +481,14 @@ function LocationDropdown({
 function AppliedChip({
   label,
   onRemove,
+  tone,
 }: {
   label: string;
   onRemove: () => void;
+  tone?: ListingTone;
 }) {
   return (
-    <span className="inline-flex max-w-[10rem] items-center gap-0.5 truncate rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/15 sm:max-w-none">
+    <span className={`inline-flex max-w-[10rem] items-center gap-0.5 truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium ring-1 sm:max-w-none ${tone ? `${listingToneClass(tone)} ${listingToneRing(tone)}` : "bg-accent/10 text-accent ring-accent/15"}`}>
       <span className="truncate">{label}</span>
       <button
         type="button"
@@ -591,7 +594,12 @@ export default function ProductFilters({ products, filters, onChange, contextPar
       (p) => p.min === filters.minPrice && p.max === filters.maxPrice,
     ) ?? null;
 
-  const appliedChips: { key: string; label: string; clear: () => void }[] = [];
+  const appliedChips: {
+    key: string;
+    label: string;
+    clear: () => void;
+    tone?: ListingTone;
+  }[] = [];
   if (filters.sort !== "relevance") {
     appliedChips.push({
       key: "sort",
@@ -652,6 +660,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
     appliedChips.push({
       key: "listingKind",
       label: filters.listingKind === "opportunity" ? "Opportunities" : filters.listingKind === "service" ? "Services" : "Products",
+        tone: filters.listingKind,
       clear: () => update({ listingKind: null, opportunityKind: null, compensation: null, pricingModel: null }),
     });
   }
@@ -786,7 +795,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
       {appliedChips.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
           {appliedChips.map((chip) => (
-            <AppliedChip key={chip.key} label={chip.label} onRemove={chip.clear} />
+            <AppliedChip key={chip.key} label={chip.label} onRemove={chip.clear} tone={chip.tone} />
           ))}
         </div>
       )}
@@ -1040,10 +1049,14 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                               pricingModel: opt.value === "service" ? filters.pricingModel : null,
                             })
                           }
-                          className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                            on
-                              ? "bg-accent text-white shadow-sm shadow-accent/20"
-                              : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
+                          className={`rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                            opt.value
+                              ? on
+                                ? `${listingToneClass(opt.value)} ring-2 ${listingToneRing(opt.value)}`
+                                : `${listingToneClass(opt.value)} opacity-75 ring-1 ${listingToneRing(opt.value)} hover:opacity-100`
+                              : on
+                                ? "bg-accent text-white shadow-sm shadow-accent/20"
+                                : "bg-accent/[0.06] text-foreground/80 ring-1 ring-accent/10 hover:bg-accent/10 hover:text-accent"
                           }`}
                         >
                           {opt.label}

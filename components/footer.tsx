@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 
 const TikTokIcon = ({ className = "size-4" }: { className?: string }) => (
   <svg className={`${className} shrink-0 fill-current`} viewBox="0 0 24 24" aria-hidden="true">
@@ -186,6 +187,11 @@ export default function Footer() {
                         </Link>
                       </li>
                     ))}
+                    {group.heading === "Support" ? (
+                      <li>
+                        <HomeFeedbackWidget />
+                      </li>
+                    ) : null}
                   </ul>
                 </nav>
               ))}

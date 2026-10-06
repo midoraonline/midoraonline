@@ -41,19 +41,6 @@ function formatUGX(n: number) {
   }).format(n);
 }
 
-function statsLine(product: Product): string | null {
-  const parts: string[] = [];
-  if (typeof product.view_count === "number") {
-    parts.push(`${product.view_count.toLocaleString()} view${product.view_count === 1 ? "" : "s"}`);
-  }
-  if (typeof product.whatsapp_clicks === "number") {
-    parts.push(
-      `${product.whatsapp_clicks.toLocaleString()} WhatsApp tap${product.whatsapp_clicks === 1 ? "" : "s"}`,
-    );
-  }
-  return parts.length ? parts.join(" · ") : null;
-}
-
 export default function ListingManageCard({
   product,
   shopName,
@@ -81,7 +68,6 @@ export default function ListingManageCard({
   const editHref = `/merchant/listings/${product.id}/edit`;
   const status = product.status;
   const published = product.is_published !== false && status !== "hidden" && status !== "draft";
-  const stats = statsLine(product);
 
   useEffect(() => {
     if (!open) return;
@@ -248,11 +234,11 @@ export default function ListingManageCard({
 
   return (
     <>
-    <article className="dm-card flex gap-3 p-3 sm:gap-4 sm:p-4">
+    <article className="flex min-w-0 gap-2.5 sm:gap-3">
       {textOnly ? null : (
         <Link
           href={editHref}
-          className="relative size-[4.5rem] shrink-0 overflow-hidden rounded-xl border border-border bg-surface-subtle sm:size-24"
+          className="relative size-14 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle sm:size-16"
         >
           {cover ? (
             <FallbackImage
@@ -276,7 +262,13 @@ export default function ListingManageCard({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {textOnly ? <ListingTypeTag kind={typeKind} /> : null}
+        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+          <ListingTypeTag kind={typeKind} />
+          <StatusBadge status={product.status} is_published={product.is_published} />
+          {showsStock(product) ? (
+            <span className="text-[10px] text-muted">Stock {stockLabel(product.stock_quantity)}</span>
+          ) : null}
+        </div>
         <div className="flex items-start justify-between gap-2">
           <Link
             href={editHref}
@@ -289,23 +281,18 @@ export default function ListingManageCard({
           </p>
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <StatusBadge status={product.status} is_published={product.is_published} />
-          {showsStock(product) ? (
-            <span className="text-[11px] text-muted">Stock: {stockLabel(product.stock_quantity)}</span>
-          ) : null}
-          {shopName ? <span className="truncate text-[11px] text-muted">{shopName}</span> : null}
+          {shopName ? <span className="truncate text-[10px] text-muted">{shopName}</span> : null}
         </div>
-        {stats ? <p className="mt-1 text-[11px] text-muted">{stats}</p> : null}
         {product.review_notes ? (
           <p
-            className={`mt-1 line-clamp-2 text-[11px] ${
+            className={`mt-1 line-clamp-1 text-[10px] ${
               status === "rejected" ? "text-[color:var(--error)]" : "text-[color:var(--warning)]"
             }`}
           >
             {product.review_notes}
           </p>
         ) : null}
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-1.5 flex items-center gap-2">
           <Link
             href={editHref}
             className="dm-btn dm-btn-primary dm-btn-sm inline-flex min-h-11 items-center gap-1.5 sm:min-h-9"
