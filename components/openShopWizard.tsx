@@ -32,7 +32,7 @@ const FIELD =
 const SHOP_TYPE_LABEL: Record<apiShops.ShopType, string> = {
   product: "Products",
   service: "Services",
-  both: "Products, services and opportunities",
+  both: "Products and services",
 };
 
 function slugFromName(name: string): string {
@@ -210,7 +210,7 @@ export default function OpenShopWizard({
               >
                 <option value="product">Products</option>
                 <option value="service">Services</option>
-                <option value="both">Products, services and opportunities</option>
+                <option value="both">Products and services</option>
               </select>
             </Field>
             <Field label="Category">

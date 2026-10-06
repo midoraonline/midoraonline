@@ -129,6 +129,7 @@ export default function OpenShopPage() {
               <ActiveModeSection
                 onShopCreated={setCreatedShop}
                 verifiedContacts={verifiedContacts}
+                enabled={mode === "quick"}
               />
             </div>
             <div className={mode === "manual" ? "" : "hidden"}>
@@ -164,9 +165,11 @@ function IntroHeader() {
 function ActiveModeSection({
   onShopCreated,
   verifiedContacts,
+  enabled,
 }: {
   onShopCreated: (s: apiShops.Shop) => void;
   verifiedContacts: { email: string | null; phone: string | null };
+  enabled: boolean;
 }) {
   return (
     <section className="dm-card overflow-hidden p-6 sm:p-8">
@@ -187,6 +190,7 @@ function ActiveModeSection({
         <CreateShopConcierge
           onShopCreated={onShopCreated}
           verifiedContacts={verifiedContacts}
+          enabled={enabled}
         />
       </div>
     </section>

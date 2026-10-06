@@ -152,9 +152,11 @@ function ShopPreview({ form }: { form: ConfirmForm }) {
 export default function CreateShopConcierge({
   onShopCreated,
   verifiedContacts,
+  enabled,
 }: {
   onShopCreated: (shop: apiShops.Shop) => void;
   verifiedContacts: { email: string | null; phone: string | null };
+  enabled: boolean;
 }) {
   const appSession = useAppSession();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -178,7 +180,7 @@ export default function CreateShopConcierge({
   }, [messages]);
 
   useEffect(() => {
-    if (!appSession.hydrated) return;
+    if (!enabled || !appSession.hydrated) return;
     if (!appSession.isAuthenticated) {
       setError("Please log in to use the quick start.");
       return;
@@ -197,7 +199,7 @@ export default function CreateShopConcierge({
     return () => {
       cancelled = true;
     };
-  }, [appSession.hydrated, appSession.isAuthenticated]);
+  }, [enabled, appSession.hydrated, appSession.isAuthenticated]);
 
   async function sendMessage(raw: string) {
     if (!sessionId || !raw.trim() || loading) return;
@@ -451,7 +453,7 @@ export default function CreateShopConcierge({
               >
                 <option value="product">Products</option>
                 <option value="service">Services</option>
-                <option value="both">Products, services &amp; opportunities</option>
+                <option value="both">Products and services</option>
               </select>
             </div>
 

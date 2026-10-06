@@ -53,7 +53,7 @@ export default function OnboardingPage() {
               Your brand deserves the spotlight—not buried in an endless grid.
             </h1>
             <p className="max-w-md text-xs sm:text-sm text-neutral-300 leading-relaxed">
-              Midora Online is built so shoppers meet <span className="font-bold text-orange-400">shops first</span>, then products. Merchants get a custom storefront; customers get discovery that feels human.
+              Discover products, services, and opportunities from local sellers. Merchants can build a storefront; shoppers can see who is behind each listing.
             </p>
             
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -73,7 +73,7 @@ export default function OnboardingPage() {
             </div>
             
             <div className="flex flex-wrap gap-2 pt-2">
-              {["From 5,000 UGX/mo", "Verified-ready", "Policies & trust"].map((t) => (
+              {["Free plan available", "Optional shop verification", "Direct seller contact"].map((t) => (
                 <span
                   key={t}
                   className="rounded-full bg-white/5 border border-white/5 px-3 py-1 text-[10px] font-bold text-neutral-300"
@@ -118,7 +118,7 @@ export default function OnboardingPage() {
             },
             {
               title: "Trust by design",
-              body: "Policies, verification, and clear contact paths help buyers commit with confidence.",
+              body: "Clear contact paths and optional shop trust checks help buyers make informed decisions.",
               icon: Shield,
             },
           ].map((item, i) => (
@@ -165,10 +165,11 @@ export default function OnboardingPage() {
               </p>
               <ol className="mt-5 space-y-4">
                 {[
-                  "Create your account and choose merchant.",
-                  "Open a shop—name, story, logo, and policies.",
-                  "Add listings and publish your storefront.",
-                  "Share your shop link; customers browse you first.",
+                  "Create an account or sign in. A shopper account can open a shop later.",
+                  "Before your first shop or listing, verify one account phone or email if it is not already verified.",
+                  "Open a storefront with the step-by-step form or AI concierge, or post directly with a personal seller profile.",
+                  "Add products, services, or opportunities. If you have multiple shops, choose which storefront owns each listing.",
+                  "Complete the publishing checks, then share your shop or listing with buyers.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-orange-50 border border-orange-100 text-sm font-bold text-orange-600">
@@ -190,10 +191,10 @@ export default function OnboardingPage() {
               </p>
               <ol className="mt-5 space-y-4">
                 {[
-                  "Browse shops or jump straight to products.",
-                  "Open a shop you like—read their story and policies.",
-                  "Contact the merchant directly to place an order.",
-                  "Return to the same brand next time—no anonymous SKUs.",
+                  "Browse shops, products, services, and opportunities without signing in.",
+                  "Compare listing details and shop information, including ratings and trust badges when available.",
+                  "Contact the seller through Midora messages or WhatsApp when offered.",
+                  "Agree on payment and delivery directly with the seller; Midora does not process checkout.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-sm font-bold text-emerald-600">
@@ -208,6 +209,9 @@ export default function OnboardingPage() {
             </div>
           </Reveal>
         </div>
+        <p className="border-l-2 border-orange-300 pl-4 text-xs leading-relaxed text-neutral-600 sm:text-sm">
+          Account contact verification is shared between opening a shop and posting listings. Shop identity or business verification is a separate, optional process for trust badges and some plan benefits; it is not the account OTP step.
+        </p>
       </section>
 
       {/* Background Image Overlay CTA Section */}
@@ -224,7 +228,7 @@ export default function OnboardingPage() {
               Ready to grow your business or browse Kampala&apos;s best?
             </h2>
             <p className="text-xs text-neutral-300 leading-normal max-w-sm">
-              Create a shop space, publish your products, and chat directly with customers via WhatsApp. No fees, no fuss.
+              Start with the free plan; paid plans may offer higher limits and additional tools. Buyers contact sellers through the channels available on each listing.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
@@ -255,7 +259,7 @@ export default function OnboardingPage() {
               Track your performance
             </h2>
             <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-500">
-              Every shop comes with built-in analytics so you always know how your shop is performing.
+              Analytics are available on eligible plans, with views into shop activity and listing engagement.
             </p>
           </div>
         </Reveal>
@@ -268,8 +272,8 @@ export default function OnboardingPage() {
               icon: BarChart2,
             },
             {
-              title: "Product engagement",
-              body: "Track views and likes per product so you know what your audience actually wants.",
+              title: "Listing engagement",
+              body: "Track listing views and likes to see what your audience responds to.",
               icon: Package,
             },
             {
@@ -346,7 +350,7 @@ export default function OnboardingPage() {
                   One hub for discovery, questions, and repeat visits.
                 </li>
                 <li className="pl-1">
-                  Built-in analytics to track shop views, product engagement, and follower growth.
+                  Analytics on eligible plans to track shop views, listing engagement, and follower growth.
                 </li>
               </ul>
             </div>
