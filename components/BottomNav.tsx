@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { useAppSession, usePresenceStore } from "@/lib/state";
+import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 
 type Tab = {
   label: string;
@@ -22,6 +23,7 @@ export default function BottomNav() {
   const role = session.user?.user_role ?? null;
   const isMerchant = role === "merchant" || role === "admin";
   const onlineCount = usePresenceStore((s) => s.onlineCount);
+  const unread = useChatUnreadCount("bottom-nav-unread");
 
   const postHref = session.isAuthenticated
     ? "/post-item"
@@ -41,6 +43,21 @@ export default function BottomNav() {
           label: "Shops",
           href: "/shops",
           icon: "storefront",
+        };
+
+    const browseOrMessagesTab: Tab = session.isAuthenticated
+      ? {
+          label: "Messages",
+          href: "/chat",
+          icon: "chat",
+          badge: unread,
+          isActive: (p) => p.startsWith("/chat"),
+        }
+      : {
+          label: "Browse",
+          href: "/products",
+          icon: "explore",
+          isActive: (p) => p.startsWith("/products"),
         };
 
     let accountTab: Tab;
@@ -84,12 +101,7 @@ export default function BottomNav() {
         icon: "home",
         isActive: (p) => p === "/",
       },
-      {
-        label: "Search",
-        href: "/products",
-        icon: "search",
-        isActive: (p) => p.startsWith("/products"),
-      },
+      browseOrMessagesTab,
       {
         label: "Post Item",
         href: postHref,
@@ -100,7 +112,7 @@ export default function BottomNav() {
       shopsTab,
       accountTab,
     ];
-  }, [accountReturn, isMerchant, postHref, role, session.isAuthenticated]);
+  }, [accountReturn, isMerchant, postHref, role, session.isAuthenticated, unread]);
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-sticky border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] shadow-lg backdrop-blur-md md:hidden">

@@ -329,7 +329,7 @@ export default function Navbar({
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
             {navItems.map((item) => {
               const active = activeHref !== null && item.href === activeHref;
               return (
@@ -337,7 +337,7 @@ export default function Navbar({
                   key={item.href}
                   href={item.href}
                   className={[
-                    "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors dm-focus",
+                    "relative whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors dm-focus",
                     active
                       ? "text-accent"
                       : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground",
@@ -350,7 +350,7 @@ export default function Navbar({
           </nav>
 
           {/* Search — desktop only */}
-          <div className="ml-auto hidden min-w-[14rem] flex-1 md:flex md:max-w-sm lg:min-w-[18rem] lg:max-w-md">
+          <div className="ml-auto hidden min-w-[14rem] flex-1 lg:flex lg:max-w-md lg:min-w-[14rem]">
             <div className="w-full">
               <ProductSearchBar
                 value={searchQuery}
@@ -364,11 +364,11 @@ export default function Navbar({
           </div>
 
           {/* Right actions */}
-          <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0 md:gap-2" suppressHydrationWarning>
+          <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0 lg:gap-2" suppressHydrationWarning>
             {/* Desktop online-presence pill (mobile equivalent lives in BottomNav) */}
             {onlineCount > 0 ? (
               <span
-                className="hidden items-center gap-1.5 rounded-full border border-accent/15 bg-accent/5 px-2.5 py-1 text-[11px] font-semibold text-accent md:inline-flex"
+                className="hidden items-center gap-1.5 rounded-full border border-accent/15 bg-accent/5 px-2.5 py-1 text-[11px] font-semibold text-accent lg:inline-flex"
                 title={`${onlineCount.toLocaleString()} people browsing Midora right now`}
                 aria-label={`${onlineCount.toLocaleString()} users online now`}
               >
@@ -384,7 +384,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setSearchOpen((open) => !open)}
-              className="inline-flex size-9 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-foreground/[0.06] hover:text-foreground lg:hidden dm-focus"
               aria-label={searchOpen ? "Close search" : "Open search"}
               aria-expanded={searchOpen}
             >
@@ -426,7 +426,7 @@ export default function Navbar({
                 </Link>
                 <Link
                   href="/post-item"
-                  className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md md:inline-flex"
+                  className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md lg:inline-flex"
                   aria-label="Post an item"
                 >
                   <MaterialSymbol name="add" className="!text-base" />
@@ -435,7 +435,7 @@ export default function Navbar({
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
                     href="/open-shop"
-                    className="hidden text-xs font-semibold text-muted transition-colors hover:text-foreground md:inline"
+                    className="hidden text-xs font-semibold text-muted transition-colors hover:text-foreground lg:inline"
                     title="Analytics, organization, and a shareable storefront"
                   >
                     Open a shop
@@ -488,7 +488,7 @@ export default function Navbar({
 
             <button
               type="button"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground md:hidden dm-focus"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground lg:hidden dm-focus"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
@@ -500,7 +500,7 @@ export default function Navbar({
 
         {/* Mobile search bar */}
         <div
-          className={`overflow-hidden transition-all duration-200 ease-out md:hidden ${
+          className={`overflow-hidden transition-all duration-200 ease-out lg:hidden ${
             searchOpen ? "max-h-20 border-t border-border" : "max-h-0"
           }`}
         >
@@ -521,7 +521,7 @@ export default function Navbar({
 
         {/* Mobile menu */}
         {open ? (
-          <div className="border-t border-border pb-4 pt-2 md:hidden">
+          <div className="border-t border-border pb-4 pt-2 lg:hidden">
             <div className="flex flex-col gap-0.5 px-2">
               {navItems.map((item) => {
                 const active = activeHref !== null && item.href === activeHref;
@@ -546,21 +546,6 @@ export default function Navbar({
 
             {session.isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-0.5 px-2">
-                <Link
-                  href="/chat"
-                  onClick={() => setOpen(false)}
-                  className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors dm-focus hover:bg-foreground/[0.04]"
-                >
-                  <span className="flex items-center gap-3">
-                    <MaterialSymbol name="chat" className="!text-lg text-muted" />
-                    Messages
-                  </span>
-                  {unread > 0 ? (
-                    <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {unread > 99 ? "99+" : unread}
-                    </span>
-                  ) : null}
-                </Link>
                 <Link
                   href="/post-item"
                   onClick={() => setOpen(false)}
