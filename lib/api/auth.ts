@@ -58,10 +58,6 @@ export type MeResponse = {
   plan_tier?: "basic" | "standard" | "premium" | null;
   plan_expires_at?: string | null;
   preferences?: UserPreferences | null;
-  /**
-   * Short-lived JWT (role="authenticated") for Supabase Realtime subscriptions.
-   * Passed to `supabase.realtime.setAuth()` so RLS policies bind to `auth.uid()`.
-   */
   supabase_realtime_token?: string | null;
 };
 

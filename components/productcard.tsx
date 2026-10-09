@@ -386,7 +386,7 @@ export default function ProductCard({
   const titleClass =
     listingKind === "product"
       ? "line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm"
-      : "line-clamp-2 text-[13px] font-bold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm";
+      : "line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm";
   const coverUrls = coverMediaUrls(product);
   const [trackedId, setTrackedId] = useState(product.id);
   const [coverFailed, setCoverFailed] = useState(false);
@@ -511,23 +511,22 @@ export default function ProductCard({
         className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
       >
         <div className="flex w-full flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
-          <div className="flex items-start justify-between gap-2">
-            <Link href={productHref} className="dm-focus min-w-0 flex-1 outline-none">
-              <h3 className={titleClass}>{headline}</h3>
-            </Link>
-            <ProductLikeButton
+          <div className="min-w-0 items-center gap-1.5">
+            <div className="flex justify-between">
+             <ListingTypeTag kind={typeKind} className="px-3 py-2 text-[15px]" />
+             <ProductLikeButton
               productId={product.id}
               variant="floating"
               initialLiked={product.isLiked}
               initialLikeCount={product.likeCount}
-            />
-          </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <ListingTypeTag kind={typeKind} className="px-2 py-1 text-[11px]" />
+             />
+            </div>
+
             {categoryLine.toLowerCase() === typeKind ? null : (
-              <p className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
-                {categoryLine}
-              </p>
+
+            <Link href={productHref} className="dm-focus min-w-0 flex-1 outline-none pt-4">
+              <h3 className={titleClass}>{headline}</h3>
+            </Link>    
             )}
           </div>
           <PersonalSellerLine shop={product.shop} />

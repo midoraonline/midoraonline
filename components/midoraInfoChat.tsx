@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiMidoraInfoChat } from "@/lib/api";
+import { useAppSession } from "@/lib/state";
 
 type InfoMessage = {
   id: string;
@@ -22,6 +23,7 @@ export default function MidoraInfoChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const session = useAppSession(); 
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -86,22 +88,12 @@ export default function MidoraInfoChat() {
   }
 
   return (
-    <div className="dm-card p-4 sm:p-5 flex flex-col gap-3 max-h-[480px]">
-      <div>
-        <p className="text-sm font-semibold tracking-tight">
-          Ask about Midora Online
-        </p>
-        <p className="text-xs text-muted max-w-xl">
-          General product and platform questions only. This bot is not tied to
-          any specific shop.
-        </p>
-      </div>
+    <div className="dm-card sm:p-5 flex flex-col gap-3 max-h-[580px]">
 
-      <div className="mt-1 flex-1 min-height-[180px] max-h-[300px] overflow-y-auto rounded-2xl border border-border bg-background px-3 py-2 space-y-2">
+      <div className="mt-1 flex-1 min-height-[180px] max-h-[300px] overflow-y-auto px-3 py-2 space-y-2">
         {messages.length === 0 ? (
-          <p className="text-xs text-muted">
-            Ask about what Midora Online is, how it works, or how to get
-            started.
+          <p className="text-xm text-muted flex justify-end">
+            Hey, {session.user?.full_name}.
           </p>
         ) : (
           messages.map((m) => (
@@ -143,7 +135,7 @@ export default function MidoraInfoChat() {
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="h-9 px-3 rounded-2xl bg-primary text-primary-foreground text-xs font-semibold dm-focus disabled:opacity-60"
+          className="h-9 px-3 rounded-2xl text-white bg-green-900  text-primary-foreground text-xs font-semibold dm-focus disabled:opacity-60"
         >
           {loading ? "Thinking…" : "Send"}
         </button>

@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function MidoraInfoChatWidget({
   aboveBottomNav = false,
 }: {
-  /** Lift the button above the mobile bottom nav. Desktop stays put. */
   aboveBottomNav?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -32,14 +31,11 @@ export default function MidoraInfoChatWidget({
                 <p className="text-xs font-semibold tracking-tight">
                   Midora Online info bot
                 </p>
-                <p className="text-[11px] text-muted">
-                  Ask about the platform & product.
-                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-xs text-muted hover:text-foreground dm-focus rounded-full px-2 py-1"
+                className="text-xs text-white text-muted hover:text-foreground dm-focus bg-orange-400 rounded-full px-2 py-1"
               >
                 Close
               </button>
