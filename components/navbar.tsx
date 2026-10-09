@@ -376,7 +376,9 @@ export default function Navbar({
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
                 </span>
-                <span>{onlineCount.toLocaleString()} people online</span>
+                <span>
+                  {onlineCount.toLocaleString()} {onlineCount === 1 ? 'person online' : 'people online'}
+                </span>
               </span>
             ) : null}
 
