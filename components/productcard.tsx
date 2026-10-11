@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
+import { ArrowRight, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -15,6 +15,7 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 import ListingTypeTag from "@/components/ListingTypeTag";
+import BrandedCover from "@/components/BrandedCover";
 import { listingTypeTagKind } from "@/lib/listingType";
 import {
   resolveShopTrustLevel,
@@ -178,11 +179,7 @@ function CardRating({
 }
 
 function CoverPlaceholder() {
-  return (
-    <div className="absolute inset-0 grid place-items-center bg-surface-subtle text-muted">
-      <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
-    </div>
-  );
+  return <BrandedCover />;
 }
 
 function ListingCover({
