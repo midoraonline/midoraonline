@@ -518,9 +518,6 @@ export default function ProductCard({
         ref={impressionRef as React.RefObject<HTMLElement>}
         className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
       >
-        <div className="relative aspect-square w-full shrink-0 overflow-hidden sm:aspect-[4/3]">
-          <BrandedCover />
-        </div>
         <div className="flex w-full flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="min-w-0">
             <div className="flex items-center justify-between gap-2">
@@ -582,8 +579,8 @@ export default function ProductCard({
               <span className="text-[10px] font-medium text-muted">· Negotiable</span>
             ) : null}
           </div>
-          <div className="mt-auto space-y-1.5">
-            {metaRow}
+          {metaRow}
+          <BrandedCover className="mt-1 flex-1">
             <WhatsAppCta
               waHref={waHref}
               productId={product.id}
@@ -592,7 +589,7 @@ export default function ProductCard({
               category={product.category ?? undefined}
               hasDiscount={isDiscounted}
             />
-          </div>
+          </BrandedCover>
         </div>
       </article>
     );
