@@ -506,7 +506,8 @@ export default function ProductCard({
     const chips = [
       ...(locationOnline && listingKind === "opportunity" ? ["Remote"] : []),
       ...textListingChips(listingKind, meta),
-    ].filter((chip) => {
+    ].filter((chip, i, all) => {
+      if (all.findIndex((c) => c.toLowerCase() === chip.toLowerCase()) !== i) return false;
       if (chip === "Urgent" && headline.toLowerCase().includes("urgent")) return false;
       if (price <= 0 && chip.toLowerCase() === rate.toLowerCase()) return false;
       return true;
