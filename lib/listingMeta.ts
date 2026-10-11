@@ -658,6 +658,11 @@ export function textListingChips(kind: ListingKind, meta: ListingMeta): string[]
   }
   if (kind !== "opportunity") return [];
   const chips: string[] = [];
+  const kind_ = meta.opportunity_kind;
+  if (kind_ && kind_ !== "other" && kind_ !== "job") {
+    const kindLabel = optionLabel(OPPORTUNITY_KIND_OPTIONS, kind_);
+    if (kindLabel) chips.push(kindLabel);
+  }
   const urgency = urgencyChip(meta);
   if (urgency) chips.push(urgency);
   const deadline = deadlineChip(meta.deadline);
@@ -667,6 +672,12 @@ export function textListingChips(kind: ListingKind, meta: ListingMeta): string[]
   const pay = optionLabel(COMPENSATION_OPTIONS, meta.compensation);
   if (pay) chips.push(pay);
   return chips;
+}
+
+/** One short line of requirements for text cards. */
+export function requirementsLine(meta: ListingMeta): string | null {
+  const t = meta.requirements?.replace(/\s+/g, " ").trim();
+  return t ? t : null;
 }
 
 function pushIf(

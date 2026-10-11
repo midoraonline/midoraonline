@@ -23,11 +23,11 @@ import {
 import {
   COMPENSATION_OPTIONS,
   isTextOnlyListing,
-  listingCardLabel,
   needHeadline,
   normalizeListingKind,
   parseListingMeta,
   textListingChips,
+  requirementsLine,
   type ListingMeta,
 } from "@/lib/listingMeta";
 import { isOnlineLocation } from "@/lib/listingLocation";
@@ -501,9 +501,12 @@ export default function ProductCard({
 
   if (textFirst) {
     const meta = listingMeta;
-    const categoryLine = listingCardLabel(listingKind, meta, product.category);
     const rate = displayPrice;
-    const chips = textListingChips(listingKind, meta).filter((chip) => {
+    const requirements = requirementsLine(meta);
+    const chips = [
+      ...(locationOnline && listingKind === "opportunity" ? ["Remote"] : []),
+      ...textListingChips(listingKind, meta),
+    ].filter((chip) => {
       if (chip === "Urgent" && headline.toLowerCase().includes("urgent")) return false;
       if (price <= 0 && chip.toLowerCase() === rate.toLowerCase()) return false;
       return true;
@@ -514,28 +517,31 @@ export default function ProductCard({
         className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
       >
         <div className="flex w-full flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
-          <div className="min-w-0 items-center gap-1.5">
-            <div className="flex items-center justify-between">
-             <ListingTypeTag kind={typeKind} className={CARD_TAG} />
-             <ProductLikeButton
-              productId={product.id}
-              variant="floating"
-              initialLiked={product.isLiked}
-              initialLikeCount={product.likeCount}
-             />
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <ListingTypeTag kind={typeKind} className={CARD_TAG} />
+                {tInfo ? (
+                  <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    {tInfo.label}
+                  </span>
+                ) : null}
+              </div>
+              <ProductLikeButton
+                productId={product.id}
+                variant="floating"
+                initialLiked={product.isLiked}
+                initialLikeCount={product.likeCount}
+              />
             </div>
-
-            {categoryLine.toLowerCase() === typeKind ? null : (
-
-            <Link href={productHref} className="dm-focus min-w-0 flex-1 outline-none pt-4">
+            <Link href={productHref} className="dm-focus block min-w-0 pt-3 outline-none">
               <h3 className={titleClass}>{headline}</h3>
-            </Link>    
-            )}
+            </Link>
           </div>
           <PersonalSellerLine shop={product.shop} />
-          {product.description?.trim() ? (
-            <p className="line-clamp-3 text-xs leading-relaxed text-foreground/80">
-              {product.description.trim()}
+          {requirements ? (
+            <p className="line-clamp-1 text-xs text-foreground/75" title={requirements}>
+              {requirements}
             </p>
           ) : null}
           {isBoosted || shopLive || isDiscounted ? (
@@ -608,11 +614,6 @@ export default function ProductCard({
               <h3 className={titleClass}>{headline}</h3>
             </Link>
             <PersonalSellerLine shop={product.shop} />
-            {listingKind !== "product" && product.description?.trim() ? (
-              <p className="line-clamp-2 text-xs leading-relaxed text-foreground/80">
-                {product.description.trim()}
-              </p>
-            ) : null}
             <div className="flex flex-wrap items-baseline gap-1.5">
               <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">{displayPrice}</span>
               {isDiscounted && (
@@ -659,11 +660,6 @@ export default function ProductCard({
           <h3 className={titleClass}>{headline}</h3>
         </Link>
         <PersonalSellerLine shop={product.shop} />
-        {listingKind !== "product" && product.description?.trim() ? (
-          <p className="line-clamp-2 text-xs leading-relaxed text-foreground/80">
-            {product.description.trim()}
-          </p>
-        ) : null}
 
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">{displayPrice}</span>
