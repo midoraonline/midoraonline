@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, MapPin, Play, Star, Zap } from "lucide-react";
+import { ArrowRight, ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -179,7 +179,11 @@ function CardRating({
 }
 
 function CoverPlaceholder() {
-  return <BrandedCover />;
+  return (
+    <div className="absolute inset-0 grid place-items-center bg-surface-subtle text-muted">
+      <ImageIcon className="size-8 opacity-40" strokeWidth={1.5} aria-hidden />
+    </div>
+  );
 }
 
 function ListingCover({
@@ -514,6 +518,9 @@ export default function ProductCard({
         ref={impressionRef as React.RefObject<HTMLElement>}
         className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
       >
+        <div className="relative aspect-square w-full shrink-0 overflow-hidden sm:aspect-[4/3]">
+          <BrandedCover />
+        </div>
         <div className="flex w-full flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
           <div className="min-w-0">
             <div className="flex items-center justify-between gap-2">
