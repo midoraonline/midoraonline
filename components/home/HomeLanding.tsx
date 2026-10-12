@@ -364,7 +364,7 @@ export default function HomeLanding({
 
   return (
     <div className="relative w-full">
-      <GuestGetNoticedBanner visible={session.hydrated && !session.isAuthenticated} />
+      <GuestGetNoticedBanner />
       <div className="mb-3 space-y-2 sm:mb-4">
         <ListingTypeTabs
           selected={filters.listingKind}
