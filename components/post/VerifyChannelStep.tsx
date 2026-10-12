@@ -184,7 +184,7 @@ export default function VerifyChannelStep({
           type="button"
           onClick={() => void send()}
           disabled={busy || (channel === "phone" ? phone.trim().length < 9 : !email)}
-          className="dm-btn dm-btn-primary min-h-11 w-full"
+          className="dm-btn dm-btn-primary min-h-11 w-full px-6"
         >
           {busy ? "Sending…" : "Send code"}
         </button>
@@ -194,7 +194,7 @@ export default function VerifyChannelStep({
             type="button"
             onClick={() => void send()}
             disabled={busy || resendIn > 0}
-            className="dm-focus min-h-11 text-sm font-semibold text-accent disabled:text-muted"
+            className="dm-btn dm-btn-secondary min-h-11 px-5 disabled:opacity-60"
           >
             {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
           </button>
@@ -202,7 +202,7 @@ export default function VerifyChannelStep({
             type="button"
             onClick={() => void confirm(code)}
             disabled={busy || code.length !== 6}
-            className="dm-btn dm-btn-primary min-h-11 px-5"
+            className="dm-btn dm-btn-primary min-h-11 px-6"
           >
             {busy ? "Checking…" : "Confirm"}
           </button>

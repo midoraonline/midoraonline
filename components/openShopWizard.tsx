@@ -254,7 +254,7 @@ export default function OpenShopWizard({
             />
           </Field>
           {onPreferAi ? (
-            <button type="button" onClick={onPreferAi} className="dm-focus min-h-11 text-sm font-semibold text-accent">
+            <button type="button" onClick={onPreferAi} className="dm-btn dm-btn-secondary min-h-11 w-full px-6 text-accent">
               Create with AI instead
             </button>
           ) : null}
