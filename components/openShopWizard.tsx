@@ -283,7 +283,7 @@ export default function OpenShopWizard({
               onChange={(e) => setShopEmail(e.target.value)}
             />
           </Field>
-          <Field label="WhatsApp number (optional)">
+          <Field label="Business phone number (optional)">
             <PhoneNumberInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="700 000 000" />
           </Field>
         </div>
@@ -322,8 +322,8 @@ export default function OpenShopWizard({
           <ReviewRow label="Sells" value={SHOP_TYPE_LABEL[shopType]} />
           <ReviewRow label="Category" value={category.trim() || "Not set"} onChange={() => setStep(0)} />
           <ReviewRow label="Location" value={locationDisplay.trim() || "Not set"} onChange={() => setStep(1)} />
-          <ReviewRow label="Email" value={shopEmail.trim() || "Not set"} onChange={() => setStep(1)} />
-          <ReviewRow label="WhatsApp" value={whatsappNumber.trim() || "Not set"} onChange={() => setStep(1)} />
+          <ReviewRow label="Business email" value={shopEmail.trim() || "Not set"} onChange={() => setStep(1)} />
+          <ReviewRow label="Business phone number" value={whatsappNumber.trim() || "Not set"} onChange={() => setStep(1)} />
           <ReviewRow label="Logo" value={logoUrl ? "Added" : "Not set"} onChange={() => setStep(2)} />
           <ReviewRow label="Banner" value={bannerUrl ? "Added" : "Not set"} onChange={() => setStep(2)} />
           <ReviewRow label="Hours" value={hoursSummary(hours)} onChange={() => setStep(3)} />

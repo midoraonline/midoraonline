@@ -494,7 +494,7 @@ export default function CreateShopConcierge({
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Shop email (optional)
+                Business email (optional)
               </label>
               <input
                 type="email"
@@ -506,7 +506,7 @@ export default function CreateShopConcierge({
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                WhatsApp number (optional)
+                Business phone number (optional)
               </label>
               <PhoneNumberInput
                 value={f.whatsappNumber}
