@@ -580,7 +580,7 @@ export default function ProductCard({
             ) : null}
           </div>
           {metaRow}
-          <BrandedCover className="mt-1 flex-1">
+          <BrandedCover className="sm:mt-1 sm:flex-1">
             <WhatsAppCta
               waHref={waHref}
               productId={product.id}
