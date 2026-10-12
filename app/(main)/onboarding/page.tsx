@@ -53,7 +53,7 @@ export default function OnboardingPage() {
               Your brand deserves the spotlight—not buried in an endless grid.
             </h1>
             <p className="max-w-md text-xs sm:text-sm text-neutral-300 leading-relaxed">
-              Discover products, services, and opportunities from local sellers. Merchants can build a storefront; shoppers can see who is behind each listing.
+              Discover listings from local sellers. Merchants can build a storefront; shoppers can see who is behind each listing.
             </p>
             
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
                   "Create an account or sign in. A shopper account can open a shop later.",
                   "Before your first shop or listing, verify one account phone or email if it is not already verified.",
                   "Open a storefront with the step-by-step form or AI concierge, or post directly with a personal seller profile.",
-                  "Add products, services, or opportunities. If you have multiple shops, choose which storefront owns each listing.",
+                  "Add listings. If you have multiple shops, choose which storefront owns each listing.",
                   "Complete the publishing checks, then share your shop or listing with buyers.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
@@ -191,7 +191,7 @@ export default function OnboardingPage() {
               </p>
               <ol className="mt-5 space-y-4">
                 {[
-                  "Browse shops, products, services, and opportunities without signing in.",
+                  "Browse shops and listings without signing in.",
                   "Compare listing details and shop information, including ratings and trust badges when available.",
                   "Contact the seller through Midora messages or WhatsApp when offered.",
                   "Agree on payment and delivery directly with the seller; Midora does not process checkout.",
@@ -367,7 +367,7 @@ export default function OnboardingPage() {
               <ul className="mt-4 space-y-3 text-xs leading-relaxed text-foreground/80 sm:text-sm">
                 <li className="pl-1">See who you&apos;re buying from before you commit.</li>
                 <li className="pl-1">
-                  Browse products, services and opportunities with context—less guesswork, fewer regrets.
+                  Browse listings with context—less guesswork, fewer regrets.
                 </li>
                 <li className="pl-1">
                   A calmer, more legible alternative to chaotic marketplaces.
