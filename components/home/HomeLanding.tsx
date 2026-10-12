@@ -415,7 +415,7 @@ export default function HomeLanding({
                   ? "Loading listings…"
                   : filters.nearMe
                     ? "Closest to you"
-                    : `Products, services & opportunities${filterHint}`}
+                    : `Listings${filterHint}`}
             </h2>
             <div className="flex shrink-0 items-center gap-3">
               {isSearching ? (
@@ -469,10 +469,10 @@ export default function HomeLanding({
             <EmptyState
               message={
                 isSearching
-                  ? `No products, services or opportunities match “${query.trim()}”. Try another search.`
+                  ? `No listings match “${query.trim()}”. Try another search.`
                   : anyFiltersActive
-                    ? "No products, services or opportunities match your filters. Try a different category or clear filters."
-                    : "No products, services or opportunities yet — check back soon."
+                    ? "No listings match your filters. Try a different category or clear filters."
+                    : "No listings yet — check back soon."
               }
             />
           ) : (
