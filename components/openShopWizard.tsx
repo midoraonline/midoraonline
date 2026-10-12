@@ -99,6 +99,16 @@ export default function OpenShopWizard({
     setStep((n) => Math.min(n + 1, STEPS.length - 1));
   }
 
+  function skip() {
+    if (step === 1 && validate(1)) {
+      setShopEmail(verifiedContacts.email ?? "");
+      setWhatsappNumber(verifiedContacts.phone ?? "");
+    }
+    if (step === 3 && validate(3)) setHours(blankHoursDraft);
+    setError(null);
+    setStep((n) => Math.min(n + 1, STEPS.length - 1));
+  }
+
   function validate(index: number): string | null {
     if (index === 0) {
       if (!name.trim()) return "Enter a shop name.";
@@ -321,9 +331,16 @@ export default function OpenShopWizard({
       ) : null}
 
       {step < STEPS.length - 1 ? (
-        <button type="button" onClick={goNext} className="dm-btn dm-btn-primary min-h-11 w-full active:scale-[0.98]">
-          Continue
-        </button>
+        <div className="flex gap-2">
+          {step > 0 ? (
+            <button type="button" onClick={skip} className="dm-btn dm-btn-secondary min-h-11 px-6 active:scale-[0.98]">
+              Skip
+            </button>
+          ) : null}
+          <button type="button" onClick={goNext} className="dm-btn dm-btn-primary min-h-11 flex-1 px-6 active:scale-[0.98]">
+            Continue
+          </button>
+        </div>
       ) : (
         <button
           type="button"
