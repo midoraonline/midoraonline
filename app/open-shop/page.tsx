@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2, PenLine, Sparkles } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import CreateShopConcierge from "@/components/createShopConcierge";
 import OpenShopWizard from "@/components/openShopWizard";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
-import StepFrame, { OPTION_ROW } from "@/components/post/StepFrame";
-import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT } from "@/components/dashboard/ui";
+import StepFrame from "@/components/post/StepFrame";
+import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT } from "@/components/dashboard/ui";
 import { useAppSession } from "@/lib/state";
 import type { apiShops } from "@/lib/api";
 import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
@@ -114,8 +114,9 @@ export default function OpenShopPage() {
         <>
           {mode === "choose" ? <ChooseStart onPick={setMode} onBack={() => router.push("/")} /> : null}
           <div className={mode === "quick" ? "" : "hidden"}>
-            <div className="mx-auto w-full max-w-md px-4 py-6 sm:py-10">
-              <button type="button" onClick={() => setMode("choose")} className={`${BTN_TEXT} -ml-1 mb-4 h-9 px-1`}>
+            <div className="min-h-[calc(100dvh-4rem)] bg-surface-page">
+            <div className="mx-auto w-full max-w-xl px-4 py-6 sm:py-10">
+              <button type="button" onClick={() => setMode("choose")} className={`${BTN_GHOST} -ml-2 mb-4`}>
                 Back
               </button>
               <CreateShopConcierge
@@ -126,6 +127,7 @@ export default function OpenShopPage() {
               <button type="button" onClick={() => setMode("manual")} className={`${BTN_TEXT} mt-6`}>
                 Fill in the form myself instead
               </button>
+            </div>
             </div>
           </div>
           <div className={mode === "manual" ? "" : "hidden"}>
@@ -145,25 +147,45 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
   const options = [
     {
       mode: "quick" as const,
+      icon: Sparkles,
       title: "Use AI",
-      text: "Describe your business in a sentence or two and we'll draft the shop for you to check.",
+      text: "Describe your business in a sentence or two. We draft the shop and you check it before it goes live.",
+      badge: "Fastest",
     },
     {
       mode: "manual" as const,
+      icon: PenLine,
       title: "Set up manually",
       text: "Fill in your shop details yourself, one short step at a time.",
+      badge: null,
     },
   ];
   return (
-    <StepFrame title="Open your shop" subtitle="How would you like to start? You can edit everything later." onBack={onBack}>
-      <div className="space-y-2">
+    <StepFrame
+      title="How do you want to set up your shop?"
+      subtitle="You can change everything later."
+      onBack={onBack}
+      wide
+      plain
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
         {options.map((o) => (
-          <button key={o.mode} type="button" onClick={() => onPick(o.mode)} className={OPTION_ROW}>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-foreground">{o.title}</span>
-              <span className="mt-0.5 block text-sm text-muted">{o.text}</span>
+          <button
+            key={o.mode}
+            type="button"
+            onClick={() => onPick(o.mode)}
+            className="dm-focus relative flex min-h-40 flex-col items-start rounded-xl border border-border bg-surface p-5 text-left shadow-xs transition-colors hover:border-accent/60"
+          >
+            <span className="grid size-10 place-items-center rounded-lg bg-accent/10 text-accent" aria-hidden>
+              <o.icon className="size-5" />
             </span>
-            <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+            {o.badge ? (
+              <span className="absolute right-4 top-4 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {o.badge}
+              </span>
+            ) : null}
+            <span className="mt-4 text-sm font-semibold text-foreground">{o.title}</span>
+            <span className="mt-1 text-sm text-muted">{o.text}</span>
           </button>
         ))}
       </div>

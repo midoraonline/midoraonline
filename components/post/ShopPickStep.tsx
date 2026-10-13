@@ -15,14 +15,14 @@ export default function ShopPickStep({
   onBack: () => void;
 }) {
   return (
-    <StepFrame title="Which shop is this for?" subtitle="The listing will appear on this shop's page." onBack={onBack}>
+    <StepFrame title="Which shop is this for?" subtitle="The listing will appear on this shop's page." onBack={onBack} plain>
       <div className="space-y-2">
         {shops.map((shop) => (
           <button key={shop.id} type="button" onClick={() => onSelect(shop.id)} className={OPTION_ROW}>
             {shop.logo_url ? (
-              <Image src={shop.logo_url} alt="" width={36} height={36} className="size-9 shrink-0 rounded-md object-cover" />
+              <Image src={shop.logo_url} alt="" width={40} height={40} className="size-10 shrink-0 rounded-lg object-cover ring-1 ring-border" />
             ) : (
-              <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border text-xs font-medium text-muted">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent/10 text-xs font-semibold text-accent">
                 {shop.name.substring(0, 2).toUpperCase()}
               </span>
             )}

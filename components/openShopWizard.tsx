@@ -27,6 +27,8 @@ const STEPS = [
   { title: "Check and create", subtitle: "Make sure everything looks right, then create your shop." },
 ] as const;
 
+const STEP_LABELS = ["Name", "Contacts", "Logo and banner", "Hours", "Review"] as const;
+
 const FIELD = INPUT;
 
 const SHOP_TYPE_LABEL: Record<apiShops.ShopType, string> = {
@@ -188,6 +190,17 @@ export default function OpenShopWizard({
       onBack={back}
       step={step + 1}
       total={STEPS.length}
+      steps={STEP_LABELS}
+      preview={
+        <ShopPreview
+          name={name}
+          description={description}
+          logoUrl={logoUrl}
+          bannerUrl={bannerUrl}
+          location={locationDisplay}
+          category={category}
+        />
+      }
     >
 
       {step === 0 ? (
@@ -371,6 +384,46 @@ function ReviewRow({
           Change
         </button>
       ) : null}
+    </div>
+  );
+}
+
+function ShopPreview({
+  name,
+  description,
+  logoUrl,
+  bannerUrl,
+  location,
+  category,
+}: {
+  name: string;
+  description: string;
+  logoUrl: string;
+  bannerUrl: string;
+  location: string;
+  category: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+      <div className="relative h-24 bg-surface-muted">
+        {bannerUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={bannerUrl} alt="" className="size-full object-cover" />
+        ) : null}
+      </div>
+      <div className="px-4 pb-4">
+        <div className="-mt-6 grid size-12 place-items-center overflow-hidden rounded-xl border-2 border-surface bg-accent/10 text-base font-semibold uppercase text-accent">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="size-full object-cover" />
+          ) : (
+            (name.trim().charAt(0) || "M")
+          )}
+        </div>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">{name.trim() || "Your shop name"}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs text-muted">{description.trim() || "A short line about what you sell."}</p>
+        <p className="mt-2 truncate text-xs text-muted">{[category, location].filter(Boolean).join(" · ") || "Category · Location"}</p>
+      </div>
     </div>
   );
 }

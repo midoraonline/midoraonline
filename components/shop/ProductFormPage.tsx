@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Clock } from "lucide-react";
-import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, StatusDot } from "@/components/dashboard/ui";
+import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, StatusDot } from "@/components/dashboard/ui";
 import { INPUT, TEXTAREA } from "@/components/post/StepFrame";
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
@@ -628,12 +628,13 @@ export default function ProductFormPage({
 
   return (
     <div
-      className={`mx-auto w-full max-w-xl space-y-6 pt-2 ${
+      className={`mx-auto w-full max-w-xl pt-2 lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8 ${
         hasBottomNav
           ? "pb-[calc(9rem+env(safe-area-inset-bottom,0px))] md:pb-32"
           : "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
       }`}
     >
+      <div className="min-w-0 space-y-6">
       {/* Top Breadcrumb Header */}
       <div>
         <div className="space-y-1">
@@ -645,7 +646,7 @@ export default function ProductFormPage({
             Back to listings
           </Link>
           {flush ? null : (
-            <h1 className="text-xl font-semibold text-foreground">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {pageTitle}
             </h1>
           )}
@@ -689,7 +690,7 @@ export default function ProductFormPage({
               return (
                 <div
                   role="status"
-                  className={`flex gap-3 rounded-md border p-3 text-sm ${tone}`}
+                  className={`flex gap-3 rounded-xl border p-4 text-sm ${tone}`}
                 >
                   <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
                   <div className="space-y-1">
@@ -740,9 +741,9 @@ export default function ProductFormPage({
           />
         </div>
 
-        <section className="space-y-4 border-t border-border pt-6">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-foreground">
+            <h2 className="text-sm font-semibold text-foreground">
               {draft.kind === "opportunity"
                 ? "Media (optional)"
                 : draft.kind === "service"
@@ -801,9 +802,9 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 2: Basic Info (Title & Description) */}
-        <section className="space-y-5 border-t border-border pt-6">
+        <section className="space-y-5 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Details</h2>
+            <h2 className="text-sm font-semibold text-foreground">Details</h2>
             <p className="mt-0.5 text-sm text-muted">A clear title and a few honest sentences help buyers decide.</p>
           </div>
 
@@ -925,9 +926,9 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 3b: Location (required to publish) */}
-        <section className="space-y-4 border-t border-border pt-6">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Location</h2>
+            <h2 className="text-sm font-semibold text-foreground">Location</h2>
             <p className="mt-0.5 text-sm text-muted">
               City or area, or Online if buyers do not visit a place. Country-only (e.g. Uganda) is not enough.
             </p>
@@ -953,9 +954,9 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 4: Pricing & Stock */}
-        <section className="space-y-5 border-t border-border pt-6">
+        <section className="space-y-5 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Price</h2>
+            <h2 className="text-sm font-semibold text-foreground">Price</h2>
             <p className="mt-0.5 text-sm text-muted">Prices are in UGX.</p>
           </div>
 
@@ -1022,9 +1023,9 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 5: Category */}
-        <section className="space-y-4 border-t border-border pt-6">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Category</h2>
+            <h2 className="text-sm font-semibold text-foreground">Category</h2>
             <p className="mt-0.5 text-sm text-muted">
               {draft.kind === "product"
                 ? "Assign a category so buyers can filter and discover your item."
@@ -1088,9 +1089,9 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 6: Additional Attributes */}
-        <section className="space-y-4 border-t border-border pt-6">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-foreground">More about this listing</h2>
+            <h2 className="text-sm font-semibold text-foreground">More about this listing</h2>
             <p className="mt-0.5 text-sm text-muted">
               Extra metadata for this {LISTING_KIND_LABEL[draft.kind].toLowerCase()}
               {categoryParts.parentLabel ? ` · ${categoryParts.parentLabel}` : ""}
@@ -1325,16 +1326,25 @@ export default function ProductFormPage({
         </section>
       </form>
 
+      </div>
+
+      <aside className="hidden lg:block">
+        <div className="sticky top-20">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Preview</p>
+          <ListingPreviewCard draft={draft} />
+        </div>
+      </aside>
+
       {/* Sticky action bar. When the mobile BottomNav is present (dashboard
           flows) sit above it; otherwise (StandaloneShell) hug the viewport. */}
       <div
-        className={`fixed inset-x-0 z-modal border-t border-border bg-background py-3 ${
+        className={`fixed inset-x-0 z-modal border-t border-border bg-surface/95 py-3 backdrop-blur ${
           hasBottomNav
             ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:bottom-0"
             : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-xl items-center gap-3 px-4">
+        <div className="mx-auto flex w-full max-w-xl flex-row-reverse items-center gap-2 px-4 lg:max-w-5xl">
           <button
             type="submit"
             form="product-form-page"
@@ -1346,7 +1356,7 @@ export default function ProductFormPage({
                   ? "The AI review found problems. Edit the listing first."
                   : undefined
             }
-            className={BTN_PRIMARY}
+            className={`${BTN_PRIMARY} min-w-28`}
           >
             {saving
               ? "Saving…"
@@ -1356,10 +1366,44 @@ export default function ProductFormPage({
                   ? "Publish listing"
                   : "Save changes"}
           </button>
-          <button type="button" onClick={handleCancel} disabled={saving} className={BTN_TEXT}>
+          <button type="button" onClick={handleCancel} disabled={saving} className={`${BTN_GHOST} mr-auto`}>
             Cancel
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const PREVIEW_COVER: Record<string, string> = {
+  product: "bg-listing-product text-listing-product-foreground",
+  service: "bg-listing-service text-listing-service-foreground",
+  opportunity: "bg-listing-opportunity text-listing-opportunity-foreground",
+};
+
+function ListingPreviewCard({ draft }: { draft: FormDraft }) {
+  const cover = draft.image_urls.find((u) => !/\.(mp4|webm|mov)(\?|$)/i.test(u));
+  const price = Number(String(draft.price_ugx).replace(/[^0-9.]/g, ""));
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+      <div className={`relative aspect-[4/3] ${cover ? "bg-surface-muted" : PREVIEW_COVER[draft.kind] ?? "bg-accent/10 text-accent"}`}>
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover} alt="" className="size-full object-cover" />
+        ) : (
+          <div className="grid size-full place-items-center p-4 text-center">
+            <span className="line-clamp-2 text-lg font-bold uppercase tracking-tight">
+              {draft.category || draft.kind}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="space-y-1 p-3">
+        <p className="line-clamp-2 text-sm font-medium text-foreground">{draft.title.trim() || "Your listing title"}</p>
+        <p className="text-sm font-semibold tabular-nums text-foreground">
+          {price > 0 ? `UGX ${new Intl.NumberFormat("en-UG").format(price)}` : "Price"}
+        </p>
+        <p className="truncate text-xs text-muted">{draft.location_name || "Location"}</p>
       </div>
     </div>
   );
