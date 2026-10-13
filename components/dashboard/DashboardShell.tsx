@@ -283,9 +283,9 @@ export default function DashboardShell({
             <button
               aria-label="Close menu overlay"
               onClick={() => setDrawerOpen(false)}
-              className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+              className="absolute inset-0 bg-foreground/30"
             />
-            <aside className="absolute inset-y-0 left-0 flex w-[75%] max-w-xs flex-col border-r border-border bg-surface shadow-2xl">
+            <aside className="absolute inset-y-0 left-0 flex w-[75%] max-w-xs flex-col border-r border-border bg-surface">
               <Sidebar
                 navItems={navItems}
                 secondaryNavItems={secondaryNavItems}

@@ -38,9 +38,9 @@ function LogoutModal({
       <button
         aria-label="Close"
         onClick={onCancel}
-        className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/30"
       />
-      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-background p-6 shadow-2xl">
+      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-background p-6 shadow-lg">
         <div className="mb-4 flex items-center gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-rose-500/10 text-rose-600">
             <MaterialSymbol name="logout" className="!text-lg" />
@@ -122,7 +122,7 @@ function ProfileDropdown({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-md">
           {/* User info */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
             <UserAvatar url={avatarUrl} name={displayName} size={40} />
@@ -204,7 +204,7 @@ export default function DashboardHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-border bg-background/95 px-4 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-border bg-background px-4 sm:px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
