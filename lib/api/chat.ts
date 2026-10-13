@@ -51,6 +51,11 @@ export type SuggestedShop = {
   location?: string | null;
   category?: string | null;
   availability?: string | null;
+  target_customers?: string | null;
+  service_areas?: string | null;
+  price_range?: string | null;
+  listing_ideas?: string[];
+  tips?: string[];
 };
 
 export function sendMessage(sessionId: string, body: { message: string }, token?: string) {
