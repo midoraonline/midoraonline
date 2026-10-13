@@ -160,19 +160,16 @@ function PostItemFlow() {
             shopLabel={shop?.name ?? null}
             onChangeType={() => setStep("type")}
             onChangeShop={showShopChange ? () => setStep("shop") : undefined}
+            contactVerified={status?.can_post}
             onVerificationRequired={() => {
-              setStatus((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      can_post: false,
-                      phone_verified: false,
-                      email_verified: false,
-                      required_channel: prev.phone ? "phone" : "email",
-                    }
-                  : prev,
-              );
-              setStep("verify");
+              // Re-check instead of assuming: a verified phone or email must
+              // never be asked for twice.
+              void fetchVerificationStatus()
+                .then((fresh) => {
+                  setStatus(fresh);
+                  if (!fresh.can_post) setStep("verify");
+                })
+                .catch(() => setStep("verify"));
             }}
             backUrl={backUrl}
             hasBottomNav={false}
