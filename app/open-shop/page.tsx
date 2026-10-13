@@ -24,6 +24,7 @@ export default function OpenShopPage() {
   const [createdShop, setCreatedShop] = useState<apiShops.Shop | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   const stillResolving =
     !session.hydrated || (session.isAuthenticated && session.user === undefined);
@@ -40,7 +41,9 @@ export default function OpenShopPage() {
     let active = true;
     fetchVerificationStatus()
       .then((status) => {
-        if (active) setVerificationStatus(status);
+        if (!active) return;
+        setVerificationError(null);
+        setVerificationStatus(status);
       })
       .catch(() => {
         if (active) setVerificationError("We couldn't check verification. Try again.");
@@ -48,7 +51,7 @@ export default function OpenShopPage() {
     return () => {
       active = false;
     };
-  }, [session.hydrated, session.isAuthenticated]);
+  }, [session.hydrated, session.isAuthenticated, attempt]);
 
   if (stillResolving) {
     return (
@@ -73,7 +76,7 @@ export default function OpenShopPage() {
             {verificationError ? (
               <>
                 <p className="text-sm" role="alert">{verificationError}</p>
-                <button type="button" onClick={() => window.location.reload()} className={BTN_SECONDARY}>
+                <button type="button" onClick={() => setAttempt((n) => n + 1)} className={BTN_SECONDARY}>
                   Try again
                 </button>
               </>

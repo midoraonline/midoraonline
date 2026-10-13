@@ -78,6 +78,11 @@ type ParsedSubmission = {
   stage2Docs: AdminVerificationDoc[];
   stage3Docs: AdminVerificationDoc[];
   stage4Docs: AdminVerificationDoc[];
+  stage2Review: string | null;
+  stage3Review: string | null;
+  stage4Review: string | null;
+  stage3Fields: Record<string, string>;
+  stage4Fields: Record<string, string>;
   phone: string | null;
   whatsapp: string | null;
   location: string | null;
@@ -151,6 +156,9 @@ function parseSubmission(v: AdminVerification): ParsedSubmission {
   const stage4Notes =
     (typeof meta.stage4_notes === "string" && meta.stage4_notes.trim()) || null;
 
+  const text = (k: string) => (typeof meta[k] === "string" && (meta[k] as string).trim()) || null;
+  const rec = (k: string) =>
+    meta[k] && typeof meta[k] === "object" ? (meta[k] as Record<string, string>) : {};
   let pendingStage: 2 | 3 | 4 | null = null;
   if (stage4Status === "pending") pendingStage = 4;
   else if (stage3Status === "pending") pendingStage = 3;
@@ -172,6 +180,11 @@ function parseSubmission(v: AdminVerification): ParsedSubmission {
     stage2Notes,
     stage3Notes,
     stage4Notes,
+    stage2Review: text("stage2_review_notes"),
+    stage3Review: text("stage3_review_notes"),
+    stage4Review: text("stage4_review_notes"),
+    stage3Fields: rec("stage3_fields"),
+    stage4Fields: rec("stage4_fields"),
     stage2Docs: docs2,
     stage3Docs: docs3,
     stage4Docs: docs4,
@@ -502,18 +515,24 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                       title="Stage 2 · Identity documents"
                       status={sub.stage2Status}
                       notes={sub.stage2Notes}
+                      reviewNotes={sub.stage2Review}
+                      fields={{}}
                       docs={sub.stage2Docs}
                     />
                     <StageDocsBlock
                       title="Stage 3 · Business documents"
                       status={sub.stage3Status}
                       notes={sub.stage3Notes}
+                      reviewNotes={sub.stage3Review}
+                      fields={sub.stage3Fields}
                       docs={sub.stage3Docs}
                     />
                     <StageDocsBlock
                       title="Stage 4 · Professional documents"
                       status={sub.stage4Status}
                       notes={sub.stage4Notes}
+                      reviewNotes={sub.stage4Review}
+                      fields={sub.stage4Fields}
                       docs={sub.stage4Docs}
                     />
 
@@ -682,18 +701,66 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
   );
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  registered_name: "Registered business name",
+  registration_number: "URSB registration number",
+  tin: "TIN",
+  profession: "Profession",
+  licence_number: "Licence / membership number",
+  issuing_body: "Issuing body",
+};
+
+function DocLightbox({ doc, label, onClose }: { doc: AdminVerificationDoc; label: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+      className="fixed inset-0 z-modal flex flex-col bg-black/85 p-4"
+      onClick={onClose}
+    >
+      <div className="flex items-center justify-between gap-3 pb-3 text-white">
+        <p className="truncate text-sm font-semibold">{label}</p>
+        <div className="flex items-center gap-3">
+          <a href={doc.url} target="_blank" rel="noreferrer" className="text-sm underline" onClick={(e) => e.stopPropagation()}>
+            Open original
+          </a>
+          <button type="button" onClick={onClose} className="dm-focus rounded-md px-2 py-1 text-sm font-semibold hover:bg-white/10">
+            Close
+          </button>
+        </div>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- admin review of uploaded documents */}
+      <img src={doc.url} alt={label} className="mx-auto min-h-0 max-w-full flex-1 object-contain" onClick={(e) => e.stopPropagation()} />
+    </div>
+  );
+}
+
 function StageDocsBlock({
   title,
   status,
   notes,
+  reviewNotes,
+  fields,
   docs,
 }: {
   title: string;
   status: StageStatus;
   notes: string | null;
+  reviewNotes: string | null;
+  fields: Record<string, string>;
   docs: AdminVerificationDoc[];
 }) {
-  if (status === "unverified" && docs.length === 0 && !notes) return null;
+  const [open, setOpen] = useState<{ doc: AdminVerificationDoc; label: string } | null>(null);
+  const fieldEntries = Object.entries(fields).filter(([, v]) => String(v).trim());
+  if (status === "unverified" && docs.length === 0 && !notes && fieldEntries.length === 0) return null;
 
   return (
     <section className="space-y-2">
@@ -708,6 +775,22 @@ function StageDocsBlock({
           <span className="font-semibold">Merchant note:</span> {notes}
         </p>
       ) : null}
+      {reviewNotes ? (
+        <p className="rounded-lg border border-border bg-background p-2.5 text-xs text-foreground/80">
+          <span className="font-semibold">Reviewer note:</span> {reviewNotes}
+        </p>
+      ) : null}
+      {fieldEntries.length ? (
+        <dl className="grid gap-2 text-sm sm:grid-cols-3">
+          {fieldEntries.map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-[11px] text-muted">{FIELD_LABELS[k] ?? k.replace(/_/g, " ")}</dt>
+              <dd className="font-medium text-foreground">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {open ? <DocLightbox doc={open.doc} label={open.label} onClose={() => setOpen(null)} /> : null}
       {docs.length === 0 ? (
         <p className="text-xs text-muted">No documents attached for this stage.</p>
       ) : (
@@ -724,15 +807,15 @@ function StageDocsBlock({
                 className="overflow-hidden rounded-md border border-border bg-background"
               >
                 {isImageUrl(doc.url) ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- admin review of uploaded URLs
-                  <a href={doc.url} target="_blank" rel="noreferrer">
+                  <button type="button" className="dm-focus block w-full" onClick={() => setOpen({ doc, label })} aria-label={`View ${label}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- admin review of uploaded URLs */}
                     <img
                       src={doc.url}
                       alt={label}
-                      className="h-36 w-full object-cover"
+                      className="h-36 w-full cursor-zoom-in object-cover"
                       loading="lazy"
                     />
-                  </a>
+                  </button>
                 ) : (
                   <div className="flex h-24 items-center justify-center bg-foreground/[0.04] text-xs text-muted">
                     File attachment

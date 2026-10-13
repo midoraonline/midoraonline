@@ -137,7 +137,8 @@ export default function AdminCategoriesClient() {
     }
   }
 
-  if (loading) {
+  // After saves we reload in place: keep editors mounted (open panels, drafts).
+  if (loading && categories.length === 0) {
     return <PageSkeleton rows={6} label="Loading categories" />;
   }
 

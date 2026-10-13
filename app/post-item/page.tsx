@@ -35,6 +35,7 @@ function PostItemFlow() {
     paramType ? normalizeListingKind(paramType) : null,
   );
   const [formReady, setFormReady] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   const backUrl =
     session.user?.user_role === "merchant" || session.user?.user_role === "admin"
@@ -74,7 +75,7 @@ function PostItemFlow() {
     return () => {
       active = false;
     };
-  }, [session.hydrated, session.isAuthenticated, paramShopId, paramType]);
+  }, [session.hydrated, session.isAuthenticated, paramShopId, paramType, attempt]);
 
   useEffect(() => {
     if (step === "form") setFormReady(true);
@@ -116,7 +117,7 @@ function PostItemFlow() {
         <p className="text-sm text-[color:var(--error)]">{loadError}</p>
         <button
           type="button"
-          onClick={() => window.location.reload()}
+          onClick={() => setAttempt((n) => n + 1)}
           className={`${BTN_SECONDARY} mt-4`}
         >
           Try again
@@ -160,19 +161,16 @@ function PostItemFlow() {
             shopLabel={shop?.name ?? null}
             onChangeType={() => setStep("type")}
             onChangeShop={showShopChange ? () => setStep("shop") : undefined}
+            contactVerified={status?.can_post}
             onVerificationRequired={() => {
-              setStatus((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      can_post: false,
-                      phone_verified: false,
-                      email_verified: false,
-                      required_channel: prev.phone ? "phone" : "email",
-                    }
-                  : prev,
-              );
-              setStep("verify");
+              // Re-check instead of assuming: a verified phone or email must
+              // never be asked for twice.
+              void fetchVerificationStatus()
+                .then((fresh) => {
+                  setStatus(fresh);
+                  if (!fresh.can_post) setStep("verify");
+                })
+                .catch(() => setStep("verify"));
             }}
             backUrl={backUrl}
             hasBottomNav={false}

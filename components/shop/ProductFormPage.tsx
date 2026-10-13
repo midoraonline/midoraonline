@@ -194,6 +194,7 @@ export default function ProductFormPage({
   onChangeType,
   onChangeShop,
   onVerificationRequired,
+  contactVerified,
   backUrl = "/merchant/listings",
   hasBottomNav = true,
   flush = false,
@@ -210,6 +211,8 @@ export default function ProductFormPage({
   onChangeType?: () => void;
   onChangeShop?: () => void;
   onVerificationRequired?: () => void;
+  /** Known `can_post` from the caller (post-item already fetched it). */
+  contactVerified?: boolean;
   backUrl?: string;
   /** Several shops: parent shows the picker. The draft stays mounted. */
   onShopRequired?: () => void;
@@ -350,10 +353,11 @@ export default function ProductFormPage({
       subcategoryLabel: categoryParts.subcategoryLabel,
       parentHasChildren: !!parentGroup && parentGroup.children.length > 0,
       metaFields: catFields,
-      phoneVerified: Boolean(sessionUser?.phone_verified),
+      phoneVerified:
+        contactVerified ?? Boolean(sessionUser?.phone_verified || sessionUser?.email_verified),
       shopLocationLabel,
     });
-  }, [draft, categoryParts, categoryTree, catFields, sessionUser?.phone_verified, shopLocationLabel]);
+  }, [draft, categoryParts, categoryTree, catFields, contactVerified, sessionUser?.phone_verified, sessionUser?.email_verified, shopLocationLabel]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -913,7 +917,7 @@ export default function ProductFormPage({
             <p className="text-xs text-[color:var(--error)]">
               {errors.phone}{" "}
               <a href="/merchant/settings#profile-photo" className="underline">
-                Verify phone
+                Verify now
               </a>
             </p>
           ) : null}

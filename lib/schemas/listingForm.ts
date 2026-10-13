@@ -142,7 +142,7 @@ export type ListingValidationContext = {
   /** Resolved category metadata fields (DB-configured or fallback). Falls
    *  back to `categoryMetaFields(parentCategoryLabel)` when omitted. */
   metaFields?: ReturnType<typeof categoryMetaFields>;
-  /** When publishing, require verified phone on the acting seller. */
+  /** When publishing, require a verified phone OR email (API `can_post`). */
   phoneVerified?: boolean;
   /** Shop-level location display used when listing location_name is empty. */
   shopLocationLabel?: string | null;
@@ -222,7 +222,7 @@ export function validateListingDraft(
 
   if (draft.is_published) {
     if (ctx.phoneVerified === false) {
-      errors.phone = "Verify your phone number before publishing.";
+      errors.phone = "Verify your phone or email before publishing.";
     }
     const loc = (draft.location_name || "").trim() || (ctx.shopLocationLabel || "").trim();
     const normalized = loc.toLowerCase().replace(/^[,.\s]+|[,.\s]+$/g, "");

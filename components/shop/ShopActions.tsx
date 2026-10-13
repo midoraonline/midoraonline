@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
 import { track } from "@/lib/analytics";
@@ -30,7 +29,6 @@ export default function ShopActions({
   initialFollowed?: boolean | null;
 }) {
   const session = useAppSession();
-  const router = useRouter();
 
   const [liked, setLiked] = useState(Boolean(initialLiked));
   const [followed, setFollowed] = useState(Boolean(initialFollowed));
@@ -93,7 +91,6 @@ export default function ShopActions({
         else await apiShops.unlikeShop(shopId);
         setLiked(next);
         notifyFeedEngagement();
-        router.refresh();
       } catch {
         /* keep prior */
       }
@@ -112,7 +109,6 @@ export default function ShopActions({
         setFollowed(next);
         notifyFeedEngagement();
         track(next ? "shop:followed" : "shop:unfollowed", { shopId });
-        router.refresh();
       } catch {
         /* keep prior */
       }

@@ -43,7 +43,6 @@ export default function FeaturesClient() {
     try {
       setItems(await listAdminSwitches());
     } catch (err) {
-      setItems([]);
       if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
         setError("Feature switches are not available yet.");
       } else {
@@ -85,7 +84,7 @@ export default function FeaturesClient() {
         description="Switches apply to every seller and save as soon as you flip them."
       />
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
-      {loading ? <PageSkeleton rows={4} label="Loading switches" /> : null}
+      {loading && items.length === 0 ? <PageSkeleton rows={4} label="Loading switches" /> : null}
       {!loading && !error && items.length === 0 ? <EmptyState message="No feature switches yet." /> : null}
       <ul className={items.length ? LIST : ""}>
         {items.map((item) => (
