@@ -183,7 +183,7 @@ export default function MerchantLeadsClient({
                 {visibleLeads.map((lead) => (
                   <li key={lead.id} className="flex items-center gap-3 px-4 py-3">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{SOURCE_LABEL[lead.source] ?? lead.source} inquiry</span>
+                      <span className="block truncate text-sm font-semibold">{SOURCE_LABEL[lead.source] ?? lead.source} inquiry</span>
                       <span
                         className="block text-xs tabular-nums text-muted"
                         title={new Date(lead.created_at).toLocaleString()}

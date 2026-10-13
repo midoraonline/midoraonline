@@ -177,7 +177,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
             {(tab === "manual_review" ? manualReview : nearDupes).map((r) => (
               <li key={r.id} className="flex items-start gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{r.title}</p>
+                  <p className="truncate text-sm font-semibold">{r.title}</p>
                   {r.reason ? <p className="mt-0.5 text-sm text-muted">{r.reason}</p> : null}
                   <p className="mt-1 text-xs text-muted">{date(r.created_at)}</p>
                 </div>

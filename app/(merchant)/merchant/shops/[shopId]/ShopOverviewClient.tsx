@@ -109,7 +109,7 @@ export default function ShopOverviewClient({
             {products.slice(0, 6).map((p) => (
               <li key={p.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{p.title}</span>
+                  <span className="block truncate text-sm font-semibold">{p.title}</span>
                   <span className="block text-xs tabular-nums text-muted">
                     {p.price_ugx != null ? `UGX ${fmt(p.price_ugx)}` : "No price"}
                   </span>

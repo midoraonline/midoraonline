@@ -122,7 +122,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
               >
                 <RowThumb src={s.logo_url} label={s.name} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{s.name}</span>
+                  <span className="block truncate text-sm font-semibold">{s.name}</span>
                   <span className="block truncate text-xs text-muted">
                     {[s.category, `${fmt(s.view_count)} views`, `${fmt(s.follower_count)} followers`]
                       .filter(Boolean)

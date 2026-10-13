@@ -80,7 +80,7 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
               <Link href={`/shops/${shop.slug}`} className={ROW}>
                 <RowThumb src={shop.logo_url} label={shop.name} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{shop.name}</span>
+                  <span className="block truncate text-sm font-semibold">{shop.name}</span>
                   <span className="block truncate text-xs tabular-nums text-muted">
                     {fmt(shop.follower_count)} followers · {fmt(shop.view_count)} views
                   </span>

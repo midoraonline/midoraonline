@@ -298,7 +298,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
                       href={`/shops/${s.slug}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="truncate text-sm font-medium hover:underline"
+                      className="truncate text-sm font-semibold hover:underline"
                     >
                       {s.name}
                     </a>

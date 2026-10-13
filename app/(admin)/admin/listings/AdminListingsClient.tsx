@@ -99,7 +99,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                     ) : null}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-medium">{listing.title}</p>
+                        <p className="truncate text-sm font-semibold">{listing.title}</p>
                         <StatusDot tone={statusTone(listing.status)}>
                           <span className="capitalize">{listing.status.replace(/_/g, " ")}</span>
                         </StatusDot>

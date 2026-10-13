@@ -204,7 +204,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
               {data.top_shops.slice(0, 6).map((shop) => (
                 <li key={shop.id} className="flex items-center gap-3 px-4 py-3">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{shop.name || shop.slug}</span>
+                    <span className="block truncate text-sm font-semibold">{shop.name || shop.slug}</span>
                     <span className="block text-xs tabular-nums text-muted">
                       {fmt(shop.product_count)} listings · {fmt(shop.follower_count)} followers
                     </span>
@@ -223,7 +223,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
               {data.top_products.slice(0, 6).map((p) => (
                 <li key={p.id} className="flex items-center gap-3 px-4 py-3">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{p.title}</span>
+                    <span className="block truncate text-sm font-semibold">{p.title}</span>
                     <span className="block truncate text-xs text-muted">{p.shop_name || "No shop"}</span>
                   </span>
                   <span className="text-xs tabular-nums text-muted">{fmt(p.view_count)} views</span>
