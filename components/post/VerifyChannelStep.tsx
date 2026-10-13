@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import OtpCodeField from "@/components/OtpCodeField";
 import StepFrame from "@/components/post/StepFrame";
+import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/dashboard/ui";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { normalizePhone } from "@/lib/phone";
 import {
@@ -139,7 +140,7 @@ export default function VerifyChannelStep({
             inputMode="tel"
             autoComplete="tel"
             placeholder="0700 123 456"
-            className="dm-input"
+            className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-foreground"
           />
           <p className="text-xs text-muted">0700 123 456, 256700123456, and 700123456 all save as +256.</p>
         </div>
@@ -147,13 +148,13 @@ export default function VerifyChannelStep({
 
       {phase === "entry" && channel === "email" ? (
         email ? (
-          <p className="rounded-xl border border-border bg-surface-subtle px-3 py-2 text-sm text-foreground">
+          <p className="rounded-md border border-border px-3 py-2 text-sm text-foreground">
             {email}
           </p>
         ) : (
           <p className="text-sm text-muted">
             Add an email in{" "}
-            <Link href="/merchant/settings" className="font-semibold text-accent">
+            <Link href="/merchant/settings" className="font-medium text-foreground underline underline-offset-2">
               settings
             </Link>{" "}
             before posting.
@@ -184,27 +185,27 @@ export default function VerifyChannelStep({
           type="button"
           onClick={() => void send()}
           disabled={busy || (channel === "phone" ? phone.trim().length < 9 : !email)}
-          className="dm-btn dm-btn-primary min-h-11 w-full px-6"
+          className={`${BTN_PRIMARY} w-full sm:w-auto`}
         >
           {busy ? "Sending…" : "Send code"}
         </button>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => void send()}
-            disabled={busy || resendIn > 0}
-            className="dm-btn dm-btn-secondary min-h-11 px-5 disabled:opacity-60"
-          >
-            {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => void confirm(code)}
             disabled={busy || code.length !== 6}
-            className="dm-btn dm-btn-primary min-h-11 px-6"
+            className={BTN_PRIMARY}
           >
             {busy ? "Checking…" : "Confirm"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void send()}
+            disabled={busy || resendIn > 0}
+            className={`${BTN_SECONDARY} tabular-nums`}
+          >
+            {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
           </button>
         </div>
       )}
