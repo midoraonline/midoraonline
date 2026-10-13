@@ -386,12 +386,12 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setSearchOpen((open) => !open)}
-              className="inline-flex size-9 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-foreground/[0.06] hover:text-foreground lg:hidden dm-focus"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-foreground/[0.06] lg:hidden dm-focus"
               aria-label={searchOpen ? "Close search" : "Open search"}
               aria-expanded={searchOpen}
             >
               {searchOpen ? (
-                <X className="size-4" />
+                <X className="size-5" strokeWidth={2.25} />
               ) : (
                 <MaterialSymbol name="search" className="!text-lg" />
               )}
@@ -490,12 +490,12 @@ export default function Navbar({
 
             <button
               type="button"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground lg:hidden dm-focus"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-foreground/[0.06] lg:hidden dm-focus"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
             >
-              {open ? <X className="size-4" /> : <Menu className="size-4" />}
+              {open ? <X className="size-5" strokeWidth={2.25} /> : <Menu className="size-5" />}
             </button>
           </div>
         </div>
