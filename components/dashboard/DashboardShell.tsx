@@ -8,6 +8,8 @@ import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import { useAppSession } from "@/lib/state";
 import DashboardHeader from "./DashboardHeader";
+import DashboardFooter from "./DashboardFooter";
+import { X } from "lucide-react";
 
 export type DashboardNavItem = {
   href: string;
@@ -33,11 +35,11 @@ type Props = {
 
 const ROLE_ACCENT: Record<
   DashboardRole,
-  { active: string; border: string; pill: string }
+  { pill: string }
 > = {
-  admin:    { active: "bg-rose-500/10 text-rose-600",       border: "border-l-rose-500",    pill: "bg-rose-500/10 text-rose-600"       },
-  merchant: { active: "bg-accent/10 text-accent",           border: "border-l-accent",      pill: "bg-accent/10 text-accent"           },
-  customer: { active: "bg-emerald-500/10 text-emerald-600", border: "border-l-emerald-500", pill: "bg-emerald-500/10 text-emerald-600" },
+  admin:    { pill: "bg-rose-500/10 text-rose-600"       },
+  merchant: { pill: "bg-accent/10 text-accent"           },
+  customer: { pill: "bg-emerald-500/10 text-emerald-600" },
 };
 
 // Map route → screen name shown in the header
@@ -94,12 +96,10 @@ function isActivePath(pathname: string, href: string, exact?: boolean): boolean 
 function NavLink({
   item,
   pathname,
-  accent,
   onClick,
 }: {
   item: DashboardNavItem;
   pathname: string;
-  accent: { active: string; border: string };
   onClick?: () => void;
 }) {
   const active = isActivePath(pathname, item.href, item.exact);
@@ -109,13 +109,10 @@ function NavLink({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={[
-        // 3px left border always reserved so active state doesn't shift layout.
-        // Active fill (~10% role color) + 3px role-colored left border satisfies
-        // AGENTS.UI.md §2 "not color alone".
-        "group flex items-center gap-2.5 rounded-xl border-l-[3px] pl-[calc(0.75rem-3px)] pr-3 py-2 text-sm font-medium transition-colors",
+        "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active
-          ? `${accent.active} ${accent.border}`
-          : "border-l-transparent text-foreground/60 hover:bg-surface-subtle hover:text-foreground",
+          ? "bg-surface-subtle text-foreground"
+          : "text-muted hover:bg-surface-subtle hover:text-foreground",
       ].join(" ")}
     >
       {item.icon && (
@@ -144,7 +141,7 @@ function Sidebar({
   navItems: DashboardNavItem[];
   secondaryNavItems?: DashboardNavItem[];
   pathname: string;
-  accent: { active: string; border: string; pill: string };
+  accent: { pill: string };
   roleLabel: string;
   onItemClick?: () => void;
 }) {
@@ -165,14 +162,14 @@ function Sidebar({
       {/* Primary nav */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
         {navItems.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} accent={accent} onClick={onItemClick} />
+          <NavLink key={item.href} item={item} pathname={pathname} onClick={onItemClick} />
         ))}
 
         {secondaryNavItems && secondaryNavItems.length > 0 && (
           <>
             <div className="my-3 h-px bg-border" />
             {secondaryNavItems.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} accent={accent} onClick={onItemClick} />
+              <NavLink key={item.href} item={item} pathname={pathname} onClick={onItemClick} />
             ))}
           </>
         )}
@@ -286,6 +283,14 @@ export default function DashboardShell({
               className="absolute inset-0 bg-foreground/30"
             />
             <aside className="absolute inset-y-0 left-0 flex w-[75%] max-w-xs flex-col border-r border-border bg-surface">
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setDrawerOpen(false)}
+                className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-lg text-foreground hover:bg-surface-subtle"
+              >
+                <X className="size-5" strokeWidth={2.25} />
+              </button>
               <Sidebar
                 navItems={navItems}
                 secondaryNavItems={secondaryNavItems}
@@ -312,6 +317,7 @@ export default function DashboardShell({
               {children}
             </div>
           </main>
+          <DashboardFooter />
         </div>
       </div>
 
