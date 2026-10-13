@@ -2,6 +2,18 @@
 
 import Link from "next/link";
 import { useCallback, useSyncExternalStore, type ReactNode } from "react";
+import {
+  BarChart3,
+  Eye,
+  Heart,
+  Inbox,
+  MessageCircle,
+  MessagesSquare,
+  Package,
+  Store,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 export function PageHeader({
   title,
@@ -13,12 +25,12 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="mb-8 flex flex-wrap items-start justify-between gap-3">
+    <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+        <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
         {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="flex shrink-0 flex-wrap gap-2">{action}</div> : null}
     </header>
   );
 }
@@ -37,7 +49,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={`mb-10 ${className}`}>
+    <section className={`mb-8 ${className}`}>
       {title || action ? (
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div className="min-w-0">
@@ -52,39 +64,98 @@ export function Section({
   );
 }
 
-export function StatStrip({ items }: { items: { label: string; value: ReactNode; hint?: ReactNode }[] }) {
+const STAT_ICONS: [RegExp, LucideIcon][] = [
+  [/whatsapp/i, MessageCircle],
+  [/message|conversation|chat/i, MessagesSquare],
+  [/view|impression/i, Eye],
+  [/shop|store|merchant/i, Store],
+  [/user|customer|follower|lead/i, Users],
+  [/save|wish|like/i, Heart],
+  [/listing|product|item/i, Package],
+];
+
+function statIcon(label: string): LucideIcon {
+  return STAT_ICONS.find(([re]) => re.test(label))?.[1] ?? BarChart3;
+}
+
+export function StatStrip({
+  items,
+}: {
+  items: { label: string; value: ReactNode; hint?: ReactNode; icon?: LucideIcon }[];
+}) {
   return (
-    <dl className="mb-10 grid grid-cols-2 divide-border rounded-lg border border-border sm:flex sm:divide-x">
-      {items.map((s, i) => (
-        <div
-          key={s.label}
-          className={`min-w-0 flex-1 p-4 ${i % 2 === 1 ? "border-l border-border sm:border-l-0" : ""} ${
-            i >= 2 ? "border-t border-border sm:border-t-0" : ""
-          }`}
-        >
-          <dt className="truncate text-xs text-muted">{s.label}</dt>
-          <dd className="mt-1 text-xl font-semibold tabular-nums text-foreground">{s.value}</dd>
-          {s.hint ? <dd className="mt-0.5 text-xs text-muted">{s.hint}</dd> : null}
-        </div>
-      ))}
+    <dl className={`mb-8 grid grid-cols-2 gap-3 ${items.length >= 4 ? "lg:grid-cols-4" : items.length === 3 ? "lg:grid-cols-3" : ""}`}>
+      {items.map((s) => {
+        const Icon = s.icon ?? statIcon(s.label);
+        return (
+          <div key={s.label} className="min-w-0 rounded-xl border border-border bg-surface p-4 shadow-xs">
+            <div className="flex items-start justify-between gap-2">
+              <dt className="truncate text-sm text-muted">{s.label}</dt>
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent" aria-hidden>
+                <Icon className="size-4" />
+              </span>
+            </div>
+            <dd className="mt-2 truncate text-2xl font-semibold tabular-nums tracking-tight text-foreground">{s.value}</dd>
+            {s.hint ? <dd className="mt-1 truncate text-xs text-muted">{s.hint}</dd> : null}
+          </div>
+        );
+      })}
     </dl>
   );
 }
 
-const DOT = {
-  ok: "bg-emerald-500",
-  warn: "bg-amber-500",
-  bad: "bg-rose-500",
-  neutral: "bg-muted",
+const BADGE = {
+  ok: "bg-success-subtle text-success ring-success/20",
+  warn: "bg-warning-subtle text-warning ring-warning/20",
+  bad: "bg-error-subtle text-error ring-error/20",
+  neutral: "bg-surface-muted text-muted ring-border",
 } as const;
 
-export type StatusTone = keyof typeof DOT;
+export type StatusTone = keyof typeof BADGE;
 
+/** Soft badge (4 tones). Kept under the old name so every caller picks it up. */
 export function StatusDot({ tone = "neutral", children }: { tone?: StatusTone; children: ReactNode }) {
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-foreground/80">
-      <span className={`size-1.5 rounded-full ${DOT[tone]}`} aria-hidden />
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${BADGE[tone]}`}
+    >
+      <span className="size-1.5 rounded-full bg-current" aria-hidden />
       {children}
+    </span>
+  );
+}
+
+export const Badge = StatusDot;
+
+/** 40px row media: image thumb, or a tinted initial tile when there is no photo. */
+export function RowThumb({
+  src,
+  alt = "",
+  label,
+  round = false,
+  tone = "accent",
+}: {
+  src?: string | null;
+  alt?: string;
+  label?: string | null;
+  round?: boolean;
+  tone?: "accent" | "product" | "service" | "opportunity" | "job";
+}) {
+  const shape = round ? "rounded-full" : "rounded-lg";
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt={alt} className={`size-10 shrink-0 ${shape} object-cover ring-1 ring-border`} loading="lazy" />;
+  }
+  const tones = {
+    accent: "bg-accent/10 text-accent",
+    product: "bg-listing-product text-listing-product-foreground",
+    service: "bg-listing-service text-listing-service-foreground",
+    opportunity: "bg-listing-opportunity text-listing-opportunity-foreground",
+    job: "bg-listing-job text-listing-job-foreground",
+  } as const;
+  return (
+    <span className={`grid size-10 shrink-0 place-items-center ${shape} text-sm font-semibold uppercase ${tones[tone]}`} aria-hidden>
+      {(label ?? "").trim().charAt(0) || "·"}
     </span>
   );
 }
@@ -114,8 +185,8 @@ export function useTabParam<T extends string>(tabs: readonly T[], fallback: T, k
   return [tab, setTab] as const;
 }
 
-const TAB = "-mb-px whitespace-nowrap border-b-2 pb-3 text-sm transition-colors";
-const TAB_ON = "border-foreground font-medium text-foreground";
+const TAB = "-mb-px inline-flex min-h-10 items-center whitespace-nowrap border-b-2 pb-2.5 text-sm transition-colors";
+const TAB_ON = "border-accent font-medium text-foreground";
 const TAB_OFF = "border-transparent text-muted hover:text-foreground";
 
 export function UnderlineTabs<T extends string>({
@@ -130,7 +201,7 @@ export function UnderlineTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <nav className={`mb-6 flex gap-5 overflow-x-auto border-b border-border ${className}`}>
+    <nav className={`scrollbar-none mb-6 flex gap-6 overflow-x-auto border-b border-border ${className}`}>
       {tabs.map((t) => {
         const cls = `${TAB} ${t.value === value ? TAB_ON : TAB_OFF}`;
         return t.href ? (
@@ -147,18 +218,32 @@ export function UnderlineTabs<T extends string>({
   );
 }
 
-export function EmptyState({ message, action }: { message: ReactNode; action?: ReactNode }) {
+export function EmptyState({
+  message,
+  title,
+  action,
+  icon: Icon = Inbox,
+}: {
+  message: ReactNode;
+  title?: ReactNode;
+  action?: ReactNode;
+  icon?: LucideIcon;
+}) {
   return (
-    <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center">
-      <p className="text-sm text-muted">{message}</p>
-      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    <div className="flex flex-col items-center rounded-xl border border-dashed border-border bg-surface px-6 py-10 text-center">
+      <span className="grid size-12 place-items-center rounded-full bg-accent/10 text-accent" aria-hidden>
+        <Icon className="size-5" />
+      </span>
+      {title ? <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3> : null}
+      <p className={`${title ? "mt-1" : "mt-4"} max-w-sm text-sm text-muted`}>{message}</p>
+      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message: ReactNode; onRetry?: () => void }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-500/30 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-error/20 bg-error-subtle px-4 py-3 text-sm text-error">
       <span>{message}</span>
       {onRetry ? (
         <button type="button" onClick={onRetry} className="text-sm font-medium underline underline-offset-2">
@@ -169,16 +254,25 @@ export function ErrorState({ message, onRetry }: { message: ReactNode; onRetry?:
   );
 }
 
-export const LIST = "divide-y divide-border rounded-lg border border-border";
-export const ROW = "flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-subtle";
+export const CARD = "rounded-xl border border-border bg-surface shadow-xs";
+export const CARD_HEADER = "flex items-center justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5";
+export const LIST = "divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-xs";
+export const ROW = "flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-muted/60 sm:px-5";
+const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 export const BTN_PRIMARY =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50";
+  `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white shadow-xs transition-colors hover:bg-accent-hover disabled:opacity-50 sm:h-9 ${FOCUS}`;
 export const BTN_SECONDARY =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border px-3.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50";
+  `inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-surface-muted disabled:opacity-50 sm:h-9 ${FOCUS}`;
+export const BTN_GHOST =
+  `inline-flex h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:opacity-50 sm:h-9 ${FOCUS}`;
 export const BTN_TEXT =
-  "inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-foreground";
-export const TH = "px-3 py-2 text-left text-xs font-normal text-muted";
-export const TD = "px-3 py-2.5";
+  "inline-flex min-h-10 items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover hover:underline sm:min-h-0";
+export const INPUT =
+  "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground shadow-xs placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10";
+export const TABLE_WRAP = "overflow-hidden rounded-xl border border-border bg-surface shadow-xs";
+export const THEAD = "bg-surface-subtle";
+export const TH = "px-4 py-2.5 text-left text-xs font-medium text-muted";
+export const TD = "px-4 py-3";
 export const NUM = "text-right tabular-nums";
 
 export function formatCount(n?: number | null) {
@@ -210,15 +304,22 @@ export function PageSkeleton({ stats = false, rows = 5, label = "Loading" }: { s
   return (
     <div role="status" aria-busy="true" aria-label={label} className="animate-pulse">
       <div className="mb-8 space-y-2">
-        <div className="h-6 w-40 rounded-md bg-surface-subtle" />
-        <div className="h-4 w-64 max-w-full rounded-md bg-surface-subtle" />
+        <div className="h-6 w-40 rounded-md bg-surface-muted" />
+        <div className="h-4 w-64 max-w-full rounded-md bg-surface-muted" />
       </div>
-      {stats ? <div className="mb-10 h-20 rounded-lg border border-border" /> : null}
+      {stats ? (
+        <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-[6.5rem] rounded-xl border border-border bg-surface" />
+          ))}
+        </div>
+      ) : null}
       <div className={LIST}>
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-3">
-            <div className="h-4 flex-1 rounded-md bg-surface-subtle" />
-            <div className="h-4 w-16 rounded-md bg-surface-subtle" />
+          <div key={i} className="flex items-center gap-3 px-4 py-3 sm:px-5">
+            <div className="size-10 rounded-lg bg-surface-muted" />
+            <div className="h-4 flex-1 rounded-md bg-surface-muted" />
+            <div className="h-4 w-16 rounded-md bg-surface-muted" />
           </div>
         ))}
       </div>
@@ -229,7 +330,7 @@ export function PageSkeleton({ stats = false, rows = 5, label = "Loading" }: { s
 export function PageError({ reset, backHref, backLabel }: { reset: () => void; backHref: string; backLabel: string }) {
   return (
     <div className="max-w-md py-10">
-      <h1 className="text-xl font-semibold tracking-tight">This page didn&apos;t load</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">This page didn&apos;t load</h1>
       <p className="mt-1 text-sm text-muted">Something went wrong while fetching it. Try again, or go back.</p>
       <div className="mt-5 flex gap-2">
         <button type="button" onClick={reset} className={BTN_PRIMARY}>

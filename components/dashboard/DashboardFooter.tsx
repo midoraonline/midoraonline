@@ -8,8 +8,8 @@ const LINKS = [
 
 export default function DashboardFooter() {
   return (
-    <footer className="border-t border-border">
-      <div className="flex flex-col items-center gap-2 px-4 py-4 text-xs text-muted sm:flex-row sm:justify-between lg:px-6">
+    <footer className="border-t border-border bg-surface">
+      <div className="flex flex-col items-center gap-2 px-4 py-4 text-xs text-muted sm:flex-row sm:justify-between lg:px-8">
         <p>© {new Date().getFullYear()} Midora</p>
         <nav className="flex gap-4">
           {LINKS.map((l) => (

@@ -101,20 +101,20 @@ function NavLink({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={[
-        "group flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "group flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 lg:h-9",
         active
-          ? "bg-surface-subtle text-foreground"
-          : "text-muted hover:bg-surface-subtle hover:text-foreground",
+          ? "bg-accent/10 font-medium text-foreground"
+          : "text-foreground-muted hover:bg-surface-muted hover:text-foreground",
       ].join(" ")}
     >
       {item.icon && (
-        <span className="grid size-5 shrink-0 place-items-center text-current">
+        <span className={`grid size-5 shrink-0 place-items-center [&>svg]:size-4 ${active ? "text-accent" : "text-muted group-hover:text-foreground"}`}>
           {item.icon}
         </span>
       )}
       <span className="flex-1 truncate">{item.label}</span>
       {item.badge != null && item.badge !== "" && (
-        <span className="rounded-full bg-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold text-foreground/60">
+        <span className="rounded-md bg-surface-muted px-1.5 text-xs tabular-nums text-muted">
           {item.badge}
         </span>
       )}
@@ -140,34 +140,33 @@ function Sidebar({
   return (
     <div className="flex h-full flex-col">
       {/* Logo + role badge */}
-      <div className="flex items-center justify-between gap-3 px-4 py-4">
+      <div className="flex h-16 shrink-0 items-center gap-3 px-4">
         <Link href="/" className="flex items-center gap-2">
           <Logo alt="Midora" width={100} height={28} className="h-7 w-auto rounded-lg" />
         </Link>
-        <span className="ml-auto truncate text-xs text-muted">{roleLabel}</span>
+        <span className="truncate rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">{roleLabel}</span>
         {onClose ? (
           <button
             type="button"
             aria-label="Close menu"
             onClick={onClose}
-            className="grid size-10 shrink-0 place-items-center rounded-md text-foreground hover:bg-surface-subtle"
+            className="ml-auto grid size-10 shrink-0 place-items-center rounded-lg text-foreground transition-colors hover:bg-surface-muted"
           >
             <X className="size-5" strokeWidth={2.25} />
           </button>
         ) : null}
       </div>
 
-      <div className="mx-3 mb-4 h-px bg-border" />
-
       {/* Primary nav */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto border-t border-border px-3 pt-3 pb-4">
+        <p className="px-3 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wide text-muted">Menu</p>
         {navItems.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} onClick={onItemClick} />
         ))}
 
         {secondaryNavItems && secondaryNavItems.length > 0 && (
           <>
-            <div className="my-3 h-px bg-border" />
+            <p className="px-3 pb-1 pt-5 text-[11px] font-medium uppercase tracking-wide text-muted">Account</p>
             {secondaryNavItems.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} onClick={onItemClick} />
             ))}
@@ -235,7 +234,7 @@ export default function DashboardShell({
   if (!allowed) {
     return (
       <div className="grid min-h-[100dvh] place-items-center bg-background p-6">
-        <div className="max-w-md space-y-3 rounded-lg border border-border p-6 text-center">
+        <div className="max-w-md space-y-3 rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
           <h1 className="text-xl font-semibold tracking-tight">Access restricted</h1>
           <p className="text-sm text-muted">
             Your account role ({userRole || "unknown"}) can&apos;t open the{" "}
@@ -252,7 +251,7 @@ export default function DashboardShell({
 
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
+    <div className="min-h-[100dvh] bg-surface-page text-foreground">
       {/* Desktop layout */}
       <div className="flex min-h-[100dvh]">
         {/* Sidebar */}
@@ -271,9 +270,9 @@ export default function DashboardShell({
             <button
               aria-label="Close menu overlay"
               onClick={() => setDrawerOpen(false)}
-              className="absolute inset-0 bg-foreground/30"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             />
-            <aside className="absolute inset-y-0 left-0 flex w-[75%] max-w-xs flex-col border-r border-border bg-surface">
+            <aside className="absolute inset-y-0 left-0 flex w-[84vw] max-w-xs flex-col border-r border-border bg-surface shadow-xl">
               <Sidebar
                 navItems={navItems}
                 secondaryNavItems={secondaryNavItems}
@@ -293,8 +292,8 @@ export default function DashboardShell({
             {/* Dashboards use the full content column (AGENTS.md §1.2). */}
             <div
               className={[
-                "w-full px-3 py-5 sm:px-4 sm:py-6 lg:px-6 lg:py-7",
-                contentWidth === "wide" ? "" : "mx-auto max-w-7xl",
+                "mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8",
+                contentWidth === "wide" ? "max-w-[1400px]" : "max-w-7xl",
               ].join(" ")}
             >
               {children}
