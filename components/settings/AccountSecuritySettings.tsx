@@ -64,7 +64,7 @@ export default function AccountSecuritySettings() {
         <h2 className="text-sm font-semibold">Account</h2>
         <p className="mt-0.5 text-xs text-muted">Change the password for email sign-in, or sign out.</p>
       </div>
-      <form onSubmit={handlePassword} className="space-y-3">
+      <form onSubmit={handlePassword} className="max-w-xl space-y-3">
         <label className="block space-y-1.5 text-sm font-medium">
           Current password
           <input

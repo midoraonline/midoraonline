@@ -43,7 +43,7 @@ export async function compositeOnColor(
       canvas.toBlob(
         (b) => (b ? resolve(b) : reject(new Error("Composite failed"))),
         "image/jpeg",
-        0.92,
+        1,
       );
     });
     return blob;

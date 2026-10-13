@@ -115,7 +115,7 @@ export async function removeBackground(
       model: pickModel(),
       device: "cpu",
       proxyToWorker: false,
-      output: { format: "image/png", quality: 0.9 },
+      output: { format: "image/png", quality: 1 },
     });
   } catch (err) {
     throw humanizeBgError(err);

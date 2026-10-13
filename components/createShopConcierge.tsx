@@ -7,7 +7,7 @@ import { BTN_PRIMARY, BTN_TEXT } from "@/components/dashboard/ui";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
 import CategoryPicker from "@/components/CategoryPicker";
-import { ImageUpload } from "@/components/image-upload";
+import { SingleImageField } from "@/components/upload/SingleImageField";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import { useAppSession } from "@/lib/state";
@@ -444,11 +444,11 @@ export default function CreateShopConcierge({
               <label className="block text-sm font-medium text-foreground">
                 Logo
               </label>
-              <ImageUpload
+              <SingleImageField
                 endpoint="shopLogo"
-                onUploadComplete={(url) => field("logoUrl", url)}
-                label="Upload logo"
-                previewUrl={f.logoUrl || undefined}
+                value={f.logoUrl}
+                onChange={(url) => field("logoUrl", url ?? "")}
+                emptyLabel="Add logo"
               />
             </div>
 

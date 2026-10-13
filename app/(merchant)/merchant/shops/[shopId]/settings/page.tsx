@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ImageUpload } from "@/components/image-upload";
+import { SingleImageField } from "@/components/upload/SingleImageField";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import VerifyContactButton from "@/components/VerifyContactButton";
@@ -13,6 +12,8 @@ import { useAppSession } from "@/lib/state";
 import {
   buildShopLocationPayload,
   locationCoords as readLocationCoords,
+  shopBannerUrl,
+  withBannerUrl,
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
@@ -45,6 +46,7 @@ export default function MerchantShopSettingsPage() {
   const [description, setDescription] = useState("");
   const [about, setAbout] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
   const [shopEmail, setShopEmail] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [whatsappVerified, setWhatsappVerified] = useState(false);
@@ -80,6 +82,7 @@ export default function MerchantShopSettingsPage() {
         setDescription(shopData.description ?? "");
         setAbout(shopData.about ?? "");
         setLogoUrl(shopData.logo_url ?? "");
+        setBannerUrl(shopBannerUrl(shopData.theme_config) ?? "");
         setShopEmail(shopData.shop_email ?? "");
         setWhatsappNumber(shopData.whatsapp_number ?? "");
         setWhatsappVerified(Boolean(shopData.whatsapp_verified));
@@ -118,7 +121,8 @@ export default function MerchantShopSettingsPage() {
         slug: slug.trim() ? slugFromName(slug) : slugFromName(name),
         description: description.trim() || undefined,
         about: about.trim() || undefined,
-        logo_url: logoUrl.trim() || undefined,
+        logo_url: logoUrl.trim() || null,
+        theme_config: withBannerUrl(shop?.theme_config ?? null, bannerUrl || null),
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
         location: buildShopLocationPayload(locationDisplay, locationCoordsState) ?? undefined,
@@ -170,7 +174,7 @@ export default function MerchantShopSettingsPage() {
         <div className="min-w-0">
         {error ? <ErrorState message={error} /> : null}
 
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="max-w-3xl space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-sm font-medium">Shop name *</label>
@@ -206,25 +210,24 @@ export default function MerchantShopSettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Logo</label>
-              <ImageUpload
+              <SingleImageField
                 endpoint="shopLogo"
-                onUploadComplete={setLogoUrl}
-                label="Upload logo"
-                previewUrl={logoUrl || undefined}
+                value={logoUrl}
+                onChange={(url) => setLogoUrl(url ?? "")}
+                emptyLabel="Add logo"
+                hint="Square works best. Shown on your shop and listing cards."
               />
-              {logoUrl ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-foreground/[0.06] ring-1 ring-foreground/[0.08]">
-                    <Image
-                      src={logoUrl}
-                      alt="Shop logo"
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-              ) : null}
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-sm font-medium">Banner</label>
+              <SingleImageField
+                endpoint="shopBanner"
+                shape="wide"
+                value={bannerUrl}
+                onChange={(url) => setBannerUrl(url ?? "")}
+                emptyLabel="Add banner"
+                hint="Wide image across the top of your shop page."
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Shop type</label>

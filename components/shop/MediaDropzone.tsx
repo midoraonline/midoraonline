@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ImagePlus, Loader2, Star, UploadCloud, Video as VideoIcon, X } from "lucide-react";
 import { isVideoUrl } from "@/lib/api/products";
+import { discardUploads } from "@/lib/uploads/discard";
 import {
   ImageUpload,
   type ImageUploadHandle,
@@ -163,7 +164,10 @@ export function MediaDropzone({
               )}
               <button
                 type="button"
-                onClick={() => onRemove(i)}
+                onClick={() => {
+                  discardUploads([url]);
+                  onRemove(i);
+                }}
                 className="flex size-7 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90"
                 aria-label={`Remove ${video ? "video" : "photo"}`}
               >
@@ -230,6 +234,7 @@ export function MediaDropzone({
               ref={imageRef}
               endpoint="productImage"
               multiple
+              existingCount={urls.length}
               label="Add photos"
               onUploadComplete={(url) => {
                 onImageUploaded(url);

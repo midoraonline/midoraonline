@@ -290,12 +290,8 @@ export default function DashboardShell({
           <DashboardHeader screenName={screenName} role={role} />
           <main className="dm-dash flex-1 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {/* Dashboards use the full content column (AGENTS.md §1.2). */}
-            <div
-              className={[
-                "mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8",
-                contentWidth === "wide" ? "max-w-[1400px]" : "max-w-7xl",
-              ].join(" ")}
-            >
+            {/* Full width on every dashboard; forms cap their own width. */}
+            <div data-width={contentWidth} className="w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
               {children}
             </div>
           </main>

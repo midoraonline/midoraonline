@@ -1,50 +1,29 @@
 "use client";
 
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import Image from "next/image";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import { useUploadThing, getUploadThingAuthHeaders } from "@/lib/uploadthing";
+import { useImageUploads } from "@/hooks/useImageUploads";
 import { watermarkProductFilesIfShopLogo } from "@/lib/watermark/client-apply";
-import {
-  isBgRemovalSupported,
-  prewarmBgRemoval,
-  removeBackground,
-  type BgRemovalProgress,
-} from "@/lib/bgRemoval";
-import { inspectImageMetadata } from "@/lib/imageMetadata";
-import {
-  avatarFileForUpload,
-  fitImagesForUpload,
-  UPLOAD_IMAGE_MAX_BYTES,
-} from "@/lib/imageFitForUpload";
-import {
-  BG_COLOR_PRESETS,
-  compositeOnColor,
-} from "@/lib/bgComposite";
+import { isBgRemovalSupported, prewarmBgRemoval, removeBackground } from "@/lib/bgRemoval";
+import { BG_COLOR_PRESETS, compositeOnColor } from "@/lib/bgComposite";
+import { IMAGE_POLICY, type ImageEndpoint } from "@/lib/uploads/policy";
+import { UploadTile } from "@/components/upload/UploadTile";
 
-type Endpoint = "shopLogo" | "productImage" | "imageUploader";
+/** The logo overlay route accepts up to 4MB; bigger photos keep the original. */
+const WATERMARK_MAX_BYTES = 4 * 1024 * 1024;
 
 type ImageUploadProps = {
-  endpoint: Endpoint;
+  endpoint: ImageEndpoint;
   onUploadComplete?: (url: string) => void;
+  /** Called per finished file (kept for older call sites). */
   onUploadManyComplete?: (urls: string[]) => void;
   label?: string;
-  accept?: string;
   className?: string;
-  previewUrl?: string;
   multiple?: boolean;
+  /** Images already attached; counts against the per-kind maximum. */
+  existingCount?: number;
   allowBackgroundRemoval?: boolean;
   watermarkLogoUrl?: string | null;
-  /** Keep the original file. HEIC/HEIF is converted at full size and quality 1. */
-  preserveQuality?: boolean;
 };
 
 export type ImageUploadHandle = {
@@ -52,243 +31,98 @@ export type ImageUploadHandle = {
   isBusy: () => boolean;
 };
 
-function endpointDefaultsAllowBg(endpoint: Endpoint): boolean {
-  return endpoint === "productImage" || endpoint === "shopLogo";
-}
-
 function fileExt(mime: string | undefined): string {
   if (mime?.includes("png")) return "png";
   if (mime?.includes("webp")) return "webp";
   return "jpg";
 }
 
-export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function ImageUpload({
-  endpoint,
-  onUploadComplete,
-  onUploadManyComplete,
-  label = "Add photos",
-  accept = "image/*",
-  className = "",
-  previewUrl,
-  multiple = false,
-  allowBackgroundRemoval,
-  watermarkLogoUrl,
-  preserveQuality = false,
-}, ref) {
-  const [uploadPct, setUploadPct] = useState(0);
-  const [preparing, setPreparing] = useState<
-    { stage: "watermark" | "bg"; current: number; total: number; pct?: number } | null
-  >(null);
+/**
+ * Button + live upload tiles. Background removal and the shop-logo overlay are
+ * opt-in; both re-save at maximum quality. Metadata checks apply to listing
+ * photos only (see lib/uploads/policy).
+ */
+export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function ImageUpload(
+  {
+    endpoint,
+    onUploadComplete,
+    onUploadManyComplete,
+    label = "Add photos",
+    className = "",
+    multiple = false,
+    existingCount = 0,
+    allowBackgroundRemoval,
+    watermarkLogoUrl,
+  },
+  ref,
+) {
+  const policy = IMAGE_POLICY[endpoint];
+  const bgEnabled = allowBackgroundRemoval ?? policy.allowBackgroundRemoval;
+  const canWatermark = policy.allowWatermark && Boolean(watermarkLogoUrl?.trim());
   const [autoRemoveBg, setAutoRemoveBg] = useState(false);
+  const [addLogo, setAddLogo] = useState(false);
   const [bgColor, setBgColor] = useState("#ffffff");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const bgEnabled =
-    !preserveQuality && (allowBackgroundRemoval ?? endpointDefaultsAllowBg(endpoint));
-  const shouldWatermark =
-    endpoint === "productImage" && Boolean(watermarkLogoUrl?.trim());
-
-  const { startUpload, isUploading } = useUploadThing(endpoint, {
-    headers: getUploadThingAuthHeaders,
-    onUploadBegin: () => setUploadPct(0),
-    onUploadProgress: (p) => setUploadPct(Math.round(p)),
-    onClientUploadComplete: (res) => {
-      const urls = (res ?? [])
-        .map((r) => r.ufsUrl ?? r.url)
-        .filter((u): u is string => Boolean(u));
-      if (onUploadManyComplete && urls.length) onUploadManyComplete(urls);
-      else if (urls[0] && onUploadComplete) onUploadComplete(urls[0]);
-      setUploadPct(0);
-      if (urls.length) {
-        toast.success(
-          urls.length === 1 ? "Photo uploaded" : `${urls.length} photos uploaded`,
-        );
-      }
-    },
-    onUploadError: (e) => {
-      setUploadPct(0);
-      toast.error("Upload failed", { description: e.message });
-    },
-  });
-
-  const removeBackgrounds = useCallback(
-    async (files: File[]): Promise<File[]> => {
-      const out: File[] = [];
-      for (let i = 0; i < files.length; i += 1) {
-        const file = files[i];
-        const onProgress: BgRemovalProgress = (_key, current, total) => {
-          setPreparing({
-            stage: "bg",
-            current: i + 1,
-            total: files.length,
-            pct: Math.round((current / Math.max(1, total)) * 100),
-          });
-        };
-        setPreparing({ stage: "bg", current: i + 1, total: files.length });
+  const transform = useCallback(
+    async (file: File, setStage: (s: string) => void): Promise<File> => {
+      let out = file;
+      if (bgEnabled && autoRemoveBg && isBgRemovalSupported()) {
+        setStage("Removing background…");
         try {
-          let blob = await removeBackground(file, { onProgress });
+          let blob = await removeBackground(out);
           try {
             blob = await compositeOnColor(blob, bgColor);
           } catch {
-            /* keep transparent cutout if composite fails */
+            /* keep the transparent cutout */
           }
-          const ext = fileExt(blob.type);
-          const stem = file.name.replace(/\.[^.]+$/, "");
-          out.push(
-            new File([blob], `${stem}-nobg.${ext}`, {
-              type: blob.type || "image/jpeg",
-            }),
-          );
-        } catch (err) {
-          const msg =
-            err instanceof Error
-              ? err.message
-              : "Background removal failed for one image.";
-          toast.warning("Kept original background", { description: msg });
-          out.push(file);
+          const stem = out.name.replace(/\.[^.]+$/, "");
+          out = new File([blob], `${stem}-nobg.${fileExt(blob.type)}`, { type: blob.type || "image/png" });
+        } catch {
+          /* keep the original photo */
+        }
+      }
+      if (canWatermark && addLogo && out.size <= WATERMARK_MAX_BYTES) {
+        setStage("Adding your logo…");
+        try {
+          [out] = await watermarkProductFilesIfShopLogo([out], watermarkLogoUrl);
+        } catch {
+          /* keep the photo without the overlay */
         }
       }
       return out;
     },
-    [bgColor],
+    [addLogo, autoRemoveBg, bgColor, bgEnabled, canWatermark, watermarkLogoUrl],
   );
 
-  const uploadFiles = useCallback(
-    async (files: File[]) => {
-      if (!files.length) return;
-      try {
-        // Metadata gate: reject stock/AI/watermarked images before we touch
-        // the network. Mirrors the server-side moderation stage so a merchant
-        // who passes here also passes there.
-        const cleared: File[] = [];
-        for (const file of files) {
-          const verdict = await inspectImageMetadata(file);
-          if (verdict.ok) {
-            cleared.push(file);
-          } else {
-            toast.error("Image rejected", { description: verdict.reason });
-          }
-        }
-        if (!cleared.length) return;
-
-        let processed = cleared;
-        if (bgEnabled && autoRemoveBg) {
-          if (!isBgRemovalSupported()) {
-            toast.warning("Kept original background", {
-              description:
-                "Background removal needs WebAssembly. Uploading originals instead.",
-            });
-          } else {
-            processed = await removeBackgrounds(cleared);
-          }
-        }
-        // Keep originals that already fit. HEIC is converted; only over-limit files are resized.
-        const maxBytes = UPLOAD_IMAGE_MAX_BYTES[endpoint];
-        try {
-          if (preserveQuality || endpoint === "imageUploader") {
-            const originals: File[] = [];
-            const limitMb = (maxBytes / (1024 * 1024)).toFixed(0);
-            for (const file of processed) {
-              const next = await avatarFileForUpload(file);
-              if (next.size > maxBytes) {
-                throw new Error(`This photo is larger than ${limitMb}MB. Choose a smaller file.`);
-              }
-              originals.push(next);
-            }
-            processed = originals;
-          } else {
-            processed = await fitImagesForUpload(processed, maxBytes);
-          }
-        } catch (err) {
-          const description =
-            err instanceof Error
-              ? err.message
-              : "Could not compress images under the upload size limit.";
-          toast.error("Upload failed", { description });
-          setPreparing(null);
-          return;
-        }
-        if (shouldWatermark) {
-          setPreparing({ stage: "watermark", current: 0, total: processed.length });
-          try {
-            processed = await watermarkProductFilesIfShopLogo(
-              processed,
-              watermarkLogoUrl,
-            );
-          } catch (err) {
-            // Watermarking is best-effort — never block the actual upload.
-            // Common failure: dev / corporate-proxy environments where the
-            // server route can't fetch the shop logo from the CDN.
-            const description =
-              err instanceof Error
-                ? err.message
-                : "Uploading photos without the shop logo overlay.";
-            toast.warning("Logo overlay skipped", { description });
-          }
-        }
-        setPreparing(null);
-        await startUpload(processed);
-      } catch (err) {
-        setPreparing(null);
-        const description =
-          err instanceof Error ? err.message : "Could not prepare images for upload.";
-        toast.error("Upload failed", { description });
-      }
+  const { items, addFiles, cancel, busy, stage } = useImageUploads({
+    endpoint,
+    existingCount,
+    transform: (bgEnabled && autoRemoveBg) || (canWatermark && addLogo) ? transform : undefined,
+    onUploaded: (url) => {
+      if (onUploadManyComplete) onUploadManyComplete([url]);
+      else onUploadComplete?.(url);
     },
-    [
-      bgEnabled,
-      autoRemoveBg,
-      removeBackgrounds,
-      shouldWatermark,
-      watermarkLogoUrl,
-      startUpload,
-      endpoint,
-      preserveQuality,
-    ],
-  );
+  });
 
   useEffect(() => {
     if (bgEnabled && autoRemoveBg) prewarmBgRemoval();
   }, [bgEnabled, autoRemoveBg]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
-    if (!files.length) return;
-    void uploadFiles(files);
-  };
-
-  const busy = isUploading || preparing !== null;
-
+  const busyRef = useRef(busy);
+  useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
   useImperativeHandle(
     ref,
     () => ({
-      submitFiles: (files: File[]) => {
-        if (busy || !files.length) return;
-        void uploadFiles(files);
-      },
-      isBusy: () => busy,
+      submitFiles: (files: File[]) => void addFiles(files),
+      isBusy: () => busyRef.current,
     }),
-    [busy, uploadFiles],
+    [addFiles],
   );
 
-  const buttonLabel = (() => {
-    if (isUploading) return `Uploading… ${uploadPct}%`;
-    if (preparing?.stage === "watermark") return "Applying logo…";
-    if (preparing?.stage === "bg") {
-      const pct = preparing.pct ?? 0;
-      return `Removing background ${preparing.current}/${preparing.total}${
-        pct ? ` · ${pct}%` : "…"
-      }`;
-    }
-    return label;
-  })();
-
-  const progressPct = isUploading
-    ? uploadPct
-    : preparing?.stage === "bg"
-      ? preparing.pct ?? 0
-      : 0;
+  const full = existingCount >= policy.maxFiles && policy.maxFiles > 1;
 
   return (
     <div className={className}>
@@ -296,75 +130,79 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
         <input
           ref={inputRef}
           type="file"
-          accept={accept}
+          accept="image/*,.heic,.heif"
           multiple={multiple}
           className="hidden"
           aria-hidden
-          onChange={handleChange}
-          disabled={busy}
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            e.target.value = "";
+            void addFiles(files);
+          }}
         />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={busy}
+          disabled={full}
           className="dm-btn dm-btn-secondary dm-btn-sm"
         >
-          {busy ? (
+          {stage ? (
             <>
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              {buttonLabel}
+              {stage}
             </>
+          ) : full ? (
+            `${policy.maxFiles} of ${policy.maxFiles} added`
           ) : (
-            buttonLabel
+            label
           )}
         </button>
-        {previewUrl && !busy && (
-          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-surface-subtle">
-            <Image
-              src={previewUrl}
-              alt="Preview"
-              fill
-              sizes="40px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
-        )}
       </div>
 
-      {bgEnabled ? (
+      {items.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {items.map((it) => (
+            <UploadTile key={it.id} item={it} onCancel={() => cancel(it.id)} />
+          ))}
+        </div>
+      ) : null}
+
+      {bgEnabled || canWatermark ? (
         <div className="mt-2 space-y-2">
-          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
-            <input
-              type="checkbox"
-              className="size-3.5 rounded border-border text-accent focus:ring-accent"
-              checked={autoRemoveBg}
-              onChange={(e) => setAutoRemoveBg(e.target.checked)}
-              disabled={busy || !isBgRemovalSupported()}
-            />
-            <Sparkles className="size-3.5" aria-hidden="true" />
-            <span>
-              Auto-remove background
-              <span className="ml-1 text-[10px] text-muted">
-                {isBgRemovalSupported()
-                  ? "(falls back to original if it fails)"
-                  : "(unavailable here — keeps original)"}
-              </span>
-            </span>
-          </label>
-          {autoRemoveBg && isBgRemovalSupported() ? (
-            <div className="flex flex-wrap items-center gap-2 pl-5">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                Fill color
-              </span>
+          {canWatermark ? (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border text-accent focus:ring-accent"
+                checked={addLogo}
+                onChange={(e) => setAddLogo(e.target.checked)}
+              />
+              Add my shop logo to new photos
+            </label>
+          ) : null}
+          {bgEnabled ? (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border text-accent focus:ring-accent"
+                checked={autoRemoveBg}
+                onChange={(e) => setAutoRemoveBg(e.target.checked)}
+                disabled={!isBgRemovalSupported()}
+              />
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              {isBgRemovalSupported() ? "Remove background" : "Background removal isn't available on this device"}
+            </label>
+          ) : null}
+          {bgEnabled && autoRemoveBg && isBgRemovalSupported() ? (
+            <div className="flex flex-wrap items-center gap-2 pl-6">
+              <span className="text-xs text-muted">Fill</span>
               {BG_COLOR_PRESETS.map((p) => (
                 <button
                   key={p.value}
                   type="button"
                   title={p.label}
-                  disabled={busy}
                   onClick={() => setBgColor(p.value)}
-                  className={`size-6 rounded-full border-2 shadow-xs ${
+                  className={`size-7 rounded-full border-2 ${
                     bgColor.toLowerCase() === p.value.toLowerCase()
                       ? "border-accent ring-2 ring-accent/30"
                       : "border-border"
@@ -373,34 +211,15 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
                   aria-label={p.label}
                 />
               ))}
-              <label className="inline-flex items-center gap-1 text-[10px] text-muted">
-                <input
-                  type="color"
-                  value={bgColor}
-                  disabled={busy}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="size-6 cursor-pointer rounded border border-border bg-transparent p-0"
-                  aria-label="Custom background color"
-                />
-                Custom
-              </label>
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="size-7 cursor-pointer rounded border border-border bg-transparent p-0"
+                aria-label="Custom background color"
+              />
             </div>
           ) : null}
-        </div>
-      ) : null}
-
-      {progressPct > 0 && busy ? (
-        <div
-          className="mt-2 h-1 overflow-hidden rounded-full bg-surface-subtle"
-          role="progressbar"
-          aria-valuenow={progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full rounded-full bg-accent transition-[width] duration-300"
-            style={{ width: `${progressPct}%` }}
-          />
         </div>
       ) : null}
     </div>
