@@ -59,7 +59,7 @@ export default function CustomerProfilePage() {
   return (
     <div>
       <PageHeader title="Profile" description="Your photo, name and phone number." />
-      <div className="max-w-2xl space-y-4">
+      <div className="space-y-4">
       <section className="space-y-4 rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6">
 
         <ProfileAvatarUpload />

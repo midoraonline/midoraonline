@@ -16,7 +16,7 @@ export default function ShopPickStep({
 }) {
   return (
     <StepFrame title="Which shop is this for?" subtitle="The listing will appear on this shop's page." onBack={onBack} plain>
-      <div className="space-y-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {shops.map((shop) => (
           <button key={shop.id} type="button" onClick={() => onSelect(shop.id)} className={OPTION_ROW}>
             {shop.logo_url ? (

@@ -79,14 +79,14 @@ export default function StepFrame({
   const hasRail = !!(steps && step);
   const layout = hasRail
     ? preview
-      ? "lg:grid lg:grid-cols-[200px_minmax(0,1fr)_300px] lg:gap-8 max-w-6xl"
-      : "lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-8 max-w-4xl"
+      ? "lg:grid lg:grid-cols-[220px_minmax(0,1fr)_340px] lg:gap-10 max-w-[1440px]"
+      : "lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 max-w-7xl"
     : wide
-      ? "max-w-2xl"
-      : "max-w-xl";
+      ? "max-w-7xl"
+      : "max-w-6xl";
   return (
     <div className="min-h-[calc(100dvh-4rem)] bg-surface-page">
-      <div className={`mx-auto w-full px-4 py-6 sm:py-10 ${layout}`}>
+      <div className={`mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8 ${layout}`}>
         {hasRail ? (
           <aside className="hidden lg:block">
             <div className="sticky top-20">

@@ -115,7 +115,7 @@ export default function OpenShopPage() {
           {mode === "choose" ? <ChooseStart onPick={setMode} onBack={() => router.push("/")} /> : null}
           <div className={mode === "quick" ? "" : "hidden"}>
             <div className="min-h-[calc(100dvh-4rem)] bg-surface-page">
-            <div className="mx-auto w-full max-w-xl px-4 py-6 sm:py-10">
+            <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
               <button type="button" onClick={() => setMode("choose")} className={`${BTN_GHOST} -ml-2 mb-4`}>
                 Back
               </button>
@@ -195,7 +195,7 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
 
 function CreatedSuccess({ shop, onCreateAnother }: { shop: apiShops.Shop; onCreateAnother: () => void }) {
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="text-sm text-muted">Your shop is live</p>
       <h1 className="mt-1 text-xl font-semibold text-foreground">{shop.name}</h1>
       <p className="mt-1 text-sm text-muted">Add your first listing or finish your shop details whenever you&apos;re ready.</p>

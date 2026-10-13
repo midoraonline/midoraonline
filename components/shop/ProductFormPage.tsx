@@ -630,7 +630,7 @@ export default function ProductFormPage({
 
   return (
     <div
-      className={`mx-auto w-full max-w-xl pt-2 lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8 ${
+      className={`mx-auto w-full max-w-[1440px] pt-2 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-10 ${
         hasBottomNav
           ? "pb-[calc(9rem+env(safe-area-inset-bottom,0px))] md:pb-32"
           : "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
@@ -1346,7 +1346,7 @@ export default function ProductFormPage({
             : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-xl flex-row-reverse items-center gap-2 px-4 lg:max-w-5xl">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-row-reverse items-center gap-2 px-4 sm:px-6 lg:px-8">
           <button
             type="submit"
             form="product-form-page"

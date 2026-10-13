@@ -24,7 +24,7 @@ import {
   ROW,
   RowThumb,
   Section,
-  Segmented,
+  Select,
   StatStrip,
   StatusDot,
   TD,
@@ -204,7 +204,10 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
           >
             <div className={`${CARD} p-4 sm:p-5`}>
             <div className="mb-4 flex justify-end">
-              <Segmented
+              <Select
+                label="Period"
+                hideLabel
+                className="w-40"
                 options={WINDOWS}
                 value={String(windowDays) as (typeof WINDOWS)[number]["value"]}
                 onChange={(v) => setWindowDays(Number(v))}

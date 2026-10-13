@@ -27,7 +27,7 @@ import type {
   StaleListingResponse,
   VerificationFunnelResponse,
 } from "@/lib/api/analytics";
-import { BTN_TEXT, EmptyState, ErrorState, PageHeader, Section as UiSection, StatStrip, UnderlineTabs } from "@/components/dashboard/ui";
+import { BTN_TEXT, EmptyState, ErrorState, PageHeader, Section as UiSection, FilterBar, Select, StatStrip } from "@/components/dashboard/ui";
 
 const PALETTE = Array.from({ length: 8 }, (_, i) => (i === 0 ? "var(--accent)" : "var(--foreground-muted)"));
 
@@ -369,11 +369,15 @@ function Header({ window: w, onChange }: { window: number; onChange: (n: number)
         title="Insights"
         description="Discovery, conversion (WhatsApp clicks), verification drop-off and trust health from analytics events."
       />
-      <UnderlineTabs
-        tabs={WINDOWS.map((o) => ({ value: String(o.value), label: `${o.value} days` }))}
-        value={String(w)}
-        onChange={(v) => onChange(Number(v))}
-      />
+      <FilterBar>
+        <Select
+          label="Period"
+          className="sm:w-48"
+          options={WINDOWS.map((o) => ({ value: String(o.value), label: `Last ${o.value} days` }))}
+          value={String(w)}
+          onChange={(v) => onChange(Number(v))}
+        />
+      </FilterBar>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import SettingsSwitch from "@/components/settings/SettingsSwitch";
 import type { NotificationPreferences } from "@/lib/api/auth";
 import { notificationsFromUser, saveAccountPreferences } from "@/lib/accountPreferences";
@@ -63,41 +64,44 @@ export default function NotificationSettings() {
   }
 
   return (
-    <section className="max-w-md space-y-1">
-      <div className="mb-3">
-        <h2 className="text-sm font-semibold">Notifications</h2>
-        <p className="mt-0.5 text-xs text-muted">Push and email are the master switches.</p>
-      </div>
-      {push.permission === "denied" ? (
-        <p className="mb-3 rounded-lg border border-[color:var(--warning)]/30 p-3 text-xs text-[color:var(--warning)]">
-          Push is blocked for this site. Allow notifications in the browser, then turn it on here.
-        </p>
-      ) : null}
-      <SettingsSwitch
-        label="Push"
-        hint={push.subscribed ? "This browser can receive push." : "Asks the browser for permission."}
-        checked={prefs.push}
-        disabled={busy || push.busy}
-        onChange={(on) => void setPush(on)}
-      />
-      <SettingsSwitch
-        label="Email"
-        hint="Account emails for the types below."
-        checked={prefs.email}
-        disabled={busy}
-        onChange={(on) => void commit({ ...prefs, email: on }, { email: on })}
-      />
-      <div className="my-2 border-t border-border" />
-      {TYPES.filter((item) => !item.adminOnly || isAdmin).map((item) => (
-        <SettingsSwitch
-          key={item.key}
-          label={item.label}
-          hint={item.hint}
-          checked={prefs[item.key]}
-          disabled={busy}
-          onChange={(on) => void commit({ ...prefs, [item.key]: on }, { [item.key]: on })}
-        />
-      ))}
-    </section>
+    <SettingsPanel>
+      <SettingsRow title="Channels" description="Push and email are the master switches for everything below.">
+        {push.permission === "denied" ? (
+          <p className="mb-3 rounded-lg border border-[color:var(--warning)]/30 p-3 text-xs text-[color:var(--warning)]">
+            Push is blocked for this site. Allow notifications in the browser, then turn it on here.
+          </p>
+        ) : null}
+        <div className="divide-y divide-border">
+          <SettingsSwitch
+            label="Push"
+            hint={push.subscribed ? "This browser can receive push." : "Asks the browser for permission."}
+            checked={prefs.push}
+            disabled={busy || push.busy}
+            onChange={(on) => void setPush(on)}
+          />
+          <SettingsSwitch
+            label="Email"
+            hint="Account emails for the types below."
+            checked={prefs.email}
+            disabled={busy}
+            onChange={(on) => void commit({ ...prefs, email: on }, { email: on })}
+          />
+        </div>
+      </SettingsRow>
+      <SettingsRow title="What to tell you about" description="Turn off anything you don't need. Changes save right away.">
+        <div className="divide-y divide-border">
+          {TYPES.filter((item) => !item.adminOnly || isAdmin).map((item) => (
+            <SettingsSwitch
+              key={item.key}
+              label={item.label}
+              hint={item.hint}
+              checked={prefs[item.key]}
+              disabled={busy}
+              onChange={(on) => void commit({ ...prefs, [item.key]: on }, { [item.key]: on })}
+            />
+          ))}
+        </div>
+      </SettingsRow>
+    </SettingsPanel>
   );
 }

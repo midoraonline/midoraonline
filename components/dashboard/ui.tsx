@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useSyncExternalStore, type ReactNode } from "react";
 import {
   BarChart3,
+  ChevronDown,
   Eye,
   Heart,
   Inbox,
@@ -224,6 +225,58 @@ export function UnderlineTabs<T extends string>({
       })}
     </nav>
   );
+}
+
+/**
+ * Themed dropdown for switching views (shop, period, type, status).
+ * Native <select> so it is keyboard and mobile friendly; label stays visible
+ * unless hideLabel is set (then it is screen-reader only).
+ */
+export function Select<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  hideLabel = false,
+  className = "",
+  id,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: readonly { value: T; label: string }[];
+  hideLabel?: boolean;
+  className?: string;
+  id?: string;
+}) {
+  const selectId = id ?? `select-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  return (
+    <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+      <label htmlFor={selectId} className={hideLabel ? "sr-only" : "text-xs font-medium text-muted"}>
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          id={selectId}
+          value={value}
+          onChange={(e) => onChange(e.target.value as T)}
+          className="h-10 w-full min-w-[9rem] cursor-pointer appearance-none truncate rounded-lg border border-border bg-surface pl-3 pr-9 text-sm text-foreground shadow-xs transition-colors hover:border-accent/40 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+      </div>
+    </div>
+  );
+}
+
+/** Row of view switchers above content; wraps on mobile. */
+export function FilterBar({ children }: { children: ReactNode }) {
+  return <div className="mb-6 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-end">{children}</div>;
 }
 
 /** Segmented control for filters inside a card (range pickers, small toggles). */
