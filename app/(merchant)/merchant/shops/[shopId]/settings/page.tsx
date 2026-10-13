@@ -250,7 +250,7 @@ export default function MerchantShopSettingsPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Shop email</label>
+              <label className="text-xs font-medium text-foreground/80">Business email</label>
               <input
                 type="email"
                 className="dm-input dm-focus"
@@ -259,7 +259,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">WhatsApp</label>
+              <label className="text-xs font-medium text-foreground/80">Business phone number</label>
               <PhoneNumberInput
                 value={whatsappNumber}
                 onChange={setWhatsappNumber}
@@ -268,7 +268,7 @@ export default function MerchantShopSettingsPage() {
               <VerifyContactButton
                 value={whatsappNumber}
                 verified={whatsappVerified}
-                label="WhatsApp number"
+                label="Business phone number"
                 sendCode={() => apiShops.sendShopWhatsAppCode(shopId, whatsappNumber.trim())}
                 confirmCode={async (code) => {
                   const updated = await apiShops.confirmShopWhatsAppCode(shopId, code);

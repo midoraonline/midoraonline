@@ -64,7 +64,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   href={`mailto:${shop.shop_email}`}
                   className={footerIcon}
                   title={shop.shop_email}
-                  aria-label={`Email ${shop.shop_email}`}
+                  aria-label={`Business email ${shop.shop_email}`}
                   onClick={() => { track("listing:messaged", { shopId: shop.id }); }}
                 >
                   <MaterialSymbol name="mail" className="!text-[22px] leading-none" />
@@ -76,7 +76,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={footerIcon}
-                  title={`WhatsApp ${shop.whatsapp_number}`}
+                  title={`Business phone number ${shop.whatsapp_number}`}
                   aria-label={`WhatsApp ${shop.whatsapp_number}`}
                   onClick={() => {
                     track("conversion:whatsapp_click", {

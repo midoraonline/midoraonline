@@ -425,7 +425,7 @@ function DetailsTab({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label htmlFor="edit-shop-email" className="text-sm font-medium text-foreground">
-              Shop email
+              Business email
             </label>
             <input
               id="edit-shop-email"
@@ -441,7 +441,7 @@ function DetailsTab({
               htmlFor="edit-shop-whatsapp"
               className="text-sm font-medium text-foreground"
             >
-              WhatsApp number
+              Business phone number
             </label>
             <PhoneNumberInput
               id="edit-shop-whatsapp"
@@ -452,7 +452,7 @@ function DetailsTab({
             <VerifyContactButton
               value={form.whatsappNumber}
               verified={whatsappVerified}
-              label="WhatsApp number"
+              label="Business phone number"
               sendCode={() => apiShops.sendShopWhatsAppCode(shop.id, form.whatsappNumber.trim())}
               confirmCode={async (code) => {
                 const updated = await apiShops.confirmShopWhatsAppCode(shop.id, code);

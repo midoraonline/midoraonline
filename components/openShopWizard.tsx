@@ -99,6 +99,16 @@ export default function OpenShopWizard({
     setStep((n) => Math.min(n + 1, STEPS.length - 1));
   }
 
+  function skip() {
+    if (step === 1 && validate(1)) {
+      setShopEmail(verifiedContacts.email ?? "");
+      setWhatsappNumber(verifiedContacts.phone ?? "");
+    }
+    if (step === 3 && validate(3)) setHours(blankHoursDraft);
+    setError(null);
+    setStep((n) => Math.min(n + 1, STEPS.length - 1));
+  }
+
   function validate(index: number): string | null {
     if (index === 0) {
       if (!name.trim()) return "Enter a shop name.";
@@ -244,7 +254,7 @@ export default function OpenShopWizard({
             />
           </Field>
           {onPreferAi ? (
-            <button type="button" onClick={onPreferAi} className="dm-focus min-h-11 text-sm font-semibold text-accent">
+            <button type="button" onClick={onPreferAi} className="dm-btn dm-btn-secondary min-h-11 w-full px-6 text-accent">
               Create with AI instead
             </button>
           ) : null}
@@ -273,7 +283,7 @@ export default function OpenShopWizard({
               onChange={(e) => setShopEmail(e.target.value)}
             />
           </Field>
-          <Field label="WhatsApp number (optional)">
+          <Field label="Business phone number (optional)">
             <PhoneNumberInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="700 000 000" />
           </Field>
         </div>
@@ -312,8 +322,8 @@ export default function OpenShopWizard({
           <ReviewRow label="Sells" value={SHOP_TYPE_LABEL[shopType]} />
           <ReviewRow label="Category" value={category.trim() || "Not set"} onChange={() => setStep(0)} />
           <ReviewRow label="Location" value={locationDisplay.trim() || "Not set"} onChange={() => setStep(1)} />
-          <ReviewRow label="Email" value={shopEmail.trim() || "Not set"} onChange={() => setStep(1)} />
-          <ReviewRow label="WhatsApp" value={whatsappNumber.trim() || "Not set"} onChange={() => setStep(1)} />
+          <ReviewRow label="Business email" value={shopEmail.trim() || "Not set"} onChange={() => setStep(1)} />
+          <ReviewRow label="Business phone number" value={whatsappNumber.trim() || "Not set"} onChange={() => setStep(1)} />
           <ReviewRow label="Logo" value={logoUrl ? "Added" : "Not set"} onChange={() => setStep(2)} />
           <ReviewRow label="Banner" value={bannerUrl ? "Added" : "Not set"} onChange={() => setStep(2)} />
           <ReviewRow label="Hours" value={hoursSummary(hours)} onChange={() => setStep(3)} />
@@ -321,9 +331,16 @@ export default function OpenShopWizard({
       ) : null}
 
       {step < STEPS.length - 1 ? (
-        <button type="button" onClick={goNext} className="dm-btn dm-btn-primary min-h-11 w-full active:scale-[0.98]">
-          Continue
-        </button>
+        <div className="flex gap-2">
+          {step > 0 ? (
+            <button type="button" onClick={skip} className="dm-btn dm-btn-secondary min-h-11 px-6 active:scale-[0.98]">
+              Skip
+            </button>
+          ) : null}
+          <button type="button" onClick={goNext} className="dm-btn dm-btn-primary min-h-11 flex-1 px-6 active:scale-[0.98]">
+            Continue
+          </button>
+        </div>
       ) : (
         <button
           type="button"

@@ -690,7 +690,7 @@ export default function ProductFormPage({
             type="button"
             onClick={handleCancel}
             disabled={saving}
-            className="dm-btn dm-btn-ghost dm-btn-sm"
+            className="dm-btn dm-btn-secondary dm-btn-sm"
           >
             Cancel
           </button>
@@ -1393,7 +1393,7 @@ export default function ProductFormPage({
             type="button"
             onClick={handleCancel}
             disabled={saving}
-            className="dm-btn dm-btn-ghost dm-btn-md"
+            className="dm-btn dm-btn-secondary min-h-11 px-6"
           >
             Cancel
           </button>

@@ -356,8 +356,8 @@ export default function Navbar({
                 value={searchQuery}
                 onChange={setSearchQuery}
                 onSubmit={submitNavbarSearch}
-                placeholder="Search products, services & opportunities…"
-                ariaLabel="Search products, services and opportunities"
+                placeholder="Search listings…"
+                ariaLabel="Search listings"
                 variant="navbar"
               />
             </div>
@@ -514,8 +514,8 @@ export default function Navbar({
                 submitNavbarSearch(q);
                 setSearchOpen(false);
               }}
-              placeholder="Search products, services & opportunities…"
-              ariaLabel="Search products, services and opportunities"
+              placeholder="Search listings…"
+              ariaLabel="Search listings"
               variant="navbar"
             />
           </div>
