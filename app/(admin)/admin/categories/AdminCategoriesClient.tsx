@@ -6,7 +6,17 @@ import { toast } from "sonner";
 import { apiAdmin } from "@/lib/api";
 import type { AdminCategory } from "@/lib/api/admin";
 import CategoryFieldsEditor from "@/components/admin/CategoryFieldsEditor";
-import { CATEGORY_META_FIELD_KEY_OPTIONS, normalizeCategoryFields } from "@/lib/listingMeta";
+import {
+  CATEGORY_META_FIELD_KEY_OPTIONS,
+  categoryMetaFields,
+  normalizeCategoryFields,
+} from "@/lib/listingMeta";
+
+/** Stored parent fields, or the built-in ones the listing form uses today. */
+function parentFieldsInUse(parent: AdminCategory) {
+  const stored = parent.metadata ?? [];
+  return stored.length > 0 ? stored : categoryMetaFields(parent.label);
+}
 import { ErrorState, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
 function slugify(label: string): string {
@@ -240,7 +250,8 @@ export default function AdminCategoriesClient() {
                                 <CategoryFieldsEditor
                                   slug={child.slug}
                                   ownJson={JSON.stringify(child.metadata ?? [])}
-                                  parentJson={JSON.stringify(parent.metadata ?? [])}
+                                  parentJson={JSON.stringify(parentFieldsInUse(parent))}
+                                  parentUnsaved={(parent.metadata ?? []).length === 0 && parentFieldsInUse(parent).length > 0}
                                   onSaved={() => void load()}
                                   scopeLabel="Inherited category fields, plus fields that apply only to this subcategory. Mark an inherited field required here when this subcategory needs it."
                                 />
@@ -271,6 +282,7 @@ export default function AdminCategoriesClient() {
                     <CategoryFieldsEditor
                       slug={parent.slug}
                       ownJson={JSON.stringify(parent.metadata ?? [])}
+                      defaultJson={JSON.stringify(categoryMetaFields(parent.label))}
                       onSaved={() => void load()}
                       scopeLabel="Fields for every subcategory under this category. A subcategory can add its own fields or mark these required."
                     />

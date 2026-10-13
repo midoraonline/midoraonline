@@ -460,7 +460,9 @@ export function categoryMetaFieldsFromItems(
     : undefined;
   const target = childItem ?? parentItem;
   if (target && target.effective_fields !== undefined) {
-    return normalizeCategoryFields(target.effective_fields);
+    const effective = normalizeCategoryFields(target.effective_fields);
+    // An empty list means nothing is stored yet: fall through to the built-ins.
+    if (effective.length > 0) return effective;
   }
 
   const storedParent = normalizeCategoryFields(parentItem?.metadata ?? parentItem?.fields);
