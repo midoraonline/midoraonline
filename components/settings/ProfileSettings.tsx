@@ -1,5 +1,6 @@
 "use client";
 
+import { BTN_PRIMARY } from "@/components/dashboard/ui";
 import { useEffect, useState } from "react";
 import { apiAuth } from "@/lib/api";
 import { migrationRequired } from "@/lib/accountPreferences";
@@ -60,7 +61,7 @@ export default function ProfileSettings() {
   }
 
   return (
-    <section className="dm-card space-y-5 p-4 sm:p-6">
+    <section className="max-w-md space-y-5">
       <div>
         <h2 className="text-sm font-semibold">Profile</h2>
         <p className="mt-0.5 text-xs text-muted">Your name, bio, phone, and photo.</p>
@@ -125,7 +126,7 @@ export default function ProfileSettings() {
         </div>
         {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
         {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
-        <button type="submit" disabled={saving} className="dm-btn dm-btn-primary min-h-11">
+        <button type="submit" disabled={saving} className={BTN_PRIMARY}>
           {saving ? "Saving…" : "Save profile"}
         </button>
       </form>

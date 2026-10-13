@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import ShopAnalyticsPage from "@/components/shop/ShopAnalyticsPage";
 import { apiShops } from "@/lib/api";
 import type { Shop } from "@/lib/api/shops";
+import { ErrorState } from "@/components/dashboard/ui";
 
 type Props = { initialShop: Shop };
 
@@ -23,13 +24,7 @@ export default function ShopAnalyticsClient({ initialShop }: Props) {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  if (error) {
-    return (
-      <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
-        {error}
-      </p>
-    );
-  }
+  if (error) return <ErrorState message={error} onRetry={() => void refresh()} />;
 
   return <ShopAnalyticsPage shop={shop} />;
 }

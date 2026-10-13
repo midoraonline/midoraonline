@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { apiAdmin } from "@/lib/api";
 import type { FeedConfigResponse, FeedConfigTestResponse } from "@/lib/api/admin";
+import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, ErrorState, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
 // Group overridable keys into logical sections for the UI.
 const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
@@ -190,63 +191,40 @@ export default function FeedConfigClient() {
 
   if (!config) {
     return (
-      <div className="dm-card p-8 text-sm text-muted">
-        {error ?? "Loading feed configuration…"}
-      </div>
+      error ? <ErrorState message={error} /> : <PageSkeleton rows={6} label="Loading feed configuration" />
     );
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="max-w-2xl text-sm text-muted">
-            Tune every score bonus, penalty, freshness curve, and vendor-diversity
-            constraint used by the ranking engine. Changes take effect within a
-            minute and can be dry-run first with the tester below.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={reset}
-            disabled={saving}
-            className="rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-foreground/[0.04] disabled:opacity-60"
-          >
-            Reset to defaults
-          </button>
-          <button
-            onClick={runTest}
-            disabled={testing}
-            className="rounded-xl border border-border bg-foreground/[0.04] px-3 py-2 text-xs font-semibold hover:bg-foreground/[0.08] disabled:opacity-60"
-          >
-            {testing ? "Testing…" : "Dry-run test"}
-          </button>
-          <button
-            onClick={save}
-            disabled={saving || changedKeys.length === 0}
-            className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? "Saving…" : `Save ${changedKeys.length ? `(${changedKeys.length})` : ""}`}
-          </button>
-        </div>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        title="Feed tuning"
+        description="Score bonuses, penalties, freshness and vendor diversity for the ranking engine. Changes apply within a minute."
+        action={
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={reset} disabled={saving} className={BTN_TEXT}>
+              Reset to defaults
+            </button>
+            <button onClick={runTest} disabled={testing} className={BTN_SECONDARY}>
+              {testing ? "Testing…" : "Dry run"}
+            </button>
+            <button onClick={save} disabled={saving || changedKeys.length === 0} className={BTN_PRIMARY}>
+              {saving ? "Saving…" : changedKeys.length ? `Save ${changedKeys.length} changes` : "Save changes"}
+            </button>
+          </div>
+        }
+      />
 
-      {error ? (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">
-          {error}
-        </div>
-      ) : null}
+      {error ? <ErrorState message={error} /> : null}
       {status ? (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700">
-          {status}
-        </div>
+        <p className="rounded-lg border border-emerald-500/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{status}</p>
       ) : null}
 
       {/* Applied overrides summary */}
-      <section className="dm-card p-5 sm:p-6">
+      <section className="rounded-lg border border-border p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="font-display text-base font-semibold">Currently applied</h2>
+            <h2 className="text-sm font-semibold">Currently applied</h2>
             <p className="mt-0.5 text-xs text-muted">
               {Object.keys(config.applied).length === 0
                 ? "No overrides — using code defaults."
@@ -260,7 +238,7 @@ export default function FeedConfigClient() {
             {Object.entries(config.applied).map(([k, v]) => (
               <span
                 key={k}
-                className="rounded-full bg-foreground/[0.06] px-2.5 py-1 text-[11px] font-mono"
+                className="rounded-md bg-surface-subtle px-2 py-0.5 text-xs font-mono"
               >
                 {k}={String(v)}
               </span>
@@ -275,8 +253,8 @@ export default function FeedConfigClient() {
           const keys = group.keys.filter((k) => config.overridable_keys.includes(k));
           if (keys.length === 0) return null;
           return (
-            <section key={group.title} className="dm-card p-5 sm:p-6">
-              <h2 className="font-display text-base font-semibold">{group.title}</h2>
+            <section key={group.title} className="rounded-lg border border-border p-5">
+              <h2 className="text-sm font-semibold">{group.title}</h2>
               <p className="mt-0.5 text-xs text-muted">{group.description}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {keys.map((key) => {
@@ -286,11 +264,11 @@ export default function FeedConfigClient() {
                   return (
                     <label key={key} className="block">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-mono font-semibold uppercase text-foreground/80">
+                        <span className="text-xs font-mono font-medium text-foreground/80">
                           {key}
                         </span>
                         {isChanged ? (
-                          <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-700">
+                          <span className="text-xs text-[color:var(--warning)]">
                             changed
                           </span>
                         ) : null}
@@ -322,30 +300,30 @@ export default function FeedConfigClient() {
 
       {/* Tester */}
       {test ? (
-        <section className="dm-card p-5 sm:p-6">
+        <section className="rounded-lg border border-border p-5">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className="font-display text-base font-semibold">Dry-run results</h2>
+              <h2 className="text-sm font-semibold">Dry-run results</h2>
               <p className="mt-0.5 text-xs text-muted">
                 Scored {test.summary.sample_size} of the most-viewed live listings
                 against the proposed values.
               </p>
             </div>
-            <div className="flex gap-2 text-[11px]">
-              <div className="rounded-lg bg-surface-subtle px-3 py-1.5 font-semibold">
+            <div className="flex flex-wrap gap-4 text-xs">
+              <div className="text-muted">
                 avg new: <span className="tabular-nums">{fmt(test.summary.avg_score)}</span>
               </div>
-              <div className="rounded-lg bg-surface-subtle px-3 py-1.5 font-semibold">
+              <div className="text-muted">
                 avg baseline: <span className="tabular-nums">{fmt(test.summary.avg_baseline)}</span>
               </div>
-              <div className="rounded-lg bg-surface-subtle px-3 py-1.5 font-semibold">
+              <div className="text-muted">
                 Δ range: <span className="tabular-nums">{fmt(test.summary.min_delta)} → {fmt(test.summary.max_delta)}</span>
               </div>
             </div>
           </div>
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-y-1 text-sm">
-              <thead className="text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <table className="min-w-full text-sm">
+              <thead className="border-b border-border text-left text-xs font-normal text-muted">
                 <tr>
                   <th className="px-3 py-2">Listing</th>
                   <th className="px-3 py-2 text-right">New</th>
@@ -354,25 +332,25 @@ export default function FeedConfigClient() {
                   <th className="px-3 py-2">Top components</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {test.results.slice(0, 20).map((row) => {
                   const topComps = Object.entries(row.components)
                     .filter(([, v]) => v !== 0)
                     .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
                     .slice(0, 3);
                   return (
-                    <tr key={row.id} className="rounded-xl bg-foreground/[0.03]">
-                      <td className="rounded-l-xl px-3 py-3">
-                        <p className="truncate font-semibold">{row.title || row.id.slice(0, 8)}</p>
+                    <tr key={row.id} className="transition-colors hover:bg-surface-subtle">
+                      <td className="px-3 py-2.5">
+                        <p className="truncate font-medium">{row.title || row.id.slice(0, 8)}</p>
                       </td>
-                      <td className="px-3 py-3 text-right tabular-nums font-semibold">
+                      <td className="px-3 py-2.5 text-right tabular-nums font-semibold">
                         {fmt(row.total)}
                       </td>
-                      <td className="px-3 py-3 text-right tabular-nums text-muted">
+                      <td className="px-3 py-2.5 text-right tabular-nums text-muted">
                         {fmt(row.baseline_total)}
                       </td>
                       <td
-                        className={`px-3 py-3 text-right tabular-nums font-semibold ${
+                        className={`px-3 py-2.5 text-right tabular-nums font-semibold ${
                           row.delta > 0
                             ? "text-emerald-600"
                             : row.delta < 0
@@ -383,12 +361,12 @@ export default function FeedConfigClient() {
                         {row.delta > 0 ? "+" : ""}
                         {fmt(row.delta)}
                       </td>
-                      <td className="rounded-r-xl px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <div className="flex flex-wrap gap-1">
                           {topComps.map(([k, v]) => (
                             <span
                               key={k}
-                              className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-mono"
+                              className="rounded-md bg-surface-subtle px-1.5 py-0.5 text-xs font-mono"
                             >
                               {k}: {fmt(v)}
                             </span>

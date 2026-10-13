@@ -11,6 +11,7 @@ import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { ImageUpload } from "@/components/image-upload";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
+import { PageSkeleton, StatusDot, type StatusTone } from "@/components/dashboard/ui";
 
 const BADGE_META: Record<string, { icon: string; label: string; color: string; desc: string }> = {
   shop_listed: {
@@ -40,19 +41,15 @@ const BADGE_META: Record<string, { icon: string; label: string; color: string; d
 };
 
 function StatusPill({ status }: { status: VerificationStatus }) {
-  const cfg: Record<VerificationStatus, { label: string; cls: string }> = {
-    unverified: { label: "Not submitted", cls: "dm-pill--muted" },
-    submitted: { label: "ID submitted", cls: "dm-pill--warning" },
-    pending: { label: "Verification pending", cls: "dm-pill--warning" },
-    verified: { label: "Approved", cls: "dm-pill--success" },
-    rejected: { label: "Changes requested", cls: "dm-pill--error" },
+  const cfg: Record<VerificationStatus, { label: string; tone: StatusTone }> = {
+    unverified: { label: "Not submitted", tone: "neutral" },
+    submitted: { label: "ID submitted", tone: "warn" },
+    pending: { label: "Verification pending", tone: "warn" },
+    verified: { label: "Approved", tone: "ok" },
+    rejected: { label: "Changes requested", tone: "bad" },
   };
   const c = cfg[status] ?? cfg.unverified;
-  return (
-    <span className={`dm-pill ${c.cls} px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide`}>
-      {c.label}
-    </span>
-  );
+  return <StatusDot tone={c.tone}>{c.label}</StatusDot>;
 }
 
 function StageCircle({
@@ -217,7 +214,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
     }
   }
 
-  if (loading) return <div className="dm-card p-8 text-sm text-muted">Loading verification status…</div>;
+  if (loading) return <PageSkeleton rows={4} label="Loading verification" />;
 
   const badges = verification?.badges ?? ["shop_listed"];
   const stage2Status = verification?.stage2_status ?? "unverified";
@@ -315,7 +312,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
               ) : (
                 <form
                   onSubmit={(e) => { e.preventDefault(); void handleSubmit(2, false); }}
-                  className="mt-4 space-y-4 rounded-xl border border-border bg-surface-subtle p-4"
+                  className="mt-4 space-y-4 rounded-lg border border-border p-4"
                 >
                   <p className="text-xs font-semibold text-foreground/80">Identity capture (optional)</p>
                   <p className="text-xs text-muted">
@@ -434,7 +431,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       </div>
 
       <div className="dm-card p-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">What your badges mean</p>
+        <p className="mb-4 text-sm font-semibold">What the badges mean</p>
         <div className="space-y-3">
           {Object.entries(BADGE_META).map(([key, b]) => (
             <div key={key} className="flex items-start gap-3">
@@ -472,7 +469,7 @@ function DocUploadList({
       {docs.map(dt => {
         const existing = values.find(d => d.type === dt.type);
         return (
-          <div key={dt.type} className="rounded-xl bg-surface px-3 py-2.5 ring-1 ring-border space-y-1.5">
+          <div key={dt.type} className="space-y-1.5 rounded-lg border border-border px-3 py-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-foreground/80">{dt.label}</span>
               {existing && (
@@ -556,7 +553,7 @@ function StageActions({
           ) : (
             <form
               onSubmit={(e) => { e.preventDefault(); onSave(); }}
-              className="mt-4 space-y-4 rounded-xl border border-border bg-surface-subtle p-4"
+              className="mt-4 space-y-4 rounded-lg border border-border p-4"
             >
               <DocUploadList docs={docsSpec} values={docs} onAdd={onAdd} onRemove={onRemove} />
               <label className="block space-y-1">
@@ -581,7 +578,7 @@ function StageActions({
 }
 
 function StageBlock({
-  number, title, icon, status, badgeKey, hasBadge, description, autoGranted,
+  number, title, status, badgeKey, hasBadge, description, autoGranted,
   locked, lockedMessage, children,
 }: {
   number: number;
@@ -603,15 +600,14 @@ function StageBlock({
         <StageCircle stage={number} status={status} active={!locked} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-display font-semibold tracking-tight">{title}</p>
+            <p className="text-sm font-semibold">{title}</p>
             {autoGranted && (
-              <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold text-foreground/60 uppercase tracking-wide">
+              <span className="text-xs text-muted">
                 Auto
               </span>
             )}
             {hasBadge && meta && (
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${meta.color}`}>
-                <MaterialSymbol name={meta.icon} className="!text-xs" />
+              <span className="text-xs text-foreground/80">
                 {meta.label}
               </span>
             )}

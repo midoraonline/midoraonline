@@ -9,6 +9,7 @@ import Logo from "@/components/Logo";
 import { useAppSession } from "@/lib/state";
 import DashboardHeader from "./DashboardHeader";
 import DashboardFooter from "./DashboardFooter";
+import { BTN_SECONDARY } from "./ui";
 import { X } from "lucide-react";
 
 export type DashboardNavItem = {
@@ -31,15 +32,6 @@ type Props = {
   returnLabel?: string;
   contentWidth?: "default" | "wide";
   children: React.ReactNode;
-};
-
-const ROLE_ACCENT: Record<
-  DashboardRole,
-  { pill: string }
-> = {
-  admin:    { pill: "bg-rose-500/10 text-rose-600"       },
-  merchant: { pill: "bg-accent/10 text-accent"           },
-  customer: { pill: "bg-emerald-500/10 text-emerald-600" },
 };
 
 // Map route → screen name shown in the header
@@ -109,7 +101,7 @@ function NavLink({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={[
-        "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "group flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
         active
           ? "bg-surface-subtle text-foreground"
           : "text-muted hover:bg-surface-subtle hover:text-foreground",
@@ -134,27 +126,35 @@ function Sidebar({
   navItems,
   secondaryNavItems,
   pathname,
-  accent,
   roleLabel,
   onItemClick,
+  onClose,
 }: {
   navItems: DashboardNavItem[];
   secondaryNavItems?: DashboardNavItem[];
   pathname: string;
-  accent: { pill: string };
   roleLabel: string;
   onItemClick?: () => void;
+  onClose?: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo + role badge */}
-      <div className="flex items-center gap-2.5 px-4 py-5">
+      <div className="flex items-center justify-between gap-3 px-4 py-4">
         <Link href="/" className="flex items-center gap-2">
           <Logo alt="Midora" width={100} height={28} className="h-7 w-auto rounded-lg" />
         </Link>
-        <span className={`ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${accent.pill}`}>
-          {roleLabel}
-        </span>
+        <span className="ml-auto truncate text-xs text-muted">{roleLabel}</span>
+        {onClose ? (
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={onClose}
+            className="grid size-10 shrink-0 place-items-center rounded-md text-foreground hover:bg-surface-subtle"
+          >
+            <X className="size-5" strokeWidth={2.25} />
+          </button>
+        ) : null}
       </div>
 
       <div className="mx-3 mb-4 h-px bg-border" />
@@ -202,7 +202,6 @@ export default function DashboardShell({
     return () => window.removeEventListener("toggle-sidebar", onToggle);
   }, []);
 
-  const accent = ROLE_ACCENT[role];
   const userRole = session.user?.user_role ?? null;
   const allowed = !!userRole && requiredRoles.includes(userRole as DashboardRole);
   const stillResolving =
@@ -236,20 +235,13 @@ export default function DashboardShell({
   if (!allowed) {
     return (
       <div className="grid min-h-[100dvh] place-items-center bg-background p-6">
-        <div className="dm-card max-w-md space-y-4 p-8 text-center">
-          <div className="mx-auto grid size-12 place-items-center rounded-full bg-surface-subtle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-muted">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
-          <h1 className="font-display text-xl font-semibold tracking-tight">Access restricted</h1>
+        <div className="max-w-md space-y-3 rounded-lg border border-border p-6 text-center">
+          <h1 className="text-xl font-semibold tracking-tight">Access restricted</h1>
           <p className="text-sm text-muted">
             Your account role ({userRole || "unknown"}) can&apos;t open the{" "}
             {roleLabel.toLowerCase()} dashboard.
           </p>
-          <Link href="/" className="dm-btn dm-btn-secondary inline-flex text-xs">
+          <Link href="/" className={BTN_SECONDARY}>
             Go home
           </Link>
         </div>
@@ -269,7 +261,6 @@ export default function DashboardShell({
             navItems={navItems}
             secondaryNavItems={secondaryNavItems}
             pathname={pathname}
-            accent={accent}
             roleLabel={roleLabel}
           />
         </aside>
@@ -283,21 +274,13 @@ export default function DashboardShell({
               className="absolute inset-0 bg-foreground/30"
             />
             <aside className="absolute inset-y-0 left-0 flex w-[75%] max-w-xs flex-col border-r border-border bg-surface">
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={() => setDrawerOpen(false)}
-                className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-lg text-foreground hover:bg-surface-subtle"
-              >
-                <X className="size-5" strokeWidth={2.25} />
-              </button>
               <Sidebar
                 navItems={navItems}
                 secondaryNavItems={secondaryNavItems}
                 pathname={pathname}
-                accent={accent}
                 roleLabel={roleLabel}
                 onItemClick={() => setDrawerOpen(false)}
+                onClose={() => setDrawerOpen(false)}
               />
             </aside>
           </div>
@@ -306,7 +289,7 @@ export default function DashboardShell({
         {/* Main content column */}
         <div className="flex min-w-0 flex-1 flex-col">
           <DashboardHeader screenName={screenName} role={role} />
-          <main className="flex-1 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+          <main className="dm-dash flex-1 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {/* Dashboards use the full content column (AGENTS.md §1.2). */}
             <div
               className={[

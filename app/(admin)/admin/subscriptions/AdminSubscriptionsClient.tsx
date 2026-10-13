@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { apiAdmin } from "@/lib/api";
 import type { AdminSubscription } from "@/lib/api/admin";
+import { BTN_SECONDARY, EmptyState, ErrorState, LIST, PageHeader, StatusDot, formatCount as fmt } from "@/components/dashboard/ui";
 
 type Props = { initialItems: AdminSubscription[] };
 
@@ -26,43 +27,37 @@ export default function AdminSubscriptionsClient({ initialItems }: Props) {
   }, [load]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div />
-        <button
-          onClick={load}
-          className="rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-foreground/[0.04]"
-        >
-          Refresh
-        </button>
-      </header>
-
-      {error ? (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </div>
-      ) : null}
-
+    <div>
+      <PageHeader
+        title="Subscriptions"
+        description={`${fmt(items.length)} Pesapal subscriptions.`}
+        action={
+          <button type="button" onClick={() => void load()} className={BTN_SECONDARY}>
+            Refresh
+          </button>
+        }
+      />
+      {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {items.length === 0 ? (
-        <div className="dm-card p-8 text-sm text-muted">No subscriptions yet.</div>
+        <EmptyState message="No subscriptions yet." />
       ) : (
-        <ul className="space-y-2">
-          {items.map((s) => (
-            <li
-              key={s.id}
-              className="dm-card flex flex-wrap items-center justify-between gap-2 p-4"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">#{s.id.slice(0, 8)}…</p>
-                <p className="truncate text-xs text-muted">
-                  Shop: {s.shop_id ? s.shop_id.slice(0, 8) + "…" : "—"}
-                </p>
-              </div>
-              <span className="rounded-full bg-foreground/[0.06] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
-                {s.status || "unknown"}
-              </span>
-            </li>
-          ))}
+        <ul className={LIST}>
+          {items.map((s) => {
+            const st = (s.status || "unknown").toLowerCase();
+            return (
+              <li key={s.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium tabular-nums">#{s.id.slice(0, 8)}</span>
+                  <span className="block truncate text-xs text-muted">
+                    Shop {s.shop_id ? s.shop_id.slice(0, 8) : "none"}
+                  </span>
+                </span>
+                <StatusDot tone={st === "active" || st === "completed" ? "ok" : st === "failed" ? "bad" : "neutral"}>
+                  <span className="capitalize">{st}</span>
+                </StatusDot>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -5,21 +5,17 @@ import { useEffect, useState } from "react";
 import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { BTN_PRIMARY, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import VerifyContactButton from "@/components/VerifyContactButton";
 
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
   return (
-    <div
-      className={[
-        "dm-alert flex items-center gap-2.5 px-4 py-3 text-sm",
-        type === "success" ? "dm-alert--success" : "dm-alert--error",
-      ].join(" ")}
+    <p
+      className={`text-sm ${type === "success" ? "text-[color:var(--success)]" : "text-[color:var(--error)]"}`}
     >
-      <MaterialSymbol name={type === "success" ? "check_circle" : "error"} className="!text-base shrink-0" />
       {message}
-    </div>
+    </p>
   );
 }
 
@@ -57,14 +53,14 @@ export default function CustomerProfilePage() {
   }
 
   if (!user) {
-    return <p className="text-sm text-muted">Loading your profile…</p>;
+    return <PageSkeleton rows={4} label="Loading your profile" />;
   }
 
   return (
-    <div className="space-y-5">
-      {/* Avatar + identity */}
-
-      <section className="dm-card space-y-4 p-5 sm:p-6">
+    <div>
+      <PageHeader title="Profile" description="Your photo, name and phone number." />
+      <div className="divide-y divide-border">
+      <section className="max-w-md space-y-4 pb-8">
 
         <ProfileAvatarUpload />
 
@@ -79,11 +75,8 @@ export default function CustomerProfilePage() {
       </section>
 
       {/* Editable profile */}
-      <section className="dm-card p-5 sm:p-6">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
-            <MaterialSymbol name="person" className="!text-lg" />
-          </span>
+      <section className="max-w-md py-8">
+        <div className="mb-5">
           <div>
             <h2 className="text-sm font-semibold">Edit profile</h2>
             <p className="text-xs text-muted">Update your display name and phone number.</p>
@@ -100,7 +93,7 @@ export default function CustomerProfilePage() {
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your name"
               autoComplete="name"
-              className="min-h-10 w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition focus-visible:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent/10"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent/10"
             />
           </div>
 
@@ -111,7 +104,7 @@ export default function CustomerProfilePage() {
               type="email"
               value={user.email ?? ""}
               disabled
-              className="min-h-10 w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground/50 outline-none cursor-not-allowed"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground/50 outline-none cursor-not-allowed"
             />
             <p className="text-xs text-muted">Email cannot be changed. Contact support if needed.</p>
           </div>
@@ -141,11 +134,11 @@ export default function CustomerProfilePage() {
 
           {status && <Banner type={status.type} message={status.message} />}
 
-          <div className="flex justify-end pt-1">
+          <div className="pt-1">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+              className={BTN_PRIMARY}
             >
               {saving ? "Saving…" : "Save changes"}
             </button>
@@ -154,11 +147,8 @@ export default function CustomerProfilePage() {
       </section>
 
       {/* Read-only account info */}
-      <section className="dm-card p-5 sm:p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
-            <MaterialSymbol name="info" className="!text-lg" />
-          </span>
+      <section className="max-w-md pt-8">
+        <div className="mb-4">
           <div>
             <h2 className="text-sm font-semibold">Account info</h2>
             <p className="text-xs text-muted">Read-only details about your account.</p>
@@ -176,6 +166,7 @@ export default function CustomerProfilePage() {
           ))}
         </dl>
       </section>
+      </div>
     </div>
   );
 }

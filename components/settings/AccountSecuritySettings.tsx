@@ -1,5 +1,6 @@
 "use client";
 
+import { BTN_PRIMARY } from "@/components/dashboard/ui";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiAuth } from "@/lib/api";
@@ -58,7 +59,7 @@ export default function AccountSecuritySettings() {
   }
 
   return (
-    <section className="dm-card space-y-5 p-4 sm:p-6">
+    <section className="max-w-md space-y-5">
       <div>
         <h2 className="text-sm font-semibold">Account</h2>
         <p className="mt-0.5 text-xs text-muted">Change the password for email sign-in, or sign out.</p>
@@ -100,7 +101,7 @@ export default function AccountSecuritySettings() {
         </label>
         {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
         {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
-        <button type="submit" disabled={saving === "password"} className="dm-btn dm-btn-primary min-h-11">
+        <button type="submit" disabled={saving === "password"} className={BTN_PRIMARY}>
           {saving === "password" ? "Updating…" : "Update password"}
         </button>
       </form>

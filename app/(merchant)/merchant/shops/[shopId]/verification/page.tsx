@@ -9,13 +9,10 @@ export default function MerchantVerificationPage() {
   const shopId = typeof params.shopId === "string" ? params.shopId : "";
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-base font-semibold tracking-tight">Shop Verification</h2>
-        <p className="mt-1 text-xs text-muted">
-          Optional ID capture first. Request review when you need Identity / Business / Professional badges or unlocks (more listings, paid plans).
-        </p>
-      </div>
+    <div>
+      <p className="mb-6 max-w-2xl text-sm text-muted">
+        Request a review when you want an identity, business or professional badge, or higher limits.
+      </p>
 
       <ShopVerificationCard shopId={shopId} />
     </div>

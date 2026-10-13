@@ -63,13 +63,13 @@ export default function NotificationSettings() {
   }
 
   return (
-    <section className="dm-card space-y-1 p-4 sm:p-6">
+    <section className="max-w-md space-y-1">
       <div className="mb-3">
         <h2 className="text-sm font-semibold">Notifications</h2>
         <p className="mt-0.5 text-xs text-muted">Push and email are the master switches.</p>
       </div>
       {push.permission === "denied" ? (
-        <p className="mb-3 rounded-xl bg-[color:var(--warning)]/10 p-3 text-xs text-[color:var(--warning)]">
+        <p className="mb-3 rounded-lg border border-[color:var(--warning)]/30 p-3 text-xs text-[color:var(--warning)]">
           Push is blocked for this site. Allow notifications in the browser, then turn it on here.
         </p>
       ) : null}

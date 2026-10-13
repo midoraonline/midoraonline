@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminFeedback } from "@/lib/api/admin";
+import { EmptyState, LIST, PageHeader, formatCount as fmt, relativeTime } from "@/components/dashboard/ui";
 
 type Props = { initialItems: AdminFeedback[] };
 
@@ -21,31 +22,24 @@ export default function AdminFeedbackClient({ initialItems }: Props) {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">Review feedback submitted by users.</p>
-
+    <div>
+      <PageHeader title="Feedback" description={`${fmt(feedbackList.length)} messages from users, newest first.`} />
       {feedbackList.length === 0 ? (
-        <div className="dm-card p-8 text-center text-sm text-muted">No feedback found.</div>
+        <EmptyState message="No feedback yet." />
       ) : (
-        <div className="space-y-4">
+        <ul className={LIST}>
           {feedbackList.map((f) => (
-            <div key={f.id} className="dm-card flex items-start gap-4 p-4">
-              <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs text-muted font-medium">
-                    {f.users?.full_name || f.users?.email || "Anonymous"}
-                  </span>
-                  <span className="text-xs text-muted/60">
-                    {new Date(f.created_at).toLocaleString()}
-                  </span>
-                </div>
-                <div className="p-3 bg-surface-subtle rounded-xl border border-border">
-                  <p className="text-sm font-medium whitespace-pre-wrap">{f.feedback_text}</p>
-                </div>
+            <li key={f.id} className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate text-sm font-medium">{f.users?.full_name || f.users?.email || "Anonymous"}</span>
+                <span className="shrink-0 text-xs tabular-nums text-muted" title={new Date(f.created_at).toLocaleString()}>
+                  {relativeTime(f.created_at)}
+                </span>
               </div>
-            </div>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/80">{f.feedback_text}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

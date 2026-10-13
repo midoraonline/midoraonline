@@ -7,13 +7,23 @@ import { apiAdmin } from "@/lib/api";
 import type { AdminShop, VerificationStatus } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/base";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import {
+  BTN_SECONDARY,
+  BTN_TEXT,
+  EmptyState,
+  ErrorState,
+  LIST,
+  PageHeader,
+  StatusDot,
+  UnderlineTabs,
+  formatCount as fmt,
+  relativeTime,
+  useTabParam,
+} from "@/components/dashboard/ui";
 
 type StatusFilter = "all" | "active" | "inactive";
-type VerifyFilter = "all" | VerificationStatus;
+const VERIFY_TABS = ["all", "verified", "pending", "unverified", "rejected"] as const;
 
-function fmt(n?: number | null) {
-  return new Intl.NumberFormat().format(Number(n ?? 0));
-}
 
 function ActiveSwitch({
   active,
@@ -53,22 +63,14 @@ function ActiveSwitch({
 
 function VerifyBadge({ status }: { status?: VerificationStatus }) {
   const s: VerificationStatus = status ?? "unverified";
-  const tone =
-    s === "verified"
-      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-      : s === "pending"
-        ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-        : s === "rejected"
-          ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
-          : "bg-foreground/[0.06] text-foreground/70";
+  const tone = s === "verified" ? "ok" : s === "pending" ? "warn" : s === "rejected" ? "bad" : "neutral";
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}
-    >
-      {s}
-    </span>
+    <StatusDot tone={tone}>
+      <span className="capitalize">{s === "unverified" ? "Not submitted" : s}</span>
+    </StatusDot>
   );
 }
+
 
 export default function AdminShopsClient({ initialShops }: { initialShops: AdminShop[] }) {
   const [shops, setShops] = useState<AdminShop[]>(initialShops);
@@ -76,7 +78,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
   const [busyId, setBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [verifyFilter, setVerifyFilter] = useState<VerifyFilter>("all");
+  const [verifyFilter, setVerifyFilter] = useTabParam(VERIFY_TABS, "all");
 
   const load = useCallback(async () => {
     setError(null);
@@ -238,196 +240,117 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
   }, [shops]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm text-muted">
-            {counts.total} total · {counts.active} active · {counts.verified}{" "}
-            verified · {counts.pending} pending · {counts.unverified} not
-            submitted · {counts.rejected} rejected
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, slug, or owner…"
-            className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm sm:flex-none"
-          />
-          <button
-            onClick={load}
-            className="rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-foreground/[0.04]"
-          >
+    <div>
+      <PageHeader
+        title="Shops"
+        description={`${fmt(counts.total)} shops, ${fmt(counts.active)} active, ${fmt(counts.pending)} waiting for verification.`}
+        action={
+          <button type="button" onClick={() => void load()} className={BTN_SECONDARY}>
             Refresh
           </button>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="flex flex-wrap gap-3">
-        <div className="inline-flex rounded-xl border border-border p-0.5 text-xs font-semibold">
-          {(["all", "active", "inactive"] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setStatusFilter(k)}
-              className={[
-                "rounded-lg px-2.5 py-1 capitalize transition-colors",
-                statusFilter === k
-                  ? "bg-foreground/[0.08] text-foreground"
-                  : "text-muted hover:bg-foreground/[0.04]",
-              ].join(" ")}
-            >
-              {k}
-            </button>
-          ))}
-        </div>
-        <div className="inline-flex flex-wrap rounded-xl border border-border p-0.5 text-xs font-semibold">
-          {(
-            ["all", "verified", "pending", "unverified", "rejected"] as const
-          ).map((k) => (
-            <button
-              key={k}
-              onClick={() => setVerifyFilter(k)}
-              className={[
-                "rounded-lg px-2.5 py-1 capitalize transition-colors",
-                verifyFilter === k
-                  ? "bg-foreground/[0.08] text-foreground"
-                  : "text-muted hover:bg-foreground/[0.04]",
-              ].join(" ")}
-            >
-              {k === "all" ? "All verifications" : k}
-            </button>
-          ))}
-        </div>
+      <UnderlineTabs
+        tabs={(["all", "verified", "pending", "unverified", "rejected"] as const).map((k) => ({
+          value: k,
+          label: k === "all" ? "All" : k === "unverified" ? "Not submitted" : k[0].toUpperCase() + k.slice(1),
+        }))}
+        value={verifyFilter}
+        onChange={(k) => setVerifyFilter(k as (typeof VERIFY_TABS)[number])}
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search name, slug or owner"
+          aria-label="Search shops"
+          className="h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          aria-label="Active status"
+          className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+        >
+          <option value="all">Any status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
       </div>
 
-      {error ? (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </div>
-      ) : null}
+      {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
 
       {visible.length === 0 ? (
-        <div className="dm-card p-8 text-sm text-muted">No shops match.</div>
+        <EmptyState message="No shops match these filters." />
       ) : (
-        <ul className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
+        <ul className={LIST}>
           {visible.map((s) => {
             const busy = busyId === s.id;
             const active = !!s.is_active;
             const verifyStatus = s.verification_status || "unverified";
             return (
-              <li
-                key={s.id}
-                className="dm-card flex flex-col gap-4 p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-display text-base font-semibold leading-tight">
-                        {s.name}
-                      </h3>
-                      <VerifyBadge status={verifyStatus as VerificationStatus} />
-                      <span
-                        className={[
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                          active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                            : "bg-foreground/[0.06] text-foreground/70",
-                        ].join(" ")}
-                      >
-                        {active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted">
-                      /{s.slug}
-                      {s.shop_type ? ` · ${s.shop_type}` : ""}
-                    </p>
-                    {s.owner_email ? (
-                      <p className="mt-0.5 text-[11px] text-muted">
-                        Owner: {s.owner_full_name || s.owner_email}
-                      </p>
-                    ) : null}
+              <li key={s.id} className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <a
+                      href={`/shops/${s.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-sm font-medium hover:underline"
+                    >
+                      {s.name}
+                    </a>
+                    <VerifyBadge status={verifyStatus as VerificationStatus} />
                   </div>
-                  <a
-                    href={`/shops/${s.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold hover:bg-foreground/[0.04]"
-                  >
-                    View ↗
-                  </a>
+                  <p className="mt-0.5 truncate text-xs tabular-nums text-muted">
+                    {[
+                      s.owner_full_name || s.owner_email,
+                      s.shop_type,
+                      `${fmt(s.product_count)} listings`,
+                      `${fmt(s.view_count)} views`,
+                      s.verification_requested_at ? `submitted ${relativeTime(s.verification_requested_at)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-3 gap-2 rounded-xl bg-foreground/[0.03] p-3 text-xs">
-                  <Stat label="Views" value={fmt(s.view_count)} />
-                  <Stat label="Products" value={fmt(s.product_count)} />
-                  <Stat
-                    label="Submitted"
-                    value={
-                      s.verification_requested_at
-                        ? new Date(s.verification_requested_at).toLocaleDateString()
-                        : "—"
-                    }
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                      Active
-                    </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs text-muted">
+                    Active
                     <ActiveSwitch
                       active={active}
                       busy={busy}
                       onChange={(next) => toggleActive(s, next)}
                       label={`${active ? "Deactivate" : "Activate"} ${s.name}`}
                     />
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {verifyStatus !== "verified" ? (
-                      <button
-                        disabled={busy}
-                        onClick={() => verifyAction(s, "approve")}
-                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                      >
-                        Verify
-                      </button>
-                    ) : null}
-                    {verifyStatus === "unverified" ? (
-                      <button
-                        disabled={busy}
-                        onClick={() => verifyAction(s, "queue")}
-                        className="rounded-lg border border-border px-3 py-1.5 text-[11px] font-semibold hover:bg-foreground/[0.04] disabled:opacity-60"
-                      >
-                        Queue review
-                      </button>
-                    ) : null}
-                    {verifyStatus !== "rejected" ? (
-                      <button
-                        disabled={busy}
-                        onClick={() => verifyAction(s, "reject")}
-                        className="rounded-lg border border-rose-500/60 px-3 py-1.5 text-[11px] font-semibold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-60 dark:text-rose-300"
-                      >
-                        Reject
-                      </button>
-                    ) : null}
-                  </div>
+                  </label>
+                  {verifyStatus !== "verified" ? (
+                    <button disabled={busy} onClick={() => verifyAction(s, "approve")} className={BTN_SECONDARY}>
+                      Verify
+                    </button>
+                  ) : null}
+                  {verifyStatus === "unverified" ? (
+                    <button disabled={busy} onClick={() => verifyAction(s, "queue")} className={BTN_TEXT}>
+                      Queue review
+                    </button>
+                  ) : null}
+                  {verifyStatus !== "rejected" ? (
+                    <button
+                      disabled={busy}
+                      onClick={() => verifyAction(s, "reject")}
+                      className="text-sm font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
+                    >
+                      Reject
+                    </button>
+                  ) : null}
                 </div>
               </li>
             );
           })}
         </ul>
       )}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-        {label}
-      </p>
-      <p className="mt-0.5 font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

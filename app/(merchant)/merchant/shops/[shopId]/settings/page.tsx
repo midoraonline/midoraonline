@@ -16,6 +16,7 @@ import {
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { BTN_PRIMARY, BTN_SECONDARY, ErrorState, PageSkeleton } from "@/components/dashboard/ui";
 
 function slugFromName(name: string): string {
   return (
@@ -26,6 +27,8 @@ function slugFromName(name: string): string {
       .replace(/[^a-z0-9-]/g, "") || "shop"
   );
 }
+
+const SETTINGS_ROW = "grid gap-6 py-8 first:pt-0 md:grid-cols-[14rem_minmax(0,1fr)]";
 
 export default function MerchantShopSettingsPage() {
   const params = useParams();
@@ -150,30 +153,27 @@ export default function MerchantShopSettingsPage() {
   }
 
   if (loading) {
-    return <div className="dm-card p-8 text-sm text-muted">Loading settings…</div>;
+    return <PageSkeleton rows={6} label="Loading settings" />;
   }
   if (error && !shop) {
-    return (
-      <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
-        {error}
-      </p>
-    );
+    return <ErrorState message={error} />;
   }
   if (!shop) return null;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-      <section className="dm-card p-5 sm:p-6">
-        {error ? (
-          <p className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
-            {error}
-          </p>
-        ) : null}
+    <div className="divide-y divide-border">
+      <section className={SETTINGS_ROW}>
+        <div>
+          <h2 className="text-sm font-semibold">Shop details</h2>
+          <p className="mt-1 text-sm text-muted">What buyers see on your public shop page.</p>
+        </div>
+        <div className="min-w-0">
+        {error ? <ErrorState message={error} /> : null}
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Shop name *</label>
+              <label className="text-sm font-medium">Shop name *</label>
               <input
                 className="dm-input dm-focus"
                 value={name}
@@ -181,7 +181,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Slug *</label>
+              <label className="text-sm font-medium">Slug *</label>
               <input
                 className="dm-input dm-focus"
                 value={slug}
@@ -189,7 +189,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Description</label>
+              <label className="text-sm font-medium">Description</label>
               <input
                 className="dm-input dm-focus"
                 value={description}
@@ -197,7 +197,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">About</label>
+              <label className="text-sm font-medium">About</label>
               <textarea
                 className="dm-textarea !min-h-[80px] dm-focus"
                 value={about}
@@ -205,7 +205,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Logo</label>
+              <label className="text-sm font-medium">Logo</label>
               <ImageUpload
                 endpoint="shopLogo"
                 onUploadComplete={setLogoUrl}
@@ -227,7 +227,7 @@ export default function MerchantShopSettingsPage() {
               ) : null}
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Shop type</label>
+              <label className="text-sm font-medium">Shop type</label>
               <select
                 className="dm-input appearance-none pr-10 dm-focus"
                 value={shopType}
@@ -239,8 +239,8 @@ export default function MerchantShopSettingsPage() {
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Category</label>
-              <div className="rounded-xl border border-border bg-white p-3 sm:p-4">
+              <label className="text-sm font-medium">Category</label>
+              <div className="rounded-lg border border-border p-3">
                 <CategoryPicker
                   value={category}
                   onChange={setCategory}
@@ -250,7 +250,7 @@ export default function MerchantShopSettingsPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Business email</label>
+              <label className="text-sm font-medium">Business email</label>
               <input
                 type="email"
                 className="dm-input dm-focus"
@@ -259,7 +259,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/80">Business phone number</label>
+              <label className="text-sm font-medium">Business phone number</label>
               <PhoneNumberInput
                 value={whatsappNumber}
                 onChange={setWhatsappNumber}
@@ -279,7 +279,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-foreground/80">Location</label>
+              <label className="text-sm font-medium">Location</label>
               <LocationInput
                 value={locationDisplay}
                 onChange={setLocationDisplay}
@@ -294,26 +294,28 @@ export default function MerchantShopSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="dm-pill dm-focus bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+              className={BTN_PRIMARY}
             >
               {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
         </form>
+        </div>
       </section>
 
-      <section className="dm-card p-5 sm:p-6">
-        <h2 className="font-display text-lg font-semibold tracking-tight">
-          AI concierge context
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Policies, FAQs, and notes the in-shop concierge uses to answer questions.
-        </p>
-        <ul className="mt-4 space-y-2">
+      <section className={SETTINGS_ROW}>
+        <div>
+          <h2 className="text-sm font-semibold">AI concierge context</h2>
+          <p className="mt-1 text-sm text-muted">
+            Policies, FAQs and notes the in-shop concierge uses to answer questions.
+          </p>
+        </div>
+        <div className="min-w-0">
+        <ul className="divide-y divide-border rounded-lg border border-border">
           {contextEntries.map((entry) => (
             <li
               key={entry.id}
-              className="rounded-2xl bg-foreground/[0.04] px-3 py-2 text-xs ring-1 ring-foreground/[0.06]"
+              className="px-3 py-2 text-sm"
             >
               <span className="font-medium text-foreground/80">
                 {entry.context_type ?? entry.key ?? "context"}:
@@ -325,7 +327,7 @@ export default function MerchantShopSettingsPage() {
         </ul>
         <form onSubmit={handleAddContext} className="mt-4 space-y-3">
           <div>
-            <label className="text-xs font-medium text-foreground/80">Type</label>
+            <label className="text-sm font-medium">Type</label>
             <select
               className="dm-input mt-1 max-w-[220px] appearance-none pr-10 dm-focus"
               value={newContextType}
@@ -337,7 +339,7 @@ export default function MerchantShopSettingsPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-foreground/80">Content</label>
+            <label className="text-sm font-medium">Content</label>
             <textarea
               className="dm-textarea mt-1 !min-h-[100px] dm-focus"
               value={newContextContent}
@@ -348,11 +350,12 @@ export default function MerchantShopSettingsPage() {
           <button
             type="submit"
             disabled={addingContext || !newContextContent.trim()}
-            className="dm-pill dm-focus bg-foreground/[0.07] px-4 py-2 text-sm font-semibold text-foreground hover:bg-foreground/[0.1] disabled:opacity-60"
+            className={BTN_SECONDARY}
           >
             {addingContext ? "Adding…" : "Add context"}
           </button>
         </form>
+        </div>
       </section>
     </div>
   );

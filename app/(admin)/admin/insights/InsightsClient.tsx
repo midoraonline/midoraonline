@@ -27,20 +27,12 @@ import type {
   StaleListingResponse,
   VerificationFunnelResponse,
 } from "@/lib/api/analytics";
+import { BTN_TEXT, EmptyState, ErrorState, PageHeader, Section as UiSection, StatStrip, UnderlineTabs } from "@/components/dashboard/ui";
 
-const PALETTE = [
-  "#4a6767",
-  "#66798f",
-  "#d49b63",
-  "#8b6f9f",
-  "#6a9379",
-  "#c17767",
-  "#5b7c99",
-  "#a68868",
-];
+const PALETTE = Array.from({ length: 8 }, (_, i) => (i === 0 ? "var(--accent)" : "var(--foreground-muted)"));
 
-const CARTESIAN_STROKE = "rgba(102, 121, 143, 0.18)";
-const AXIS_STROKE = "rgba(42,51,49,0.5)";
+const CARTESIAN_STROKE = "var(--border)";
+const AXIS_STROKE = "var(--foreground-muted)";
 
 const WINDOWS = [
   { label: "7d", value: 7 },
@@ -124,7 +116,7 @@ export default function InsightsClient() {
   );
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div>
       <Header window={window_} onChange={setWindow} />
 
       <KpiStrip
@@ -275,7 +267,7 @@ export default function InsightsClient() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
-                <tr className="border-b border-border/60 text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <tr className="border-b border-border text-left text-xs text-muted">
                   <th className="pb-2">Shop</th>
                   <th className="pb-2 text-right">Views</th>
                   <th className="pb-2 text-right">WhatsApp clicks</th>
@@ -372,31 +364,16 @@ const tooltipStyle: React.CSSProperties = {
 
 function Header({ window: w, onChange }: { window: number; onChange: (n: number) => void }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h2 className="font-display text-lg font-semibold tracking-tight">Insights</h2>
-        <p className="mt-1 max-w-2xl text-xs text-muted sm:text-sm">
-          Behavior metrics from <code className="text-[11px]">analytics_events</code>: discovery
-          fill, marketplace conversion (WhatsApp click as proxy), verification funnel drop-off,
-          trust health. New metrics are new queries over the same log — no new instrumentation.
-        </p>
-      </div>
-      <div className="flex items-center gap-1 rounded-full border border-border/60 bg-surface p-1">
-        {WINDOWS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-              opt.value === w
-                ? "bg-foreground text-background"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+    <div>
+      <PageHeader
+        title="Insights"
+        description="Discovery, conversion (WhatsApp clicks), verification drop-off and trust health from analytics events."
+      />
+      <UnderlineTabs
+        tabs={WINDOWS.map((o) => ({ value: String(o.value), label: `${o.value} days` }))}
+        value={String(w)}
+        onChange={(v) => onChange(Number(v))}
+      />
     </div>
   );
 }
@@ -416,54 +393,37 @@ function KpiStrip({
   const verifApproved = verification?.steps.find((s) => s.step === "approved")?.count ?? 0;
   const verifRate = verifStart ? verifApproved / verifStart : 0;
 
-  const kpis = [
-    {
-      label: "Search → contact",
-      value: searchToContact ? pct(searchToContact.conversion_rate) : "…",
-      sub: searchToContact
-        ? `${fmt(searchToContact.sessions_with_contact)} / ${fmt(searchToContact.sessions_with_search)} sessions`
-        : "loading",
-      accent: PALETTE[0],
-    },
-    {
-      label: "Stale listings (14d)",
-      value: stale ? pct(stale.stale_rate) : "…",
-      sub: stale ? `${fmt(stale.stale_listings)} / ${fmt(stale.active_listings)} active` : "loading",
-      accent: PALETTE[2],
-      warn: (stale?.stale_rate ?? 0) > 0.4,
-    },
-    {
-      label: "Rating coverage",
-      value: rating ? pct(rating.coverage_rate) : "…",
-      sub: rating ? `${fmt(rating.submitted)} / ${fmt(rating.prompted)} prompts` : "loading",
-      accent: PALETTE[3],
-    },
-    {
-      label: "Verification complete rate",
-      value: verifStart ? pct(verifRate) : "—",
-      sub: verifStart ? `${fmt(verifApproved)} of ${fmt(verifStart)} started` : "no starts yet",
-      accent: PALETTE[4],
-    },
-  ];
-
   return (
-    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {kpis.map((k) => (
-        <div
-          key={k.label}
-          className="dm-card p-4"
-          style={k.warn ? { borderColor: "rgba(220, 90, 60, 0.4)" } : undefined}
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-            {k.label}
-          </p>
-          <p className="mt-1.5 font-display text-2xl font-semibold" style={{ color: k.accent }}>
-            {k.value}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted">{k.sub}</p>
-        </div>
-      ))}
-    </section>
+    <StatStrip
+      items={[
+        {
+          label: "Search to contact",
+          value: searchToContact ? pct(searchToContact.conversion_rate) : "…",
+          hint: searchToContact
+            ? `${fmt(searchToContact.sessions_with_contact)} of ${fmt(searchToContact.sessions_with_search)} sessions`
+            : undefined,
+        },
+        {
+          label: "Stale listings (14 days)",
+          value: (
+            <span className={(stale?.stale_rate ?? 0) > 0.4 ? "text-[color:var(--warning)]" : undefined}>
+              {stale ? pct(stale.stale_rate) : "…"}
+            </span>
+          ),
+          hint: stale ? `${fmt(stale.stale_listings)} of ${fmt(stale.active_listings)} live` : undefined,
+        },
+        {
+          label: "Rating coverage",
+          value: rating ? pct(rating.coverage_rate) : "…",
+          hint: rating ? `${fmt(rating.submitted)} of ${fmt(rating.prompted)} prompts` : undefined,
+        },
+        {
+          label: "Verification completed",
+          value: verifStart ? pct(verifRate) : "None yet",
+          hint: verifStart ? `${fmt(verifApproved)} of ${fmt(verifStart)} started` : undefined,
+        },
+      ]}
+    />
   );
 }
 
@@ -485,43 +445,25 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="dm-card p-5 sm:p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h3 className="font-display text-base font-semibold tracking-tight">{title}</h3>
-          {description ? (
-            <p className="mt-1 max-w-2xl text-xs text-muted sm:text-sm">{description}</p>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-2">
+    <UiSection
+      title={title}
+      description={description}
+      action={
+        <div className="flex items-center gap-3">
           {toolbar}
           {onRefresh ? (
-            <button
-              type="button"
-              onClick={onRefresh}
-              className="dm-btn dm-btn-ghost dm-btn-sm"
-              disabled={loading}
-            >
+            <button type="button" onClick={onRefresh} className={BTN_TEXT} disabled={loading}>
               {loading ? "Refreshing…" : "Refresh"}
             </button>
           ) : null}
         </div>
-      </div>
-      {error ? (
-        <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300">
-          {error}
-        </div>
-      ) : (
-        <div className="mt-4">{children}</div>
-      )}
-    </section>
+      }
+    >
+      {error ? <ErrorState message={error} onRetry={onRefresh} /> : children}
+    </UiSection>
   );
 }
 
 function Empty({ message }: { message: string }) {
-  return (
-    <div className="grid h-40 place-items-center rounded-xl border border-dashed border-border/40 text-xs text-muted">
-      {message}
-    </div>
-  );
+  return <EmptyState message={message} />;
 }

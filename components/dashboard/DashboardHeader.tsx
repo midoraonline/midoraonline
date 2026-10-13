@@ -40,22 +40,17 @@ function LogoutModal({
         onClick={onCancel}
         className="absolute inset-0 bg-foreground/30"
       />
-      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-background p-6 shadow-lg">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-rose-500/10 text-rose-600">
-            <MaterialSymbol name="logout" className="!text-lg" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold">Sign out?</p>
-            <p className="text-xs text-muted">You'll need to sign back in to access your dashboard.</p>
-          </div>
+      <div className="relative w-full max-w-sm rounded-lg border border-border bg-background p-5">
+        <div className="mb-4">
+          <p className="text-sm font-semibold">Sign out?</p>
+          <p className="mt-1 text-sm text-muted">You&apos;ll need to sign in again to open your dashboard.</p>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-subtle disabled:opacity-50"
+            className="h-9 flex-1 rounded-md border border-border px-3.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-subtle disabled:opacity-50"
           >
             Cancel
           </button>
@@ -63,7 +58,7 @@ function LogoutModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+            className="h-9 flex-1 rounded-md bg-rose-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
           >
             {loading ? "Signing out…" : "Sign out"}
           </button>
@@ -109,7 +104,7 @@ function ProfileDropdown({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-surface-subtle"
+        className="flex items-center gap-2 rounded-md p-1 pr-2 transition-colors hover:bg-surface-subtle"
       >
         <UserAvatar url={avatarUrl} name={displayName} size={32} />
         <span className="hidden max-w-[120px] truncate text-sm font-medium sm:block">
@@ -122,7 +117,7 @@ function ProfileDropdown({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-md">
+        <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-lg border border-border bg-background shadow-sm">
           {/* User info */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
             <UserAvatar url={avatarUrl} name={displayName} size={40} />
@@ -137,7 +132,7 @@ function ProfileDropdown({
             <button
               type="button"
               onClick={() => { setOpen(false); router.push(settingsHref); }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
             >
               <MaterialSymbol name="settings" className="!text-base text-muted" />
               Settings
@@ -145,7 +140,7 @@ function ProfileDropdown({
             <button
               type="button"
               onClick={() => { setOpen(false); router.push("/"); }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle"
             >
               <MaterialSymbol name="storefront" className="!text-base text-muted" />
               Back to site
@@ -154,7 +149,7 @@ function ProfileDropdown({
             <button
               type="button"
               onClick={() => { setOpen(false); onLogout(); }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-500/10"
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-500/10"
             >
               <MaterialSymbol name="logout" className="!text-base" />
               Sign out
@@ -210,24 +205,14 @@ export default function DashboardHeader({
             type="button"
             aria-label="Open menu"
             onClick={() => window.dispatchEvent(new Event("toggle-sidebar"))}
-            className="grid size-9 shrink-0 place-items-center rounded-xl text-foreground/70 transition-colors hover:bg-surface-subtle lg:hidden"
+            className="grid size-9 shrink-0 place-items-center rounded-md text-foreground transition-colors hover:bg-surface-subtle lg:hidden"
           >
             <MaterialSymbol name="menu" className="!text-xl" />
           </button>
-          <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-            {screenName}
-          </h1>
+          <p className="text-sm font-medium text-foreground">{screenName}</p>
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative grid size-9 place-items-center rounded-xl text-foreground/70 transition-colors hover:bg-surface-subtle"
-          >
-            <MaterialSymbol name="notifications" className="!text-xl" />
-          </button>
-
           <ProfileDropdown
             displayName={displayName}
             email={email}

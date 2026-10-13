@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, AlertCircle } from "lucide-react";
+import { BTN_SECONDARY, PageSkeleton } from "@/components/dashboard/ui";
 import ProductFormPage from "@/components/shop/ProductFormPage";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
@@ -47,30 +47,18 @@ export default function EditListingPage({
     };
   }, [productId]);
 
-  if (loading) {
-    return (
-      <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
-        <Loader2 className="size-6 animate-spin text-accent" />
-        <p className="text-sm font-medium">Loading listing details…</p>
-      </div>
-    );
-  }
+  if (loading) return <PageSkeleton rows={6} label="Loading listing" />;
 
   if (error || !product) {
     return (
-      <div className="mx-auto max-w-md space-y-4 py-20 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[color:var(--error-subtle)] text-[color:var(--error)]">
-          <AlertCircle className="size-6" />
-        </div>
-        <h1 className="font-display text-xl font-bold text-foreground">Listing not found</h1>
-        <p className="text-xs text-muted leading-relaxed">
-          {error || "The requested listing could not be found or you do not have permission to edit it."}
+      <div className="max-w-md py-10">
+        <h1 className="text-xl font-semibold tracking-tight">Listing not found</h1>
+        <p className="mt-1 text-sm text-muted">
+          {error || "This listing doesn't exist, or it isn't yours to edit."}
         </p>
-        <div className="pt-2">
-          <Link href="/merchant/listings" className="dm-btn dm-btn-secondary dm-btn-md">
-            Return to listings
-          </Link>
-        </div>
+        <Link href="/merchant/listings" className={`mt-5 ${BTN_SECONDARY}`}>
+          Back to listings
+        </Link>
       </div>
     );
   }

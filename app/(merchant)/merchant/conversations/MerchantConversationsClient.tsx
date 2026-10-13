@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import UserAvatar from "@/components/UserAvatar";
 import { useCallback, useEffect, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import type { Conversation } from "@/lib/api/chat";
 import { sameUserId } from "@/lib/chat/participants";
+import { EmptyState, LIST, PageHeader, ROW, formatCount as fmt, relativeTime } from "@/components/dashboard/ui";
 
 type Props = { initialConversations: Conversation[] };
 
@@ -30,60 +30,40 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
     sameUserId(c.seller_id, session.user?.id),
   );
 
+  const unread = sellerConvs.reduce((sum, c) => sum + c.seller_unread, 0);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm text-muted">Messages from buyers interested in your listings.</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="dm-card p-4">
-          <p className="text-2xl font-semibold">{sellerConvs.length}</p>
-          <p className="text-xs text-muted">Active Conversations</p>
-        </div>
-        <div className="dm-card p-4">
-          <p className="text-2xl font-semibold">
-            {sellerConvs.reduce((sum, c) => sum + c.seller_unread, 0)}
-          </p>
-          <p className="text-xs text-muted">Unread Messages</p>
-        </div>
-      </div>
-
+    <div>
+      <PageHeader
+        title="Conversations"
+        description={`${fmt(sellerConvs.length)} conversations with buyers, ${fmt(unread)} unread messages.`}
+      />
       {sellerConvs.length === 0 ? (
-        <div className="dm-card p-8 text-center text-sm text-muted">
-          No customer conversations yet. Buyers can message you from listing pages.
-        </div>
+        <EmptyState message="No buyer conversations yet. Buyers can message you from listing pages." />
       ) : (
-        <div className="space-y-2">
+        <ul className={LIST}>
           {sellerConvs.map((c) => (
-            <Link
-              key={c.id}
-              href={`/chat?conversation=${c.id}`}
-              className="dm-card dm-card-hover flex items-center gap-4 p-4"
-            >
-              <div className="relative shrink-0">
-                <UserAvatar
-                  url={c.buyer?.avatar_url}
-                  name={c.buyer?.full_name}
-                  size="lg"
-                  className="bg-foreground/[0.06] text-muted"
-                />
-                {c.seller_unread > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] h-[18px] place-items-center rounded-full bg-red-500 text-[8px] font-bold text-white">
-                    {c.seller_unread > 9 ? "9+" : c.seller_unread}
+            <li key={c.id}>
+              <Link href={`/chat?conversation=${c.id}`} className={ROW}>
+                <span className="min-w-0 flex-1">
+                  <span className={`block truncate text-sm ${c.seller_unread > 0 ? "font-semibold" : "font-medium"}`}>
+                    {c.buyer?.full_name || "Buyer"}
                   </span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{c.buyer?.full_name || "Unknown"}</p>
-                <p className="truncate text-xs text-muted">{c.last_message || "No messages"}</p>
-              </div>
-              <span className="shrink-0 text-[10px] text-muted">
-                {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : ""}
-              </span>
-            </Link>
+                  <span className="block truncate text-xs text-muted">{c.last_message || "No messages"}</span>
+                </span>
+                {c.seller_unread > 0 ? (
+                  <span className="text-xs font-medium tabular-nums text-accent">{c.seller_unread} new</span>
+                ) : null}
+                <span
+                  className="shrink-0 text-xs tabular-nums text-muted"
+                  title={c.last_message_at ? new Date(c.last_message_at).toLocaleString() : undefined}
+                >
+                  {relativeTime(c.last_message_at)}
+                </span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

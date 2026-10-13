@@ -16,7 +16,7 @@ export default function AppearanceSettings() {
   }
 
   return (
-    <section className="dm-card space-y-4 p-4 sm:p-6">
+    <section className="max-w-md space-y-4">
       <div>
         <h2 className="text-sm font-semibold">Appearance</h2>
         <p className="mt-0.5 text-xs text-muted">Applies right away and stays on this device.</p>

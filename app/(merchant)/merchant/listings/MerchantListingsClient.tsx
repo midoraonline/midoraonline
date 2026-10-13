@@ -1,17 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  CheckCircle2,
-  Clock,
-  ImagePlus,
-  Loader2,
-  Package,
-  Search,
-  XCircle,
-} from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
@@ -19,8 +9,19 @@ import { type Product, type ProductStatus } from "@/lib/api/products";
 import ListingManageCard from "@/components/shop/ListingManageCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
+import {
+  BTN_PRIMARY,
+  BTN_SECONDARY,
+  BTN_TEXT,
+  EmptyState,
+  PageHeader,
+  UnderlineTabs,
+  formatCount as fmt,
+  useTabParam,
+} from "@/components/dashboard/ui";
 
-type Tab = "all" | "reviewing" | "live" | "rejected" | "drafts";
+const TAB_KEYS = ["all", "reviewing", "live", "rejected", "drafts"] as const;
+type Tab = (typeof TAB_KEYS)[number];
 
 const TAB_META: {
   key: Tab;
@@ -87,7 +88,7 @@ export default function MerchantListingsClient({
 }) {
   const router = useRouter();
   const [items, setItems] = useState<Product[]>(initialListings);
-  const [tab, setTab] = useState<Tab>("all");
+  const [tab, setTab] = useTabParam(TAB_KEYS, "all");
   const [search, setSearch] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -170,86 +171,63 @@ export default function MerchantListingsClient({
 
   const showMultipleShops = shops.length > 1;
 
+  const emptyMessage: Record<Tab, string> = {
+    all: "No listings yet. They go live after a quick automated check.",
+    reviewing: "Nothing is in review.",
+    live: "Nothing is live yet.",
+    rejected: "No listings were turned down.",
+    drafts: "No drafts or hidden listings.",
+  };
+
   return (
-    <div className="flex w-full flex-col gap-4 px-3 pb-24 pt-4 sm:pt-6">
-      {/* Header */}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="mt-0.5 text-xs text-muted">
-            {shops.length === 0
-              ? "Everything you've posted."
-              : shops.length === 1
-                ? "Everything you've posted across your shop. Approved listings go live automatically."
-                : `Everything you've posted across ${shops.length} shops. Approved listings go live automatically.`}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void reload()}
-            disabled={refreshing}
-            className="dm-focus inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-foreground/70 hover:bg-surface-subtle disabled:opacity-60"
-          >
-            <Loader2 className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-          <button
-            type="button"
-            onClick={openAdd}
-            className="dm-btn dm-btn-primary dm-btn-sm inline-flex items-center gap-1"
-          >
-            <ImagePlus className="size-3.5" />
+    <div>
+      <PageHeader
+        title="My listings"
+        description={
+          shops.length > 1
+            ? `${fmt(items.length)} listings across ${shops.length} shops.`
+            : `${fmt(items.length)} listings. Approved listings go live automatically.`
+        }
+        action={
+          <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
             Add listing
           </button>
-        </div>
-      </header>
+        }
+      />
 
-      {/* Search + Tabs — sticky so filters stay reachable while scrolling long lists */}
-      <div className="sticky top-0 z-10 -mx-3 space-y-2 border-b border-border/60 bg-background/85 px-3 pt-1 pb-2 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:px-3 sm:pt-2">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={showMultipleShops ? "Search listings or shop…" : "Search listings…"}
-            className="dm-input w-full pl-9"
-          />
-        </div>
+      <UnderlineTabs
+        tabs={TAB_META.map((t) => ({ value: t.key, label: `${t.label} ${counts[t.key]}` }))}
+        value={tab}
+        onChange={(v) => setTab(v as Tab)}
+      />
 
-        <div className="flex gap-1 overflow-x-auto">
-          {TAB_META.map((t) => {
-            const active = tab === t.key;
-            const n = counts[t.key];
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setTab(t.key)}
-                className={`shrink-0 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                  active
-                    ? "bg-accent text-white shadow-sm"
-                    : "bg-surface-subtle text-foreground/70 hover:bg-foreground/[0.06]"
-                }`}
-              >
-                {t.label}
-                <span
-                  className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                    active ? "bg-white/25" : "bg-foreground/[0.08]"
-                  }`}
-                >
-                  {n}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      <div className="mb-4 flex items-center gap-3">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={showMultipleShops ? "Search listings or shop" : "Search listings"}
+          aria-label="Search listings"
+          className="h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        />
+        <button type="button" onClick={() => void reload()} disabled={refreshing} className={BTN_TEXT}>
+          {refreshing ? "Refreshing…" : "Refresh"}
+        </button>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState tab={tab} hasShops={shops.length > 0} onAdd={openAdd} />
+        <EmptyState
+          message={emptyMessage[tab]}
+          action={
+            tab === "all" ? (
+              <button type="button" onClick={openAdd} className={BTN_SECONDARY}>
+                Add listing
+              </button>
+            ) : null
+          }
+        />
       ) : (
-        <ul className="divide-y divide-border/70">
+        <ul className="divide-y divide-border">
           {filtered.map((p) => (
             <li key={p.id} className="py-2 first:pt-0 last:pb-0">
               <ListingManageCard
@@ -263,12 +241,10 @@ export default function MerchantListingsClient({
         </ul>
       )}
 
-
-      {/* Delete confirmation */}
       {pendingDelete ? (
         <ConfirmDialog
           title="Delete listing?"
-          message={`"${pendingDelete.title || "This listing"}" will be removed permanently. Uploaded photos will also be cleared. This cannot be undone.`}
+          message={`"${pendingDelete.title || "This listing"}" and its photos will be removed. This can't be undone.`}
           confirmLabel={deleting ? "Deleting…" : "Delete"}
           cancelLabel="Cancel"
           destructive
@@ -280,59 +256,3 @@ export default function MerchantListingsClient({
     </div>
   );
 }
-function EmptyState({
-  tab,
-  hasShops,
-  onAdd,
-}: {
-  tab: Tab;
-  hasShops: boolean;
-  onAdd: () => void;
-}) {
-  const map: Record<Tab, { title: string; hint: string; icon: React.ReactNode }> = {
-    all: {
-      title: "No listings yet",
-      hint: "Post your first product — it goes live after a quick automated check.",
-      icon: <Package className="size-6" aria-hidden />,
-    },
-    reviewing: {
-      title: "Nothing in review",
-      hint: "New listings show here while Midora checks them — or when they await admin review.",
-      icon: <Clock className="size-6" aria-hidden />,
-    },
-    live: {
-      title: "Nothing live yet",
-      hint: "Approved listings show here. Post something to get started.",
-      icon: <CheckCircle2 className="size-6" aria-hidden />,
-    },
-    rejected: {
-      title: "No rejections",
-      hint: "Listings we couldn't approve show up here with a reason so you can fix and resubmit.",
-      icon: <XCircle className="size-6" aria-hidden />,
-    },
-    drafts: {
-      title: "No drafts or hidden listings",
-      hint: "Save drafts or unpublish listings and they'll appear here.",
-      icon: <Package className="size-6" aria-hidden />,
-    },
-  };
-  const meta = map[tab];
-  return (
-    <div className="dm-card flex flex-col items-center gap-3 p-8 text-center">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-        {meta.icon}
-      </div>
-      <p className="text-sm font-bold text-foreground">{meta.title}</p>
-      <p className="max-w-xs text-xs text-muted">{meta.hint}</p>
-      <button type="button" onClick={onAdd} className="dm-btn dm-btn-primary dm-btn-sm">
-        Add listing
-      </button>
-      {!hasShops && tab === "all" ? (
-        <Link href="/open-shop" className="text-[11px] font-medium text-muted hover:text-foreground">
-          Open a shop for analytics, organization, and a public storefront
-        </Link>
-      ) : null}
-    </div>
-  );
-}
-

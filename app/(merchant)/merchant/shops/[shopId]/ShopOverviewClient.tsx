@@ -7,6 +7,17 @@ import { apiShops, apiProducts } from "@/lib/api";
 import type { Shop, Verification } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import {
+  BTN_PRIMARY,
+  BTN_SECONDARY,
+  EmptyState,
+  ErrorState,
+  LIST,
+  Section,
+  StatStrip,
+  StatusDot,
+  formatCount as fmt,
+} from "@/components/dashboard/ui";
 
 type Props = {
   shopId: string;
@@ -52,99 +63,63 @@ export default function ShopOverviewClient({
     },
   );
 
-  if (error) {
-    return (
-      <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
-        {error}
-      </p>
-    );
-  }
+  if (error) return <ErrorState message={error} onRetry={() => void load()} />;
 
   const badges = verification?.badges ?? [];
+  const unverified =
+    verification && (!badges.includes("business_verified") || !badges.includes("identity_verified"));
 
   return (
-    <div className="space-y-5">
-      {/* Verification progress banner */}
-      {verification && (!badges.includes("business_verified") || !badges.includes("identity_verified")) && (
-        <section className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="font-display text-sm font-semibold text-foreground/90">Verification incomplete</h3>
-              <p className="mt-1 text-xs text-muted max-w-lg">
-                Complete your verification journey to unlock trust badges. Shops with badges get more views and sales.
-              </p>
-            </div>
-            <Link
-              href={`/merchant/shops/${shopId}/verification`}
-              className="dm-btn dm-btn-primary dm-btn-sm shrink-0 whitespace-nowrap"
-            >
-              Complete verification →
-            </Link>
-          </div>
-        </section>
-      )}
-
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Views" value={shop.view_count ?? 0} />
-        <StatCard label="Followers" value={shop.follower_count ?? 0} />
-        <StatCard label="Likes" value={shop.like_count ?? 0} />
-        <StatCard label="Products" value={products.length} />
-      </section>
-
-      <section className="dm-card p-5 sm:p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold">Recent products</h2>
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/merchant/shops/${shopId}/catalog?openAdd=true`}
-              className="dm-btn dm-btn-secondary dm-btn-sm"
-            >
-              Add Product
-            </Link>
-            <Link
-              href={`/merchant/shops/${shopId}/catalog`}
-              className="text-xs font-semibold text-foreground/75 hover:text-foreground"
-            >
-              Manage catalog →
-            </Link>
-          </div>
+    <div>
+      {unverified ? (
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
+          <p className="text-sm text-muted">Verification isn&apos;t finished. Verified shops show a trust badge.</p>
+          <Link href={`/merchant/shops/${shopId}/verification`} className={BTN_SECONDARY}>
+            Continue verification
+          </Link>
         </div>
+      ) : null}
+
+      <StatStrip
+        items={[
+          { label: "Views", value: fmt(shop.view_count) },
+          { label: "Followers", value: fmt(shop.follower_count) },
+          { label: "Likes", value: fmt(shop.like_count) },
+          { label: "Listings", value: fmt(products.length) },
+        ]}
+      />
+
+      <Section
+        title="Recent listings"
+        action={
+          <div className="flex items-center gap-3">
+            <Link href={`/merchant/shops/${shopId}/catalog`} className="text-sm text-muted hover:text-foreground">
+              Catalog
+            </Link>
+            <Link href={`/merchant/shops/${shopId}/catalog?openAdd=true`} className={BTN_PRIMARY}>
+              Add listing
+            </Link>
+          </div>
+        }
+      >
         {products.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">
-            No listings yet. Add your first listing to start selling.
-          </p>
+          <EmptyState message="No listings in this shop yet." />
         ) : (
-          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          <ul className={LIST}>
             {products.slice(0, 6).map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-border p-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{p.title}</p>
-                  <p className="truncate text-[11px] text-muted">
-                    {p.price_ugx != null
-                      ? `UGX ${p.price_ugx.toLocaleString()}`
-                      : "—"}
-                  </p>
-                </div>
-                <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold">
-                  {p.is_published ? "Live" : "Draft"}
+              <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{p.title}</span>
+                  <span className="block text-xs tabular-nums text-muted">
+                    {p.price_ugx != null ? `UGX ${fmt(p.price_ugx)}` : "No price"}
+                  </span>
                 </span>
+                <StatusDot tone={p.is_published ? "ok" : "neutral"}>{p.is_published ? "Live" : "Draft"}</StatusDot>
               </li>
             ))}
           </ul>
         )}
-      </section>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="dm-card p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 font-display text-2xl font-semibold">{value}</p>
+      </Section>
     </div>
   );
 }
