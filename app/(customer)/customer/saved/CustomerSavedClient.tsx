@@ -6,67 +6,29 @@ import { useCallback, useEffect, useState } from "react";
 
 import { apiShops } from "@/lib/api";
 import type { EngagementShop } from "@/lib/api/shops";
+import {
+  BTN_SECONDARY,
+  EmptyState,
+  ErrorState,
+  LIST,
+  PageHeader,
+  ROW,
+  StatusDot,
+  UnderlineTabs,
+  formatCount as fmt,
+  useTabParam,
+} from "@/components/dashboard/ui";
 
 type Tab = "followed" | "liked";
+const TAB_KEYS = ["followed", "liked"] as const;
 
 type Props = {
   initialFollowed: EngagementShop[];
   initialLiked: EngagementShop[];
 };
 
-function fmt(n?: number | null) {
-  return new Intl.NumberFormat().format(Number(n ?? 0));
-}
-
-function ShopCard({ shop }: { shop: EngagementShop }) {
-  return (
-    <Link
-      href={`/shops/${shop.slug}`}
-      className="dm-card group flex flex-col gap-3 p-4 transition hover:-translate-y-0.5"
-    >
-      <div className="flex items-start gap-3">
-        {shop.logo_url ? (
-          <Image
-            src={shop.logo_url}
-            alt={shop.name}
-            width={40}
-            height={40}
-            className="size-10 shrink-0 rounded-xl object-cover"
-          />
-        ) : (
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
-            {shop.name[0]?.toUpperCase() ?? "?"}
-          </span>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{shop.name}</p>
-          <p className="truncate text-xs text-muted">{shop.slug}</p>
-        </div>
-        <span
-          className={[
-            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            shop.is_active
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-              : "bg-foreground/[0.06] text-foreground/70",
-          ].join(" ")}
-        >
-          {shop.is_active ? "Active" : "Inactive"}
-        </span>
-      </div>
-      {shop.description ? (
-        <p className="line-clamp-2 text-xs text-muted">{shop.description}</p>
-      ) : null}
-      <div className="flex items-center gap-4 border-t border-border pt-3 text-[11px] text-muted">
-        <span>👁 {fmt(shop.view_count)}</span>
-        <span>❤ {fmt(shop.like_count)}</span>
-        <span>👥 {fmt(shop.follower_count)}</span>
-      </div>
-    </Link>
-  );
-}
-
 export default function CustomerSavedClient({ initialFollowed, initialLiked }: Props) {
-  const [tab, setTab] = useState<Tab>("followed");
+  const [tab, setTab] = useTabParam(TAB_KEYS, "followed");
   const [followed, setFollowed] = useState<EngagementShop[]>(initialFollowed);
   const [liked, setLiked] = useState<EngagementShop[]>(initialLiked);
   const [error, setError] = useState<string | null>(null);
@@ -91,52 +53,42 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
   const activeList = tab === "followed" ? followed : liked;
 
   return (
-    <div className="space-y-6">
-      {error ? (
-        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </p>
-      ) : null}
-
-      <nav className="flex gap-1 rounded-xl border border-border p-0.5 text-xs font-semibold w-fit">
-        {(["followed", "liked"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={[
-              "flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors",
-              tab === t
-                ? "bg-foreground/[0.08] text-foreground shadow-sm"
-                : "text-muted hover:bg-foreground/[0.04]",
-            ].join(" ")}
-          >
-            <span>{t === "followed" ? "Following" : "Liked"}</span>
-            <span className="rounded-full bg-foreground/[0.08] px-1.5 py-0.5 text-[10px] tabular-nums">
-              {t === "followed" ? followed.length : liked.length}
-            </span>
-          </button>
-        ))}
-      </nav>
-
+    <div>
+      <PageHeader title="Saved shops" description="Shops you follow or liked." />
+      {error ? <ErrorState message={error} onRetry={() => void refresh()} /> : null}
+      <UnderlineTabs
+        tabs={[
+          { value: "followed", label: `Following ${followed.length}` },
+          { value: "liked", label: `Liked ${liked.length}` },
+        ]}
+        value={tab}
+        onChange={(v) => setTab(v as Tab)}
+      />
       {activeList.length === 0 ? (
-        <div className="dm-card p-8 text-center text-sm text-muted">
-          <p>
-            {tab === "followed"
-              ? "You aren't following any shops yet."
-              : "You haven't liked any shops yet."}
-          </p>
-          <Link
-            href="/shops"
-            className="dm-pill dm-focus mt-5 inline-flex bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-95"
-          >
-            Discover shops →
-          </Link>
-        </div>
+        <EmptyState
+          message={tab === "followed" ? "You aren't following any shops yet." : "You haven't liked any shops yet."}
+          action={
+            <Link href="/shops" className={BTN_SECONDARY}>
+              Discover shops
+            </Link>
+          }
+        />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {activeList.map((s) => (
-            <li key={s.id}>
-              <ShopCard shop={s} />
+        <ul className={LIST}>
+          {activeList.map((shop) => (
+            <li key={shop.id}>
+              <Link href={`/shops/${shop.slug}`} className={ROW}>
+                {shop.logo_url ? (
+                  <Image src={shop.logo_url} alt="" width={32} height={32} className="size-8 shrink-0 rounded-md object-cover" />
+                ) : null}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{shop.name}</span>
+                  <span className="block truncate text-xs tabular-nums text-muted">
+                    {fmt(shop.follower_count)} followers · {fmt(shop.view_count)} views
+                  </span>
+                </span>
+                {shop.is_active ? null : <StatusDot tone="neutral">Inactive</StatusDot>}
+              </Link>
             </li>
           ))}
         </ul>

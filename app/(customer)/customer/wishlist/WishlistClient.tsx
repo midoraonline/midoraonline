@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { apiProducts } from "@/lib/api";
 import type { LikedProduct } from "@/lib/api/products";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { BTN_SECONDARY, EmptyState, ErrorState, PageHeader, formatCount as fmt } from "@/components/dashboard/ui";
 import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import { likedProductToCard } from "@/lib/productCardMap";
 
@@ -33,30 +33,27 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
   }, [refresh]);
 
   return (
-    <div className="dm-container py-6 sm:py-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">
-          {total} saved {total === 1 ? "item" : "items"}
-        </p>
-        <Link
-          href="/products"
-          className="dm-focus inline-flex items-center gap-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold text-foreground transition hover:border-accent/30 hover:text-accent"
-        >
-          <MaterialSymbol name="storefront" className="!text-sm" />
-          Browse products
-        </Link>
-      </div>
-
-      {error ? (
-        <div className="dm-card p-8 text-sm text-red-600">{error}</div>
-      ) : items.length === 0 ? (
-        <div className="dm-card flex flex-col items-center gap-3 p-8 text-center text-sm text-muted">
-          <MaterialSymbol name="favorite_border" className="!text-3xl text-muted/60" />
-          <p>No saved items yet. Tap the heart on any product to save it here.</p>
-          <Link href="/products" className="text-accent font-semibold hover:underline">
-            Explore products
+    <div>
+      <PageHeader
+        title="Wishlist"
+        description={`${fmt(total)} saved ${total === 1 ? "item" : "items"}.`}
+        action={
+          <Link href="/products" className={BTN_SECONDARY}>
+            Browse listings
           </Link>
-        </div>
+        }
+      />
+      {error ? (
+        <ErrorState message={error} onRetry={() => void refresh()} />
+      ) : items.length === 0 ? (
+        <EmptyState
+          message="Nothing saved yet. Tap the heart on any listing to save it here."
+          action={
+            <Link href="/products" className={BTN_SECONDARY}>
+              Browse listings
+            </Link>
+          }
+        />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {items.map((p) => {
