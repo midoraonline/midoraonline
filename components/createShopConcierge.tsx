@@ -30,6 +30,16 @@ const CARD = "rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6";
 
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };
 
+/** Older API replies (and history) may still carry the JSON block. */
+function visibleReply(text: string, hasDraft: boolean): string {
+  const cleaned = text
+    .replace(/```(?:json)?\s*\{[\s\S]*?\}\s*```/g, "")
+    .replace(/```(?:json)?\s*\{[\s\S]*$/, "")
+    .trim();
+  if (cleaned) return cleaned;
+  return hasDraft ? "I've drafted your shop. Check the details and change anything that isn't right." : text.trim();
+}
+
 function slugFromName(name: string): string {
   return (
     name
@@ -259,7 +269,7 @@ export default function CreateShopConcierge({
 
     try {
       const res = await apiChat.sendMessage(sessionId, { message: text });
-      const reply = res.message ?? "";
+      const reply = visibleReply(res.message ?? "", Boolean(res.suggested_shop));
       setMessages((prev) =>
         reply
           ? prev.map((m) =>
