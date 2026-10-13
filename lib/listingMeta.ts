@@ -617,7 +617,7 @@ function urgencyChip(meta: { urgency?: string; urgent?: string }): string | null
   return titleCaseChip(raw);
 }
 
-function deadlineChip(raw: string | undefined): string | null {
+export function deadlineChip(raw: string | undefined): string | null {
   const t = raw?.trim();
   if (!t) return null;
   const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
