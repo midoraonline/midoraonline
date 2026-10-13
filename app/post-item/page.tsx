@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
+import { BTN_SECONDARY } from "@/components/dashboard/ui";
 import ListingTypeStep from "@/components/post/ListingTypeStep";
 import ShopPickStep from "@/components/post/ShopPickStep";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
@@ -103,7 +104,7 @@ function PostItemFlow() {
   if (!session.hydrated || !session.isAuthenticated || (loading && !status)) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
-        <Loader2 className="size-6 animate-spin text-accent" />
+        <Loader2 className="size-5 animate-spin" aria-hidden />
         <p className="text-sm font-medium">Loading page…</p>
       </div>
     );
@@ -116,7 +117,7 @@ function PostItemFlow() {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="dm-btn dm-btn-primary mt-4 min-h-11"
+          className={`${BTN_SECONDARY} mt-4`}
         >
           Try again
         </button>
@@ -150,7 +151,7 @@ function PostItemFlow() {
         />
       ) : null}
       {formReady && kind ? (
-        <div className={step === "form" ? "w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10" : "hidden"}>
+        <div className={step === "form" ? "w-full px-4 py-6 sm:py-10" : "hidden"}>
           <ProductFormPage
             mode="add"
             shopId={shopId ?? undefined}
@@ -188,7 +189,7 @@ export default function PostItemPage() {
       <Suspense
         fallback={
           <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
-            <Loader2 className="size-6 animate-spin text-accent" />
+            <Loader2 className="size-5 animate-spin" aria-hidden />
             <p className="text-sm font-medium">Loading page…</p>
           </div>
         }
