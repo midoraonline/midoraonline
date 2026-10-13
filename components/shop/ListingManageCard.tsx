@@ -235,10 +235,25 @@ export default function ListingManageCard({
   return (
     <>
     <article className="flex min-w-0 gap-2.5 sm:gap-3">
-      {textOnly ? null : (
+      {textOnly ? (
+        <Link href={editHref} className="shrink-0" aria-label={product.title || "Edit listing"}>
+          <span
+            className={`grid size-14 place-items-center rounded-lg text-base font-semibold uppercase sm:size-16 ${
+              {
+                product: "bg-listing-product text-listing-product-foreground",
+                service: "bg-listing-service text-listing-service-foreground",
+                opportunity: "bg-listing-opportunity text-listing-opportunity-foreground",
+                job: "bg-listing-job text-listing-job-foreground",
+              }[typeKind]
+            }`}
+          >
+            {(product.title || "·").trim().charAt(0)}
+          </span>
+        </Link>
+      ) : (
         <Link
           href={editHref}
-          className="relative size-14 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle sm:size-16"
+          className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-surface-muted ring-1 ring-border sm:size-16"
         >
           {cover ? (
             <FallbackImage
@@ -266,7 +281,7 @@ export default function ListingManageCard({
           <ListingTypeTag kind={typeKind} />
           <StatusBadge status={product.status} is_published={product.is_published} />
           {showsStock(product) ? (
-            <span className="text-[10px] text-muted">Stock {stockLabel(product.stock_quantity)}</span>
+            <span className="text-xs text-muted">Stock {stockLabel(product.stock_quantity)}</span>
           ) : null}
         </div>
         <div className="flex items-start justify-between gap-2">
@@ -281,11 +296,11 @@ export default function ListingManageCard({
           </p>
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-          {shopName ? <span className="truncate text-[10px] text-muted">{shopName}</span> : null}
+          {shopName ? <span className="truncate text-xs text-muted">{shopName}</span> : null}
         </div>
         {product.review_notes ? (
           <p
-            className={`mt-1 line-clamp-1 text-[10px] ${
+            className={`mt-1 line-clamp-1 text-xs ${
               status === "rejected" ? "text-[color:var(--error)]" : "text-[color:var(--warning)]"
             }`}
           >
@@ -295,7 +310,7 @@ export default function ListingManageCard({
         <div className="mt-1.5 flex items-center gap-2">
           <Link
             href={editHref}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-subtle sm:min-h-9"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium shadow-xs transition-colors hover:bg-surface-muted sm:min-h-9"
           >
             <Pencil className="size-3.5" aria-hidden />
             Edit
@@ -308,7 +323,7 @@ export default function ListingManageCard({
               aria-controls={menuId}
               disabled={busy}
               onClick={() => setOpen((v) => !v)}
-              className="dm-focus grid size-11 place-items-center rounded-md text-foreground/70 hover:bg-foreground/[0.06] disabled:opacity-50"
+              className="dm-focus grid size-10 place-items-center rounded-lg text-foreground/70 transition-colors hover:bg-surface-muted disabled:opacity-50"
             >
               <MoreHorizontal className="size-5" />
               <span className="sr-only">More actions</span>
@@ -317,7 +332,7 @@ export default function ListingManageCard({
               <div
                 id={menuId}
                 role="menu"
-                className="absolute right-0 z-sticky mt-1 w-44 overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-sm"
+                className="absolute right-0 z-sticky mt-1 w-48 overflow-hidden rounded-xl border border-border bg-surface p-1 shadow-lg"
               >
                 {items.map((item) => (
                   <button
@@ -325,7 +340,7 @@ export default function ListingManageCard({
                     type="button"
                     role="menuitem"
                     onClick={item.onSelect}
-                    className={`dm-focus flex min-h-11 w-full items-center px-3 text-left text-sm ${
+                    className={`dm-focus flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm ${
                       item.danger
                         ? "text-[color:var(--error)] hover:bg-[color:var(--error-subtle)]"
                         : "text-foreground hover:bg-foreground/[0.04]"

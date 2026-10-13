@@ -59,14 +59,14 @@ export default function CustomerProfilePage() {
   return (
     <div>
       <PageHeader title="Profile" description="Your photo, name and phone number." />
-      <div className="divide-y divide-border">
-      <section className="max-w-md space-y-4 pb-8">
+      <div className="max-w-2xl space-y-4">
+      <section className="space-y-4 rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6">
 
         <ProfileAvatarUpload />
 
         <div>
 
-          <p className="text-base font-semibold">{user.full_name || "No name set"}</p>
+          <p className="text-sm font-semibold">{user.full_name || "No name set"}</p>
 
           <p className="text-sm text-muted">{user.email}</p>
 
@@ -75,7 +75,7 @@ export default function CustomerProfilePage() {
       </section>
 
       {/* Editable profile */}
-      <section className="max-w-md py-8">
+      <section className="rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6">
         <div className="mb-5">
           <div>
             <h2 className="text-sm font-semibold">Edit profile</h2>
@@ -93,7 +93,7 @@ export default function CustomerProfilePage() {
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your name"
               autoComplete="name"
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent/10"
+              className="h-10 w-full rounded-lg border border-border bg-surface shadow-xs px-3 text-sm text-foreground outline-none transition focus-visible:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent/10"
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function CustomerProfilePage() {
               type="email"
               value={user.email ?? ""}
               disabled
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground/50 outline-none cursor-not-allowed"
+              className="h-10 w-full rounded-lg border border-border bg-surface shadow-xs px-3 text-sm text-foreground/50 outline-none cursor-not-allowed"
             />
             <p className="text-xs text-muted">Email cannot be changed. Contact support if needed.</p>
           </div>
@@ -147,7 +147,7 @@ export default function CustomerProfilePage() {
       </section>
 
       {/* Read-only account info */}
-      <section className="max-w-md pt-8">
+      <section className="rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6">
         <div className="mb-4">
           <div>
             <h2 className="text-sm font-semibold">Account info</h2>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
+import { StepProgress, INPUT, TEXTAREA, FormError } from "@/components/post/StepFrame";
+import { BTN_PRIMARY, BTN_TEXT } from "@/components/dashboard/ui";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
 import CategoryPicker from "@/components/CategoryPicker";
@@ -17,7 +19,7 @@ import type { LatLng } from "@/lib/geo";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 const STARTER_PROMPTS = [
-  "I bake cakes and pastries in Kampala — home delivery available",
+  "I bake cakes in Kampala and deliver",
   "Phone accessories and repairs shop in Ntinda",
   "I offer cleaning and laundry services across Wakiso",
   "Land and rental listings around Entebbe Road",
@@ -84,67 +86,29 @@ function AISuggestion({
 }) {
   if (!value.trim()) return null;
   return (
-    <div className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
-      <span className="mt-0.5 shrink-0 text-primary">✦</span>
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold text-foreground/80">AI suggestion for {label}</p>
-        <p className="mt-1 text-foreground/70">{value}</p>
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={onAccept}
-            className="rounded-lg bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
-          >
-            Use this
-          </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-foreground/[0.04]"
-          >
-            I&apos;ll edit it
-          </button>
-        </div>
+    <div className="rounded-md border border-border px-3 py-2.5">
+      <p className="text-xs text-muted">Suggested {label}</p>
+      <p className="mt-1 text-sm text-foreground">{value}</p>
+      <div className="mt-2 flex gap-3">
+        <button type="button" onClick={onAccept} className="text-sm font-medium text-foreground underline underline-offset-2">
+          Use this
+        </button>
+        <button type="button" onClick={onEdit} className="text-sm text-muted hover:text-foreground">
+          Write my own
+        </button>
       </div>
     </div>
   );
 }
 
 function ShopPreview({ form }: { form: ConfirmForm }) {
+  const meta = [form.category, form.locationDisplay].filter(Boolean).join(" · ");
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground">
-      <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-accent/25 blur-2xl" />
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary-foreground/60">
-        Shop preview
-      </p>
-      <p className="relative mt-2 font-display text-xl font-semibold tracking-tight">
-        {form.name || "Your shop name"}
-      </p>
-      {form.description ? (
-        <p className="relative mt-1 text-sm text-primary-foreground/70">{form.description}</p>
-      ) : null}
-      <div className="relative mt-3 flex flex-wrap gap-2 text-[11px]">
-        {form.shop_type ? (
-          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 capitalize text-primary-foreground/85">
-            {form.shop_type}
-          </span>
-        ) : null}
-        {form.category ? (
-          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-primary-foreground/85">
-            {form.category}
-          </span>
-        ) : null}
-        {form.locationDisplay ? (
-          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-primary-foreground/85">
-            {form.locationDisplay}
-          </span>
-        ) : null}
-        {form.availability ? (
-          <span className="rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-primary-foreground/85">
-            {form.availability}
-          </span>
-        ) : null}
-      </div>
+    <div className="rounded-md border border-border px-4 py-3">
+      <p className="text-xs text-muted">Preview</p>
+      <p className="mt-1 text-base font-semibold text-foreground">{form.name || "Your shop name"}</p>
+      {form.description ? <p className="mt-0.5 text-sm text-muted">{form.description}</p> : null}
+      {meta ? <p className="mt-1 text-xs text-muted">{meta}</p> : null}
     </div>
   );
 }
@@ -334,16 +298,14 @@ export default function CreateShopConcierge({
   if (!sessionId && !error) {
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-muted">
-        <Loader2 className="size-4 animate-spin text-accent" aria-hidden />
-        Starting AI shop assistant…
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Starting the assistant…
       </div>
     );
   }
   if (error && !sessionId) {
     return (
-      <p className="rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
-        {error}
-      </p>
+<FormError>{error}</FormError>
     );
   }
 
@@ -352,23 +314,21 @@ export default function CreateShopConcierge({
     return (
       <div className="space-y-5">
         <div>
-          <p className="text-sm font-semibold">Review your shop details</p>
-          <p className="mt-1 text-xs text-muted">
-            The assistant filled in what it could. Review, edit, and add
-            anything missing — then hit Create.
-          </p>
+          <StepProgress step={2} total={2} />
+          <p className="text-base font-semibold text-foreground">Check your shop details</p>
+          <p className="mt-1 text-sm text-muted">We filled in what we could. Change anything that isn&apos;t right.</p>
         </div>
 
         <ShopPreview form={f} />
 
         <form onSubmit={handleCreate} className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Shop name *
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">
+                Shop name
               </label>
               <input
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+                className={INPUT}
                 value={f.name}
                 onChange={(e) => field("name", e.target.value)}
                 placeholder="e.g. Kampala Bakes"
@@ -376,14 +336,14 @@ export default function CreateShopConcierge({
               />
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                URL slug *
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">
+                Shop link
               </label>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-muted">/shops/</span>
                 <input
-                  className="h-9 flex-1 rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+                  className={`${INPUT} flex-1`}
                   value={f.slug}
                   onChange={(e) =>
                     field(
@@ -399,9 +359,9 @@ export default function CreateShopConcierge({
               </div>
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Short tagline
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">
+                Short description <span className="font-normal text-muted">(optional)</span>
               </label>
               {pendingSuggestions.has("description") ? (
                 <AISuggestion
@@ -412,7 +372,7 @@ export default function CreateShopConcierge({
                 />
               ) : (
                 <input
-                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+                  className={INPUT}
                   value={f.description}
                   onChange={(e) => field("description", e.target.value)}
                   placeholder="One line that describes your shop"
@@ -421,9 +381,9 @@ export default function CreateShopConcierge({
               )}
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                About
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">
+                About your shop <span className="font-normal text-muted">(optional)</span>
               </label>
               {pendingSuggestions.has("about") ? (
                 <AISuggestion
@@ -434,20 +394,20 @@ export default function CreateShopConcierge({
                 />
               ) : (
                 <textarea
-                  className="min-h-[90px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm dm-focus"
+                  className={TEXTAREA}
                   value={f.about}
                   onChange={(e) => field("about", e.target.value)}
-                  placeholder="Tell customers more about your business story, specialties, and values…"
+                  placeholder="What you sell, and how you deliver"
                 />
               )}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Type
+              <label className="block text-sm font-medium text-foreground">
+                What you sell
               </label>
               <select
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+                className={INPUT}
                 value={f.shop_type}
                 onChange={(e) => field("shop_type", e.target.value)}
               >
@@ -457,8 +417,8 @@ export default function CreateShopConcierge({
               </select>
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">
                 Category
               </label>
               {pendingSuggestions.has("category") ? (
@@ -469,7 +429,7 @@ export default function CreateShopConcierge({
                   onEdit={() => dismissSuggestion("category")}
                 />
               ) : (
-                <div className="rounded-xl border border-border bg-surface p-3 sm:p-4">
+                <div>
                   <CategoryPicker
                     value={f.category}
                     onChange={(v) => field("category", v)}
@@ -480,8 +440,8 @@ export default function CreateShopConcierge({
               )}
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">
                 Logo
               </label>
               <ImageUpload
@@ -493,20 +453,20 @@ export default function CreateShopConcierge({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Business email (optional)
+              <label className="block text-sm font-medium text-foreground">
+                Business email <span className="font-normal text-muted">(optional)</span>
               </label>
               <input
                 type="email"
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus"
+                className={INPUT}
                 value={f.shopEmail}
                 onChange={(e) => field("shopEmail", e.target.value)}
                 placeholder="hello@yourshop.com"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Business phone number (optional)
+              <label className="block text-sm font-medium text-foreground">
+                Business phone number <span className="font-normal text-muted">(optional)</span>
               </label>
               <PhoneNumberInput
                 value={f.whatsappNumber}
@@ -516,7 +476,7 @@ export default function CreateShopConcierge({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label className="block text-sm font-medium text-foreground">
                 Location
               </label>
               <LocationInput
@@ -529,8 +489,8 @@ export default function CreateShopConcierge({
                 className="pt-1"
               />
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
                 Opening hours
               </label>
               {pendingSuggestions.has("availability") && f.availability.trim() ? (
@@ -548,15 +508,13 @@ export default function CreateShopConcierge({
             </div>
           </div>
 
-          {error ? (
-            <p className="text-xs text-red-600">{error}</p>
-          ) : null}
+          {error ? <FormError>{error}</FormError> : null}
 
-          <div className="flex gap-3 pt-1">
+          <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-border bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:p-0">
             <button
               type="submit"
               disabled={creating}
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-accent/25 transition-colors hover:bg-accent-hover disabled:opacity-60 sm:flex-none"
+              className={BTN_PRIMARY}
             >
               {creating ? "Creating your shop…" : "Create shop"}
             </button>
@@ -567,9 +525,9 @@ export default function CreateShopConcierge({
                 setConfirmForm(null);
                 setLocationCoords(null);
               }}
-              className="rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-foreground/[0.04]"
+              className={BTN_TEXT}
             >
-              Keep chatting
+              Back to chat
             </button>
           </div>
         </form>
@@ -579,98 +537,74 @@ export default function CreateShopConcierge({
 
   return (
     <div className="space-y-4">
-      <div className="flex min-h-[280px] max-h-[420px] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-inner">
-        <div className="flex items-center gap-2 border-b border-border/80 bg-surface-subtle/50 px-3 py-2.5">
-          <span className="grid size-7 place-items-center rounded-lg bg-accent/15 text-accent">
-            <Sparkles className="size-3.5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-foreground">Midora assistant</p>
-            <p className="text-[10px] text-muted">Drafts your shop from a short description</p>
+      <div>
+        <StepProgress step={1} total={2} />
+        <p className="text-base font-semibold text-foreground">Tell us about your business</p>
+        <p className="mt-1 text-sm text-muted">
+          What you sell, where you are and anything special. English, Swahili or Luganda is fine.
+        </p>
+      </div>
+
+      {messages.length === 0 ? (
+        <div className="space-y-2">
+          <p className="text-xs text-muted">Or start from an example</p>
+          <div className="divide-y divide-border rounded-md border border-border">
+            {STARTER_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                disabled={loading || !sessionId}
+                onClick={() => void sendMessage(prompt)}
+                className="block w-full px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-surface disabled:opacity-50"
+              >
+                {prompt}
+              </button>
+            ))}
           </div>
         </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:px-4">
-          {messages.length === 0 ? (
-            <div className="space-y-3 py-2">
-              <p className="text-sm leading-relaxed text-foreground/80">
-                Tell me what you sell or offer, where you are, and any specialty.
-                I&apos;ll propose a shop name, slug, and story you can edit.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {STARTER_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    disabled={loading || !sessionId}
-                    onClick={() => void sendMessage(prompt)}
-                    className="max-w-full rounded-full border border-accent/20 bg-accent/[0.06] px-3 py-1.5 text-left text-[11px] font-medium text-foreground/80 transition-colors hover:border-accent/40 hover:bg-accent/10 hover:text-accent disabled:opacity-50"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            messages.map((m) => (
+      ) : (
+        <div className="max-h-[50dvh] space-y-3 overflow-y-auto rounded-md border border-border p-3">
+          {messages.map((m) => (
+            <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
               <div
-                key={m.id}
                 className={
-                  m.role === "user" ? "flex justify-end" : "flex justify-start"
+                  "max-w-[85%] whitespace-pre-wrap break-words rounded-md px-3 py-2 text-sm " +
+                  (m.role === "user" ? "bg-foreground text-background" : "bg-surface text-foreground")
                 }
               >
-                <div
-                  className={
-                    "max-w-[90%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed " +
-                    (m.role === "user"
-                      ? "rounded-br-md bg-accent text-white shadow-sm shadow-accent/20"
-                      : "rounded-bl-md border border-border bg-surface-subtle text-foreground/90")
-                  }
-                >
-                  {m.content === "Thinking…" ? (
-                    <span className="inline-flex items-center gap-2 text-muted">
-                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                      Thinking…
-                    </span>
-                  ) : (
-                    m.content
-                  )}
-                </div>
+                {m.content === "Thinking…" ? (
+                  <span className="inline-flex items-center gap-2 text-muted">
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    Thinking…
+                  </span>
+                ) : (
+                  m.content
+                )}
               </div>
-            ))
-          )}
+            </div>
+          ))}
           <div ref={chatEndRef} />
         </div>
+      )}
 
-        {error ? (
-          <p className="border-t border-border px-3 py-2 text-xs text-red-600">{error}</p>
-        ) : null}
+      {error ? <FormError>{error}</FormError> : null}
 
-        <form
-          onSubmit={handleSend}
-          className="flex gap-2 border-t border-border bg-surface-subtle/40 p-2.5 sm:p-3"
-        >
-          <input
-            className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3.5 text-sm dm-focus"
-            placeholder="Describe your business…"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            aria-label="Send"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-md shadow-accent/25 transition-colors hover:bg-accent-hover disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-            ) : (
-              <Send className="size-4" aria-hidden />
-            )}
-          </button>
-        </form>
-      </div>
+      <form onSubmit={handleSend} className="flex gap-2">
+        <label htmlFor="concierge-input" className="sr-only">
+          Describe your business
+        </label>
+        <input
+          id="concierge-input"
+          className={`${INPUT} min-w-0 flex-1`}
+          placeholder="e.g. I sell second-hand phones in Ntinda"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
+        />
+        <button type="submit" disabled={loading || !input.trim()} aria-label="Send" className={`${BTN_PRIMARY} w-10 shrink-0 px-0`}>
+          {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+        </button>
+      </form>
     </div>
   );
 }

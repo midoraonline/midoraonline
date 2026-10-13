@@ -312,7 +312,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
               ) : (
                 <form
                   onSubmit={(e) => { e.preventDefault(); void handleSubmit(2, false); }}
-                  className="mt-4 space-y-4 rounded-lg border border-border p-4"
+                  className="mt-4 space-y-4 rounded-xl border border-border bg-surface shadow-xs p-4"
                 >
                   <p className="text-xs font-semibold text-foreground/80">Identity capture (optional)</p>
                   <p className="text-xs text-muted">
@@ -469,7 +469,7 @@ function DocUploadList({
       {docs.map(dt => {
         const existing = values.find(d => d.type === dt.type);
         return (
-          <div key={dt.type} className="space-y-1.5 rounded-lg border border-border px-3 py-2.5">
+          <div key={dt.type} className="space-y-1.5 rounded-xl border border-border bg-surface shadow-xs px-3 py-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-foreground/80">{dt.label}</span>
               {existing && (
@@ -553,7 +553,7 @@ function StageActions({
           ) : (
             <form
               onSubmit={(e) => { e.preventDefault(); onSave(); }}
-              className="mt-4 space-y-4 rounded-lg border border-border p-4"
+              className="mt-4 space-y-4 rounded-xl border border-border bg-surface shadow-xs p-4"
             >
               <DocUploadList docs={docsSpec} values={docs} onAdd={onAdd} onRemove={onRemove} />
               <label className="block space-y-1">

@@ -1,5 +1,7 @@
 "use client";
 
+import { Package, Plus, Search } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -11,9 +13,10 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
 import {
   BTN_PRIMARY,
-  BTN_SECONDARY,
   BTN_TEXT,
   EmptyState,
+  INPUT,
+  LIST,
   PageHeader,
   UnderlineTabs,
   formatCount as fmt,
@@ -172,7 +175,7 @@ export default function MerchantListingsClient({
   const showMultipleShops = shops.length > 1;
 
   const emptyMessage: Record<Tab, string> = {
-    all: "No listings yet. They go live after a quick automated check.",
+    all: "Post your first product, service or opportunity. It goes live after a quick automated check.",
     reviewing: "Nothing is in review.",
     live: "Nothing is live yet.",
     rejected: "No listings were turned down.",
@@ -190,26 +193,36 @@ export default function MerchantListingsClient({
         }
         action={
           <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
+            <Plus className="size-4" aria-hidden />
             Add listing
           </button>
         }
       />
 
       <UnderlineTabs
-        tabs={TAB_META.map((t) => ({ value: t.key, label: `${t.label} ${counts[t.key]}` }))}
+        tabs={TAB_META.map((t) => ({ value: t.key, label: (
+            <>
+              {t.label}
+              <span className="ml-1.5 rounded-md bg-surface-muted px-1.5 text-xs tabular-nums text-muted">{counts[t.key]}</span>
+            </>
+          ),
+        }))}
         value={tab}
         onChange={(v) => setTab(v as Tab)}
       />
 
       <div className="mb-4 flex items-center gap-3">
+        <div className="relative w-full sm:max-w-xs">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={showMultipleShops ? "Search listings or shop" : "Search listings"}
           aria-label="Search listings"
-          className="h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className={`${INPUT} pl-9`}
         />
+        </div>
         <button type="button" onClick={() => void reload()} disabled={refreshing} className={BTN_TEXT}>
           {refreshing ? "Refreshing…" : "Refresh"}
         </button>
@@ -217,19 +230,22 @@ export default function MerchantListingsClient({
 
       {filtered.length === 0 ? (
         <EmptyState
+          icon={Package}
+          title={tab === "all" ? "No listings yet" : undefined}
           message={emptyMessage[tab]}
           action={
             tab === "all" ? (
-              <button type="button" onClick={openAdd} className={BTN_SECONDARY}>
-                Add listing
+              <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
+                <Plus className="size-4" aria-hidden />
+                Post a listing
               </button>
             ) : null
           }
         />
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className={LIST}>
           {filtered.map((p) => (
-            <li key={p.id} className="py-2 first:pt-0 last:pb-0">
+            <li key={p.id} className="px-3 py-3 sm:px-4">
               <ListingManageCard
                 product={p}
                 shopName={showMultipleShops ? shopById.get(p.shop_id)?.name : null}

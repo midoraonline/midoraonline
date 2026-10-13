@@ -109,9 +109,9 @@ export default function ShopCatalogEditor({
         ) : items.length === 0 ? (
           <EmptyState message={`No ${kindLabel} in this shop yet.`} />
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
             {items.map((p) => (
-              <li key={p.id} className="py-2 first:pt-0 last:pb-0">
+              <li key={p.id} className="px-3 py-3 sm:px-4">
                 <ListingManageCard product={p} onDelete={() => setPendingDelete(p)} onUpdated={applyProduct} />
               </li>
             ))}

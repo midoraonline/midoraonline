@@ -14,18 +14,21 @@ import { useAppSession } from "@/lib/state";
 import {
   BTN_PRIMARY,
   BTN_SECONDARY,
+  BTN_TEXT,
+  CARD,
   EmptyState,
   ErrorState,
   LIST,
   NUM,
   PageHeader,
   ROW,
+  RowThumb,
   Section,
+  Segmented,
   StatStrip,
   StatusDot,
   TD,
   TH,
-  UnderlineTabs,
   formatCount as fmt,
 } from "@/components/dashboard/ui";
 
@@ -164,6 +167,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
             {pending.map((s) => (
               <li key={s.id}>
                 <Link href={`/merchant/shops/${s.id}/verification`} className={ROW}>
+                  <RowThumb src={s.logo_url} label={s.name} />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{s.name}</span>
                   <StatusDot tone="warn">Pending review</StatusDot>
                 </Link>
@@ -181,7 +185,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
 
       {analyticsOn && analyticsLocked ? (
         <Section title="Analytics">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface shadow-xs p-5">
             <p className="text-sm text-muted">
               Impressions, trends and the contact funnel are on the Standard plan and above.
             </p>
@@ -198,25 +202,35 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
             title={`${fmt(analytics.summary.total_impressions)} impressions in the last ${analytics.window_days} days`}
             description={`${fmt(analytics.summary.total_product_views)} listing views from those impressions.`}
           >
-            <UnderlineTabs
-              tabs={WINDOWS}
-              value={String(windowDays) as (typeof WINDOWS)[number]["value"]}
-              onChange={(v) => setWindowDays(Number(v))}
-            />
+            <div className={`${CARD} p-4 sm:p-5`}>
+            <div className="mb-4 flex justify-end">
+              <Segmented
+                options={WINDOWS}
+                value={String(windowDays) as (typeof WINDOWS)[number]["value"]}
+                onChange={(v) => setWindowDays(Number(v))}
+              />
+            </div>
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={mergeSeries(analytics.trends)} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke={GRID} strokeOpacity={0.6} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: AXIS }} stroke={GRID} tickFormatter={formatDay} minTickGap={28} />
-                  <YAxis tick={{ fontSize: 11, fill: AXIS }} allowDecimals={false} stroke={GRID} />
+                  <defs>
+                    <linearGradient id="dashAccentFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.22} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke={GRID} strokeDasharray="3 3" strokeOpacity={0.8} />
+                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} tickFormatter={formatDay} minTickGap={28} />
+                  <YAxis tick={{ fontSize: 11, fill: AXIS }} allowDecimals={false} axisLine={false} tickLine={false} />
                   <Tooltip
                     labelFormatter={formatDay}
-                    contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", fontSize: 12 }}
+                    contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", fontSize: 12, boxShadow: "var(--shadow-md)" }}
                   />
-                  <Area type="monotone" dataKey="views" name="Views" stroke={AXIS} strokeWidth={1.5} fill="transparent" />
-                  <Area type="monotone" dataKey="impressions" name="Impressions" stroke="var(--accent)" strokeWidth={2} fill="var(--accent)" fillOpacity={0.08} />
+                  <Area type="monotone" dataKey="views" name="Views" stroke={AXIS} strokeWidth={1.5} strokeDasharray="4 3" fill="transparent" />
+                  <Area type="monotone" dataKey="impressions" name="Impressions" stroke="var(--accent)" strokeWidth={2} fill="url(#dashAccentFill)" />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
             </div>
           </Section>
 
@@ -241,9 +255,9 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
 
           {analytics.top_products.length > 0 ? (
             <Section title="Top listings" description="Ranked by impressions.">
-              <div className="overflow-x-auto rounded-lg border border-border">
+              <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-border">
+                  <thead className="border-b border-border bg-surface-subtle">
                     <tr>
                       <th className={TH}>Listing</th>
                       <th className={`${TH} text-right`}>Impressions</th>
@@ -277,7 +291,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         title="Your shops"
         action={
           shops.length > 0 ? (
-            <Link href="/merchant/shops" className="text-sm text-muted hover:text-foreground">
+            <Link href="/merchant/shops" className={BTN_TEXT}>
               View all
             </Link>
           ) : null
@@ -297,6 +311,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
             {shops.slice(0, 5).map((s) => (
               <li key={s.id}>
                 <Link href={`/merchant/shops/${s.id}`} className={ROW}>
+                  <RowThumb src={s.logo_url} label={s.name} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{s.name}</span>
                     <span className="block truncate text-xs text-muted">

@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { apiShops } from "@/lib/api";
 import CategoryPicker from "@/components/CategoryPicker";
 import { ImageUpload } from "@/components/image-upload";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
-import StepFrame from "@/components/post/StepFrame";
+import StepFrame, { ActionBar, FormError, FormField, INPUT, TEXTAREA } from "@/components/post/StepFrame";
+import { BTN_PRIMARY, BTN_TEXT } from "@/components/dashboard/ui";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
@@ -19,15 +20,16 @@ import { blankHoursDraft, hoursAreBlank, hoursDraftError, shopHoursWritePayload,
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 const STEPS = [
-  { title: "Shop basics", subtitle: "Name your shop and choose what you sell." },
-  { title: "Location and contact", subtitle: "Where you are, and how buyers reach you on WhatsApp." },
-  { title: "Logo and banner", subtitle: "Photos stay full quality. Only iPhone HEIC files are converted." },
-  { title: "Opening hours", subtitle: "Times are in Kampala (EAT). Skip this if you want to add hours later." },
-  { title: "Review and create", subtitle: "Check the details, then publish your shop." },
+  { title: "Name your shop", subtitle: "Buyers see this name first. You can change it later." },
+  { title: "Where buyers can find you", subtitle: "Add a location and how buyers can reach you." },
+  { title: "Add a logo and banner", subtitle: "Photos keep their full quality. You can add these later." },
+  { title: "Opening hours", subtitle: "Times are in Kampala time (EAT). You can add these later." },
+  { title: "Check and create", subtitle: "Make sure everything looks right, then create your shop." },
 ] as const;
 
-const FIELD =
-  "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm dm-focus";
+const STEP_LABELS = ["Name", "Contacts", "Logo and banner", "Hours", "Review"] as const;
+
+const FIELD = INPUT;
 
 const SHOP_TYPE_LABEL: Record<apiShops.ShopType, string> = {
   product: "Products",
@@ -68,9 +70,11 @@ function hoursSummary(draft: HoursDraft): string {
 
 export default function OpenShopWizard({
   onPreferAi,
+  onExit,
   verifiedContacts,
 }: {
   onPreferAi?: () => void;
+  onExit?: () => void;
   verifiedContacts: { email: string | null; phone: string | null };
 }) {
   const session = useAppSession();
@@ -123,7 +127,8 @@ export default function OpenShopWizard({
   function back() {
     setError(null);
     if (step === 0) {
-      router.push("/");
+      if (onExit) onExit();
+      else router.push("/");
       return;
     }
     setStep((n) => n - 1);
@@ -185,18 +190,22 @@ export default function OpenShopWizard({
       onBack={back}
       step={step + 1}
       total={STEPS.length}
-      wide
+      steps={STEP_LABELS}
+      preview={
+        <ShopPreview
+          name={name}
+          description={description}
+          logoUrl={logoUrl}
+          bannerUrl={bannerUrl}
+          location={locationDisplay}
+          category={category}
+        />
+      }
     >
-      {error ? (
-        <div className="flex items-start gap-2 rounded-xl border border-[color:var(--error)]/30 bg-[color:var(--error)]/10 px-3 py-2.5 text-sm text-[color:var(--error)]">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>{error}</span>
-        </div>
-      ) : null}
 
       {step === 0 ? (
         <>
-          <Field label="Shop name" htmlFor="wizard-shop-name" required>
+          <Field label="Shop name" htmlFor="wizard-shop-name">
             <input
               id="wizard-shop-name"
               className={FIELD}
@@ -205,12 +214,12 @@ export default function OpenShopWizard({
               onChange={(e) => setName(e.target.value)}
             />
             {slug ? (
-              <p className="text-[11px] text-muted">
-                Public URL: <span className="font-mono text-foreground">/shops/{slug}</span>
+              <p className="text-xs text-muted">
+                Your link: <span className="text-foreground">/shops/{slug}</span>
               </p>
             ) : null}
           </Field>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <>
             <Field label="What you sell">
               <select
                 id="wizard-shop-type"
@@ -223,7 +232,7 @@ export default function OpenShopWizard({
                 <option value="both">Products and services</option>
               </select>
             </Field>
-            <Field label="Category">
+            <Field label="Category" optional>
               <CategoryPicker
                 value={category}
                 onChange={setCategory}
@@ -233,8 +242,8 @@ export default function OpenShopWizard({
                 idPrefix="open-shop-wizard-category"
               />
             </Field>
-          </div>
-          <Field label="Short description" htmlFor="wizard-shop-desc">
+          </>
+          <Field label="Short description" htmlFor="wizard-shop-desc" optional>
             <input
               id="wizard-shop-desc"
               className={FIELD}
@@ -244,27 +253,27 @@ export default function OpenShopWizard({
               onChange={(e) => setDescription(e.target.value)}
             />
           </Field>
-          <Field label="About" htmlFor="wizard-shop-about">
+          <Field label="About your shop" htmlFor="wizard-shop-about" optional>
             <textarea
               id="wizard-shop-about"
-              className="min-h-24 w-full rounded-xl border border-border bg-background p-3 text-sm dm-focus"
+              className={TEXTAREA}
               placeholder="What you sell, and how you deliver"
               value={about}
               onChange={(e) => setAbout(e.target.value)}
             />
           </Field>
           {onPreferAi ? (
-            <button type="button" onClick={onPreferAi} className="dm-btn dm-btn-secondary min-h-11 w-full px-6 text-accent">
-              Create with AI instead
+            <button type="button" onClick={onPreferAi} className={BTN_TEXT}>
+              Describe your shop to AI instead
             </button>
           ) : null}
         </>
       ) : null}
 
       {step === 1 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="lg:col-span-2">
-            <Field label="Town or address">
+        <>
+          <div>
+            <Field label="Town or address" optional>
               <LocationInput
                 value={locationDisplay}
                 onChange={setLocationDisplay}
@@ -286,12 +295,12 @@ export default function OpenShopWizard({
           <Field label="Business phone number (optional)">
             <PhoneNumberInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="700 000 000" />
           </Field>
-        </div>
+        </>
       ) : null}
 
       {step === 2 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Field label="Logo">
+        <>
+          <Field label="Logo" optional>
             <ImageUpload
               endpoint="shopLogo"
               preserveQuality
@@ -301,7 +310,7 @@ export default function OpenShopWizard({
               previewUrl={logoUrl || undefined}
             />
           </Field>
-          <Field label="Banner">
+          <Field label="Banner" optional>
             <ImageUpload
               endpoint="imageUploader"
               preserveQuality
@@ -311,13 +320,13 @@ export default function OpenShopWizard({
               previewUrl={bannerUrl || undefined}
             />
           </Field>
-        </div>
+        </>
       ) : null}
 
       {step === 3 ? <ShopHoursEditor value={hours} onChange={setHours} /> : null}
 
       {step === 4 ? (
-        <dl className="grid divide-y divide-border rounded-xl border border-border md:grid-cols-2">
+        <dl className="divide-y divide-border rounded-md border border-border">
           <ReviewRow label="Name" value={name.trim()} onChange={() => setStep(0)} />
           <ReviewRow label="Sells" value={SHOP_TYPE_LABEL[shopType]} />
           <ReviewRow label="Category" value={category.trim() || "Not set"} onChange={() => setStep(0)} />
@@ -330,53 +339,32 @@ export default function OpenShopWizard({
         </dl>
       ) : null}
 
-      {step < STEPS.length - 1 ? (
-        <div className="flex gap-2">
-          {step > 0 ? (
-            <button type="button" onClick={skip} className="dm-btn dm-btn-secondary min-h-11 px-6 active:scale-[0.98]">
-              Skip
+      {error ? <FormError>{error}</FormError> : null}
+
+      <ActionBar>
+        {step < STEPS.length - 1 ? (
+          <>
+            <button type="button" onClick={goNext} className={BTN_PRIMARY}>
+              Continue
             </button>
-          ) : null}
-          <button type="button" onClick={goNext} className="dm-btn dm-btn-primary min-h-11 flex-1 px-6 active:scale-[0.98]">
-            Continue
+            {step > 0 ? (
+              <button type="button" onClick={skip} className={BTN_TEXT}>
+                Skip for now
+              </button>
+            ) : null}
+          </>
+        ) : (
+          <button type="button" onClick={handleCreateShop} disabled={creating} className={BTN_PRIMARY}>
+            {creating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+            {creating ? "Creating shop…" : "Create shop"}
           </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={handleCreateShop}
-          disabled={creating}
-          className="dm-btn dm-btn-primary min-h-11 w-full active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-        >
-          {creating ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
-          {creating ? "Creating shop…" : "Create shop"}
-        </button>
-      )}
+        )}
+      </ActionBar>
     </StepFrame>
   );
 }
 
-function Field({
-  label,
-  htmlFor,
-  required,
-  children,
-}: {
-  label: string;
-  htmlFor?: string;
-  required?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="text-xs font-semibold uppercase tracking-wider text-muted">
-        {label}
-        {required ? <span className="text-[color:var(--error)]"> *</span> : null}
-      </label>
-      {children}
-    </div>
-  );
-}
+const Field = FormField;
 
 function ReviewRow({
   label,
@@ -389,13 +377,53 @@ function ReviewRow({
 }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5">
-      <dt className="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">{label}</dt>
+      <dt className="w-28 shrink-0 text-xs text-muted">{label}</dt>
       <dd className="min-w-0 flex-1 truncate text-sm text-foreground">{value}</dd>
       {onChange ? (
-        <button type="button" onClick={onChange} className="dm-focus shrink-0 text-xs font-semibold text-accent">
+        <button type="button" onClick={onChange} className="dm-focus shrink-0 text-xs font-medium text-foreground underline underline-offset-2">
           Change
         </button>
       ) : null}
+    </div>
+  );
+}
+
+function ShopPreview({
+  name,
+  description,
+  logoUrl,
+  bannerUrl,
+  location,
+  category,
+}: {
+  name: string;
+  description: string;
+  logoUrl: string;
+  bannerUrl: string;
+  location: string;
+  category: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+      <div className="relative h-24 bg-surface-muted">
+        {bannerUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={bannerUrl} alt="" className="size-full object-cover" />
+        ) : null}
+      </div>
+      <div className="px-4 pb-4">
+        <div className="-mt-6 grid size-12 place-items-center overflow-hidden rounded-xl border-2 border-surface bg-accent/10 text-base font-semibold uppercase text-accent">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="size-full object-cover" />
+          ) : (
+            (name.trim().charAt(0) || "M")
+          )}
+        </div>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">{name.trim() || "Your shop name"}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs text-muted">{description.trim() || "A short line about what you sell."}</p>
+        <p className="mt-2 truncate text-xs text-muted">{[category, location].filter(Boolean).join(" · ") || "Category · Location"}</p>
+      </div>
     </div>
   );
 }

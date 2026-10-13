@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Clock, Check, Sparkles, Lightbulb } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock } from "lucide-react";
+import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, StatusDot } from "@/components/dashboard/ui";
+import { INPUT, TEXTAREA } from "@/components/post/StepFrame";
 import { toast } from "sonner";
 import { apiProducts, apiShops } from "@/lib/api";
 import { fetchCategoryFields, mediaUnreachableMessage, missingListingFields } from "@/lib/api/categoryFields";
@@ -95,17 +97,7 @@ function MediaGridWrapper({
 }
 
 function QualityPill({ label, ok }: { label: string; ok: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-        ok
-          ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
-          : "bg-[color:var(--warning)]/15 text-[color:var(--warning)]"
-      }`}
-    >
-      {label}
-    </span>
-  );
+  return <StatusDot tone={ok ? "ok" : "warn"}>{label}</StatusDot>;
 }
 
 /** AI-authored replacement for a single field — merchant explicitly accepts or dismisses it. */
@@ -123,35 +115,16 @@ function SuggestionRow({
   onDismiss: () => void;
 }) {
   return (
-    <div className="flex items-start gap-2 rounded-xl border border-accent/25 bg-accent/5 p-2.5">
-      <Sparkles className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-accent">
-          {label}
-        </p>
-        <p
-          className={`text-xs text-foreground/85 ${
-            multiline ? "leading-relaxed" : "truncate"
-          }`}
-        >
-          {value}
-        </p>
-        <div className="flex items-center gap-2 pt-0.5">
-          <button
-            type="button"
-            onClick={onUse}
-            className="dm-btn dm-btn-primary dm-btn-sm !py-1 !text-[11px]"
-          >
-            Use this
-          </button>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="text-[11px] font-semibold text-muted hover:text-foreground"
-          >
-            Dismiss
-          </button>
-        </div>
+    <div className="rounded-md border border-border px-3 py-2.5">
+      <p className="text-xs text-muted">{label}</p>
+      <p className={`mt-1 text-sm text-foreground ${multiline ? "whitespace-pre-wrap" : "truncate"}`}>{value}</p>
+      <div className="mt-2 flex items-center gap-3">
+        <button type="button" onClick={onUse} className="text-sm font-medium text-foreground underline underline-offset-2">
+          Use this
+        </button>
+        <button type="button" onClick={onDismiss} className="text-sm text-muted hover:text-foreground">
+          Dismiss
+        </button>
       </div>
     </div>
   );
@@ -657,75 +630,40 @@ export default function ProductFormPage({
 
   return (
     <div
-      className={`w-full space-y-6 pt-2 ${
-        flush ? "" : "mx-auto max-w-7xl"
-      } ${
+      className={`mx-auto w-full max-w-xl pt-2 lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8 ${
         hasBottomNav
           ? "pb-[calc(9rem+env(safe-area-inset-bottom,0px))] md:pb-32"
           : "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
       }`}
     >
+      <div className="min-w-0 space-y-6">
       {/* Top Breadcrumb Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div>
         <div className="space-y-1">
           <Link
             href={backUrl}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-foreground transition-colors"
+            className="inline-flex h-9 items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             Back to listings
           </Link>
           {flush ? null : (
-            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {pageTitle}
             </h1>
           )}
-          <p className="text-xs text-muted">
-            Provide details, media, and pricing. All listings pass automated moderation before going live.
+          <p className="text-sm text-muted">
+            Listings are checked automatically before they go live, usually within a minute.
           </p>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCancel}
-            disabled={saving}
-            className="dm-btn dm-btn-secondary dm-btn-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="product-form-page"
-            disabled={saving || aiChecking || !isDirty || Boolean(aiCheck?.critical)}
-            title={
-              !isDirty
-                ? "No changes to save."
-                : aiCheck?.critical
-                  ? "AI review found critical issues — please edit the listing first."
-                  : undefined
-            }
-            className={`dm-btn dm-btn-md gap-2 ${
-              isDirty ? "dm-btn-primary" : "dm-btn-secondary"
-            }`}
-          >
-            <Check className="size-4" />
-            {saving
-              ? "Saving…"
-              : aiChecking
-                ? "Running AI review…"
-                : mode === "add"
-                  ? "Publish listing"
-                  : "Save changes"}
-          </button>
-        </div>
       </div>
 
       <form
         id="product-form-page"
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0"
+        className="space-y-8"
       >
         {/* Moderation status banner */}
         {mode === "edit" && product
@@ -754,11 +692,11 @@ export default function ProductFormPage({
               return (
                 <div
                   role="status"
-                  className={`flex gap-3 rounded-2xl border p-4 text-sm shadow-xs lg:col-span-2 ${tone}`}
+                  className={`flex gap-3 rounded-xl border p-4 text-sm ${tone}`}
                 >
                   <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
                   <div className="space-y-1">
-                    <p className="font-bold text-base">{heading}</p>
+                    <p className="font-medium">{heading}</p>
                     <p className="text-xs leading-relaxed opacity-95">{body}</p>
                     {hint ? <p className="text-xs opacity-80 font-medium">{hint}</p> : null}
                   </div>
@@ -772,7 +710,7 @@ export default function ProductFormPage({
         {mode === "add" && !sessionUser?.avatar_url && !profileNudgeDismissed ? (
           <div
             role="status"
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm lg:col-span-2"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border px-3 py-2.5 text-sm"
           >
             <p className="min-w-0 flex-1 text-xs leading-relaxed text-foreground/85">
               Add a profile photo so buyers know who they&apos;re messaging. It builds trust — you can skip for now.
@@ -780,14 +718,14 @@ export default function ProductFormPage({
             <div className="flex shrink-0 items-center gap-2">
               <a
                 href="/merchant/settings#profile-photo"
-                className="dm-btn dm-btn-secondary dm-btn-sm"
+                className={BTN_SECONDARY}
               >
                 Add photo
               </a>
               <button
                 type="button"
                 onClick={() => setProfileNudgeDismissed(true)}
-                className="dm-btn dm-btn-ghost dm-btn-sm text-muted"
+                className={BTN_TEXT}
               >
                 Not now
               </button>
@@ -795,7 +733,7 @@ export default function ProductFormPage({
           </div>
         ) : null}
 
-        <div className="lg:col-span-2">
+        <div>
           <ListingTypeSummary
             kind={draft.kind}
             meta={draft.meta}
@@ -805,16 +743,16 @@ export default function ProductFormPage({
           />
         </div>
 
-        <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+            <h2 className="text-sm font-semibold text-foreground">
               {draft.kind === "opportunity"
-                ? "2. Media (optional)"
+                ? "Media (optional)"
                 : draft.kind === "service"
-                  ? "2. Photos & Video (optional)"
-                  : "2. Photos & Video"}
+                  ? "Photos and video (optional)"
+                  : "Photos and video"}
             </h2>
-            <p className="text-xs text-muted">
+            <p className="mt-0.5 text-sm text-muted">
               {draft.kind === "opportunity"
                 ? "Photos are optional. You can still add up to 3 photos or a short video."
                 : draft.kind === "service"
@@ -866,20 +804,20 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 2: Basic Info (Title & Description) */}
-        <section className="dm-card p-5 sm:p-6 space-y-5 lg:col-span-2">
+        <section className="space-y-5 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">3. Listing Details</h2>
-            <p className="text-xs text-muted">Write a clear title and detailed description for buyers.</p>
+            <h2 className="text-sm font-semibold text-foreground">Details</h2>
+            <p className="mt-0.5 text-sm text-muted">A clear title and a few honest sentences help buyers decide.</p>
           </div>
 
           {/* Title */}
           <div className="space-y-1.5">
-            <label htmlFor="product-title" className="text-sm font-semibold text-foreground">
-              Title <span className="text-[color:var(--error)]">*</span>
+            <label htmlFor="product-title" className="block text-sm font-medium text-foreground">
+              Title
             </label>
             <input
               id="product-title"
-              className="dm-input text-base font-medium"
+              className={INPUT}
               value={draft.title}
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
               placeholder={
@@ -910,14 +848,12 @@ export default function ProductFormPage({
           {/* Description */}
           <div className="space-y-1.5">
             <label
-              htmlFor="product-description"
-              className="text-sm font-semibold text-foreground"
-            >
-              Description <span className="text-[color:var(--error)]">*</span>
+              htmlFor="product-description" className="block text-sm font-medium text-foreground">
+              Description
             </label>
             <textarea
               id="product-description"
-              className="dm-textarea text-sm"
+              className={TEXTAREA}
               rows={5}
               value={draft.description}
               onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
@@ -932,9 +868,8 @@ export default function ProductFormPage({
                 type="button"
                 onClick={() => void runQualityCheck()}
                 disabled={aiChecking}
-                className="dm-btn dm-btn-ghost dm-btn-sm gap-1.5 border border-accent/25 text-accent hover:bg-accent/5 disabled:opacity-60"
+                className={BTN_SECONDARY}
               >
-                <Sparkles className="size-3.5" aria-hidden />
                 {aiChecking ? "Running AI review…" : "Check quality with AI"}
               </button>
             </div>
@@ -955,25 +890,13 @@ export default function ProductFormPage({
 
             {aiCheck ? (
               <div
-                className={`mt-2 rounded-2xl border p-3 sm:p-4 ${
-                  aiCheck.ok
-                    ? "border-[color:var(--success)]/30 bg-[color:var(--success)]/10"
-                    : "border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10"
-                }`}
+                className="mt-2 rounded-md border border-border p-3"
               >
                 <div className="flex items-start gap-2">
-                  <Sparkles
-                    className={`mt-0.5 size-4 shrink-0 ${
-                      aiCheck.ok
-                        ? "text-[color:var(--success)]"
-                        : "text-[color:var(--warning)]"
-                    }`}
-                    aria-hidden
-                  />
-                  <div className="min-w-0 space-y-2">
+<div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-bold text-foreground">
-                        AI review — {aiCheck.score}/100
+                      <p className="text-sm font-medium tabular-nums text-foreground">
+                        AI review: {aiCheck.score}/100
                       </p>
                       <QualityPill
                         label="Title vs images"
@@ -991,10 +914,7 @@ export default function ProductFormPage({
                       <ul className="space-y-1 pt-1 text-xs text-foreground/80">
                         {aiCheck.suggestions.map((s, i) => (
                           <li key={i} className="flex items-start gap-1.5">
-                            <Lightbulb
-                              className="mt-0.5 size-3 shrink-0 text-accent"
-                              aria-hidden
-                            />
+                            <span aria-hidden>·</span>
                             <span>{s}</span>
                           </li>
                         ))}
@@ -1008,10 +928,10 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 3b: Location (required to publish) */}
-        <section className="dm-card p-5 sm:p-6 space-y-4">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">Location</h2>
-            <p className="text-xs text-muted">
+            <h2 className="text-sm font-semibold text-foreground">Location</h2>
+            <p className="mt-0.5 text-sm text-muted">
               City or area, or Online if buyers do not visit a place. Country-only (e.g. Uganda) is not enough.
             </p>
           </div>
@@ -1036,20 +956,20 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 4: Pricing & Stock */}
-        <section className="dm-card p-5 sm:p-6 space-y-5">
+        <section className="space-y-5 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">4. Pricing & Inventory</h2>
-            <p className="text-xs text-muted">Set price in UGX and manage discount options.</p>
+            <h2 className="text-sm font-semibold text-foreground">Price</h2>
+            <p className="mt-0.5 text-sm text-muted">Prices are in UGX.</p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="product-price" className="text-sm font-semibold text-foreground">
+              <label htmlFor="product-price" className="block text-sm font-medium text-foreground">
                 {draft.kind === "opportunity" ? "Budget / pay (UGX)" : "Price (UGX)"}
               </label>
               <input
                 id="product-price"
-                className="dm-input text-base font-semibold"
+                className={INPUT}
                 inputMode="numeric"
                 value={draft.price_ugx}
                 onChange={(e) => setDraft((d) => ({ ...d, price_ugx: e.target.value }))}
@@ -1062,12 +982,12 @@ export default function ProductFormPage({
 
             {draft.kind !== "opportunity" ? (
               <div className="space-y-1.5">
-                <label htmlFor="product-sale" className="text-sm font-semibold text-foreground">
+                <label htmlFor="product-sale" className="block text-sm font-medium text-foreground">
                   Sale price <span className="font-normal text-muted">(optional)</span>
                 </label>
                 <input
                   id="product-sale"
-                  className="dm-input text-base font-semibold"
+                  className={INPUT}
                   inputMode="numeric"
                   value={draft.sale_price}
                   onChange={(e) => setDraft((d) => ({ ...d, sale_price: e.target.value }))}
@@ -1088,13 +1008,13 @@ export default function ProductFormPage({
           </div>
 
           {draft.kind === "product" ? (
-            <div className="space-y-1.5 sm:max-w-xs">
-              <label htmlFor="product-stock" className="text-sm font-semibold text-foreground">
+            <div className="space-y-1.5">
+              <label htmlFor="product-stock" className="block text-sm font-medium text-foreground">
                 Stock quantity
               </label>
               <input
                 id="product-stock"
-                className="dm-input"
+                className={INPUT}
                 inputMode="numeric"
                 value={draft.stock_quantity}
                 onChange={(e) => setDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
@@ -1105,10 +1025,10 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 5: Category */}
-        <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">5. Category</h2>
-            <p className="text-xs text-muted">
+            <h2 className="text-sm font-semibold text-foreground">Category</h2>
+            <p className="mt-0.5 text-sm text-muted">
               {draft.kind === "product"
                 ? "Assign a category so buyers can filter and discover your item."
                 : draft.kind === "service"
@@ -1171,23 +1091,23 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 6: Additional Attributes */}
-        <section className="dm-card p-5 sm:p-6 space-y-4 lg:col-span-2">
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">6. Additional Attributes</h2>
-            <p className="text-xs text-muted">
+            <h2 className="text-sm font-semibold text-foreground">More about this listing</h2>
+            <p className="mt-0.5 text-sm text-muted">
               Extra metadata for this {LISTING_KIND_LABEL[draft.kind].toLowerCase()}
               {categoryParts.parentLabel ? ` · ${categoryParts.parentLabel}` : ""}
             </p>
           </div>
 
           {draft.kind === "product" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Condition <span className="text-[color:var(--error)]">*</span>
+                <label className="block text-sm font-medium text-foreground">
+                  Condition
                 </label>
                 <select
-                  className="dm-input"
+                  className={INPUT}
                   value={draft.meta.condition ?? ""}
                   onChange={(e) =>
                     setDraft((d) => ({
@@ -1207,33 +1127,17 @@ export default function ProductFormPage({
                   ))}
                 </select>
               </div>
-              {!catFields.some((f) => f.key === "brand") ? (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">Brand</label>
-                  <input
-                    className="dm-input"
-                    value={draft.meta.brand ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        meta: { ...d.meta, brand: e.target.value },
-                      }))
-                    }
-                    placeholder="Optional (e.g. Samsung, Nike)"
-                  />
-                </div>
-              ) : null}
             </div>
           ) : null}
 
           {draft.kind === "service" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-semibold text-foreground">
-                  Pricing model <span className="text-[color:var(--error)]">*</span>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">
+                  Pricing model
                 </label>
                 <select
-                  className="dm-input"
+                  className={INPUT}
                   value={draft.meta.pricing_model ?? ""}
                   onChange={(e) =>
                     setDraft((d) => ({
@@ -1254,43 +1158,15 @@ export default function ProductFormPage({
                   ))}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Availability</label>
-                <input
-                  className="dm-input"
-                  value={draft.meta.availability ?? ""}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      meta: { ...d.meta, availability: e.target.value },
-                    }))
-                  }
-                  placeholder="e.g. Mon–Sat 9am–6pm"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Service area</label>
-                <input
-                  className="dm-input"
-                  value={draft.meta.service_area ?? ""}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      meta: { ...d.meta, service_area: e.target.value },
-                    }))
-                  }
-                  placeholder="e.g. Kampala & Wakiso"
-                />
-              </div>
             </div>
           ) : null}
 
           {draft.kind === "opportunity" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Compensation</label>
+                <label className="block text-sm font-medium text-foreground">Compensation</label>
                 <select
-                  className="dm-input"
+                  className={INPUT}
                   value={draft.meta.compensation ?? ""}
                   onChange={(e) =>
                     setDraft((d) => ({
@@ -1311,14 +1187,84 @@ export default function ProductFormPage({
                   ))}
                 </select>
               </div>
+            </div>
+          ) : null}
+
+          {(draft.kind === "product"
+            ? !catFields.some((f) => f.key === "brand")
+            : draft.kind === "service" ||
+              !(catFields.some((f) => f.key === "deadline") && catFields.some((f) => f.key === "requirements"))) ? (
+            <details
+              className="group rounded-md border border-border"
+              open={Boolean(draft.meta.brand || draft.meta.availability || draft.meta.service_area || draft.meta.deadline || draft.meta.requirements) || undefined}
+            >
+              <summary className="flex h-10 cursor-pointer list-none items-center justify-between px-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
+                Add more details
+                <span className="text-muted transition-transform group-open:rotate-45" aria-hidden>+</span>
+              </summary>
+              <div className="space-y-4 border-t border-border p-3">
+                {draft.kind === "product" ? (
+                  <>
+              {!catFields.some((f) => f.key === "brand") ? (
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-foreground">Brand <span className="font-normal text-muted">(optional)</span></label>
+                  <input
+                    className={INPUT}
+                    value={draft.meta.brand ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        meta: { ...d.meta, brand: e.target.value },
+                      }))
+                    }
+                    placeholder="e.g. Samsung, Nike"
+                  />
+                </div>
+              ) : null}
+                  </>
+                ) : null}
+                {draft.kind === "service" ? (
+                  <>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">Availability <span className="font-normal text-muted">(optional)</span></label>
+                <input
+                  className={INPUT}
+                  value={draft.meta.availability ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: { ...d.meta, availability: e.target.value },
+                    }))
+                  }
+                  placeholder="e.g. Mon–Sat 9am–6pm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">Service area <span className="font-normal text-muted">(optional)</span></label>
+                <input
+                  className={INPUT}
+                  value={draft.meta.service_area ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      meta: { ...d.meta, service_area: e.target.value },
+                    }))
+                  }
+                  placeholder="e.g. Kampala & Wakiso"
+                />
+              </div>
+                  </>
+                ) : null}
+                {draft.kind === "opportunity" ? (
+                  <>
               {!catFields.some((field) => field.key === "deadline") ? (
                 <div className="space-y-1.5">
-                  <label htmlFor="opportunity-deadline" className="text-xs font-semibold text-foreground">
+                  <label htmlFor="opportunity-deadline" className="block text-sm font-medium text-foreground">
                     Application deadline <span className="font-normal text-muted">(optional)</span>
                   </label>
                   <input
                     id="opportunity-deadline"
-                    className="dm-input"
+                    className={INPUT}
                     type="date"
                     value={draft.meta.deadline ?? ""}
                     onChange={(e) =>
@@ -1331,13 +1277,13 @@ export default function ProductFormPage({
                 </div>
               ) : null}
               {!catFields.some((field) => field.key === "requirements") ? (
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="opportunity-requirements" className="text-xs font-semibold text-foreground">
+                <div className="space-y-1.5">
+                  <label htmlFor="opportunity-requirements" className="block text-sm font-medium text-foreground">
                     Applicant requirements <span className="font-normal text-muted">(optional)</span>
                   </label>
                   <textarea
                     id="opportunity-requirements"
-                    className="dm-textarea"
+                    className={TEXTAREA}
                     rows={3}
                     value={draft.meta.requirements ?? ""}
                     onChange={(e) =>
@@ -1350,7 +1296,10 @@ export default function ProductFormPage({
                   />
                 </div>
               ) : null}
-            </div>
+                  </>
+                ) : null}
+              </div>
+            </details>
           ) : null}
 
           {catFields.length > 0 ? (
@@ -1379,24 +1328,25 @@ export default function ProductFormPage({
         </section>
       </form>
 
+      </div>
+
+      <aside className="hidden lg:block">
+        <div className="sticky top-20">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Preview</p>
+          <ListingPreviewCard draft={draft} />
+        </div>
+      </aside>
+
       {/* Sticky action bar. When the mobile BottomNav is present (dashboard
           flows) sit above it; otherwise (StandaloneShell) hug the viewport. */}
       <div
-        className={`fixed inset-x-0 z-modal border-t border-border bg-surface/95 p-3 shadow-lg backdrop-blur-md ${
+        className={`fixed inset-x-0 z-modal border-t border-border bg-surface/95 py-3 backdrop-blur ${
           hasBottomNav
             ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:bottom-0"
             : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
         }`}
       >
-        <div className={`mx-auto flex w-full items-center justify-between gap-3 px-4 ${flush ? "" : "max-w-7xl"}`}>
-          <button
-            type="button"
-            onClick={handleCancel}
-            disabled={saving}
-            className="dm-btn dm-btn-secondary min-h-11 px-6"
-          >
-            Cancel
-          </button>
+        <div className="mx-auto flex w-full max-w-xl flex-row-reverse items-center gap-2 px-4 lg:max-w-5xl">
           <button
             type="submit"
             form="product-form-page"
@@ -1405,14 +1355,11 @@ export default function ProductFormPage({
               !isDirty
                 ? "No changes to save."
                 : aiCheck?.critical
-                  ? "AI review found critical issues — please edit the listing first."
+                  ? "The AI review found problems. Edit the listing first."
                   : undefined
             }
-            className={`dm-btn dm-btn-md min-w-[160px] gap-2 shadow-md ${
-              isDirty ? "dm-btn-primary" : "dm-btn-secondary"
-            }`}
+            className={`${BTN_PRIMARY} min-w-28`}
           >
-            <Check className="size-4" />
             {saving
               ? "Saving…"
               : aiChecking
@@ -1421,7 +1368,44 @@ export default function ProductFormPage({
                   ? "Publish listing"
                   : "Save changes"}
           </button>
+          <button type="button" onClick={handleCancel} disabled={saving} className={`${BTN_GHOST} mr-auto`}>
+            Cancel
+          </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const PREVIEW_COVER: Record<string, string> = {
+  product: "bg-listing-product text-listing-product-foreground",
+  service: "bg-listing-service text-listing-service-foreground",
+  opportunity: "bg-listing-opportunity text-listing-opportunity-foreground",
+};
+
+function ListingPreviewCard({ draft }: { draft: FormDraft }) {
+  const cover = draft.image_urls.find((u) => !/\.(mp4|webm|mov)(\?|$)/i.test(u));
+  const price = Number(String(draft.price_ugx).replace(/[^0-9.]/g, ""));
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+      <div className={`relative aspect-[4/3] ${cover ? "bg-surface-muted" : PREVIEW_COVER[draft.kind] ?? "bg-accent/10 text-accent"}`}>
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover} alt="" className="size-full object-cover" />
+        ) : (
+          <div className="grid size-full place-items-center p-4 text-center">
+            <span className="line-clamp-2 text-lg font-bold uppercase tracking-tight">
+              {draft.category || draft.kind}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="space-y-1 p-3">
+        <p className="line-clamp-2 text-sm font-medium text-foreground">{draft.title.trim() || "Your listing title"}</p>
+        <p className="text-sm font-semibold tabular-nums text-foreground">
+          {price > 0 ? `UGX ${new Intl.NumberFormat("en-UG").format(price)}` : "Price"}
+        </p>
+        <p className="truncate text-xs text-muted">{draft.location_name || "Location"}</p>
       </div>
     </div>
   );

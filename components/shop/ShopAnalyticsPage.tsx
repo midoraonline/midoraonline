@@ -149,9 +149,9 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
         {productViewRows.length === 0 ? (
           <EmptyState message="No listings in this shop yet." />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
             <table className="w-full text-sm">
-              <thead className="border-b border-border">
+              <thead className="border-b border-border bg-surface-subtle">
                 <tr>
                   <th className={TH}>Listing</th>
                   <th className={`${TH} text-right`}>Views</th>

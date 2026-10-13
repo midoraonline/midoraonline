@@ -95,7 +95,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                   <div className="flex min-w-0 flex-1 gap-3">
                     {listing.image_urls?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={listing.image_urls[0]} alt="" className="size-12 shrink-0 rounded-md object-cover" />
+                      <img src={listing.image_urls[0]} alt="" className="size-12 shrink-0 rounded-lg object-cover ring-1 ring-border" />
                     ) : null}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                       aria-label="Review note"
                       value={notesMap[listing.id] ?? ""}
                       onChange={(e) => setNotesMap((prev) => ({ ...prev, [listing.id]: e.target.value }))}
-                      className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      className="h-10 w-full rounded-lg border border-border bg-surface shadow-xs px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     />
                   </div>
                 </li>
