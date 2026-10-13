@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import ThemeSelector from "@/components/ThemeSelector";
 import type { ThemePreference } from "@/lib/api/auth";
 import { saveAccountPreferences } from "@/lib/accountPreferences";
@@ -16,12 +17,10 @@ export default function AppearanceSettings() {
   }
 
   return (
-    <section className="max-w-md space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold">Appearance</h2>
-        <p className="mt-0.5 text-xs text-muted">Applies right away and stays on this device.</p>
-      </div>
-      <ThemeSelector onChange={onChange} />
-    </section>
+    <SettingsPanel>
+      <SettingsRow title="Theme" description="Light, dark or follow your device. Applies right away.">
+        <ThemeSelector onChange={onChange} />
+      </SettingsRow>
+    </SettingsPanel>
   );
 }

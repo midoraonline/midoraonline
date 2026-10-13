@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SingleImageField } from "@/components/upload/SingleImageField";
+import { SettingsActions, SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import VerifyContactButton from "@/components/VerifyContactButton";
@@ -17,7 +18,15 @@ import {
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
-import { BTN_PRIMARY, BTN_SECONDARY, ErrorState, PageSkeleton } from "@/components/dashboard/ui";
+import { BTN_PRIMARY, BTN_SECONDARY, ErrorState, PageSkeleton, UnderlineTabs, useTabParam } from "@/components/dashboard/ui";
+
+const SETTINGS_TABS = [
+  { value: "general", label: "General" },
+  { value: "branding", label: "Logo and banner" },
+  { value: "contact", label: "Contact and location" },
+  { value: "assistant", label: "AI concierge" },
+] as const;
+const SETTINGS_KEYS = SETTINGS_TABS.map((t) => t.value);
 
 function slugFromName(name: string): string {
   return (
@@ -29,7 +38,6 @@ function slugFromName(name: string): string {
   );
 }
 
-const SETTINGS_ROW = "grid gap-5 rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-8";
 
 export default function MerchantShopSettingsPage() {
   const params = useParams();
@@ -38,6 +46,7 @@ export default function MerchantShopSettingsPage() {
 
   const [shop, setShop] = useState<apiShops.Shop | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useTabParam(SETTINGS_KEYS, "general");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -165,155 +174,14 @@ export default function MerchantShopSettingsPage() {
   if (!shop) return null;
 
   return (
-    <div className="space-y-4">
-      <section className={SETTINGS_ROW}>
-        <div>
-          <h2 className="text-sm font-semibold">Shop details</h2>
-          <p className="mt-1 text-sm text-muted">What buyers see on your public shop page.</p>
-        </div>
-        <div className="min-w-0">
-        {error ? <ErrorState message={error} /> : null}
-
-        <form onSubmit={handleSave} className="max-w-3xl space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">Shop name *</label>
-              <input
-                className="dm-input dm-focus"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">Slug *</label>
-              <input
-                className="dm-input dm-focus"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">Description</label>
-              <input
-                className="dm-input dm-focus"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">About</label>
-              <textarea
-                className="dm-textarea !min-h-[80px] dm-focus"
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Logo</label>
-              <SingleImageField
-                endpoint="shopLogo"
-                value={logoUrl}
-                onChange={(url) => setLogoUrl(url ?? "")}
-                emptyLabel="Add logo"
-                hint="Square works best. Shown on your shop and listing cards."
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">Banner</label>
-              <SingleImageField
-                endpoint="shopBanner"
-                shape="wide"
-                value={bannerUrl}
-                onChange={(url) => setBannerUrl(url ?? "")}
-                emptyLabel="Add banner"
-                hint="Wide image across the top of your shop page."
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Shop type</label>
-              <select
-                className="dm-input appearance-none pr-10 dm-focus"
-                value={shopType}
-                onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
-              >
-                <option value="product">Product</option>
-                <option value="service">Service</option>
-                <option value="both">Both</option>
-              </select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">Category</label>
-              <div className="rounded-xl border border-border bg-surface shadow-xs p-3">
-                <CategoryPicker
-                  value={category}
-                  onChange={setCategory}
-                  compact
-                  idPrefix="merchant-shop-category"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Business email</label>
-              <input
-                type="email"
-                className="dm-input dm-focus"
-                value={shopEmail}
-                onChange={(e) => setShopEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Business phone number</label>
-              <PhoneNumberInput
-                value={whatsappNumber}
-                onChange={setWhatsappNumber}
-                placeholder="700 000 000"
-              />
-              <VerifyContactButton
-                value={whatsappNumber}
-                verified={whatsappVerified}
-                label="Business phone number"
-                sendCode={() => apiShops.sendShopWhatsAppCode(shopId, whatsappNumber.trim())}
-                confirmCode={async (code) => {
-                  const updated = await apiShops.confirmShopWhatsAppCode(shopId, code);
-                  setShop(updated);
-                  setWhatsappNumber(updated.whatsapp_number ?? whatsappNumber);
-                  setWhatsappVerified(Boolean(updated.whatsapp_verified));
-                }}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-sm font-medium">Location</label>
-              <LocationInput
-                value={locationDisplay}
-                onChange={setLocationDisplay}
-                onResolved={(place) =>
-                  setLocationCoordsState(place ? { lat: place.lat, lng: place.lng } : null)
-                }
-                placeholder="e.g. Kisasi, Kampala"
-              />
-            </div>
-          </div>
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className={BTN_PRIMARY}
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-          </div>
-        </form>
-        </div>
-      </section>
-
-      <section className={SETTINGS_ROW}>
-        <div>
-          <h2 className="text-sm font-semibold">AI concierge context</h2>
-          <p className="mt-1 text-sm text-muted">
-            Policies, FAQs and notes the in-shop concierge uses to answer questions.
-          </p>
-        </div>
-        <div className="min-w-0">
+    <div>
+      <UnderlineTabs tabs={SETTINGS_TABS} value={tab} onChange={setTab} />
+      {tab === "assistant" ? (
+        <SettingsPanel>
+          <SettingsRow
+            title="AI concierge context"
+            description="Policies, FAQs and notes the in-shop concierge uses to answer questions."
+          >
         <ul className="divide-y divide-border rounded-xl border border-border bg-surface shadow-xs">
           {contextEntries.map((entry) => (
             <li
@@ -358,8 +226,166 @@ export default function MerchantShopSettingsPage() {
             {addingContext ? "Adding…" : "Add context"}
           </button>
         </form>
-        </div>
-      </section>
+          </SettingsRow>
+        </SettingsPanel>
+      ) : (
+        <form onSubmit={handleSave}>
+          <SettingsPanel>
+            {tab === "general" ? (
+              <>
+                <SettingsRow title="Name and link" description="Your shop name and the web address buyers use.">
+                  <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Shop name *</label>
+              <input
+                className="dm-input dm-focus"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Slug *</label>
+              <input
+                className="dm-input dm-focus"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+              />
+            </div>
+                  </div>
+                </SettingsRow>
+                <SettingsRow title="Description" description="A one-liner for cards, plus a longer about section for your shop page.">
+                  <div className="grid gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Description</label>
+              <input
+                className="dm-input dm-focus"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">About</label>
+              <textarea
+                className="dm-textarea !min-h-[80px] dm-focus"
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+              />
+            </div>
+                  </div>
+                </SettingsRow>
+                <SettingsRow title="Type and category" description="Helps buyers find you in search and the feed.">
+                  <div className="grid gap-4">
+            <div className="space-y-1.5 md:max-w-xs">
+              <label className="text-sm font-medium">Shop type</label>
+              <select
+                className="dm-input appearance-none pr-10 dm-focus"
+                value={shopType}
+                onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
+              >
+                <option value="product">Product</option>
+                <option value="service">Service</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Category</label>
+              <div className="rounded-xl border border-border bg-surface shadow-xs p-3">
+                <CategoryPicker
+                  value={category}
+                  onChange={setCategory}
+                  compact
+                  idPrefix="merchant-shop-category"
+                />
+              </div>
+            </div>
+                  </div>
+                </SettingsRow>
+              </>
+            ) : null}
+            {tab === "branding" ? (
+              <>
+                <SettingsRow title="Logo" description="Square works best. Shown on your shop and listing cards.">
+            <div className="space-y-1.5">
+              <SingleImageField
+                endpoint="shopLogo"
+                value={logoUrl}
+                onChange={(url) => setLogoUrl(url ?? "")}
+                emptyLabel="Add logo"
+              />
+            </div>
+                </SettingsRow>
+                <SettingsRow title="Banner" description="A wide image across the top of your shop page.">
+            <div className="space-y-1.5">
+              <SingleImageField
+                endpoint="shopBanner"
+                shape="wide"
+                value={bannerUrl}
+                onChange={(url) => setBannerUrl(url ?? "")}
+                emptyLabel="Add banner"
+              />
+            </div>
+                </SettingsRow>
+              </>
+            ) : null}
+            {tab === "contact" ? (
+              <>
+                <SettingsRow title="Business contacts" description="How buyers reach you. Verify the phone so WhatsApp buttons show.">
+                  <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Business email</label>
+              <input
+                type="email"
+                className="dm-input dm-focus"
+                value={shopEmail}
+                onChange={(e) => setShopEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Business phone number</label>
+              <PhoneNumberInput
+                value={whatsappNumber}
+                onChange={setWhatsappNumber}
+                placeholder="700 000 000"
+              />
+              <VerifyContactButton
+                value={whatsappNumber}
+                verified={whatsappVerified}
+                label="Business phone number"
+                sendCode={() => apiShops.sendShopWhatsAppCode(shopId, whatsappNumber.trim())}
+                confirmCode={async (code) => {
+                  const updated = await apiShops.confirmShopWhatsAppCode(shopId, code);
+                  setShop(updated);
+                  setWhatsappNumber(updated.whatsapp_number ?? whatsappNumber);
+                  setWhatsappVerified(Boolean(updated.whatsapp_verified));
+                }}
+              />
+            </div>
+                  </div>
+                </SettingsRow>
+                <SettingsRow title="Location" description="Shown on your shop and used for near-me results.">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Location</label>
+              <LocationInput
+                value={locationDisplay}
+                onChange={setLocationDisplay}
+                onResolved={(place) =>
+                  setLocationCoordsState(place ? { lat: place.lat, lng: place.lng } : null)
+                }
+                placeholder="e.g. Kisasi, Kampala"
+              />
+            </div>
+                </SettingsRow>
+              </>
+            ) : null}
+        <SettingsActions>
+          {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
+          <button type="submit" disabled={saving} className={BTN_PRIMARY}>
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </SettingsActions>
+          </SettingsPanel>
+        </form>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { BTN_PRIMARY } from "@/components/dashboard/ui";
+import { SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiAuth } from "@/lib/api";
@@ -59,62 +60,65 @@ export default function AccountSecuritySettings() {
   }
 
   return (
-    <section className="max-w-md space-y-5">
-      <div>
-        <h2 className="text-sm font-semibold">Account</h2>
-        <p className="mt-0.5 text-xs text-muted">Change the password for email sign-in, or sign out.</p>
-      </div>
-      <form onSubmit={handlePassword} className="max-w-xl space-y-3">
-        <label className="block space-y-1.5 text-sm font-medium">
-          Current password
-          <input
-            type="password"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            autoComplete="current-password"
-            required
-            className="dm-input font-normal"
-          />
-        </label>
-        <label className="block space-y-1.5 text-sm font-medium">
-          New password
-          <input
-            type="password"
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            autoComplete="new-password"
-            required
-            minLength={8}
-            className="dm-input font-normal"
-          />
-        </label>
-        <label className="block space-y-1.5 text-sm font-medium">
-          Confirm new password
-          <input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="new-password"
-            required
-            className="dm-input font-normal"
-          />
-        </label>
-        {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
-        {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
-        <button type="submit" disabled={saving === "password"} className={BTN_PRIMARY}>
-          {saving === "password" ? "Updating…" : "Update password"}
-        </button>
-      </form>
-      <div className="border-t border-border pt-4">
+    <SettingsPanel>
+      <SettingsRow
+        title="Password"
+        description="For email sign-in. Google sign-in accounts don't use a password here."
+      >
+        <form onSubmit={handlePassword} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block space-y-1.5 text-sm font-medium md:col-span-2 md:max-w-[calc(50%-0.5rem)]">
+              Current password
+              <input
+                type="password"
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                autoComplete="current-password"
+                required
+                className="dm-input font-normal"
+              />
+            </label>
+            <label className="block space-y-1.5 text-sm font-medium">
+              New password
+              <input
+                type="password"
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                autoComplete="new-password"
+                required
+                minLength={8}
+                className="dm-input font-normal"
+              />
+            </label>
+            <label className="block space-y-1.5 text-sm font-medium">
+              Confirm new password
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                required
+                className="dm-input font-normal"
+              />
+            </label>
+          </div>
+          {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
+          {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
+          <button type="submit" disabled={saving === "password"} className={BTN_PRIMARY}>
+            {saving === "password" ? "Updating…" : "Update password"}
+          </button>
+        </form>
+      </SettingsRow>
+      <SettingsRow title="Sign out" description="Ends your session on this device.">
         <button
           type="button"
           onClick={() => void handleSignOut()}
           disabled={signingOut}
-          className="dm-btn dm-btn-secondary min-h-11 text-[color:var(--error)]"
+          className="dm-btn dm-btn-secondary min-h-10 text-[color:var(--error)]"
         >
           {signingOut ? "Signing out…" : "Sign out"}
         </button>
-      </div>
-    </section>
+      </SettingsRow>
+    </SettingsPanel>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { BTN_PRIMARY } from "@/components/dashboard/ui";
+import { SettingsActions, SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import { useEffect, useState } from "react";
 import { apiAuth } from "@/lib/api";
 import { migrationRequired } from "@/lib/accountPreferences";
@@ -61,75 +62,82 @@ export default function ProfileSettings() {
   }
 
   return (
-    <section className="max-w-md space-y-5">
-      <div>
-        <h2 className="text-sm font-semibold">Profile</h2>
-        <p className="mt-0.5 text-xs text-muted">Your name, bio, phone, and photo.</p>
-      </div>
-      <ProfileAvatarUpload />
-      <form onSubmit={handleSave} className="max-w-3xl space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="settings-name" className="block text-sm font-medium">
-            Name
-          </label>
-          <input
-            id="settings-name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            autoComplete="name"
-            className="dm-input"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="settings-email" className="block text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="settings-email"
-            value={session.user?.email ?? ""}
-            disabled
-            className="dm-input disabled:opacity-60"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="settings-bio" className="block text-sm font-medium">
-            Bio
-          </label>
-          <textarea
-            id="settings-bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value.slice(0, 500))}
-            maxLength={500}
-            rows={3}
-            placeholder="A short line about you"
-            className="dm-textarea"
-          />
-          <p className="text-xs text-muted">{bio.length}/500</p>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="settings-phone" className="block text-sm font-medium">
-            Phone
-          </label>
-          <PhoneNumberInput id="settings-phone" value={phone} onChange={setPhone} autoComplete="tel" />
-          <VerifyContactButton
-            value={phone}
-            verified={phoneVerified}
-            label="phone number"
-            sendCode={() => apiAuth.sendPhoneVerificationCode({ phone_number: phone.trim() })}
-            confirmCode={async (code) => {
-              const updated = await apiAuth.confirmPhoneVerificationCode(code);
-              setPhone(updated.phone_number ?? phone);
-              setPhoneVerified(Boolean(updated.phone_verified));
-            }}
-            onSuccess={() => notifyAuthChanged()}
-          />
-        </div>
-        {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
-        {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
-        <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-          {saving ? "Saving…" : "Save profile"}
-        </button>
-      </form>
-    </section>
+    <form onSubmit={handleSave}>
+      <SettingsPanel>
+        <SettingsRow title="Photo" description="Shown on your reviews, messages and seller profile.">
+          <ProfileAvatarUpload />
+        </SettingsRow>
+        <SettingsRow title="Personal details" description="Your name as buyers and sellers see it.">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="settings-name" className="block text-sm font-medium">
+                Name
+              </label>
+              <input
+                id="settings-name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
+                className="dm-input"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="settings-email" className="block text-sm font-medium">
+                Email
+              </label>
+              <input
+                id="settings-email"
+                value={session.user?.email ?? ""}
+                disabled
+                className="dm-input disabled:opacity-60"
+              />
+              <p className="text-xs text-muted">Used to sign in. It can&apos;t be changed here.</p>
+            </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <label htmlFor="settings-bio" className="block text-sm font-medium">
+                Bio
+              </label>
+              <textarea
+                id="settings-bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value.slice(0, 500))}
+                maxLength={500}
+                rows={3}
+                placeholder="A short line about you"
+                className="dm-textarea"
+              />
+              <p className="text-right text-xs tabular-nums text-muted">{bio.length}/500</p>
+            </div>
+          </div>
+        </SettingsRow>
+        <SettingsRow title="Phone" description="Verify it so buyers can trust WhatsApp contact from you.">
+          <div className="space-y-2 md:max-w-md">
+            <label htmlFor="settings-phone" className="sr-only">
+              Phone
+            </label>
+            <PhoneNumberInput id="settings-phone" value={phone} onChange={setPhone} autoComplete="tel" />
+            <VerifyContactButton
+              value={phone}
+              verified={phoneVerified}
+              label="phone number"
+              sendCode={() => apiAuth.sendPhoneVerificationCode({ phone_number: phone.trim() })}
+              confirmCode={async (code) => {
+                const updated = await apiAuth.confirmPhoneVerificationCode(code);
+                setPhone(updated.phone_number ?? phone);
+                setPhoneVerified(Boolean(updated.phone_verified));
+              }}
+              onSuccess={() => notifyAuthChanged()}
+            />
+          </div>
+        </SettingsRow>
+        <SettingsActions>
+          {message ? <p className="mr-auto text-sm text-[color:var(--success)]">{message}</p> : null}
+          {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
+          <button type="submit" disabled={saving} className={BTN_PRIMARY}>
+            {saving ? "Saving…" : "Save profile"}
+          </button>
+        </SettingsActions>
+      </SettingsPanel>
+    </form>
   );
 }
