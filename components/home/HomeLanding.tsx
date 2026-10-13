@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, Package, Store, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
@@ -27,7 +27,6 @@ import { ProductCardSkeleton } from "@/components/skeletons/Skeleton";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
 import { HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
-import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import type { ListingKind } from "@/lib/listingMeta";
@@ -71,7 +70,6 @@ export default function HomeLanding({
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const session = useAppSession();
   const [query, setQuery] = useState(() => searchParams.get("q")?.trim() ?? "");
@@ -321,22 +319,18 @@ export default function HomeLanding({
     };
   }, [hasMore, isSearching, products.length]);
 
-  useEffect(() => {
-    function onEngagement() {
-      router.refresh();
-    }
-    window.addEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
-    return () => window.removeEventListener(FEED_ENGAGEMENT_EVENT, onEngagement);
-  }, [router]);
 
   const commitSearch = useCallback(
     (term: string) => {
       const next = term.trim();
       setQuery(next);
       const path = next ? `/?q=${encodeURIComponent(next)}` : "/";
-      router.replace(path, { scroll: false });
+      // Results come from client-side SWR, so only the URL needs to change.
+      // router.replace would re-render the server page and flash the
+      // route skeleton; native history keeps useSearchParams in sync.
+      window.history.replaceState(window.history.state, "", path);
     },
-    [router],
+    [],
   );
 
   const categoryFilterActive = isCategoryFilterActive(categoryFilter);

@@ -35,6 +35,7 @@ function PostItemFlow() {
     paramType ? normalizeListingKind(paramType) : null,
   );
   const [formReady, setFormReady] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   const backUrl =
     session.user?.user_role === "merchant" || session.user?.user_role === "admin"
@@ -74,7 +75,7 @@ function PostItemFlow() {
     return () => {
       active = false;
     };
-  }, [session.hydrated, session.isAuthenticated, paramShopId, paramType]);
+  }, [session.hydrated, session.isAuthenticated, paramShopId, paramType, attempt]);
 
   useEffect(() => {
     if (step === "form") setFormReady(true);
@@ -116,7 +117,7 @@ function PostItemFlow() {
         <p className="text-sm text-[color:var(--error)]">{loadError}</p>
         <button
           type="button"
-          onClick={() => window.location.reload()}
+          onClick={() => setAttempt((n) => n + 1)}
           className={`${BTN_SECONDARY} mt-4`}
         >
           Try again

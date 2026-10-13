@@ -263,7 +263,8 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
     }
   }
 
-  if (loading) return <PageSkeleton rows={4} label="Loading verification" />;
+  // Realtime updates call load() again; only the first load shows a skeleton.
+  if (loading && !verification) return <PageSkeleton rows={4} label="Loading verification" />;
 
   const badges = verification?.badges ?? ["shop_listed"];
   const stage2Status = verification?.stage2_status ?? "unverified";

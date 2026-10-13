@@ -98,6 +98,9 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
         revalidateOnFocus: false,
         shouldRetryOnError: false,
         dedupingInterval: 4_000,
+        // Filters/tabs/pages change the key; keep showing the last result
+        // instead of flashing an empty or skeleton state.
+        keepPreviousData: true,
       }}
     >
       {children}
