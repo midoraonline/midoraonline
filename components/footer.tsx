@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
 
@@ -12,35 +11,6 @@ const TikTokIcon = ({ className = "size-4" }: { className?: string }) => (
     <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.08-1.4-1.22-.8-2.15-2.02-2.58-3.41-.02 1.83.01 3.66-.02 5.49 0 2.21-.55 4.45-1.74 6.22-1.19 1.77-3.08 2.94-5.18 3.26-2.1.32-4.38-.07-6.09-1.34C1.045 17.58.125 15.28.175 12.87c.05-2.41 1.09-4.8 2.96-6.32 1.87-1.52 4.44-2.06 6.81-1.47.02 1.41.01 2.82.02 4.23-1.32-.41-2.83-.17-3.92.65-1.09.82-1.63 2.28-1.38 3.65.25 1.37 1.34 2.52 2.69 2.81 1.35.29 2.88-.12 3.73-1.22.85-1.1 1.02-2.61.97-3.98.02-4.07-.01-8.14.02-12.21z" />
   </svg>
 );
-
-type TrustBadge = {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-};
-
-const TRUST_BADGES: TrustBadge[] = [
-  {
-    icon: <MaterialSymbol name="verified_user" className="!text-[22px]" />,
-    title: "Verified sellers only",
-    desc: "Every shop is checked before it goes live.",
-  },
-  {
-    icon: <WhatsAppIcon className="size-[22px]" />,
-    title: "Chat on WhatsApp",
-    desc: "Message sellers directly — no middlemen.",
-  },
-  {
-    icon: <MaterialSymbol name="location_on" className="!text-[22px]" />,
-    title: "Buy near you",
-    desc: "Find items and shops close to home.",
-  },
-  {
-    icon: <MaterialSymbol name="handshake" className="!text-[22px]" />,
-    title: "Real deals, real people",
-    desc: "No scams, no fake listings — just trade.",
-  },
-];
 
 type LinkGroup = { heading: string; links: { label: string; href: string }[] };
 
@@ -88,36 +58,9 @@ export default function Footer() {
 
   return (
     <footer className="w-full border-t border-border bg-surface-subtle">
-      {/* 1 — Trust badges */}
-      <section
-        aria-label="Why shop on Midora"
-        className="dm-container pt-8 pb-10 sm:pt-10"
-      >
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {TRUST_BADGES.map((b) => (
-            <div
-              key={b.title}
-              className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs transition-shadow hover:shadow-md sm:gap-4 sm:p-5"
-            >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent sm:size-11">
-                {b.icon}
-              </span>
-              <div className="min-w-0">
-                <h4 className="text-sm font-semibold leading-tight text-foreground sm:text-[15px]">
-                  {b.title}
-                </h4>
-                <p className="mt-1 text-[12px] leading-snug text-muted sm:text-[13px]">
-                  {b.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Main links */}
-      <div className="border-t border-border bg-surface">
-        <div className="dm-container py-10 sm:py-12 lg:py-14">
+      <div className="bg-surface">
+        <div className="dm-container py-8 sm:py-10">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
             {/* Brand column */}
             <div className="lg:col-span-4">
