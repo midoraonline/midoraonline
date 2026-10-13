@@ -37,10 +37,10 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   const [planLocked, setPlanLocked] = useState(false);
 
   const load = useCallback(async () => {
-    if (!session.isAuthenticated) return;
+    if (!session.isAuthenticated || !platformAnalytics.ready) return;
     setLoading(true);
     setError(null);
-    if (!planHasAnalytics(session.user?.plan_tier)) {
+    if (!platformAnalytics.allPlans && !planHasAnalytics(session.user?.plan_tier)) {
       setPlanLocked(true);
       setLoading(false);
       return;
@@ -62,7 +62,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     } finally {
       setLoading(false);
     }
-  }, [shop.id, session.isAuthenticated, session.user?.plan_tier]);
+  }, [shop.id, session.isAuthenticated, session.user?.plan_tier, platformAnalytics.ready, platformAnalytics.allPlans]);
 
   useEffect(() => {
     if (!hydrated) return;

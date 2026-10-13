@@ -20,6 +20,7 @@ export function usePublicSettings() {
   return {
     ready: !isLoading,
     analytics: flags.analytics === true,
+    analyticsAllPlans: flags.analytics_all_plans === true,
     maintenance: flags.maintenance_mode === true,
     flags,
   };
@@ -30,5 +31,6 @@ export function usePlatformAnalytics() {
   return {
     ready: settings.ready,
     enabled: settings.analytics,
+    allPlans: settings.analyticsAllPlans,
   };
 }

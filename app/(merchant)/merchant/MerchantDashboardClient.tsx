@@ -73,9 +73,9 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [analyticsEndpointOff, setAnalyticsEndpointOff] = useState(false);
   const [windowDays, setWindowDays] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
-  const canAnalytics = planHasAnalytics(session.user?.plan_tier);
   const platformAnalytics = usePlatformAnalytics();
   const analyticsOn = platformAnalytics.ready && platformAnalytics.enabled;
+  const canAnalytics = platformAnalytics.allPlans || planHasAnalytics(session.user?.plan_tier);
 
   const load = useCallback(async () => {
     if (!session.hydrated) return;
