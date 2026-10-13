@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Sparkles } from "lucide-react";
 import { StepProgress, INPUT, TEXTAREA, FormError } from "@/components/post/StepFrame";
-import { BTN_PRIMARY, BTN_TEXT } from "@/components/dashboard/ui";
+import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT } from "@/components/dashboard/ui";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
 import CategoryPicker from "@/components/CategoryPicker";
@@ -19,13 +19,26 @@ import type { LatLng } from "@/lib/geo";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 const STARTER_PROMPTS = [
-  "I bake cakes in Kampala and deliver",
-  "Phone accessories and repairs shop in Ntinda",
-  "I offer cleaning and laundry services across Wakiso",
-  "Land and rental listings around Entebbe Road",
+  "I bake cakes in Kampala and deliver by boda",
+  "Phone accessories and repairs in Ntinda, UGX 10,000 to 300,000",
+  "Cleaning and laundry services across Wakiso for homes and offices",
+  "Salon in Mukono that also hires stylists and trainees",
+  "Rentals and land plots around Entebbe Road",
 ] as const;
 
+const CARD = "rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6";
+
 type ChatLine = { id: string; role: "user" | "assistant"; content: string };
+
+/** Older API replies (and history) may still carry the JSON block. */
+function visibleReply(text: string, hasDraft: boolean): string {
+  const cleaned = text
+    .replace(/```(?:json)?\s*\{[\s\S]*?\}\s*```/g, "")
+    .replace(/```(?:json)?\s*\{[\s\S]*$/, "")
+    .trim();
+  if (cleaned) return cleaned;
+  return hasDraft ? "I've drafted your shop. Check the details and change anything that isn't right." : text.trim();
+}
 
 function slugFromName(name: string): string {
   return (
@@ -86,14 +99,17 @@ function AISuggestion({
 }) {
   if (!value.trim()) return null;
   return (
-    <div className="rounded-md border border-border px-3 py-2.5">
-      <p className="text-xs text-muted">Suggested {label}</p>
+    <div className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-3">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent">
+        <Sparkles className="size-3.5" aria-hidden />
+        Suggested {label}
+      </p>
       <p className="mt-1 text-sm text-foreground">{value}</p>
-      <div className="mt-2 flex gap-3">
-        <button type="button" onClick={onAccept} className="text-sm font-medium text-foreground underline underline-offset-2">
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={onAccept} className={BTN_SECONDARY}>
           Use this
         </button>
-        <button type="button" onClick={onEdit} className="text-sm text-muted hover:text-foreground">
+        <button type="button" onClick={onEdit} className={BTN_GHOST}>
           Write my own
         </button>
       </div>
@@ -104,12 +120,84 @@ function AISuggestion({
 function ShopPreview({ form }: { form: ConfirmForm }) {
   const meta = [form.category, form.locationDisplay].filter(Boolean).join(" · ");
   return (
-    <div className="rounded-md border border-border px-4 py-3">
-      <p className="text-xs text-muted">Preview</p>
-      <p className="mt-1 text-base font-semibold text-foreground">{form.name || "Your shop name"}</p>
+    <div className={CARD}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Preview</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{form.name || "Your shop name"}</p>
       {form.description ? <p className="mt-0.5 text-sm text-muted">{form.description}</p> : null}
       {meta ? <p className="mt-1 text-xs text-muted">{meta}</p> : null}
     </div>
+  );
+}
+
+function ShopInsights({ shop, onAddToAbout }: { shop: SuggestedShop; onAddToAbout: (text: string) => void }) {
+  const facts = [
+    { label: "Customers", value: shop.target_customers },
+    { label: "Areas served", value: shop.service_areas },
+    { label: "Price range", value: shop.price_range },
+  ].filter((f): f is { label: string; value: string } => Boolean(f.value?.trim()));
+  const ideas = shop.listing_ideas ?? [];
+  const tips = shop.tips ?? [];
+  if (!facts.length && !ideas.length && !tips.length) return null;
+  return (
+    <section className={`${CARD} space-y-4`} aria-labelledby="shop-insights-heading">
+      <h2 id="shop-insights-heading" className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        <Sparkles className="size-4 text-accent" aria-hidden />
+        What we picked up
+      </h2>
+      {facts.length ? (
+        <dl className="grid gap-3 sm:grid-cols-3">
+          {facts.map((f) => (
+            <div key={f.label} className="min-w-0">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">{f.label}</dt>
+              <dd className="mt-0.5 text-sm text-foreground">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {shop.target_customers || shop.service_areas ? (
+        <button
+          type="button"
+          className={BTN_SECONDARY}
+          onClick={() =>
+            onAddToAbout(
+              [
+                shop.target_customers ? `We serve ${shop.target_customers.replace(/\.$/, "")}.` : "",
+                shop.service_areas ? `We cover ${shop.service_areas.replace(/\.$/, "")}.` : "",
+              ]
+                .filter(Boolean)
+                .join(" "),
+            )
+          }
+        >
+          Add these to About
+        </button>
+      ) : null}
+      {ideas.length ? (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">First listings to post</p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {ideas.map((idea) => (
+              <li key={idea} className="rounded-full border border-border bg-surface-subtle px-3 py-1 text-sm text-foreground">
+                {idea}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {tips.length ? (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Tips for this shop</p>
+          <ul className="mt-2 space-y-1.5">
+            {tips.map((tip) => (
+              <li key={tip} className="flex items-start gap-2 text-sm text-foreground">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+                <span>{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -181,7 +269,7 @@ export default function CreateShopConcierge({
 
     try {
       const res = await apiChat.sendMessage(sessionId, { message: text });
-      const reply = res.message ?? "";
+      const reply = visibleReply(res.message ?? "", Boolean(res.suggested_shop));
       setMessages((prev) =>
         reply
           ? prev.map((m) =>
@@ -320,9 +408,16 @@ export default function CreateShopConcierge({
         </div>
 
         <ShopPreview form={f} />
+        <ShopInsights
+          shop={suggestedShop}
+          onAddToAbout={(text) => {
+            const about = f.about.trim();
+            field("about", about.includes(text) ? about : [about, text].filter(Boolean).join(" "));
+          }}
+        />
 
         <form onSubmit={handleCreate} className="space-y-5">
-          <div className="space-y-4">
+          <div className={`${CARD} space-y-4`}>
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">
                 Shop name
@@ -456,6 +551,9 @@ export default function CreateShopConcierge({
               <label className="block text-sm font-medium text-foreground">
                 Business email <span className="font-normal text-muted">(optional)</span>
               </label>
+              {verifiedContacts.email && f.shopEmail === verifiedContacts.email ? (
+                <p className="text-xs text-muted">From your verified account. Change it if customers should use another.</p>
+              ) : null}
               <input
                 type="email"
                 className={INPUT}
@@ -466,8 +564,11 @@ export default function CreateShopConcierge({
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">
-                Business phone number <span className="font-normal text-muted">(optional)</span>
+                WhatsApp number <span className="font-normal text-muted">(optional)</span>
               </label>
+              {verifiedContacts.phone && f.whatsappNumber === verifiedContacts.phone ? (
+                <p className="text-xs text-muted">From your verified phone. Buyers contact you here.</p>
+              ) : null}
               <PhoneNumberInput
                 value={f.whatsappNumber}
                 onChange={(val) => field("whatsappNumber", val)}
@@ -541,21 +642,22 @@ export default function CreateShopConcierge({
         <StepProgress step={1} total={2} />
         <p className="text-base font-semibold text-foreground">Tell us about your business</p>
         <p className="mt-1 text-sm text-muted">
-          What you sell, where you are and anything special. English, Swahili or Luganda is fine.
+          What you offer (products, services or opportunities), who buys, where you work and your price range in UGX.
+          English, Swahili or Luganda is fine. Your verified email and phone are reused.
         </p>
       </div>
 
       {messages.length === 0 ? (
         <div className="space-y-2">
-          <p className="text-xs text-muted">Or start from an example</p>
-          <div className="divide-y divide-border rounded-md border border-border">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Or start from an example</p>
+          <div className="flex flex-wrap gap-2">
             {STARTER_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 disabled={loading || !sessionId}
                 onClick={() => void sendMessage(prompt)}
-                className="block w-full px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-surface disabled:opacity-50"
+                className="dm-focus rounded-full border border-border bg-surface px-3 py-1.5 text-left text-sm text-foreground transition-colors hover:border-accent/50 hover:bg-accent/5 disabled:opacity-50"
               >
                 {prompt}
               </button>
@@ -563,13 +665,15 @@ export default function CreateShopConcierge({
           </div>
         </div>
       ) : (
-        <div className="max-h-[50dvh] space-y-3 overflow-y-auto rounded-md border border-border p-3">
+        <div className="max-h-[55dvh] space-y-3 overflow-y-auto rounded-xl border border-border bg-surface-subtle/60 p-3 sm:p-4" aria-live="polite">
           {messages.map((m) => (
             <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
               <div
                 className={
-                  "max-w-[85%] whitespace-pre-wrap break-words rounded-md px-3 py-2 text-sm " +
-                  (m.role === "user" ? "bg-foreground text-background" : "bg-surface text-foreground")
+                  "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm " +
+                  (m.role === "user"
+                    ? "rounded-br-md bg-accent text-white"
+                    : "rounded-bl-md border border-border bg-surface text-foreground shadow-xs")
                 }
               >
                 {m.content === "Thinking…" ? (
