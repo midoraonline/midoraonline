@@ -221,7 +221,7 @@ export default function FeedConfigClient() {
       ) : null}
 
       {/* Applied overrides summary */}
-      <section className="rounded-lg border border-border p-5">
+      <section className="rounded-xl border border-border bg-surface shadow-xs p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold">Currently applied</h2>
@@ -253,7 +253,7 @@ export default function FeedConfigClient() {
           const keys = group.keys.filter((k) => config.overridable_keys.includes(k));
           if (keys.length === 0) return null;
           return (
-            <section key={group.title} className="rounded-lg border border-border p-5">
+            <section key={group.title} className="rounded-xl border border-border bg-surface shadow-xs p-5">
               <h2 className="text-sm font-semibold">{group.title}</h2>
               <p className="mt-0.5 text-xs text-muted">{group.description}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -300,7 +300,7 @@ export default function FeedConfigClient() {
 
       {/* Tester */}
       {test ? (
-        <section className="rounded-lg border border-border p-5">
+        <section className="rounded-xl border border-border bg-surface shadow-xs p-5">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold">Dry-run results</h2>
@@ -323,7 +323,7 @@ export default function FeedConfigClient() {
           </div>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="border-b border-border text-left text-xs font-normal text-muted">
+              <thead className="border-b border-border bg-surface-subtle text-left text-xs font-medium text-muted">
                 <tr>
                   <th className="px-3 py-2">Listing</th>
                   <th className="px-3 py-2 text-right">New</th>

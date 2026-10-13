@@ -163,7 +163,7 @@ export default function AdminCategoriesClient() {
             const children = childrenByParent[parent.slug] ?? [];
             const isOpen = expanded[parent.slug] ?? false;
             return (
-              <div key={parent.slug} className="rounded-lg border border-border p-4">
+              <div key={parent.slug} className="rounded-xl border border-border bg-surface shadow-xs p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -18,6 +17,7 @@ import {
   formatCount as fmt,
   useTabParam,
 } from "@/components/dashboard/ui";
+import { RowThumb } from "@/components/dashboard/ui";
 
 type Tab = "followed" | "liked";
 const TAB_KEYS = ["followed", "liked"] as const;
@@ -78,9 +78,7 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
           {activeList.map((shop) => (
             <li key={shop.id}>
               <Link href={`/shops/${shop.slug}`} className={ROW}>
-                {shop.logo_url ? (
-                  <Image src={shop.logo_url} alt="" width={32} height={32} className="size-8 shrink-0 rounded-md object-cover" />
-                ) : null}
+                <RowThumb src={shop.logo_url} label={shop.name} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{shop.name}</span>
                   <span className="block truncate text-xs tabular-nums text-muted">

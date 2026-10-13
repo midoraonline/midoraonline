@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -20,6 +19,7 @@ import {
   formatCount as fmt,
   useTabParam,
 } from "@/components/dashboard/ui";
+import { RowThumb } from "@/components/dashboard/ui";
 
 const TAB_KEYS = ["all", "live", "pending"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -96,7 +96,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search shops"
             aria-label="Search shops"
-            className="mb-4 h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="mb-4 h-10 w-full max-w-xs rounded-lg border border-border bg-surface shadow-xs px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           />
         </>
       ) : null}
@@ -120,9 +120,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
                 href={newProductMode ? `/merchant/shops/${s.id}/catalog?openAdd=true` : `/merchant/shops/${s.id}`}
                 className={ROW}
               >
-                {s.logo_url ? (
-                  <Image src={s.logo_url} alt="" width={32} height={32} className="size-8 shrink-0 rounded-md object-cover" />
-                ) : null}
+                <RowThumb src={s.logo_url} label={s.name} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{s.name}</span>
                   <span className="block truncate text-xs text-muted">

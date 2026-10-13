@@ -266,13 +266,13 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search name, slug or owner"
           aria-label="Search shops"
-          className="h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="h-10 w-full max-w-xs rounded-lg border border-border bg-surface shadow-xs px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           aria-label="Active status"
-          className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-border bg-surface shadow-xs px-3 text-sm"
         >
           <option value="all">Any status</option>
           <option value="active">Active</option>

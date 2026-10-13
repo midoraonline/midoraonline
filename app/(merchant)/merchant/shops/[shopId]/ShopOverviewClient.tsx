@@ -72,7 +72,7 @@ export default function ShopOverviewClient({
   return (
     <div>
       {unverified ? (
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface shadow-xs px-4 py-3">
           <p className="text-sm text-muted">Verification isn&apos;t finished. Verified shops show a trust badge.</p>
           <Link href={`/merchant/shops/${shopId}/verification`} className={BTN_SECONDARY}>
             Continue verification

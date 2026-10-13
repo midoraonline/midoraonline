@@ -327,7 +327,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search shop, phone or location"
         aria-label="Search verifications"
-        className="mb-4 h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="mb-4 h-10 w-full max-w-xs rounded-lg border border-border bg-surface shadow-xs px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       />
 
       {error ? <ErrorState message={error} onRetry={() => load()} /> : null}
@@ -361,7 +361,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
             return (
               <li
                 key={v.id || v.shop_id}
-                className="space-y-4 rounded-lg border border-border p-5"
+                className="space-y-4 rounded-xl border border-border bg-surface shadow-xs p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">

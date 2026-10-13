@@ -28,7 +28,7 @@ function slugFromName(name: string): string {
   );
 }
 
-const SETTINGS_ROW = "grid gap-6 py-8 first:pt-0 md:grid-cols-[14rem_minmax(0,1fr)]";
+const SETTINGS_ROW = "grid gap-5 rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-8";
 
 export default function MerchantShopSettingsPage() {
   const params = useParams();
@@ -161,7 +161,7 @@ export default function MerchantShopSettingsPage() {
   if (!shop) return null;
 
   return (
-    <div className="divide-y divide-border">
+    <div className="space-y-4">
       <section className={SETTINGS_ROW}>
         <div>
           <h2 className="text-sm font-semibold">Shop details</h2>
@@ -240,7 +240,7 @@ export default function MerchantShopSettingsPage() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-sm font-medium">Category</label>
-              <div className="rounded-lg border border-border p-3">
+              <div className="rounded-xl border border-border bg-surface shadow-xs p-3">
                 <CategoryPicker
                   value={category}
                   onChange={setCategory}
@@ -311,7 +311,7 @@ export default function MerchantShopSettingsPage() {
           </p>
         </div>
         <div className="min-w-0">
-        <ul className="divide-y divide-border rounded-lg border border-border">
+        <ul className="divide-y divide-border rounded-xl border border-border bg-surface shadow-xs">
           {contextEntries.map((entry) => (
             <li
               key={entry.id}

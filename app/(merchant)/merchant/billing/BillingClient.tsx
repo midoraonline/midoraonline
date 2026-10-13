@@ -159,7 +159,7 @@ export default function BillingClient() {
                 id="billing-shop"
                 value={selectedShopId}
                 onChange={(e) => setSelectedShopId(e.target.value)}
-                className="h-9 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="h-10 rounded-lg border border-border bg-surface shadow-xs px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {shops.map((s) => (
                   <option key={s.id} value={s.id}>
