@@ -289,7 +289,7 @@ export default function DashboardShell({
         {/* Main content column */}
         <div className="flex min-w-0 flex-1 flex-col">
           <DashboardHeader screenName={screenName} role={role} />
-          <main className="flex-1 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+          <main className="dm-dash flex-1 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {/* Dashboards use the full content column (AGENTS.md §1.2). */}
             <div
               className={[

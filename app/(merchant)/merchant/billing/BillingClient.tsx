@@ -8,26 +8,21 @@ import { apiPayments, apiShops } from "@/lib/api";
 import type { Plan, PlanTier } from "@/lib/api/payments";
 import type { Shop } from "@/lib/api/shops";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { BTN_SECONDARY, EmptyState, PageHeader } from "@/components/dashboard/ui";
 
 function formatPrice(plan: Plan) {
   if (plan.price_ugx <= 0) return "Free";
   return `UGX ${new Intl.NumberFormat().format(plan.price_ugx)} / ${plan.billing_period_days}d`;
 }
 
-function Banner({ type, message }: { type: "success" | "error" | "info"; message: string }) {
+function Notice({ type, message }: { type: "success" | "error" | "info"; message: string }) {
   const tone =
     type === "success"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+      ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
       : type === "error"
-      ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-      : "border-accent/30 bg-accent/10 text-accent";
-  return (
-    <div className={`dm-alert flex items-center gap-2.5 px-4 py-3 text-sm ${tone}`}>
-      <MaterialSymbol name={type === "success" ? "check_circle" : type === "error" ? "error" : "info"} />
-      <span>{message}</span>
-    </div>
-  );
+        ? "border-rose-500/30 text-rose-700 dark:text-rose-300"
+        : "border-border text-foreground";
+  return <div className={`mb-6 rounded-lg border px-4 py-3 text-sm ${tone}`}>{message}</div>;
 }
 
 export default function BillingClient() {
@@ -134,37 +129,37 @@ export default function BillingClient() {
   const currentTier = user?.plan_tier ?? "basic";
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <div>
-        <p className="text-sm text-muted">
-          Choose a plan to control how many shops you can open, how many items each shop can list, and whether you get access to shop analytics.
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title="Billing and plans"
+        description="Your plan sets how many shops and listings you can have, and whether shop analytics is on."
+      />
 
-      {confirming && <Banner type="info" message={notice ?? "Confirming…"} />}
-      {!confirming && notice && <Banner type="success" message={notice} />}
-      {error && <Banner type="error" message={error} />}
+      {confirming && <Notice type="info" message={notice ?? "Confirming…"} />}
+      {!confirming && notice && <Notice type="success" message={notice} />}
+      {error && <Notice type="error" message={error} />}
 
       {shops.length === 0 ? (
-        <div className="dm-card p-6 text-sm text-muted">
-          You don&apos;t have a shop yet.{" "}
-          <Link href="/open-shop" className="font-semibold text-accent">
-            Open a shop
-          </Link>{" "}
-          to subscribe to a plan.
-        </div>
+        <EmptyState
+          message="Open a shop to subscribe to a plan."
+          action={
+            <Link href="/open-shop" className={BTN_SECONDARY}>
+              Open a shop
+            </Link>
+          }
+        />
       ) : (
         <>
           {shops.length > 1 && (
-            <div className="dm-card flex flex-wrap items-center gap-3 p-4">
-              <label htmlFor="billing-shop" className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="mb-6 flex max-w-md flex-col gap-1.5">
+              <label htmlFor="billing-shop" className="text-sm font-medium">
                 Shop
               </label>
               <select
                 id="billing-shop"
                 value={selectedShopId}
                 onChange={(e) => setSelectedShopId(e.target.value)}
-                className="min-h-9 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus-visible:border-accent/50"
+                className="h-9 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {shops.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -175,40 +170,37 @@ export default function BillingClient() {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = currentTier === plan.key;
               return (
                 <div
                   key={plan.key}
-                  className={`dm-card flex flex-col gap-4 p-6 ${isCurrent ? "ring-2 ring-accent" : ""}`}
+                  className={`flex flex-col gap-4 rounded-lg border p-5 ${isCurrent ? "border-foreground" : "border-border"}`}
                 >
                   <div>
-                    <h3 className="font-display text-lg font-semibold">{plan.name}</h3>
-                    <p className="mt-1 text-2xl font-semibold">{formatPrice(plan)}</p>
+                    <h2 className="text-sm font-semibold">{plan.name}</h2>
+                    <p className="mt-1 text-xl font-semibold tabular-nums">{formatPrice(plan)}</p>
                   </div>
-                  <ul className="space-y-2 text-sm text-muted">
-                    <li className="flex items-center gap-2">
-                      <MaterialSymbol name="storefront" className="text-base" />
+                  <ul className="space-y-1.5 text-sm text-muted">
+                    <li className="tabular-nums">
                       Up to {plan.max_shops} shop{plan.max_shops === 1 ? "" : "s"}
                     </li>
-                    <li className="flex items-center gap-2">
-                      <MaterialSymbol name="inventory_2" className="text-base" />
-                      Up to {plan.max_products_per_shop} items per shop
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <MaterialSymbol name={plan.analytics_enabled ? "check_circle" : "cancel"} className="text-base" />
-                      Shop analytics {plan.analytics_enabled ? "included" : "not included"}
-                    </li>
+                    <li className="tabular-nums">Up to {plan.max_products_per_shop} listings per shop</li>
+                    <li>Shop analytics {plan.analytics_enabled ? "included" : "not included"}</li>
                   </ul>
-                  <button
-                    type="button"
-                    disabled={isCurrent || busyTier === plan.key || !selectedShopId}
-                    onClick={() => onChoose(plan.key)}
-                    className="mt-auto rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isCurrent ? "Current plan" : busyTier === plan.key ? "Redirecting…" : "Choose plan"}
-                  </button>
+                  {isCurrent ? (
+                    <p className="mt-auto text-sm font-medium">Current plan</p>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busyTier === plan.key || !selectedShopId}
+                      onClick={() => onChoose(plan.key)}
+                      className={`mt-auto ${BTN_SECONDARY}`}
+                    >
+                      {busyTier === plan.key ? "Redirecting…" : `Switch to ${plan.name}`}
+                    </button>
+                  )}
                 </div>
               );
             })}

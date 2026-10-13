@@ -3,6 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiShops, apiLeads } from "@/lib/api";
 import type { Lead } from "@/lib/api/leads";
+import {
+  EmptyState,
+  LIST,
+  PageHeader,
+  Section,
+  StatStrip,
+  StatusDot,
+  UnderlineTabs,
+  formatCount as fmt,
+  relativeTime,
+} from "@/components/dashboard/ui";
 
 type LeadStats = {
   total_leads: number;
@@ -70,67 +81,52 @@ export default function MerchantLeadsClient({
   }, [selectedShop, initialShopId, load]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm text-muted">Track inquiries from customers across your shops.</p>
-      </div>
+    <div>
+      <PageHeader title="Leads" description="Inquiries from buyers, per shop." />
 
-      <div className="flex flex-wrap gap-2">
-        {shops.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setSelectedShop(s.id)}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-              selectedShop === s.id ? "bg-accent text-white" : "bg-foreground/[0.06] text-muted hover:text-foreground"
-            }`}
-          >
-            {s.name}
-          </button>
-        ))}
-      </div>
+      {shops.length > 1 ? (
+        <UnderlineTabs
+          tabs={shops.map((s) => ({ value: s.id, label: s.name }))}
+          value={selectedShop ?? ""}
+          onChange={(v) => setSelectedShop(v)}
+        />
+      ) : null}
 
       {!stats ? (
-        <div className="dm-card p-8 text-center text-sm text-muted">No lead data available.</div>
+        <EmptyState message={shops.length ? "No lead data for this shop yet." : "Open a shop to start tracking leads."} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <div className="dm-card p-4">
-              <p className="text-2xl font-semibold">{stats.total_leads}</p>
-              <p className="text-xs text-muted">Total Leads</p>
-            </div>
-            <div className="dm-card p-4">
-              <p className="text-2xl font-semibold">{stats.new_leads}</p>
-              <p className="text-xs text-muted">New Leads</p>
-            </div>
-            <div className="dm-card p-4">
-              <p className="text-2xl font-semibold">{stats.today_leads}</p>
-              <p className="text-xs text-muted">Today</p>
-            </div>
-          </div>
-
-          {leads.length > 0 && (
-            <div className="space-y-2">
-              <h2 className="text-sm font-semibold">Recent Leads</h2>
-              {leads.map((lead) => (
-                <div key={lead.id} className="dm-card p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium capitalize">{lead.source} inquiry</p>
-                      <p className="text-xs text-muted">{new Date(lead.created_at).toLocaleString()}</p>
-                    </div>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${
-                      lead.lead_status === "new" ? "bg-blue-500/10 text-blue-600"
-                      : lead.lead_status === "responded" ? "bg-emerald-500/10 text-emerald-600"
-                      : "bg-foreground/[0.06] text-muted"
-                    }`}>
-                      {lead.lead_status}
+          <StatStrip
+            items={[
+              { label: "New", value: fmt(stats.new_leads) },
+              { label: "Today", value: fmt(stats.today_leads) },
+              { label: "All time", value: fmt(stats.total_leads) },
+            ]}
+          />
+          <Section title="Recent leads">
+            {leads.length === 0 ? (
+              <EmptyState message="No leads yet. They appear when buyers tap WhatsApp or message you." />
+            ) : (
+              <ul className={LIST}>
+                {leads.map((lead) => (
+                  <li key={lead.id} className="flex items-center gap-3 px-4 py-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium capitalize">{lead.source} inquiry</span>
+                      <span
+                        className="block text-xs tabular-nums text-muted"
+                        title={new Date(lead.created_at).toLocaleString()}
+                      >
+                        {relativeTime(lead.created_at)}
+                      </span>
                     </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                    <StatusDot tone={lead.lead_status === "new" ? "warn" : lead.lead_status === "responded" ? "ok" : "neutral"}>
+                      <span className="capitalize">{lead.lead_status}</span>
+                    </StatusDot>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
         </>
       )}
     </div>

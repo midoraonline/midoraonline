@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import { type ItemType, type Product } from "@/lib/api/products";
@@ -11,6 +10,7 @@ import { LISTING_KIND_LABEL, normalizeListingKind } from "@/lib/listingMeta";
 import { useAppSession } from "@/lib/state";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ListingManageCard from "@/components/shop/ListingManageCard";
+import { BTN_PRIMARY, EmptyState, PageSkeleton, Section } from "@/components/dashboard/ui";
 
 export default function ShopCatalogEditor({
   shopId,
@@ -89,68 +89,40 @@ export default function ShopCatalogEditor({
   const kindLabel =
     LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase() + "s";
 
-  if (!hydrated) {
-    return (
-      <div className="dm-card flex items-center gap-3 p-5 text-sm text-muted">
-        <Loader2 className="size-4 animate-spin" /> Loading…
-      </div>
-    );
-  }
+  if (!hydrated) return <PageSkeleton rows={4} label="Loading catalog" />;
 
-  if (!isAuthed) {
-    return (
-      <div className="dm-card p-5 text-sm text-muted">
-        Sign in to manage {kindLabel}.
-      </div>
-    );
-  }
+  if (!isAuthed) return <EmptyState message={`Sign in to manage ${kindLabel}.`} />;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-base font-semibold tracking-tight">{heading}</h2>
-        <p className="mt-1 text-xs text-muted">
-          Tap <strong>Edit</strong> on any listing to change its details, photos, or videos.
-        </p>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-foreground/90">
-            Your {kindLabel}
-          </p>
-          <Link
-            href={`/post-item?shop_id=${shopId}&item_type=${itemType}`}
-            className="dm-btn dm-btn-primary dm-btn-sm"
-          >
+    <div>
+      <Section
+        title={`Your ${kindLabel}`}
+        description={heading}
+        action={
+          <Link href={`/post-item?shop_id=${shopId}&item_type=${itemType}`} className={BTN_PRIMARY}>
             Add {LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase()}
           </Link>
-        </div>
+        }
+      >
         {loading ? (
-          <div className="mt-4 flex items-center gap-2 text-sm text-muted">
-            <Loader2 className="size-4 animate-spin" /> Loading…
-          </div>
+          <PageSkeleton rows={4} label="Loading catalog" />
         ) : items.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">Nothing here yet — add one above.</p>
+          <EmptyState message={`No ${kindLabel} in this shop yet.`} />
         ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="divide-y divide-border">
             {items.map((p) => (
-              <li key={p.id}>
-                <ListingManageCard
-                  product={p}
-                  onDelete={() => setPendingDelete(p)}
-                  onUpdated={applyProduct}
-                />
+              <li key={p.id} className="py-2 first:pt-0 last:pb-0">
+                <ListingManageCard product={p} onDelete={() => setPendingDelete(p)} onUpdated={applyProduct} />
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </Section>
 
       {pendingDelete && (
         <ConfirmDialog
           title="Remove listing?"
-          message={`"${pendingDelete.title}" will be removed permanently. This cannot be undone.`}
+          message={`"${pendingDelete.title}" will be removed. This can't be undone.`}
           confirmLabel="Remove listing"
           destructive
           busy={deleting}

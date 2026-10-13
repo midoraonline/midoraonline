@@ -272,11 +272,11 @@ export default function ListingManageCard({
         <div className="flex items-start justify-between gap-2">
           <Link
             href={editHref}
-            className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-accent"
+            className="line-clamp-2 text-sm font-medium leading-snug text-foreground hover:underline"
           >
             {product.title || "Untitled"}
           </Link>
-          <p className="shrink-0 text-sm font-bold tabular-nums text-accent">
+          <p className="shrink-0 text-sm font-medium tabular-nums text-foreground">
             {formatUGX(productPriceUgx(product))}
           </p>
         </div>
@@ -295,7 +295,7 @@ export default function ListingManageCard({
         <div className="mt-1.5 flex items-center gap-2">
           <Link
             href={editHref}
-            className="dm-btn dm-btn-primary dm-btn-sm inline-flex min-h-11 items-center gap-1.5 sm:min-h-9"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-subtle sm:min-h-9"
           >
             <Pencil className="size-3.5" aria-hidden />
             Edit
@@ -308,7 +308,7 @@ export default function ListingManageCard({
               aria-controls={menuId}
               disabled={busy}
               onClick={() => setOpen((v) => !v)}
-              className="dm-focus grid size-11 place-items-center rounded-xl text-foreground/70 hover:bg-foreground/[0.06] disabled:opacity-50"
+              className="dm-focus grid size-11 place-items-center rounded-md text-foreground/70 hover:bg-foreground/[0.06] disabled:opacity-50"
             >
               <MoreHorizontal className="size-5" />
               <span className="sr-only">More actions</span>
@@ -317,7 +317,7 @@ export default function ListingManageCard({
               <div
                 id={menuId}
                 role="menu"
-                className="absolute right-0 z-sticky mt-1 w-44 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg"
+                className="absolute right-0 z-sticky mt-1 w-44 overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-sm"
               >
                 {items.map((item) => (
                   <button
