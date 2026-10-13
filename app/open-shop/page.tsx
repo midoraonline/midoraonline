@@ -3,22 +3,24 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Sparkles, Store } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import CreateShopConcierge from "@/components/createShopConcierge";
 import OpenShopWizard from "@/components/openShopWizard";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
+import StepFrame, { OPTION_ROW } from "@/components/post/StepFrame";
+import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT } from "@/components/dashboard/ui";
 import { useAppSession } from "@/lib/state";
 import type { apiShops } from "@/lib/api";
 import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
 
-type CreationMode = "quick" | "manual";
+type CreationMode = "choose" | "quick" | "manual";
 
 export default function OpenShopPage() {
   const router = useRouter();
   const session = useAppSession();
-  const [mode, setMode] = useState<CreationMode>("manual");
+  const [mode, setMode] = useState<CreationMode>("choose");
   const [createdShop, setCreatedShop] = useState<apiShops.Shop | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
@@ -71,13 +73,13 @@ export default function OpenShopPage() {
             {verificationError ? (
               <>
                 <p className="text-sm" role="alert">{verificationError}</p>
-                <button type="button" onClick={() => window.location.reload()} className="dm-btn dm-btn-secondary min-h-11">
+                <button type="button" onClick={() => window.location.reload()} className={BTN_SECONDARY}>
                   Try again
                 </button>
               </>
             ) : (
               <>
-                <Loader2 className="size-5 animate-spin text-accent" aria-hidden />
+                <Loader2 className="size-5 animate-spin" aria-hidden />
                 <p className="text-sm font-medium">Checking verified contact…</p>
               </>
             )}
@@ -106,148 +108,86 @@ export default function OpenShopPage() {
 
   return (
     <StandaloneShell eyebrow="Merchant Studio">
-      <div
-        className={
-          createdShop || mode === "quick"
-            ? "mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
-            : ""
-        }
-      >
-        {createdShop ? (
-          <CreatedSuccessCard shop={createdShop} onCreateAnother={() => setCreatedShop(null)} />
-        ) : (
-          <>
-            <div className={mode === "manual" ? "hidden" : "space-y-8"}>
-              <IntroHeader />
-              <button
-                type="button"
-                onClick={() => setMode("manual")}
-                className="dm-focus min-h-11 text-sm font-semibold text-accent"
-              >
-                Use the step-by-step form
+      {createdShop ? (
+        <CreatedSuccess shop={createdShop} onCreateAnother={() => { setCreatedShop(null); setMode("choose"); }} />
+      ) : (
+        <>
+          {mode === "choose" ? <ChooseStart onPick={setMode} onBack={() => router.push("/")} /> : null}
+          <div className={mode === "quick" ? "" : "hidden"}>
+            <div className="mx-auto w-full max-w-md px-4 py-6 sm:py-10">
+              <button type="button" onClick={() => setMode("choose")} className={`${BTN_TEXT} -ml-1 mb-4 h-9 px-1`}>
+                Back
               </button>
-              <ActiveModeSection
+              <CreateShopConcierge
                 onShopCreated={setCreatedShop}
                 verifiedContacts={verifiedContacts}
                 enabled={mode === "quick"}
               />
+              <button type="button" onClick={() => setMode("manual")} className={`${BTN_TEXT} mt-6`}>
+                Fill in the form myself instead
+              </button>
             </div>
-            <div className={mode === "manual" ? "" : "hidden"}>
-              <OpenShopWizard
-                onPreferAi={() => setMode("quick")}
-                verifiedContacts={verifiedContacts}
-              />
-            </div>
-          </>
-        )}
-      </div>
+          </div>
+          <div className={mode === "manual" ? "" : "hidden"}>
+            <OpenShopWizard
+              onPreferAi={() => setMode("quick")}
+              onExit={() => setMode("choose")}
+              verifiedContacts={verifiedContacts}
+            />
+          </div>
+        </>
+      )}
     </StandaloneShell>
   );
 }
 
-function IntroHeader() {
+function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; onBack: () => void }) {
+  const options = [
+    {
+      mode: "quick" as const,
+      title: "Use AI",
+      text: "Describe your business in a sentence or two and we'll draft the shop for you to check.",
+    },
+    {
+      mode: "manual" as const,
+      title: "Set up manually",
+      text: "Fill in your shop details yourself, one short step at a time.",
+    },
+  ];
   return (
-    <div className="space-y-3">
-      <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
-        <Store className="size-3.5" />
-        Open your shop
+    <StepFrame title="Open your shop" subtitle="How would you like to start? You can edit everything later." onBack={onBack}>
+      <div className="space-y-2">
+        {options.map((o) => (
+          <button key={o.mode} type="button" onClick={() => onPick(o.mode)} className={OPTION_ROW}>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-foreground">{o.title}</span>
+              <span className="mt-0.5 block text-sm text-muted">{o.text}</span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+          </button>
+        ))}
       </div>
-      <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        Start selling on Midora
-      </h1>
-      <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-        Describe your business once — our AI assistant drafts the store name, story, and details for you.
-      </p>
-    </div>
+    </StepFrame>
   );
 }
 
-function ActiveModeSection({
-  onShopCreated,
-  verifiedContacts,
-  enabled,
-}: {
-  onShopCreated: (s: apiShops.Shop) => void;
-  verifiedContacts: { email: string | null; phone: string | null };
-  enabled: boolean;
-}) {
+function CreatedSuccess({ shop, onCreateAnother }: { shop: apiShops.Shop; onCreateAnother: () => void }) {
   return (
-    <section className="dm-card overflow-hidden p-6 sm:p-8">
-      <div className="flex items-start gap-4 border-b border-border pb-5">
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-white shadow-sm">
-          <Sparkles className="size-5" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
-            AI Shop Concierge
-          </h2>
-          <p className="mt-0.5 text-xs text-muted sm:text-sm">
-            Chat in plain English, Swahili, or Luganda. Review the draft, then launch.
-          </p>
-        </div>
+    <div className="mx-auto w-full max-w-md px-4 py-10">
+      <p className="text-sm text-muted">Your shop is live</p>
+      <h1 className="mt-1 text-xl font-semibold text-foreground">{shop.name}</h1>
+      <p className="mt-1 text-sm text-muted">Add your first listing or finish your shop details whenever you&apos;re ready.</p>
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <Link href={`/merchant/shops/${shop.id}`} className={BTN_PRIMARY}>
+          Manage shop
+        </Link>
+        <Link href={`/shops/${encodeURIComponent(shop.slug)}`} className={BTN_SECONDARY}>
+          View public page
+        </Link>
       </div>
-      <div className="mt-6">
-        <CreateShopConcierge
-          onShopCreated={onShopCreated}
-          verifiedContacts={verifiedContacts}
-          enabled={enabled}
-        />
-      </div>
-    </section>
-  );
-}
-
-function CreatedSuccessCard({
-  shop,
-  onCreateAnother,
-}: {
-  shop: apiShops.Shop;
-  onCreateAnother: () => void;
-}) {
-  return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div className="dm-card relative overflow-hidden p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-accent/15 blur-3xl" />
-
-        <div className="relative flex items-center gap-2 text-accent">
-          <CheckCircle2 className="size-5" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
-            Shop published
-          </span>
-        </div>
-
-        <h1 className="relative mt-3 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {shop.name}
-        </h1>
-        <p className="relative mt-2 text-sm leading-relaxed text-muted">
-          Your storefront is live. Add listings or customize your shop whenever you&apos;re ready.
-        </p>
-
-        <div className="relative mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Link
-            href={`/merchant/shops/${shop.id}`}
-            className="dm-btn dm-btn-primary"
-          >
-            Manage shop
-          </Link>
-          <Link
-            href={`/shops/${encodeURIComponent(shop.slug)}`}
-            className="dm-btn dm-btn-ghost"
-          >
-            View public page
-          </Link>
-        </div>
-      </div>
-
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={onCreateAnother}
-          className="text-xs font-semibold text-muted transition-colors hover:text-foreground"
-        >
-          + Create another shop
-        </button>
-      </div>
+      <button type="button" onClick={onCreateAnother} className={`${BTN_TEXT} mt-6`}>
+        Create another shop
+      </button>
     </div>
   );
 }
