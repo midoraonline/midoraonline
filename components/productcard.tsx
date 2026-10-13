@@ -27,8 +27,7 @@ import {
   needHeadline,
   normalizeListingKind,
   parseListingMeta,
-  textListingChips,
-  requirementsLine,
+  deadlineChip,
   type ListingMeta,
 } from "@/lib/listingMeta";
 import { isOnlineLocation } from "@/lib/listingLocation";
@@ -400,8 +399,12 @@ export default function ProductCard({
   }
   const hasMedia = coverUrls.length > 0;
   const textFirst = listingKind !== "product" && (!hasMedia || coverFailed);
+  const coverLabel =
+    product.category?.trim() || product.shop.category?.trim() || headline;
   const coverFrame = (sizes: string) =>
-    coverFailed || coverUrls.length === 0 ? (
+    textFirst ? (
+      <BrandedCover kind={typeKind} label={coverLabel} />
+    ) : coverFailed || coverUrls.length === 0 ? (
       <CoverPlaceholder />
     ) : (
       <ListingCover
@@ -429,7 +432,7 @@ export default function ProductCard({
             Live now
           </Badge>
         )}
-        {tInfo && (
+        {tInfo && listingKind === "product" && (
           <Badge
             className={
               tInfo.tone === "hot"
@@ -487,6 +490,7 @@ export default function ProductCard({
       </span>
     );
 
+  const whenLabel = deadlineChip(listingMeta.deadline) ?? tInfo?.label ?? null;
   const metaRow = (
     <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
       <span className="inline-flex min-w-0 flex-1 items-center gap-0.5">
@@ -496,104 +500,12 @@ export default function ProductCard({
         <span className="truncate font-medium text-foreground/80">{locationLabel}</span>
       </span>
       {listingKind === "product" || textFirst ? trustMark : null}
+      {listingKind === "product" ? null : whenLabel ? (
+        <span className="shrink-0 whitespace-nowrap font-medium">{whenLabel}</span>
+      ) : null}
       <CardRating rating={product.rating} count={product.reviewCount} />
     </div>
   );
-
-  if (textFirst) {
-    const meta = listingMeta;
-    const rate = displayPrice;
-    const requirements = requirementsLine(meta);
-    const chips = [
-      ...(locationOnline && listingKind === "opportunity" ? ["Remote"] : []),
-      ...textListingChips(listingKind, meta),
-    ].filter((chip, i, all) => {
-      if (all.findIndex((c) => c.toLowerCase() === chip.toLowerCase()) !== i) return false;
-      if (chip === "Urgent" && headline.toLowerCase().includes("urgent")) return false;
-      if (price <= 0 && chip.toLowerCase() === rate.toLowerCase()) return false;
-      return true;
-    });
-    return (
-      <article
-        ref={impressionRef as React.RefObject<HTMLElement>}
-        className="dm-product-card dm-card-hover flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden"
-      >
-        <div className="flex w-full flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
-          <div className="min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1.5">
-                <ListingTypeTag kind={typeKind} className={CARD_TAG} />
-                {tInfo ? (
-                  <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
-                    {tInfo.label}
-                  </span>
-                ) : null}
-              </div>
-              <ProductLikeButton
-                productId={product.id}
-                variant="floating"
-                initialLiked={product.isLiked}
-                initialLikeCount={product.likeCount}
-              />
-            </div>
-            <Link href={productHref} className="dm-focus block min-w-0 pt-3 outline-none">
-              <h3 className={titleClass}>{headline}</h3>
-            </Link>
-          </div>
-          <PersonalSellerLine shop={product.shop} />
-          {requirements ? (
-            <p className="line-clamp-1 text-xs text-foreground/75" title={requirements}>
-              {requirements}
-            </p>
-          ) : null}
-          {isBoosted || shopLive || isDiscounted ? (
-            <div className="flex flex-wrap gap-1">
-              {isBoosted ? <Badge className="bg-accent text-white">Hot</Badge> : null}
-              {shopLive ? <Badge className="bg-emerald-600 text-white">Live now</Badge> : null}
-              {isDiscounted ? (
-                <Badge className="bg-amber-400 text-primary">-{discountPct}%</Badge>
-              ) : null}
-            </div>
-          ) : null}
-          {chips.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {chips.map((chip) => (
-                <span
-                  key={chip}
-                  className={`inline-flex max-w-full truncate rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                    chip === "Urgent"
-                      ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-                      : "border-border bg-surface-subtle text-foreground/80"
-                  }`}
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          <div className="flex flex-wrap items-baseline gap-1.5">
-            <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">
-              {rate}
-            </span>
-            {price > 0 && product.negotiable !== false ? (
-              <span className="text-[10px] font-medium text-muted">· Negotiable</span>
-            ) : null}
-          </div>
-          {metaRow}
-          <BrandedCover className="sm:mt-1 sm:flex-1">
-            <WhatsAppCta
-              waHref={waHref}
-              productId={product.id}
-              productHref={productHref}
-              shopId={product.shop.id}
-              category={product.category ?? undefined}
-              hasDiscount={isDiscounted}
-            />
-          </BrandedCover>
-        </div>
-      </article>
-    );
-  }
 
   if (layout === "horizontal") {
     return (
@@ -623,7 +535,7 @@ export default function ProductCard({
                   {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
                 </span>
               )}
-              {price > 0 && product.negotiable !== false && (
+              {listingKind === "product" && price > 0 && product.negotiable !== false && (
                 <span className="text-[10px] font-medium text-muted">· Negotiable</span>
               )}
             </div>
@@ -670,7 +582,7 @@ export default function ProductCard({
               {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
             </span>
           )}
-          {price > 0 && product.negotiable !== false && (
+          {listingKind === "product" && price > 0 && product.negotiable !== false && (
             <span className="text-[10px] font-medium text-muted">· Negotiable</span>
           )}
         </div>
