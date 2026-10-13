@@ -130,6 +130,8 @@ function SuggestionRow({
   );
 }
 
+type FormDraft = ListingDraft;
+
 function emptyDraft(kind: ListingKind): FormDraft {
   return {
     kind,
