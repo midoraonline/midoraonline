@@ -1,16 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { apiShops, apiLeads } from "@/lib/api";
-import type { Lead } from "@/lib/api/leads";
+import type { Lead, LeadSource, LeadStatus } from "@/lib/api/leads";
 import {
   EmptyState,
+  FilterBar,
   LIST,
   PageHeader,
   Section,
   StatStrip,
+  Select,
   StatusDot,
-  UnderlineTabs,
   formatCount as fmt,
   relativeTime,
 } from "@/components/dashboard/ui";
@@ -22,6 +24,29 @@ type LeadStats = {
 };
 
 type ShopSummary = { id: string; name: string };
+
+const STATUS_OPTIONS: readonly { value: "all" | LeadStatus; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "new", label: "New" },
+  { value: "responded", label: "Responded" },
+  { value: "closed", label: "Closed" },
+  { value: "ignored", label: "Ignored" },
+];
+
+const SOURCE_OPTIONS: readonly { value: "all" | LeadSource; label: string }[] = [
+  { value: "all", label: "All types" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "call", label: "Call" },
+  { value: "contact_form", label: "Contact form" },
+  { value: "email", label: "Email" },
+];
+
+const SOURCE_LABEL: Record<LeadSource, string> = {
+  whatsapp: "WhatsApp",
+  call: "Call",
+  contact_form: "Contact form",
+  email: "Email",
+};
 
 type Props = {
   initialShops: ShopSummary[];
@@ -40,6 +65,33 @@ export default function MerchantLeadsClient({
   const [selectedShop, setSelectedShop] = useState<string | null>(initialShopId);
   const [stats, setStats] = useState<LeadStats | null>(initialStats);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const statusParam = params.get("status");
+  const sourceParam = params.get("type");
+  const status = STATUS_OPTIONS.some((o) => o.value === statusParam) ? (statusParam as "all" | LeadStatus) : "all";
+  const source = SOURCE_OPTIONS.some((o) => o.value === sourceParam) ? (sourceParam as "all" | LeadSource) : "all";
+
+  /** Filters live in the URL so they survive refresh and can be shared. */
+  const setParam = useCallback(
+    (key: string, value: string, fallback: string) => {
+      const next = new URLSearchParams(params.toString());
+      if (value === fallback) next.delete(key);
+      else next.set(key, value);
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [params, pathname, router],
+  );
+
+  const visibleLeads = useMemo(
+    () =>
+      leads.filter(
+        (l) => (status === "all" || l.lead_status === status) && (source === "all" || l.source === source),
+      ),
+    [leads, source, status],
+  );
 
   // Refresh shops list once on mount (SSR seed may be stale).
   useEffect(() => {
@@ -84,13 +136,31 @@ export default function MerchantLeadsClient({
     <div>
       <PageHeader title="Leads" description="Inquiries from buyers, per shop." />
 
-      {shops.length > 1 ? (
-        <UnderlineTabs
-          tabs={shops.map((s) => ({ value: s.id, label: s.name }))}
-          value={selectedShop ?? ""}
-          onChange={(v) => setSelectedShop(v)}
+      <FilterBar>
+        {shops.length > 1 ? (
+          <Select
+            label="Shop"
+            className="sm:w-64"
+            value={selectedShop ?? ""}
+            onChange={(v) => setSelectedShop(v)}
+            options={shops.map((s) => ({ value: s.id, label: s.name }))}
+          />
+        ) : null}
+        <Select
+          label="Status"
+          className="sm:w-48"
+          value={status}
+          onChange={(v) => setParam("status", v, "all")}
+          options={STATUS_OPTIONS}
         />
-      ) : null}
+        <Select
+          label="Lead type"
+          className="sm:w-48"
+          value={source}
+          onChange={(v) => setParam("type", v, "all")}
+          options={SOURCE_OPTIONS}
+        />
+      </FilterBar>
 
       {!stats ? (
         <EmptyState message={shops.length ? "No lead data for this shop yet." : "Open a shop to start tracking leads."} />
@@ -106,12 +176,14 @@ export default function MerchantLeadsClient({
           <Section title="Recent leads">
             {leads.length === 0 ? (
               <EmptyState message="No leads yet. They appear when buyers tap WhatsApp or message you." />
+            ) : visibleLeads.length === 0 ? (
+              <EmptyState message="No leads match these filters." />
             ) : (
               <ul className={LIST}>
-                {leads.map((lead) => (
+                {visibleLeads.map((lead) => (
                   <li key={lead.id} className="flex items-center gap-3 px-4 py-3">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium capitalize">{lead.source} inquiry</span>
+                      <span className="block truncate text-sm font-medium">{SOURCE_LABEL[lead.source] ?? lead.source} inquiry</span>
                       <span
                         className="block text-xs tabular-nums text-muted"
                         title={new Date(lead.created_at).toLocaleString()}
