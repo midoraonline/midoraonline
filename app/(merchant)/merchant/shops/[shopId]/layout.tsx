@@ -57,7 +57,8 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
         title={loading ? "Loading…" : shop?.name || "Shop"}
         description={
           shop ? (
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-foreground">{shop.name}</span>
               <StatusDot tone={shop.is_active ? "ok" : "warn"}>{shop.is_active ? "Live" : "Pending review"}</StatusDot>
               <span className="truncate">/{shop.slug}</span>
             </span>

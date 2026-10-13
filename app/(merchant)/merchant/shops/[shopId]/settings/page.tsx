@@ -174,7 +174,7 @@ export default function MerchantShopSettingsPage() {
         <div className="min-w-0">
         {error ? <ErrorState message={error} /> : null}
 
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="max-w-3xl space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-sm font-medium">Shop name *</label>

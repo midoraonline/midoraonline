@@ -15,20 +15,28 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+/**
+ * Page context row. The page title already shows in the DashboardHeader
+ * navbar, so this renders only the one-line context and the primary action.
+ * `title` is kept for screen readers and older call sites.
+ */
 export function PageHeader({
   title,
   description,
   action,
 }: {
-  title: ReactNode;
+  title?: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
 }) {
+  if (!description && !action) {
+    return typeof title === "string" ? <h1 className="sr-only">{title}</h1> : null;
+  }
   return (
-    <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {typeof title === "string" ? <h1 className="sr-only">{title}</h1> : null}
       <div className="min-w-0">
-        <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
+        {description ? <p className="text-sm text-muted">{description}</p> : null}
       </div>
       {action ? <div className="flex shrink-0 flex-wrap gap-2">{action}</div> : null}
     </header>

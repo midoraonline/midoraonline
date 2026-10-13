@@ -67,7 +67,7 @@ export default function ProfileSettings() {
         <p className="mt-0.5 text-xs text-muted">Your name, bio, phone, and photo.</p>
       </div>
       <ProfileAvatarUpload />
-      <form onSubmit={handleSave} className="space-y-4">
+      <form onSubmit={handleSave} className="max-w-3xl space-y-4">
         <div className="space-y-1.5">
           <label htmlFor="settings-name" className="block text-sm font-medium">
             Name
