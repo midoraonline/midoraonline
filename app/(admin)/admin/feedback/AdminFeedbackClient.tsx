@@ -31,7 +31,7 @@ export default function AdminFeedbackClient({ initialItems }: Props) {
           {feedbackList.map((f) => (
             <li key={f.id} className="px-4 py-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="truncate text-sm font-medium">{f.users?.full_name || f.users?.email || "Anonymous"}</span>
+                <span className="truncate text-sm font-semibold">{f.users?.full_name || f.users?.email || "Anonymous"}</span>
                 <span className="shrink-0 text-xs tabular-nums text-muted" title={new Date(f.created_at).toLocaleString()}>
                   {relativeTime(f.created_at)}
                 </span>

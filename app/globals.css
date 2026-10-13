@@ -33,12 +33,16 @@
   --surface-page: #F3F5F8;
   --surface-muted: #F1F5F9;
 
-  --foreground: #1E293B;
-  --foreground-muted: #475569;
-  --muted: #64748B;
+  --foreground: #0F172A;
+  --foreground-muted: #334155;
+  /* Secondary text: slate-600 keeps ~7:1 on white (was slate-500). */
+  --muted: #475569;
 
   --border: #E2E8F0;
   --border-strong: #CBD5E1;
+  /* Form controls need a clearly visible edge (slate-400, ~3:1 on white). */
+  --border-input: #94A3B8;
+  --focus-ring: rgba(212, 101, 60, 0.28);
   --ring: #D4653C;
 
   /* ── Semantic colors ────────────────────────────────────── */
@@ -159,12 +163,14 @@
   --surface-page: #0B111C;
   --surface-muted: #1A2436;
 
-  --foreground: #F1F5F9;
-  --foreground-muted: #CBD5E1;
-  --muted: #94A3B8;
+  --foreground: #F8FAFC;
+  --foreground-muted: #E2E8F0;
+  --muted: #B6C2D2;
 
   --border: #253044;
   --border-strong: #334159;
+  --border-input: #5B6B82;
+  --focus-ring: rgba(227, 123, 78, 0.38);
   --ring: #E37B4E;
 
   /* ── Semantic colors ────────────────────────────────────── */
@@ -245,6 +251,7 @@
   --color-surface-raised: var(--surface-raised);
   --color-foreground-muted: var(--foreground-muted);
   --color-border-strong: var(--border-strong);
+  --color-border-input: var(--border-input);
   --color-accent-hover: var(--accent-hover);
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
@@ -546,7 +553,7 @@ html.modal-open body {
   .dm-input {
     @apply w-full min-h-[2.75rem] rounded-xl border-0 px-4 text-sm text-foreground outline-none;
     background: var(--surface-subtle);
-    box-shadow: inset 0 0 0 1px var(--border);
+    box-shadow: inset 0 0 0 1px var(--border-input);
     transition: box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
@@ -557,7 +564,7 @@ html.modal-open body {
 
   .dm-input:focus-visible {
     background: var(--surface);
-    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--focus-ring);
   }
 
   /* ── Phone number input (react-phone-number-input) ───────── */
@@ -574,20 +581,20 @@ html.modal-open body {
     --PhoneInputCountrySelect-marginRight: 0;
     @apply w-full min-h-[2.75rem] rounded-xl border-0 pr-3 text-sm text-foreground;
     background: var(--surface-subtle);
-    box-shadow: inset 0 0 0 1px var(--border);
+    box-shadow: inset 0 0 0 1px var(--border-input);
     transition: box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
   .PhoneInput--midora.PhoneInput--focus {
     background: var(--surface);
-    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--focus-ring);
   }
 
   .PhoneInput--midora .PhoneInputCountry {
     align-self: stretch;
     margin: 0;
     padding: 0 0.75rem 0 0.85rem;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-input);
   }
 
   .PhoneInput--midora .PhoneInputCountryIcon {
@@ -618,7 +625,7 @@ html.modal-open body {
   .dm-textarea {
     @apply w-full min-h-[8rem] rounded-xl border-0 px-4 py-3 text-sm text-foreground outline-none resize-none;
     background: var(--surface-subtle);
-    box-shadow: inset 0 0 0 1px var(--border);
+    box-shadow: inset 0 0 0 1px var(--border-input);
     transition: box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
@@ -629,13 +636,13 @@ html.modal-open body {
 
   .dm-textarea:focus-visible {
     background: var(--surface);
-    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--focus-ring);
   }
 
   .dm-input-xs {
     @apply w-full min-h-[2.25rem] rounded-xl border-0 px-3 text-xs text-foreground outline-none;
     background: var(--surface-subtle);
-    box-shadow: inset 0 0 0 1px var(--border);
+    box-shadow: inset 0 0 0 1px var(--border-input);
     transition: box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
@@ -646,13 +653,13 @@ html.modal-open body {
 
   .dm-input-xs:focus-visible {
     background: var(--surface);
-    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--focus-ring);
   }
 
   .dm-textarea-xs {
     @apply w-full min-h-[100px] resize-none rounded-xl border-0 px-3 py-2 text-xs text-foreground outline-none;
     background: var(--surface-subtle);
-    box-shadow: inset 0 0 0 1px var(--border);
+    box-shadow: inset 0 0 0 1px var(--border-input);
     transition: box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
@@ -663,7 +670,15 @@ html.modal-open body {
 
   .dm-textarea-xs:focus-visible {
     background: var(--surface);
-    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(212, 101, 60, 0.1);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--focus-ring);
+  }
+
+  /* Placeholders stay lighter than values but readable. */
+  .dm-input::placeholder,
+  .dm-textarea::placeholder,
+  .dm-input-xs::placeholder,
+  .dm-textarea-xs::placeholder {
+    opacity: 0.85;
   }
 
   /* ── Focus ring utility ────────────────────────────────── */
@@ -1162,5 +1177,51 @@ html.modal-open body {
       transition: none !important;
       animation: none !important;
     }
+  }
+}
+
+
+/* ── Form control edges + dashboard text weight (source-level) ──────────
+   Any input/select/textarea using the hairline `border-border` utility gets
+   the stronger input edge, so every page is fixed without per-page edits.
+   Checkboxes/radios get a visible box and the brand accent. */
+/* Unlayered on purpose: must beat the `border-border` utility on controls. */
+:where(input, select, textarea).border-border {
+  border-color: var(--border-input);
+}
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px var(--focus-ring);
+  border-color: var(--accent);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+input[type="checkbox"]:not(:checked),
+input[type="radio"]:not(:checked) {
+  border-color: var(--border-input);
+}
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@layer base {
+  .dm-dash {
+    color: var(--foreground);
+  }
+  .dm-dash label {
+    font-weight: 500;
+    color: var(--foreground);
+  }
+  .dm-dash h1,
+  .dm-dash h2,
+  .dm-dash h3,
+  .dm-dash th,
+  .dm-dash dt {
+    font-weight: 600;
   }
 }

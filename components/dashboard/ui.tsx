@@ -99,7 +99,7 @@ export function StatStrip({
         return (
           <div key={s.label} className="min-w-0 rounded-xl border border-border bg-surface p-4 shadow-xs">
             <div className="flex items-start justify-between gap-2">
-              <dt className="truncate text-sm text-muted">{s.label}</dt>
+              <dt className="truncate text-sm font-semibold text-foreground-muted">{s.label}</dt>
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent" aria-hidden>
                 <Icon className="size-4" />
               </span>
@@ -117,7 +117,7 @@ const BADGE = {
   ok: "bg-success-subtle text-success ring-success/20",
   warn: "bg-warning-subtle text-warning ring-warning/20",
   bad: "bg-error-subtle text-error ring-error/20",
-  neutral: "bg-surface-muted text-muted ring-border",
+  neutral: "bg-surface-muted text-foreground-muted ring-border-strong",
 } as const;
 
 export type StatusTone = keyof typeof BADGE;
@@ -252,7 +252,7 @@ export function Select<T extends string>({
   const selectId = id ?? `select-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
-      <label htmlFor={selectId} className={hideLabel ? "sr-only" : "text-xs font-medium text-muted"}>
+      <label htmlFor={selectId} className={hideLabel ? "sr-only" : "text-xs font-semibold text-foreground"}>
         {label}
       </label>
       <div className="relative">
@@ -260,7 +260,7 @@ export function Select<T extends string>({
           id={selectId}
           value={value}
           onChange={(e) => onChange(e.target.value as T)}
-          className="h-10 w-full min-w-[9rem] cursor-pointer appearance-none truncate rounded-lg border border-border bg-surface pl-3 pr-9 text-sm text-foreground shadow-xs transition-colors hover:border-accent/40 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
+          className="h-10 w-full min-w-[9rem] cursor-pointer appearance-none truncate rounded-lg border border-border-input bg-surface pl-3 pr-9 text-sm font-medium text-foreground shadow-xs transition-colors hover:border-accent/60 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/25"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value}>
@@ -268,7 +268,7 @@ export function Select<T extends string>({
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-foreground-muted" aria-hidden />
       </div>
     </div>
   );
@@ -358,10 +358,10 @@ export const BTN_GHOST =
 export const BTN_TEXT =
   "inline-flex min-h-10 items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover hover:underline sm:min-h-0";
 export const INPUT =
-  "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground shadow-xs placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10";
+  "h-10 w-full rounded-lg border border-border-input bg-surface px-3 text-sm text-foreground shadow-xs placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/25";
 export const TABLE_WRAP = "overflow-hidden rounded-xl border border-border bg-surface shadow-xs";
 export const THEAD = "bg-surface-subtle";
-export const TH = "px-4 py-2.5 text-left text-xs font-medium text-muted";
+export const TH = "px-4 py-2.5 text-left text-xs font-semibold text-foreground-muted";
 export const TD = "px-4 py-3";
 export const NUM = "text-right tabular-nums";
 

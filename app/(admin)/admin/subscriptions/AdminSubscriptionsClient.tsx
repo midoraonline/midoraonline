@@ -47,7 +47,7 @@ export default function AdminSubscriptionsClient({ initialItems }: Props) {
             return (
               <li key={s.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium tabular-nums">#{s.id.slice(0, 8)}</span>
+                  <span className="block truncate text-sm font-semibold tabular-nums">#{s.id.slice(0, 8)}</span>
                   <span className="block truncate text-xs text-muted">
                     Shop {s.shop_id ? s.shop_id.slice(0, 8) : "none"}
                   </span>

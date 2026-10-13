@@ -107,7 +107,7 @@ function ProfileDropdown({
         className="flex items-center gap-2 rounded-lg p-1 pr-2 transition-colors hover:bg-surface-muted"
       >
         <UserAvatar url={avatarUrl} name={displayName} size={32} />
-        <span className="hidden max-w-[120px] truncate text-sm font-medium sm:block">
+        <span className="hidden max-w-[120px] truncate text-sm font-semibold sm:block">
           {displayName}
         </span>
         <MaterialSymbol

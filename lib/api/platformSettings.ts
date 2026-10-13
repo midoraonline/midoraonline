@@ -14,6 +14,10 @@ const KNOWN: Record<string, { label: string; description: string }> = {
     label: "Analytics",
     description: "Seller and admin analytics. Off stops new events and hides analytics.",
   },
+  analytics_all_plans: {
+    label: "Analytics for all plans",
+    description: "Every subscription, including Basic, gets shop analytics. Needs Analytics on.",
+  },
   signups_allowed: {
     label: "Sign-ups",
     description: "New email and Google accounts. Existing sign-in still works when this is off.",
@@ -34,6 +38,7 @@ const KNOWN: Record<string, { label: string; description: string }> = {
 
 const SWITCH_ORDER = [
   "analytics",
+  "analytics_all_plans",
   "signups_allowed",
   "listings_require_review",
   "ai_moderation",
@@ -81,7 +86,7 @@ function switchFrom(key: string, value: unknown): FeatureSwitch | null {
 
 export function parseFeatureSwitches(data: unknown): FeatureSwitch[] {
   const root = asRecord(data);
-  const bag = root?.switches ?? root?.items ?? root?.settings ?? root?.features ?? data;
+  const bag = root?.switches ?? root?.items ?? root?.settings ?? root?.features ?? root?.flags ?? data;
   const out: FeatureSwitch[] = [];
   if (Array.isArray(bag)) {
     for (const item of bag) {

@@ -73,9 +73,9 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [analyticsEndpointOff, setAnalyticsEndpointOff] = useState(false);
   const [windowDays, setWindowDays] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
-  const canAnalytics = planHasAnalytics(session.user?.plan_tier);
   const platformAnalytics = usePlatformAnalytics();
   const analyticsOn = platformAnalytics.ready && platformAnalytics.enabled;
+  const canAnalytics = platformAnalytics.allPlans || planHasAnalytics(session.user?.plan_tier);
 
   const load = useCallback(async () => {
     if (!session.hydrated) return;
@@ -168,7 +168,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
               <li key={s.id}>
                 <Link href={`/merchant/shops/${s.id}/verification`} className={ROW}>
                   <RowThumb src={s.logo_url} label={s.name} />
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{s.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{s.name}</span>
                   <StatusDot tone="warn">Pending review</StatusDot>
                 </Link>
               </li>
@@ -316,7 +316,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
                 <Link href={`/merchant/shops/${s.id}`} className={ROW}>
                   <RowThumb src={s.logo_url} label={s.name} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{s.name}</span>
+                    <span className="block truncate text-sm font-semibold">{s.name}</span>
                     <span className="block truncate text-xs text-muted">
                       {fmt(s.view_count)} views · {fmt(s.follower_count)} followers
                     </span>

@@ -27,7 +27,7 @@ const KINDS: { value: CategoryMetaFieldKind; label: string }[] = [
   { value: "boolean", label: "Boolean" },
 ];
 
-type EditorField = CategoryMetaField & { inherited?: boolean };
+type EditorField = CategoryMetaField & { inherited?: boolean; builtIn?: boolean };
 
 function optionsToText(options?: readonly { value: string; label: string }[]): string {
   return (options ?? []).map((o) => `${o.value}|${o.label}`).join("\n");
@@ -86,12 +86,22 @@ export default function CategoryFieldsEditor({
   scopeLabel,
   ownJson,
   parentJson = "[]",
+  defaultJson = "[]",
+  parentUnsaved = false,
   onSaved,
 }: {
   slug: string;
   scopeLabel: string;
   ownJson: string;
   parentJson?: string;
+  /**
+   * Built-in fields the listing form already uses for this category when
+   * nothing is stored yet. Shown so admins edit what's live instead of an
+   * empty list; saving stores them, and new fields are appended.
+   */
+  defaultJson?: string;
+  /** Parent fields shown are built-in defaults that aren't stored yet. */
+  parentUnsaved?: boolean;
   onSaved: () => void;
 }) {
   const parentFields = useMemo(
@@ -102,18 +112,33 @@ export default function CategoryFieldsEditor({
     () => normalizeCategoryFields(JSON.parse(ownJson) as unknown),
     [ownJson],
   );
+  const defaultFields = useMemo(
+    () => normalizeCategoryFields(JSON.parse(defaultJson) as unknown),
+    [defaultJson],
+  );
+  /** What is stored now: the diff base for saving. */
   const baseline = useMemo(
     () => toEditorRows(parentFields, ownFields),
     [parentFields, ownFields],
   );
-  const [fields, setFields] = useState<EditorField[]>(baseline);
+  /** What the editor starts with: stored fields, or the built-in ones in use. */
+  const initialRows = useMemo(() => {
+    if (ownFields.length > 0 || defaultFields.length === 0) return baseline;
+    const taken = new Set(baseline.map((row) => row.key));
+    const extra = defaultFields
+      .filter((field) => !taken.has(field.key))
+      .map((field) => ({ ...field, inherited: false, builtIn: true }));
+    return [...baseline, ...extra];
+  }, [baseline, defaultFields, ownFields.length]);
+  const [fields, setFields] = useState<EditorField[]>(initialRows);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setFields(baseline);
-  }, [baseline]);
+    setFields(initialRows);
+  }, [initialRows]);
 
-  const dirty = JSON.stringify(fields) !== JSON.stringify(baseline);
+  const hasUnsavedBuiltIns = fields.some((field) => field.builtIn);
+  const dirty = hasUnsavedBuiltIns || JSON.stringify(fields) !== JSON.stringify(baseline);
 
   function update(index: number, patch: Partial<EditorField>) {
     setFields((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -212,6 +237,16 @@ export default function CategoryFieldsEditor({
   return (
     <div className="space-y-3 rounded-xl border border-border/60 bg-surface-subtle/40 p-3">
       <p className="text-xs text-muted">{scopeLabel}</p>
+      {hasUnsavedBuiltIns ? (
+        <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs font-medium text-warning">
+          These are the built-in fields sellers see for this category today. Save to store them here; new fields are added after them.
+        </p>
+      ) : null}
+      {parentUnsaved ? (
+        <p className="text-xs font-medium text-foreground-muted">
+          Inherited fields come from the category&apos;s built-in list. Save the category&apos;s fields first to change them here.
+        </p>
+      ) : null}
       {fields.length === 0 ? (
         <p className="text-xs italic text-muted">No extra fields configured.</p>
       ) : (
@@ -257,6 +292,7 @@ export default function CategoryFieldsEditor({
                 <input
                   className="dm-input sm:col-span-2"
                   value={field.help_text ?? ""}
+                  disabled={Boolean(field.inherited && parentUnsaved)}
                   onChange={(e) => update(index, { help_text: e.target.value })}
                   placeholder="Help text"
                   aria-label="Help text"
@@ -289,6 +325,7 @@ export default function CategoryFieldsEditor({
                   <input
                     type="checkbox"
                     checked={Boolean(field.required)}
+                    disabled={Boolean(field.inherited && parentUnsaved)}
                     onChange={(e) => update(index, { required: e.target.checked })}
                   />
                   Required

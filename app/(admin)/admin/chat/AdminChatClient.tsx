@@ -45,7 +45,7 @@ export default function AdminChatClient({
           {conversations.map((c) => (
             <li key={c.id} className="flex items-center gap-3 px-4 py-3">
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium">
+                <span className="block truncate text-sm font-semibold">
                   {c.buyer?.full_name || "Buyer"} and {c.seller?.full_name || "seller"}
                 </span>
                 {c.last_message ? <span className="block truncate text-xs text-muted">{c.last_message}</span> : null}

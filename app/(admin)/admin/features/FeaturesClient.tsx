@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { mutate } from "swr";
+import SettingsSwitch from "@/components/settings/SettingsSwitch";
 import { ApiError } from "@/lib/api/base";
 import {
   listAdminSwitches,
@@ -16,18 +18,24 @@ function changedLine(item: FeatureSwitch): string {
     when && !Number.isNaN(when.getTime())
       ? when.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
       : null;
-  if (item.updated_by && stamp) return `Changed by ${item.updated_by} · ${stamp}`;
-  if (stamp) return `Changed ${stamp}`;
-  if (item.updated_by) return `Changed by ${item.updated_by}`;
-  return "No changes yet";
+  if (stamp) return `Last changed ${stamp}`;
+  return "Not changed yet";
+}
+
+function failureMessage(label: string, err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) return "Your admin session expired. Sign in again and retry.";
+    if (err.code === "migration_required") return "Settings storage isn't set up on the server yet.";
+  }
+  return `Couldn't update ${label}. It's back to how it was. Try again.`;
 }
 
 export default function FeaturesClient() {
   const [items, setItems] = useState<FeatureSwitch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<FeatureSwitch | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const inflight = useRef<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,18 +58,23 @@ export default function FeaturesClient() {
     void load();
   }, [load]);
 
-  async function confirmToggle() {
-    if (!pending) return;
-    setBusy(true);
-    setError(null);
+  async function toggle(item: FeatureSwitch, next: boolean) {
+    if (inflight.current[item.key]) return;
+    inflight.current[item.key] = true;
+    setSaving((prev) => ({ ...prev, [item.key]: true }));
+    setItems((prev) => prev.map((row) => (row.key === item.key ? { ...row, enabled: next } : row)));
     try {
-      const next = await updateAdminSwitch(pending.key, !pending.enabled);
-      setItems((prev) => prev.map((item) => (item.key === next.key ? { ...item, ...next } : item)));
-      setPending(null);
+      const saved = await updateAdminSwitch(item.key, next);
+      setItems((prev) =>
+        prev.map((row) => (row.key === item.key ? { ...row, ...saved, label: row.label, description: row.description } : row)),
+      );
+      void mutate("settings-public");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update that switch.");
+      setItems((prev) => prev.map((row) => (row.key === item.key ? { ...row, enabled: item.enabled } : row)));
+      toast.error(failureMessage(item.label, err));
     } finally {
-      setBusy(false);
+      inflight.current[item.key] = false;
+      setSaving((prev) => ({ ...prev, [item.key]: false }));
     }
   }
 
@@ -69,62 +82,24 @@ export default function FeaturesClient() {
     <div>
       <PageHeader
         title="Features"
-        description="Switches apply to every seller. Turning one off hides that feature until you turn it back on."
+        description="Switches apply to every seller and save as soon as you flip them."
       />
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading ? <PageSkeleton rows={4} label="Loading switches" /> : null}
       {!loading && !error && items.length === 0 ? <EmptyState message="No feature switches yet." /> : null}
       <ul className={items.length ? LIST : ""}>
         {items.map((item) => (
-          <li key={item.key} className="flex items-center gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">{item.label}</p>
-              {item.description ? <p className="mt-1 text-xs text-muted">{item.description}</p> : null}
-              <p className="mt-1 text-xs text-muted">{changedLine(item)}</p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={item.enabled}
-              disabled={busy}
-              onClick={() => setPending(item)}
-              className="dm-focus grid min-h-11 min-w-11 place-items-center"
-            >
-              <span
-                className={`relative h-7 w-12 rounded-full transition-colors ${
-                  item.enabled ? "bg-accent" : "bg-foreground/20"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 size-6 rounded-full bg-background transition-transform ${
-                    item.enabled ? "translate-x-5" : "translate-x-0.5"
-                  }`}
-                />
-              </span>
-              <span className="sr-only">{item.enabled ? `Turn off ${item.label}` : `Turn on ${item.label}`}</span>
-            </button>
+          <li key={item.key} className="px-4 py-2">
+            <SettingsSwitch
+              label={item.label}
+              hint={[item.description, changedLine(item)].filter(Boolean).join(" · ")}
+              checked={item.enabled}
+              disabled={Boolean(saving[item.key])}
+              onChange={(next) => void toggle(item, next)}
+            />
           </li>
         ))}
       </ul>
-      {pending ? (
-        <ConfirmDialog
-          title={pending.enabled ? `Turn off ${pending.label}?` : `Turn on ${pending.label}?`}
-          message={
-            pending.description
-              ? pending.description
-              : pending.enabled
-                ? "Sellers will lose this feature until you turn it back on."
-                : "Sellers will see this feature again."
-          }
-          confirmLabel={pending.enabled ? "Turn off" : "Turn on"}
-          destructive={pending.enabled}
-          busy={busy}
-          onConfirm={() => void confirmToggle()}
-          onClose={() => {
-            if (!busy) setPending(null);
-          }}
-        />
-      ) : null}
     </div>
   );
 }
