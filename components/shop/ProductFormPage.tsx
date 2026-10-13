@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Clock } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, Sparkles } from "lucide-react";
 import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, StatusDot } from "@/components/dashboard/ui";
 import { INPUT, TEXTAREA } from "@/components/post/StepFrame";
 import { toast } from "sonner";
@@ -115,14 +115,14 @@ function SuggestionRow({
   onDismiss: () => void;
 }) {
   return (
-    <div className="rounded-md border border-border px-3 py-2.5">
-      <p className="text-xs text-muted">{label}</p>
-      <p className={`mt-1 text-sm text-foreground ${multiline ? "whitespace-pre-wrap" : "truncate"}`}>{value}</p>
-      <div className="mt-2 flex items-center gap-3">
-        <button type="button" onClick={onUse} className="text-sm font-medium text-foreground underline underline-offset-2">
+    <div className="rounded-lg border border-border bg-surface px-3 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className={`mt-1 text-sm text-foreground ${multiline ? "whitespace-pre-wrap" : ""}`}>{value}</p>
+      <div className="mt-3 flex items-center gap-2">
+        <button type="button" onClick={onUse} className={BTN_SECONDARY}>
           Use this
         </button>
-        <button type="button" onClick={onDismiss} className="text-sm text-muted hover:text-foreground">
+        <button type="button" onClick={onDismiss} className={BTN_GHOST}>
           Dismiss
         </button>
       </div>
@@ -363,6 +363,7 @@ export default function ProductFormPage({
   // sets this ref first so that one "Use this" click doesn't wipe out the
   // other pending suggestions the merchant hasn't reviewed yet.
   const applyingSuggestionRef = useRef(false);
+  const metaKey = JSON.stringify(draft.meta);
   useEffect(() => {
     if (applyingSuggestionRef.current) {
       applyingSuggestionRef.current = false;
@@ -370,7 +371,50 @@ export default function ProductFormPage({
     }
     setAiCheck(null);
     setDismissedSuggestions({});
-  }, [draft.title, draft.description, draft.category, draft.image_urls.length]);
+  }, [draft.title, draft.description, draft.category, draft.image_urls.length, draft.price_ugx, draft.location_name, metaKey]);
+
+  function qualityRequest() {
+    const optionLabel = (options: readonly { value: string; label: string }[], value?: string) =>
+      options.find((o) => o.value === value)?.label ?? value ?? "";
+    const meta = draft.meta as Record<string, unknown>;
+    const details: Record<string, string> = {
+      [draft.kind === "opportunity" ? "Budget / pay (UGX)" : "Price (UGX)"]: draft.price_ugx.trim(),
+      Location: draft.location_name.trim(),
+    };
+    if (draft.kind !== "opportunity") {
+      details["Sale price (UGX)"] = draft.sale_price.trim();
+      details.Negotiable = draft.is_negotiable ? "yes" : "no";
+    }
+    if (draft.kind === "product") {
+      details["Stock quantity"] = draft.stock_quantity.trim();
+      details.Condition = optionLabel(CONDITION_OPTIONS, draft.meta.condition);
+      details.Brand = draft.meta.brand ?? "";
+    }
+    if (draft.kind === "service") {
+      details["Pricing model"] = optionLabel(PRICING_MODEL_OPTIONS, draft.meta.pricing_model);
+      details.Availability = draft.meta.availability ?? "";
+      details["Service area"] = draft.meta.service_area ?? "";
+    }
+    if (draft.kind === "opportunity") {
+      details.Compensation = optionLabel(COMPENSATION_OPTIONS, draft.meta.compensation);
+      details["Application deadline"] = draft.meta.deadline ?? "";
+      details["Applicant requirements"] = draft.meta.requirements ?? "";
+    }
+    for (const field of catFields) {
+      const raw = meta[field.key];
+      details[field.label || field.key] =
+        raw == null ? "" : typeof raw === "boolean" ? (raw ? "yes" : "no") : String(raw);
+    }
+    return {
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      image_urls: draft.image_urls,
+      category: categoryParts.parentLabel || draft.category || null,
+      subcategory: categoryParts.subcategoryLabel || null,
+      listing_kind: draft.kind,
+      details,
+    };
+  }
 
   async function runQualityCheck() {
     if (aiChecking) return;
@@ -380,12 +424,7 @@ export default function ProductFormPage({
     }
     setAiChecking(true);
     try {
-      const result = await checkListingQuality({
-        title: draft.title.trim(),
-        description: draft.description.trim(),
-        image_urls: draft.image_urls,
-        category: draft.category || null,
-      });
+      const result = await checkListingQuality(qualityRequest());
       setAiCheck(result);
       if (result.ok) {
         toast.success("AI review passed", { description: result.feedback });
@@ -465,12 +504,7 @@ export default function ProductFormPage({
     if (verdict === null) {
       setAiChecking(true);
       try {
-        verdict = await checkListingQuality({
-          title: draft.title.trim(),
-          description: draft.description.trim(),
-          image_urls: draft.image_urls,
-          category: draft.category || null,
-        });
+        verdict = await checkListingQuality(qualityRequest());
         setAiCheck(verdict);
       } catch {
         // AI review unavailable — proceed without blocking; moderation
@@ -833,16 +867,6 @@ export default function ProductFormPage({
             {showErrors && errors.title ? (
               <p className="text-xs text-[color:var(--error)]">{errors.title}</p>
             ) : null}
-            {aiCheck?.suggested_title && !dismissedSuggestions.title ? (
-              <SuggestionRow
-                label="AI suggests"
-                value={aiCheck.suggested_title}
-                onUse={applyTitleSuggestion}
-                onDismiss={() =>
-                  setDismissedSuggestions((s) => ({ ...s, title: true }))
-                }
-              />
-            ) : null}
           </div>
 
           {/* Description */}
@@ -860,69 +884,9 @@ export default function ProductFormPage({
               placeholder={descriptionPrompt}
               aria-invalid={showErrors && Boolean(errors.description)}
             />
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-muted">
-                {descriptionTip}
-              </p>
-              <button
-                type="button"
-                onClick={() => void runQualityCheck()}
-                disabled={aiChecking}
-                className={BTN_SECONDARY}
-              >
-                {aiChecking ? "Running AI review…" : "Check quality with AI"}
-              </button>
-            </div>
+            <p className="text-xs text-muted">{descriptionTip}</p>
             {showErrors && errors.description ? (
               <p className="text-xs text-[color:var(--error)]">{errors.description}</p>
-            ) : null}
-            {aiCheck?.suggested_description && !dismissedSuggestions.description ? (
-              <SuggestionRow
-                label="AI suggests"
-                value={aiCheck.suggested_description}
-                multiline
-                onUse={applyDescriptionSuggestion}
-                onDismiss={() =>
-                  setDismissedSuggestions((s) => ({ ...s, description: true }))
-                }
-              />
-            ) : null}
-
-            {aiCheck ? (
-              <div
-                className="mt-2 rounded-md border border-border p-3"
-              >
-                <div className="flex items-start gap-2">
-<div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium tabular-nums text-foreground">
-                        AI review: {aiCheck.score}/100
-                      </p>
-                      <QualityPill
-                        label="Title vs images"
-                        ok={aiCheck.title_matches && aiCheck.images_match}
-                      />
-                      <QualityPill
-                        label={`Description: ${aiCheck.description_quality}`}
-                        ok={aiCheck.description_quality !== "poor"}
-                      />
-                    </div>
-                    <p className="text-xs leading-relaxed text-foreground/80">
-                      {aiCheck.feedback}
-                    </p>
-                    {aiCheck.suggestions.length > 0 ? (
-                      <ul className="space-y-1 pt-1 text-xs text-foreground/80">
-                        {aiCheck.suggestions.map((s, i) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span aria-hidden>·</span>
-                            <span>{s}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
             ) : null}
           </div>
         </section>
@@ -1068,24 +1032,6 @@ export default function ProductFormPage({
             />
             {showErrors && errors.category ? (
               <p className="text-xs text-[color:var(--error)]">{errors.category}</p>
-            ) : null}
-            {draft.kind === "product" &&
-            aiCheck?.suggested_category &&
-            !dismissedSuggestions.category &&
-            (aiCheck.suggested_subcategory || aiCheck.suggested_category) !==
-              (categoryParts.subcategoryLabel || categoryParts.parentLabel) ? (
-              <SuggestionRow
-                label="AI suggests"
-                value={
-                  aiCheck.suggested_subcategory
-                    ? `${aiCheck.suggested_category} › ${aiCheck.suggested_subcategory}`
-                    : aiCheck.suggested_category
-                }
-                onUse={applyCategorySuggestion}
-                onDismiss={() =>
-                  setDismissedSuggestions((s) => ({ ...s, category: true }))
-                }
-              />
             ) : null}
           </div>
         </section>
@@ -1324,6 +1270,91 @@ export default function ProductFormPage({
 
           {showErrors && errors.meta ? (
             <p className="text-xs text-[color:var(--error)]">{errors.meta}</p>
+          ) : null}
+        </section>
+        {/* AI review: runs on the whole listing, so it sits after every field. */}
+        <section aria-labelledby="ai-review-heading" className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 id="ai-review-heading" className="text-sm font-semibold text-foreground">Check quality with AI</h2>
+              <p className="mt-0.5 text-sm text-muted">
+                Reviews your photos, text and every field above, then points out what&apos;s missing or weak.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void runQualityCheck()}
+              disabled={aiChecking}
+              className={BTN_SECONDARY}
+            >
+              <Sparkles className="size-4" aria-hidden />
+              {aiChecking ? "Reviewing…" : aiCheck ? "Check again" : "Check quality"}
+            </button>
+          </div>
+
+          {aiCheck ? (
+            <div className="space-y-4 rounded-lg border border-border bg-surface-subtle/60 p-4" aria-live="polite">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-semibold tabular-nums text-foreground">{aiCheck.score}</span>
+                  <span className="text-sm text-muted">/100</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <QualityPill label="Title matches photos" ok={aiCheck.title_matches && aiCheck.images_match} />
+                  <QualityPill
+                    label={`Description ${aiCheck.description_quality}`}
+                    ok={aiCheck.description_quality !== "poor"}
+                  />
+                </div>
+              </div>
+              {aiCheck.feedback ? <p className="text-sm text-foreground">{aiCheck.feedback}</p> : null}
+              {aiCheck.suggestions.length > 0 ? (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">What to improve</p>
+                  <ul className="mt-2 space-y-2">
+                    {aiCheck.suggestions.map((s, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                        <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {aiCheck.suggested_title && !dismissedSuggestions.title ? (
+                <SuggestionRow
+                  label="Suggested title"
+                  value={aiCheck.suggested_title}
+                  onUse={applyTitleSuggestion}
+                  onDismiss={() => setDismissedSuggestions((s) => ({ ...s, title: true }))}
+                />
+              ) : null}
+              {aiCheck.suggested_description && !dismissedSuggestions.description ? (
+                <SuggestionRow
+                  label="Suggested description"
+                  value={aiCheck.suggested_description}
+                  multiline
+                  onUse={applyDescriptionSuggestion}
+                  onDismiss={() => setDismissedSuggestions((s) => ({ ...s, description: true }))}
+                />
+              ) : null}
+              {draft.kind === "product" &&
+              aiCheck.suggested_category &&
+              !dismissedSuggestions.category &&
+              (aiCheck.suggested_subcategory || aiCheck.suggested_category) !==
+                (categoryParts.subcategoryLabel || categoryParts.parentLabel) ? (
+                <SuggestionRow
+                  label="Suggested category"
+                  value={
+                    aiCheck.suggested_subcategory
+                      ? `${aiCheck.suggested_category} › ${aiCheck.suggested_subcategory}`
+                      : aiCheck.suggested_category
+                  }
+                  onUse={applyCategorySuggestion}
+                  onDismiss={() => setDismissedSuggestions((s) => ({ ...s, category: true }))}
+                />
+              ) : null}
+            </div>
           ) : null}
         </section>
       </form>

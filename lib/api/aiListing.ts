@@ -5,6 +5,10 @@ export type ListingQualityRequest = {
   description: string;
   image_urls: string[];
   category?: string | null;
+  subcategory?: string | null;
+  listing_kind?: string | null;
+  /** Values dedicated form fields already capture. Label -> value; "" = skipped. */
+  details?: Record<string, string>;
 };
 
 export type ListingQualityResponse = {
