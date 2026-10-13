@@ -98,7 +98,7 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
                           aria-label={`${WEEKDAY_LABEL[day]} opens`}
                           value={range.open}
                           onChange={(e) => updateRange(day, index, { open: e.target.value })}
-                          className="h-11 rounded-lg border border-border bg-background px-2 text-sm"
+                          className="h-11 rounded-lg border border-border-input bg-background px-2 text-sm"
                         />
                         <span className="text-xs text-muted">–</span>
                         <input
@@ -106,7 +106,7 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
                           aria-label={`${WEEKDAY_LABEL[day]} closes`}
                           value={range.close}
                           onChange={(e) => updateRange(day, index, { close: e.target.value })}
-                          className="h-11 rounded-lg border border-border bg-background px-2 text-sm"
+                          className="h-11 rounded-lg border border-border-input bg-background px-2 text-sm"
                         />
                         {row.ranges.length > 1 ? (
                           <button
@@ -164,7 +164,7 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
           maxLength={160}
           onChange={(e) => onChange({ ...value, note: e.target.value })}
           placeholder="e.g. Kitchen closes 30 minutes early"
-          className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          className="h-11 w-full rounded-xl border border-border-input bg-background px-3 text-sm"
         />
       </div>
       {rangeError ? (
