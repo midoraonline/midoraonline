@@ -3,7 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminListingProduct } from "@/lib/api/admin";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import {
+  BTN_SECONDARY,
+  BTN_TEXT,
+  EmptyState,
+  LIST,
+  PageHeader,
+  Pagination,
+  StatusDot,
+  UnderlineTabs,
+  formatCount as fmt,
+  relativeTime,
+  useTabParam,
+} from "@/components/dashboard/ui";
 
 const FILTERS = ["pending_review", "active", "rejected", "all"] as const;
 const FILTER_LABELS: Record<string, string> = {
@@ -12,13 +24,6 @@ const FILTER_LABELS: Record<string, string> = {
   rejected: "Rejected",
   all: "All",
 };
-const STATUS_COLORS: Record<string, string> = {
-  pending_review:
-    "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  active: "bg-green-500/10 text-green-600 dark:text-green-400",
-  rejected: "bg-red-500/10 text-red-600 dark:text-red-400",
-};
-
 type ListingFilter = "pending_review" | "active" | "rejected" | "all";
 
 type Props = {
@@ -29,7 +34,7 @@ type Props = {
 export default function AdminListingsClient({ initialItems, initialTotalPages }: Props) {
   const [listings, setListings] = useState<AdminListingProduct[]>(initialItems);
   const [reviewing, setReviewing] = useState<string | null>(null);
-  const [filter, setFilter] = useState<ListingFilter>("pending_review");
+  const [filter, setFilter] = useTabParam(FILTERS, "pending_review");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [rejectConfirm, setRejectConfirm] = useState<string | null>(null);
@@ -62,220 +67,107 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
     setReviewing(null);
   };
 
-  const pages: number[] = [];
-  if (totalPages > 1) {
-    const start = Math.max(1, page - 2);
-    const end = Math.min(totalPages, page + 2);
-    for (let i = start; i <= end; i++) pages.push(i);
-  }
+  const statusTone = (st: string) =>
+    st === "active" ? "ok" : st === "pending_review" ? "warn" : st === "rejected" ? "bad" : "neutral";
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">Review, approve, or reject all product listings across the platform.</p>
-
-      <div className="flex gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => { setFilter(f); setPage(1); }}
-            className={`dm-pill dm-focus px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f
-                ? "bg-accent text-white"
-                : "border border-foreground/[0.08] text-foreground/60 hover:bg-foreground/[0.04]"
-            }`}
-          >
-            {FILTER_LABELS[f]}
-          </button>
-        ))}
-      </div>
+    <div>
+      <PageHeader title="Listings" description="Approve or reject listings across the platform." />
+      <UnderlineTabs
+        tabs={FILTERS.map((f) => ({ value: f, label: FILTER_LABELS[f] }))}
+        value={filter}
+        onChange={(f) => {
+          setFilter(f as ListingFilter);
+          setPage(1);
+        }}
+      />
 
       {listings.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-muted">
-          <MaterialSymbol name="inventory_2" className="!text-3xl" />
-          <p className="text-sm">No listings found</p>
-        </div>
+        <EmptyState message="No listings here." />
       ) : (
-        <div className="space-y-3">
-          {listings.map((listing) => (
-            <div
-              key={listing.id}
-              className="rounded-xl border border-foreground/[0.08] bg-card p-4 transition-shadow hover:shadow-sm"
-            >
-              <div className="flex items-start gap-4">
-                {listing.image_urls?.[0] && (
-                  <img
-                    src={listing.image_urls[0]}
-                    alt={listing.title}
-                    className="size-16 shrink-0 rounded-lg object-cover"
-                  />
-                )}
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate text-sm font-semibold">{listing.title}</h3>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        STATUS_COLORS[listing.status] ?? "bg-foreground/[0.06] text-foreground/50"
-                      }`}
-                    >
-                      {listing.status.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                  <p className="line-clamp-1 text-xs text-muted">{listing.description}</p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
-                    <span>UGX {listing.price_ugx.toLocaleString()}</span>
-                    <span>Shop: {listing.shop_name ?? listing.shop_id}</span>
-                    {listing.category && <span>Category: {listing.category}</span>}
-                    <span>Views: {listing.view_count}</span>
-                    <span>Reports: {listing.reports_count}</span>
-                    <span>Created: {new Date(listing.created_at).toLocaleDateString()}</span>
-                  </div>
-
-                  {listing.review_notes && (
-                    <div className="mt-1 flex items-start gap-1.5 text-[11px] text-muted">
-                      <MaterialSymbol name="rate_review" className="!text-sm shrink-0 mt-0.5" />
-                      <span>
-                        Review note: &ldquo;{listing.review_notes}&rdquo;
-                        {listing.reviewed_at && (
-                          <> — {new Date(listing.reviewed_at).toLocaleDateString()}</>
-                        )}
-                      </span>
+        <>
+          <ul className={LIST}>
+            {listings.map((listing) => {
+              const canApprove = listing.status !== "active";
+              const canReject = listing.status !== "rejected";
+              return (
+                <li key={listing.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start">
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    {listing.image_urls?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={listing.image_urls[0]} alt="" className="size-12 shrink-0 rounded-md object-cover" />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-medium">{listing.title}</p>
+                        <StatusDot tone={statusTone(listing.status)}>
+                          <span className="capitalize">{listing.status.replace(/_/g, " ")}</span>
+                        </StatusDot>
+                      </div>
+                      <p className="mt-0.5 truncate text-xs tabular-nums text-muted">
+                        UGX {fmt(listing.price_ugx)} · {listing.shop_name ?? listing.shop_id}
+                        {listing.category ? ` · ${listing.category}` : ""} · {fmt(listing.view_count)} views
+                        {listing.reports_count ? ` · ${fmt(listing.reports_count)} reports` : ""} ·{" "}
+                        <span title={new Date(listing.created_at).toLocaleString()}>{relativeTime(listing.created_at)}</span>
+                      </p>
+                      {listing.review_notes ? (
+                        <p className="mt-1 text-xs text-muted">Note: {listing.review_notes}</p>
+                      ) : null}
                     </div>
-                  )}
-                </div>
-
-                {(() => {
-                  const canApprove = listing.status !== "active";
-                  const canReject = listing.status !== "rejected";
-                  return (
-                    <div className="shrink-0 space-y-1.5">
-                      <div className="flex gap-1.5">
-                        {canApprove && (
-                          <button
-                            type="button"
-                            onClick={() => handleReview(listing.id, "approve")}
-                            disabled={reviewing === listing.id}
-                            className="dm-focus flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:brightness-95 disabled:opacity-50"
-                          >
-                            <MaterialSymbol name="check" className="!text-sm" />
-                            {listing.status === "rejected" ? "Re-approve" : "Approve"}
-                          </button>
-                        )}
-
-                        {canReject &&
-                          (rejectConfirm === listing.id ? (
-                            <div className="flex gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleReview(listing.id, "reject")}
-                                disabled={reviewing === listing.id}
-                                className="dm-focus flex items-center gap-1 rounded-lg bg-red-700 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:brightness-95 disabled:opacity-50"
-                              >
-                                Confirm reject
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setRejectConfirm(null)}
-                                className="dm-focus rounded-lg border border-foreground/[0.12] px-2 py-1.5 text-[11px] font-medium text-foreground/60"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-2 sm:w-56">
+                    <div className="flex flex-wrap gap-2">
+                      {canApprove ? (
+                        <button
+                          type="button"
+                          onClick={() => handleReview(listing.id, "approve")}
+                          disabled={reviewing === listing.id}
+                          className={BTN_SECONDARY}
+                        >
+                          {listing.status === "rejected" ? "Re-approve" : "Approve"}
+                        </button>
+                      ) : null}
+                      {canReject ? (
+                        rejectConfirm === listing.id ? (
+                          <>
                             <button
                               type="button"
-                              onClick={() => setRejectConfirm(listing.id)}
-                              className="dm-focus flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:brightness-95"
+                              onClick={() => handleReview(listing.id, "reject")}
+                              disabled={reviewing === listing.id}
+                              className="inline-flex h-9 items-center rounded-md bg-rose-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
                             >
-                              <MaterialSymbol name="close" className="!text-sm" />
-                              Reject
+                              Confirm reject
                             </button>
-                          ))}
-                      </div>
-
-                      <input
-                        type="text"
-                        placeholder="Review notes..."
-                        value={notesMap[listing.id] ?? ""}
-                        onChange={(e) =>
-                          setNotesMap((prev) => ({ ...prev, [listing.id]: e.target.value }))
-                        }
-                        className="w-full rounded-lg border border-foreground/[0.08] bg-transparent px-2.5 py-1.5 text-[11px] outline-none placeholder:text-foreground/30 focus:border-accent"
-                      />
+                            <button type="button" onClick={() => setRejectConfirm(null)} className={BTN_TEXT}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setRejectConfirm(listing.id)}
+                            className="text-sm font-medium text-rose-600 hover:underline"
+                          >
+                            Reject
+                          </button>
+                        )
+                      ) : null}
                     </div>
-                  );
-                })()}
-              </div>
-            </div>
-          ))}
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="dm-focus flex items-center gap-1 rounded-lg border border-foreground/[0.08] px-3 py-1.5 text-xs font-medium text-foreground/60 disabled:opacity-30"
-              >
-                <MaterialSymbol name="chevron_left" className="!text-sm" />
-                Prev
-              </button>
-
-              {pages[0] > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setPage(1)}
-                    className="dm-focus flex size-8 items-center justify-center rounded-lg text-xs font-medium text-foreground/60 hover:bg-foreground/[0.04]"
-                  >
-                    1
-                  </button>
-                  {pages[0] > 2 && <span className="text-xs text-foreground/30">...</span>}
-                </>
-              )}
-
-              {pages.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPage(p)}
-                  className={`dm-focus flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
-                    p === page
-                      ? "bg-accent text-white"
-                      : "text-foreground/60 hover:bg-foreground/[0.04]"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-
-              {pages[pages.length - 1] < totalPages && (
-                <>
-                  {pages[pages.length - 1] < totalPages - 1 && (
-                    <span className="text-xs text-foreground/30">...</span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setPage(totalPages)}
-                    className="dm-focus flex size-8 items-center justify-center rounded-lg text-xs font-medium text-foreground/60 hover:bg-foreground/[0.04]"
-                  >
-                    {totalPages}
-                  </button>
-                </>
-              )}
-
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="dm-focus flex items-center gap-1 rounded-lg border border-foreground/[0.08] px-3 py-1.5 text-xs font-medium text-foreground/60 disabled:opacity-30"
-              >
-                Next
-                <MaterialSymbol name="chevron_right" className="!text-sm" />
-              </button>
-            </div>
-          )}
-        </div>
+                    <input
+                      type="text"
+                      placeholder="Review note (optional)"
+                      aria-label="Review note"
+                      value={notesMap[listing.id] ?? ""}
+                      onChange={(e) => setNotesMap((prev) => ({ ...prev, [listing.id]: e.target.value }))}
+                      className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        </>
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import {
   updateAdminSwitch,
   type FeatureSwitch,
 } from "@/lib/api/platformSettings";
+import { EmptyState, ErrorState, LIST, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
 function changedLine(item: FeatureSwitch): string {
   const when = item.updated_at ? new Date(item.updated_at) : null;
@@ -65,22 +66,21 @@ export default function FeaturesClient() {
   }
 
   return (
-    <div className="space-y-4">
-      <p className="max-w-xl text-sm text-muted">
-        Platform switches apply to every seller. Turning one off hides that feature until you turn it back on.
-      </p>
-      {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
-      {loading ? <p className="text-sm text-muted">Loading switches…</p> : null}
-      {!loading && !error && items.length === 0 ? (
-        <p className="text-sm text-muted">No feature switches yet.</p>
-      ) : null}
-      <ul className="space-y-3">
+    <div>
+      <PageHeader
+        title="Features"
+        description="Switches apply to every seller. Turning one off hides that feature until you turn it back on."
+      />
+      {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
+      {loading ? <PageSkeleton rows={4} label="Loading switches" /> : null}
+      {!loading && !error && items.length === 0 ? <EmptyState message="No feature switches yet." /> : null}
+      <ul className={items.length ? LIST : ""}>
         {items.map((item) => (
-          <li key={item.key} className="dm-card flex flex-wrap items-center gap-3 p-4">
+          <li key={item.key} className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">{item.label}</p>
+              <p className="text-sm font-medium text-foreground">{item.label}</p>
               {item.description ? <p className="mt-1 text-xs text-muted">{item.description}</p> : null}
-              <p className="mt-1 text-[11px] text-muted">{changedLine(item)}</p>
+              <p className="mt-1 text-xs text-muted">{changedLine(item)}</p>
             </div>
             <button
               type="button"
@@ -96,7 +96,7 @@ export default function FeaturesClient() {
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform ${
+                  className={`absolute top-0.5 size-6 rounded-full bg-background transition-transform ${
                     item.enabled ? "translate-x-5" : "translate-x-0.5"
                   }`}
                 />

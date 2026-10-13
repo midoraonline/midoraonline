@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminConversation } from "@/lib/api/admin";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { EmptyState, LIST, PageHeader, formatCount as fmt, relativeTime } from "@/components/dashboard/ui";
 
 type Props = {
   initialConversations: AdminConversation[];
@@ -33,42 +33,32 @@ export default function AdminChatClient({
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">Overview of all buyer-seller conversations.</p>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="dm-card p-4">
-          <p className="text-2xl font-semibold">{conversations.length}</p>
-          <p className="text-xs text-muted">Total Conversations</p>
-        </div>
-        <div className="dm-card p-4">
-          <p className="text-2xl font-semibold">{msgCount}</p>
-          <p className="text-xs text-muted">Total Messages</p>
-        </div>
-      </div>
-
+    <div>
+      <PageHeader
+        title="Chat monitoring"
+        description={`${fmt(conversations.length)} conversations, ${fmt(msgCount)} messages.`}
+      />
       {conversations.length === 0 ? (
-        <div className="dm-card p-8 text-center text-sm text-muted">No conversations yet.</div>
+        <EmptyState message="No conversations yet." />
       ) : (
-        <div className="space-y-2">
+        <ul className={LIST}>
           {conversations.map((c) => (
-            <div key={c.id} className="dm-card p-4">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">
-                    {c.buyer?.full_name || "Unknown"} ↔ {c.seller?.full_name || "Unknown"}
-                  </p>
-                  {c.last_message && (
-                    <p className="mt-0.5 truncate text-xs text-muted">{c.last_message}</p>
-                  )}
-                </div>
-                <span className="shrink-0 text-[10px] text-muted">
-                  {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : "—"}
+            <li key={c.id} className="flex items-center gap-3 px-4 py-3">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">
+                  {c.buyer?.full_name || "Buyer"} and {c.seller?.full_name || "seller"}
                 </span>
-              </div>
-            </div>
+                {c.last_message ? <span className="block truncate text-xs text-muted">{c.last_message}</span> : null}
+              </span>
+              <span
+                className="shrink-0 text-xs tabular-nums text-muted"
+                title={c.last_message_at ? new Date(c.last_message_at).toLocaleString() : undefined}
+              >
+                {relativeTime(c.last_message_at)}
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

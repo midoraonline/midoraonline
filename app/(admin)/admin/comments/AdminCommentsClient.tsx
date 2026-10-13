@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminComment } from "@/lib/api/admin";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { BTN_TEXT, EmptyState, LIST, PageHeader, Section, StatusDot, UnderlineTabs, relativeTime, useTabParam } from "@/components/dashboard/ui";
 
 type Props = {
   initialProductComments: AdminComment[];
@@ -16,7 +16,9 @@ export default function AdminCommentsClient({
 }: Props) {
   const [productComments, setProductComments] = useState<AdminComment[]>(initialProductComments);
   const [shopComments, setShopComments] = useState<AdminComment[]>(initialShopComments);
-  const [showFlagged, setShowFlagged] = useState(false);
+  const [tab, setTab] = useTabParam(["all", "flagged"] as const, "all");
+  const showFlagged = tab === "flagged";
+  const setShowFlagged = (v: boolean) => setTab(v ? "flagged" : "all");
 
   const load = useCallback(async () => {
     try {
@@ -39,62 +41,49 @@ export default function AdminCommentsClient({
   };
 
   const renderComment = (c: AdminComment, table: "product_comments" | "shop_comments") => (
-    <div key={c.id} className={`dm-card flex items-start gap-3 p-3 ${c.is_flagged ? "ring-1 ring-red-500/30" : ""}`}>
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex items-center gap-2">
-          {c.is_flagged && (
-            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-600">Flagged</span>
-          )}
-          <span className="text-[10px] text-muted">{new Date(c.created_at).toLocaleDateString()}</span>
-        </div>
+    <li key={c.id} className="flex items-start gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
         <p className="text-sm">{c.comment}</p>
-        <div className="flex gap-3 text-[10px] text-muted">
-          <span>By: {c.user?.full_name || "Unknown"}</span>
-          {c.product?.title && <span>On: {c.product.title}</span>}
-          {c.shop?.name && <span>Shop: {c.shop.name}</span>}
-        </div>
+        <p className="mt-1 truncate text-xs text-muted">
+          {[c.user?.full_name || "Unknown", c.product?.title, c.shop?.name].filter(Boolean).join(" · ")}
+          <span className="tabular-nums" title={new Date(c.created_at).toLocaleString()}>
+            {" · "}
+            {relativeTime(c.created_at)}
+          </span>
+        </p>
       </div>
-      <button
-        type="button"
-        onClick={() => handleToggleFlag(c.id, table)}
-        className={`dm-focus shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold ${
-          c.is_flagged
-            ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-            : "bg-red-500/10 text-red-600 hover:bg-red-500/20"
-        }`}
-      >
+      {c.is_flagged ? <StatusDot tone="bad">Flagged</StatusDot> : null}
+      <button type="button" onClick={() => handleToggleFlag(c.id, table)} className={BTN_TEXT}>
         {c.is_flagged ? "Unflag" : "Flag"}
       </button>
-    </div>
+    </li>
   );
 
+  const groups = [
+    { title: "Listing comments", items: productComments, table: "product_comments" as const },
+    { title: "Shop comments", items: shopComments, table: "shop_comments" as const },
+  ];
+
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">Review and flag comments on products and shops.</p>
-
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={showFlagged} onChange={(e) => setShowFlagged(e.target.checked)} className="rounded" />
-        Show only flagged
-      </label>
-
-      <div className="space-y-8">
-          <section>
-            <h2 className="mb-3 text-sm font-semibold">Product Comments ({productComments.length})</h2>
-            {productComments.length === 0 ? (
-              <p className="text-sm text-muted">No comments.</p>
-            ) : (
-              <div className="space-y-2">{productComments.map((c) => renderComment(c, "product_comments"))}</div>
-            )}
-          </section>
-          <section>
-            <h2 className="mb-3 text-sm font-semibold">Shop Comments ({shopComments.length})</h2>
-            {shopComments.length === 0 ? (
-              <p className="text-sm text-muted">No comments.</p>
-            ) : (
-              <div className="space-y-2">{shopComments.map((c) => renderComment(c, "shop_comments"))}</div>
-            )}
-          </section>
-        </div>
+    <div>
+      <PageHeader title="Comments" description="Flag comments that break the rules. Flagged comments are hidden." />
+      <UnderlineTabs
+        tabs={[
+          { value: "all", label: "All" },
+          { value: "flagged", label: "Flagged" },
+        ]}
+        value={showFlagged ? "flagged" : "all"}
+        onChange={(v) => setShowFlagged(v === "flagged")}
+      />
+      {groups.map((g) => (
+        <Section key={g.table} title={`${g.title} ${g.items.length}`}>
+          {g.items.length === 0 ? (
+            <EmptyState message="No comments here." />
+          ) : (
+            <ul className={LIST}>{g.items.map((c) => renderComment(c, g.table))}</ul>
+          )}
+        </Section>
+      ))}
     </div>
   );
 }

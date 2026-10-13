@@ -3,13 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminNearDupe, AdminReport, AdminSellerReport } from "@/lib/api/admin";
+import {
+  BTN_SECONDARY,
+  EmptyState,
+  LIST,
+  PageHeader,
+  StatusDot,
+  UnderlineTabs,
+  relativeTime,
+  useTabParam,
+} from "@/components/dashboard/ui";
 
-type Tab = "listings" | "sellers" | "manual_review" | "near_dupes";
+const TAB_KEYS = ["listings", "sellers", "manual_review", "near_dupes"] as const;
+type Tab = (typeof TAB_KEYS)[number];
 
 type Props = { initialReports: AdminReport[] };
 
 export default function AdminReportsClient({ initialReports }: Props) {
-  const [tab, setTab] = useState<Tab>("listings");
+  const [tab, setTab] = useTabParam(TAB_KEYS, "listings");
   const [reports, setReports] = useState<AdminReport[]>(initialReports);
   const [sellerReports, setSellerReports] = useState<AdminSellerReport[]>([]);
   const [nearDupes, setNearDupes] = useState<AdminNearDupe[]>([]);
@@ -82,168 +93,102 @@ export default function AdminReportsClient({ initialReports }: Props) {
     { id: "near_dupes", label: "Near-duplicates", count: counts.near_dupes },
   ];
 
-  return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">
-        Trust queue — reports plus listings awaiting admin after auto-moderation timeout or soft flags.
-      </p>
+  const date = (iso: string) => (
+    <span className="tabular-nums" title={new Date(iso).toLocaleString()}>
+      {relativeTime(iso)}
+    </span>
+  );
 
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-              tab === t.id ? "bg-accent text-white" : "bg-foreground/[0.06] text-muted hover:text-foreground"
-            }`}
-          >
-            {t.label}
-            <span className="ml-1.5 opacity-80">{t.count}</span>
-          </button>
-        ))}
-      </div>
+  return (
+    <div>
+      <PageHeader
+        title="Reports"
+        description="Buyer reports, plus listings waiting on an admin after auto-moderation."
+      />
+      <UnderlineTabs
+        tabs={tabs.map((t) => ({ value: t.id, label: `${t.label} ${t.count}` }))}
+        value={tab}
+        onChange={(v) => setTab(v as Tab)}
+      />
 
       {tab === "listings" ? (
         reports.length === 0 ? (
-          <div className="dm-card p-8 text-center text-sm text-muted">No open listing reports.</div>
+          <EmptyState message="No open listing reports." />
         ) : (
-          <div className="space-y-2">
+          <ul className={LIST}>
             {reports.map((r) => (
-              <div key={r.id} className={`dm-card flex items-start gap-4 p-4 ${r.resolved ? "opacity-50" : ""}`}>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      r.resolved ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
-                    }`}>
-                      {r.resolved ? "Resolved" : "Open"}
-                    </span>
-                    <span className="text-xs text-muted">{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
+              <li key={r.id} className={`flex items-start gap-3 px-4 py-3 ${r.resolved ? "opacity-60" : ""}`}>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{r.reason}</p>
-                  {r.description ? <p className="text-xs text-muted">{r.description}</p> : null}
-                  <div className="flex gap-3 text-[10px] text-muted">
-                    {r.product?.title ? <span>Product: {r.product.title}</span> : null}
-                    {r.reporter?.full_name ? <span>By: {r.reporter.full_name}</span> : null}
-                  </div>
+                  {r.description ? <p className="mt-0.5 text-sm text-muted">{r.description}</p> : null}
+                  <p className="mt-1 truncate text-xs text-muted">
+                    {[r.product?.title, r.reporter?.full_name && `by ${r.reporter.full_name}`].filter(Boolean).join(" · ")}
+                    {" · "}
+                    {date(r.created_at)}
+                  </p>
                 </div>
-                {!r.resolved ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleResolveListing(r.id)}
-                    className="dm-focus shrink-0 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/20"
-                  >
+                {r.resolved ? (
+                  <StatusDot tone="neutral">Resolved</StatusDot>
+                ) : (
+                  <button type="button" onClick={() => void handleResolveListing(r.id)} className={BTN_SECONDARY}>
                     Resolve
                   </button>
-                ) : null}
-              </div>
+                )}
+              </li>
             ))}
-          </div>
+          </ul>
         )
       ) : null}
 
       {tab === "sellers" ? (
         sellerReports.length === 0 ? (
-          <div className="dm-card p-8 text-center text-sm text-muted">No open seller reports.</div>
+          <EmptyState message="No open seller reports." />
         ) : (
-          <div className="space-y-2">
+          <ul className={LIST}>
             {sellerReports.map((r) => (
-              <div key={r.id} className={`dm-card flex items-start gap-4 p-4 ${r.resolved ? "opacity-50" : ""}`}>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-600">
-                      Seller
-                    </span>
-                    <span className="text-xs text-muted">{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
+              <li key={r.id} className={`flex items-start gap-3 px-4 py-3 ${r.resolved ? "opacity-60" : ""}`}>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{r.reason}</p>
-                  {r.description ? <p className="text-xs text-muted">{r.description}</p> : null}
-                  <p className="text-[10px] text-muted">Seller id: {r.seller_id}</p>
+                  {r.description ? <p className="mt-0.5 text-sm text-muted">{r.description}</p> : null}
+                  <p className="mt-1 truncate text-xs text-muted">
+                    Seller {r.seller_id.slice(0, 8)} · {date(r.created_at)}
+                  </p>
                 </div>
-                {!r.resolved ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleResolveSeller(r.id)}
-                    className="dm-focus shrink-0 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/20"
-                  >
+                {r.resolved ? (
+                  <StatusDot tone="neutral">Resolved</StatusDot>
+                ) : (
+                  <button type="button" onClick={() => void handleResolveSeller(r.id)} className={BTN_SECONDARY}>
                     Resolve
                   </button>
-                ) : null}
-              </div>
+                )}
+              </li>
             ))}
-          </div>
+          </ul>
         )
       ) : null}
 
-      {tab === "manual_review" ? (
-        manualReview.length === 0 ? (
-          <div className="dm-card p-8 text-center text-sm text-muted">
-            No listings awaiting manual review.
-          </div>
+      {tab === "manual_review" || tab === "near_dupes" ? (
+        (tab === "manual_review" ? manualReview : nearDupes).length === 0 ? (
+          <EmptyState
+            message={tab === "manual_review" ? "No listings waiting for manual review." : "No near-duplicates waiting for review."}
+          />
         ) : (
-          <div className="space-y-2">
-            {manualReview.map((r) => (
-              <div key={r.id} className="dm-card flex items-start gap-4 p-4">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-                      In review
-                    </span>
-                    <span className="text-xs text-muted">{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-sm font-medium">{r.title}</p>
-                  {r.reason ? <p className="text-xs text-muted">{r.reason}</p> : null}
-                  {r.product_id ? (
-                    <p className="text-[10px] text-muted">Product: {r.product_id}</p>
-                  ) : null}
+          <ul className={LIST}>
+            {(tab === "manual_review" ? manualReview : nearDupes).map((r) => (
+              <li key={r.id} className="flex items-start gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{r.title}</p>
+                  {r.reason ? <p className="mt-0.5 text-sm text-muted">{r.reason}</p> : null}
+                  <p className="mt-1 text-xs text-muted">{date(r.created_at)}</p>
                 </div>
                 {r.product_id ? (
-                  <a
-                    href={`/admin/listings?q=${encodeURIComponent(r.product_id)}`}
-                    className="dm-focus shrink-0 rounded-lg bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-foreground/[0.1]"
-                  >
-                    Review listing
-                  </a>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )
-      ) : null}
-
-      {tab === "near_dupes" ? (
-        nearDupes.length === 0 ? (
-          <div className="dm-card p-8 text-center text-sm text-muted">
-            No near-duplicates in needs_review. Apply migration 040 and re-moderate to populate.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {nearDupes.map((r) => (
-              <div key={r.id} className="dm-card flex items-start gap-4 p-4">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-                      Near-dupe
-                    </span>
-                    <span className="text-xs text-muted">{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-sm font-medium">{r.title}</p>
-                  {r.reason ? <p className="text-xs text-muted">{r.reason}</p> : null}
-                  {r.product_id ? (
-                    <p className="text-[10px] text-muted">Product: {r.product_id}</p>
-                  ) : null}
-                </div>
-                {r.product_id ? (
-                  <a
-                    href={`/admin/listings?q=${encodeURIComponent(r.product_id)}`}
-                    className="dm-focus shrink-0 rounded-lg bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-foreground/[0.1]"
-                  >
+                  <a href={`/admin/listings?q=${encodeURIComponent(r.product_id)}`} className={BTN_SECONDARY}>
                     Open listing
                   </a>
                 ) : null}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )
       ) : null}
     </div>

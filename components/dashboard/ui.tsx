@@ -242,3 +242,20 @@ export function PageError({ reset, backHref, backLabel }: { reset: () => void; b
     </div>
   );
 }
+
+export function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="mt-4 flex items-center justify-end gap-3 text-sm">
+      <span className="tabular-nums text-muted">
+        Page {page} of {totalPages}
+      </span>
+      <button type="button" disabled={page <= 1} onClick={() => onChange(page - 1)} className={BTN_SECONDARY}>
+        Previous
+      </button>
+      <button type="button" disabled={page >= totalPages} onClick={() => onChange(page + 1)} className={BTN_SECONDARY}>
+        Next
+      </button>
+    </div>
+  );
+}
