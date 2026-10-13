@@ -586,7 +586,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-7">
+    <div className="mx-auto w-full max-w-7xl space-y-6 sm:space-y-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>

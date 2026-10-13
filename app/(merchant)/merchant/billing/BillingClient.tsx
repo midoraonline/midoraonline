@@ -151,7 +151,7 @@ export default function BillingClient() {
       ) : (
         <>
           {shops.length > 1 && (
-            <div className="mb-6 flex max-w-md flex-col gap-1.5">
+            <div className="mb-6 flex flex-col gap-1.5 sm:max-w-sm">
               <label htmlFor="billing-shop" className="text-sm font-medium">
                 Shop
               </label>
