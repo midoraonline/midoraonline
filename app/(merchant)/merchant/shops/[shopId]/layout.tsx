@@ -54,12 +54,9 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
         </span>
       </nav>
 
-      <header className="dm-card flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            Shop
-          </p>
-          <h2 className="mt-1 truncate font-display text-xl font-semibold sm:text-2xl">
+          <h2 className="truncate font-display text-xl font-semibold sm:text-2xl">
             {loading ? "Loading…" : shop?.name || "Unknown shop"}
           </h2>
           {shop?.slug ? (
@@ -81,7 +78,7 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
               href={`/shops/${shop.slug}`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold hover:bg-foreground/[0.04]"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface-subtle"
             >
               View public ↗
             </Link>
@@ -95,8 +92,8 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <nav className="flex min-w-full items-center gap-1 rounded-xl bg-foreground/[0.04] p-1">
+      <div className="overflow-x-auto border-b border-border">
+        <nav className="flex min-w-full items-center gap-1">
           {TABS.map((t) => {
             const href = t.slug
               ? `/merchant/shops/${shopId}/${t.slug}`
@@ -110,10 +107,10 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
                 key={t.slug || "overview"}
                 href={href}
                 className={[
-                  "whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+                  "-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-xs font-semibold transition-colors",
                   active
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-foreground/70 hover:bg-background/50 hover:text-foreground",
+                    ? "border-accent text-foreground"
+                    : "border-transparent text-muted hover:text-foreground",
                 ].join(" ")}
               >
                 {t.label}

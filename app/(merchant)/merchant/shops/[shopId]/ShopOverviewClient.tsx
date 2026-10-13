@@ -66,7 +66,7 @@ export default function ShopOverviewClient({
     <div className="space-y-5">
       {/* Verification progress banner */}
       {verification && (!badges.includes("business_verified") || !badges.includes("identity_verified")) && (
-        <section className="dm-card overflow-hidden bg-gradient-to-r from-surface to-accent/5 p-4 sm:p-5">
+        <section className="rounded-xl border border-border bg-surface p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-display text-sm font-semibold text-foreground/90">Verification incomplete</h3>
