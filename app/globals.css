@@ -41,7 +41,7 @@
   --border: #E2E8F0;
   --border-strong: #CBD5E1;
   /* Form controls need a clearly visible edge (slate-400, ~3:1 on white). */
-  --border-input: #94A3B8;
+  --border-input: #7C8BA1;
   --focus-ring: rgba(212, 101, 60, 0.28);
   --ring: #D4653C;
 
@@ -169,7 +169,7 @@
 
   --border: #253044;
   --border-strong: #334159;
-  --border-input: #5B6B82;
+  --border-input: #6E809A;
   --focus-ring: rgba(227, 123, 78, 0.38);
   --ring: #E37B4E;
 
@@ -859,12 +859,12 @@ html.modal-open body {
   .dm-dash .dm-textarea {
     border-radius: 0.5rem;
     background: var(--surface);
-    box-shadow: var(--elev-xs);
+    box-shadow: inset 0 0 0 1px var(--border-input), var(--elev-xs);
   }
   .dm-dash .dm-input:focus,
   .dm-dash .dm-textarea:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 12%, transparent);
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--focus-ring);
   }
 
   /* ── Toggle switch (dm-toggle) ───────────────────────────────── */
