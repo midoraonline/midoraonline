@@ -22,7 +22,7 @@ import {
 } from "@/components/dashboard/ui";
 
 type StatusFilter = "all" | "active" | "inactive";
-type VerifyFilter = "all" | VerificationStatus;
+const VERIFY_TABS = ["all", "verified", "pending", "unverified", "rejected"] as const;
 
 
 function ActiveSwitch({
@@ -78,7 +78,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
   const [busyId, setBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [verifyFilter, setVerifyFilter] = useTabParam(["all", "verified", "pending", "unverified", "rejected"] as const, "all");
+  const [verifyFilter, setVerifyFilter] = useTabParam(VERIFY_TABS, "all");
 
   const load = useCallback(async () => {
     setError(null);
@@ -257,7 +257,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
           label: k === "all" ? "All" : k === "unverified" ? "Not submitted" : k[0].toUpperCase() + k.slice(1),
         }))}
         value={verifyFilter}
-        onChange={(k) => setVerifyFilter(k as VerifyFilter)}
+        onChange={(k) => setVerifyFilter(k as (typeof VERIFY_TABS)[number])}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
