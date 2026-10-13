@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +7,8 @@ import { AlertCircle, ArrowLeft, BarChart2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { apiShops } from "@/lib/api";
 import type { Shop } from "@/lib/api/shops";
-import { ImageUpload } from "@/components/image-upload";
+import { SingleImageField } from "@/components/upload/SingleImageField";
+import { discardUploads } from "@/lib/uploads/discard";
 import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import LocationInput from "@/components/LocationInput";
@@ -21,6 +21,8 @@ import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 import {
   buildShopLocationPayload,
   locationCoords as readLocationCoords,
+  shopBannerUrl,
+  withBannerUrl,
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import {
@@ -37,6 +39,7 @@ type FormState = {
   description: string;
   about: string;
   logoUrl: string;
+  bannerUrl: string;
   shopEmail: string;
   whatsappNumber: string;
   hours: HoursDraft;
@@ -54,6 +57,7 @@ function shopToFormState(shop: Shop): FormState {
     description: shop.description ?? "",
     about: shop.about ?? "",
     logoUrl: shop.logo_url ?? "",
+    bannerUrl: shopBannerUrl(shop.theme_config) ?? "",
     shopEmail: shop.shop_email ?? "",
     whatsappNumber: shop.whatsapp_number ?? "",
     hours: hoursDraftFromShop(shop),
@@ -76,6 +80,7 @@ function formsEqual(a: FormState, b: FormState): boolean {
     a.description === b.description &&
     a.about === b.about &&
     a.logoUrl === b.logoUrl &&
+    a.bannerUrl === b.bannerUrl &&
     a.shopEmail === b.shopEmail &&
     a.whatsappNumber === b.whatsappNumber &&
     JSON.stringify(a.hours) === JSON.stringify(b.hours) &&
@@ -125,77 +130,12 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ── Logo field ──────────────────────────────────────────────────────────────
-function LogoField({
-  currentUrl,
-  stagedUrl,
-  onStaged,
-  onRemove,
-}: {
-  currentUrl: string;
-  stagedUrl: string;
-  onStaged: (url: string) => void;
-  onRemove: () => void;
-}) {
-  const displayUrl = stagedUrl || currentUrl;
-  const isStaged = Boolean(stagedUrl);
-
-  return (
-    <div className="space-y-3">
-      {displayUrl && (
-        <div className="flex items-center gap-3">
-          <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-subtle">
-            <Image
-              src={displayUrl}
-              alt="Shop logo"
-              fill
-              sizes="64px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            {isStaged ? (
-              <p
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                style={{
-                  background: "var(--warning-subtle)",
-                  color: "var(--warning)",
-                }}
-              >
-                <span
-                  className="size-1.5 rounded-full"
-                  style={{ background: "var(--warning)" }}
-                />
-                New logo staged — save to apply
-              </p>
-            ) : (
-              <p className="text-xs text-muted">Current logo</p>
-            )}
-            <button
-              type="button"
-              onClick={onRemove}
-              className="text-[11px] text-muted transition-colors hover:text-[color:var(--error)] dm-focus rounded"
-            >
-              Remove logo
-            </button>
-          </div>
-        </div>
-      )}
-
-      <ImageUpload
-        endpoint="shopLogo"
-        label={displayUrl ? "Replace logo" : "Upload logo"}
-        allowBackgroundRemoval={false}
-        onUploadComplete={(url) => onStaged(url)}
-      />
-      {!displayUrl && (
-        <p className="text-[11px] text-muted">
-          PNG or JPG, square crop recommended. Shown in the shop header and cards.
-        </p>
-      )}
-    </div>
-  );
+/** Uploads that were staged in the form but never saved. */
+function discardUnsavedImages(form: FormState, saved: FormState) {
+  discardUploads([
+    form.logoUrl !== saved.logoUrl ? form.logoUrl : null,
+    form.bannerUrl !== saved.bannerUrl ? form.bannerUrl : null,
+  ]);
 }
 
 // ── Details tab ─────────────────────────────────────────────────────────────
@@ -244,9 +184,10 @@ function DetailsTab({
           ? true
           : window.confirm("Discard your changes?");
       if (!ok) return;
+      discardUnsavedImages(form, shopToFormState(shop));
     }
     router.push(`/shops/${shop.slug}`);
-  }, [isDirty, router, shop.slug]);
+  }, [form, isDirty, router, shop]);
 
   function change<K extends keyof FormState>(key: K, value: FormState[K]) {
     setJustSaved(false);
@@ -276,6 +217,7 @@ function DetailsTab({
       description: form.description.trim() || null,
       about: form.about.trim() || null,
       logo_url: form.logoUrl.trim() || null,
+      theme_config: withBannerUrl(shop.theme_config ?? null, form.bannerUrl || null),
       shop_email: form.shopEmail.trim() || null,
       whatsapp_number: form.whatsappNumber.trim() || null,
       ...(hoursPayload
@@ -403,20 +345,35 @@ function DetailsTab({
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Shop logo</h2>
           <p className="mt-0.5 text-[11px] text-muted">
-            Upload your logo, then hit <strong>Save changes</strong> to apply it.
+            Changes apply when you save.
           </p>
         </div>
-        <LogoField
-          currentUrl={shop.logo_url ?? ""}
-          stagedUrl={stagedLogo}
-          onStaged={(url) => {
-            onLogoStaged(url);
-            change("logoUrl", url);
+        <SingleImageField
+          endpoint="shopLogo"
+          value={form.logoUrl}
+          onChange={(url) => {
+            if (url) onLogoStaged(url);
+            else onLogoRemove();
+            change("logoUrl", url ?? "");
           }}
-          onRemove={() => {
-            onLogoRemove();
-            change("logoUrl", "");
-          }}
+          emptyLabel="Add logo"
+          hint="Square works best. Shown in the shop header and cards."
+        />
+      </section>
+
+      <section className="dm-card space-y-4 p-5 sm:p-6">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">Shop banner</h2>
+          <p className="mt-0.5 text-[11px] text-muted">
+            A wide image across the top of your shop page.
+          </p>
+        </div>
+        <SingleImageField
+          endpoint="shopBanner"
+          shape="wide"
+          value={form.bannerUrl}
+          onChange={(url) => change("bannerUrl", url ?? "")}
+          emptyLabel="Add banner"
         />
       </section>
 
@@ -609,6 +566,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           ? true
           : window.confirm("You have unsaved changes. Discard them?");
       if (!ok) return;
+      discardUnsavedImages(form, initialForm);
       setForm(initialForm);
       setStagedLogo("");
     }
@@ -622,6 +580,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           ? true
           : window.confirm("Discard your changes?");
       if (!ok) return;
+      discardUnsavedImages(form, initialForm);
     }
     router.push(`/shops/${shopState.slug}`);
   }

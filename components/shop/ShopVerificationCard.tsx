@@ -485,7 +485,7 @@ function DocUploadList({
               </div>
             ) : (
               <ImageUpload
-                endpoint="imageUploader"
+                endpoint="verificationDoc"
                 label={`Upload ${dt.label}`}
                 onUploadComplete={(url) => onAdd(dt.type, dt.label, url)}
                 className=""

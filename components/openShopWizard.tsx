@@ -6,7 +6,8 @@ import { Loader2 } from "lucide-react";
 
 import { apiShops } from "@/lib/api";
 import CategoryPicker from "@/components/CategoryPicker";
-import { ImageUpload } from "@/components/image-upload";
+import { SingleImageField } from "@/components/upload/SingleImageField";
+import { discardUploads } from "@/lib/uploads/discard";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import StepFrame, { ActionBar, FormError, FormField, INPUT, TEXTAREA } from "@/components/post/StepFrame";
@@ -127,6 +128,8 @@ export default function OpenShopWizard({
   function back() {
     setError(null);
     if (step === 0) {
+      // Leaving the wizard: drop anything uploaded but never saved.
+      discardUploads([logoUrl, bannerUrl]);
       if (onExit) onExit();
       else router.push("/");
       return;
@@ -301,23 +304,20 @@ export default function OpenShopWizard({
       {step === 2 ? (
         <>
           <Field label="Logo" optional>
-            <ImageUpload
+            <SingleImageField
               endpoint="shopLogo"
-              preserveQuality
-              allowBackgroundRemoval={false}
-              onUploadComplete={setLogoUrl}
-              label="Upload logo"
-              previewUrl={logoUrl || undefined}
+              value={logoUrl}
+              onChange={(url) => setLogoUrl(url ?? "")}
+              emptyLabel="Add logo"
             />
           </Field>
           <Field label="Banner" optional>
-            <ImageUpload
-              endpoint="imageUploader"
-              preserveQuality
-              allowBackgroundRemoval={false}
-              onUploadComplete={setBannerUrl}
-              label="Upload banner"
-              previewUrl={bannerUrl || undefined}
+            <SingleImageField
+              endpoint="shopBanner"
+              shape="wide"
+              value={bannerUrl}
+              onChange={(url) => setBannerUrl(url ?? "")}
+              emptyLabel="Add banner"
             />
           </Field>
         </>

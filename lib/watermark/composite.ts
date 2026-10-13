@@ -58,6 +58,6 @@ export async function compositeShopLogoWatermark(
 
   return base
     .composite([{ input: faded, left, top, blend: "over" }])
-    .jpeg({ quality: 88, mozjpeg: true })
+    .jpeg({ quality: 100, chromaSubsampling: "4:4:4" })
     .toBuffer();
 }

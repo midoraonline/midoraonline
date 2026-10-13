@@ -42,6 +42,21 @@ export function shopBannerUrl(theme: Shop["theme_config"]): string | null {
   return typeof url === "string" && url.trim() ? url.trim() : null;
 }
 
+/** Copy of theme_config with the banner set or cleared; other keys are kept. */
+export function withBannerUrl(
+  theme: Shop["theme_config"],
+  url: string | null,
+): NonNullable<Shop["theme_config"]> {
+  const base = theme && typeof theme === "object" ? { ...theme } : {};
+  const meta =
+    base.metadata && typeof base.metadata === "object"
+      ? { ...(base.metadata as Record<string, unknown>) }
+      : {};
+  if (url && url.trim()) meta.banner_url = url.trim();
+  else delete meta.banner_url;
+  return { ...base, metadata: meta };
+}
+
 export function locationDisplay(loc: Shop["location"]): string {
   if (typeof loc === "string") return loc;
   if (loc && typeof loc === "object" && "display" in loc)

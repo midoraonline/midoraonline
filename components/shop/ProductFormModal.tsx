@@ -25,6 +25,7 @@ import {
 import CategoryPicker from "@/components/CategoryPicker";
 import FormModal from "@/components/FormModal";
 import { ImageUpload } from "@/components/image-upload";
+import { discardUploads } from "@/lib/uploads/discard";
 import { VideoUpload } from "@/components/video-upload";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
@@ -95,7 +96,10 @@ function MediaGrid({
             ) : null}
             <button
               type="button"
-              onClick={() => onRemove(i)}
+              onClick={() => {
+                discardUploads([url]);
+                onRemove(i);
+              }}
               className="absolute right-1 top-1 flex size-7 items-center justify-center rounded-full bg-black/65 text-white opacity-0 transition-opacity backdrop-blur-sm hover:bg-black/85 group-hover:opacity-100 focus-visible:opacity-100"
               aria-label={`Remove ${video ? "video" : "photo"}`}
             >
@@ -606,6 +610,7 @@ export default function ProductFormModal({
               <ImageUpload
                 endpoint="productImage"
                 multiple
+                existingCount={draft.image_urls.length}
                 label="Add photos"
                 watermarkLogoUrl={shopLogoUrl}
                 onUploadManyComplete={(newUrls) => {

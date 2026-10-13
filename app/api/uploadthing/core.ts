@@ -1,56 +1,43 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { verifyUploadBearer } from "@/lib/auth/verifyUploadBearer";
+import { registerUpload, type UploadKind } from "@/lib/uploads/register";
+import { MAX_LISTING_PHOTOS } from "@/lib/uploads/policy";
 
 const f = createUploadthing();
 
 async function requireUser(req: Request): Promise<{ userId: string }> {
   const auth = await verifyUploadBearer(req);
-  if (!auth) throw new UploadThingError("Unauthorized");
-  return auth;
+  if (!auth) throw new UploadThingError("Please sign in again to upload.");
+  return { userId: auth.userId };
+}
+
+/** Every image route takes the original file up to 16MB; nothing is recompressed. */
+function imageRoute(kind: UploadKind, maxFileCount: number) {
+  return f({ image: { maxFileSize: "16MB", maxFileCount } })
+    .middleware(async ({ req }) => requireUser(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      await registerUpload({ key: file.key, url: file.ufsUrl, userId: metadata.userId, kind });
+      return { url: file.ufsUrl, key: file.key };
+    });
 }
 
 export const ourFileRouter = {
-  shopLogo: f({
-    // 16MB matches imageUploader so full-resolution logos are not recompressed.
-    image: { maxFileSize: "16MB", maxFileCount: 1 },
-  })
-    .middleware(async ({ req }) => requireUser(req))
-    .onUploadComplete(async ({ file }) => {
-      return { url: file.ufsUrl };
-    }),
-
-  productImage: f({
-    // 8MB: BG-removed PNGs / phone photos after client fit; keep in sync with UPLOAD_IMAGE_MAX_BYTES
-    image: { maxFileSize: "8MB", maxFileCount: 3 },
-  })
-    .middleware(async ({ req }) => requireUser(req))
-    .onUploadComplete(async ({ file }) => {
-      return { url: file.ufsUrl };
-    }),
-
-  imageUploader: f({
-    image: { maxFileSize: "16MB", maxFileCount: 1 },
-  })
-    .middleware(async ({ req }) => requireUser(req))
-    .onUploadComplete(async ({ metadata, file }) => {
-      return { uploadedBy: metadata.userId, url: file.ufsUrl };
-    }),
-
-  avatarImage: f({
-    image: { maxFileSize: "16MB", maxFileCount: 1 },
-  })
-    .middleware(async ({ req }) => requireUser(req))
-    .onUploadComplete(async ({ file }) => {
-      return { url: file.ufsUrl };
-    }),
+  productImage: imageRoute("listingPhoto", MAX_LISTING_PHOTOS),
+  shopLogo: imageRoute("shopLogo", 1),
+  shopBanner: imageRoute("shopBanner", 1),
+  verificationDoc: imageRoute("verificationDoc", 1),
+  /** Kept for older clients still pointing at the generic route. */
+  imageUploader: imageRoute("verificationDoc", 1),
+  avatarImage: imageRoute("avatar", 1),
 
   productVideo: f({
     video: { maxFileSize: "32MB", maxFileCount: 4 },
   })
     .middleware(async ({ req }) => requireUser(req))
-    .onUploadComplete(async ({ file }) => {
-      return { url: file.ufsUrl };
+    .onUploadComplete(async ({ metadata, file }) => {
+      await registerUpload({ key: file.key, url: file.ufsUrl, userId: metadata.userId, kind: "productVideo" });
+      return { url: file.ufsUrl, key: file.key };
     }),
 } satisfies FileRouter;
 
