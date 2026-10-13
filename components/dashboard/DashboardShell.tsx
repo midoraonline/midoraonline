@@ -128,23 +128,33 @@ function Sidebar({
   pathname,
   roleLabel,
   onItemClick,
+  onClose,
 }: {
   navItems: DashboardNavItem[];
   secondaryNavItems?: DashboardNavItem[];
   pathname: string;
   roleLabel: string;
   onItemClick?: () => void;
+  onClose?: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo + role badge */}
-      <div className="flex items-center gap-2.5 px-4 py-5">
+      <div className="flex items-center justify-between gap-3 px-4 py-4">
         <Link href="/" className="flex items-center gap-2">
           <Logo alt="Midora" width={100} height={28} className="h-7 w-auto rounded-lg" />
         </Link>
-        <span className="ml-auto text-xs text-muted">
-          {roleLabel}
-        </span>
+        <span className="ml-auto truncate text-xs text-muted">{roleLabel}</span>
+        {onClose ? (
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={onClose}
+            className="grid size-10 shrink-0 place-items-center rounded-md text-foreground hover:bg-surface-subtle"
+          >
+            <X className="size-5" strokeWidth={2.25} />
+          </button>
+        ) : null}
       </div>
 
       <div className="mx-3 mb-4 h-px bg-border" />
@@ -264,20 +274,13 @@ export default function DashboardShell({
               className="absolute inset-0 bg-foreground/30"
             />
             <aside className="absolute inset-y-0 left-0 flex w-[75%] max-w-xs flex-col border-r border-border bg-surface">
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={() => setDrawerOpen(false)}
-                className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-md text-foreground hover:bg-surface-subtle"
-              >
-                <X className="size-5" strokeWidth={2.25} />
-              </button>
               <Sidebar
                 navItems={navItems}
                 secondaryNavItems={secondaryNavItems}
                 pathname={pathname}
                 roleLabel={roleLabel}
                 onItemClick={() => setDrawerOpen(false)}
+                onClose={() => setDrawerOpen(false)}
               />
             </aside>
           </div>
