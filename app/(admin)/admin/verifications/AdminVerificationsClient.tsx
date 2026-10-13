@@ -11,8 +11,11 @@ import type {
 } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/base";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import { BTN_SECONDARY, EmptyState, ErrorState, PageHeader, StatusDot, UnderlineTabs, useTabParam, type StatusTone } from "@/components/dashboard/ui";
 
 type TabKey = "all" | "pending" | "submitted" | "verified" | "rejected" | "unverified";
+
+const TAB_KEYS = ["pending", "submitted", "unverified", "verified", "rejected", "all"] as const;
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "pending", label: "Review queue" },
@@ -23,13 +26,22 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "all", label: "All" },
 ];
 
-const STATUS_BADGE: Record<VerificationStatus, string> = {
-  unverified: "bg-foreground/[0.06] text-foreground/70",
-  submitted: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
-  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  verified: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-  rejected: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+const STATUS_TONE: Record<VerificationStatus, StatusTone> = {
+  unverified: "neutral",
+  submitted: "neutral",
+  pending: "warn",
+  verified: "ok",
+  rejected: "bad",
 };
+
+function VStatus({ status, prefix }: { status: string; prefix?: string }) {
+  return (
+    <StatusDot tone={STATUS_TONE[status as VerificationStatus] ?? "neutral"}>
+      {prefix ? `${prefix}: ` : ""}
+      <span className="capitalize">{status}</span>
+    </StatusDot>
+  );
+}
 
 const BADGE_LABELS: Record<string, string> = {
   shop_listed: "Shop listed",
@@ -178,7 +190,7 @@ function isImageUrl(url: string): boolean {
 type Props = { initialItems: AdminVerification[] };
 
 export default function AdminVerificationsClient({ initialItems }: Props) {
-  const [tab, setTab] = useState<TabKey>("pending");
+  const [tab, setTab] = useTabParam(TAB_KEYS, "pending");
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<AdminVerification[]>(initialItems);
   const [refreshing, setRefreshing] = useState(false);
@@ -295,79 +307,35 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            Admin · Verifications
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            Shop verification console
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Review merchant submissions — identity (stage 2) and business
-            (stage 3) — with docs, contact details, and stage-aware decisions.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search shop, phone, or location…"
-            className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm sm:flex-none"
-          />
-          <button
-            onClick={() => load()}
-            disabled={refreshing}
-            className="rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-foreground/[0.04] disabled:opacity-60"
-          >
+    <div>
+      <PageHeader
+        title="Verifications"
+        description="Identity, business and professional submissions from merchants."
+        action={
+          <button onClick={() => load()} disabled={refreshing} className={BTN_SECONDARY}>
             {refreshing ? "Refreshing…" : "Refresh"}
           </button>
-        </div>
-      </header>
+        }
+      />
+      <UnderlineTabs
+        tabs={TABS.map((t) => ({ value: t.key, label: `${t.label} ${counts[t.key] ?? 0}` }))}
+        value={tab}
+        onChange={(v) => setTab(v as TabKey)}
+      />
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search shop, phone or location"
+        aria-label="Search verifications"
+        className="mb-4 h-9 w-full max-w-xs rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      />
 
-      <nav className="-mx-1 flex flex-wrap gap-1 overflow-x-auto px-1 pb-1">
-        {TABS.map((t) => {
-          const active = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={[
-                "flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
-                active
-                  ? "border-transparent bg-primary text-primary-foreground shadow-sm"
-                  : "border-border bg-background hover:bg-foreground/[0.04]",
-              ].join(" ")}
-            >
-              <span>{t.label}</span>
-              <span
-                className={[
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
-                  active
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-foreground/[0.08] text-foreground/70",
-                ].join(" ")}
-              >
-                {counts[t.key] ?? 0}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {error ? (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </div>
-      ) : null}
+      {error ? <ErrorState message={error} onRetry={() => load()} /> : null}
 
       {visible.length === 0 ? (
-        <div className="dm-card p-8 text-sm text-muted">
-          No shops match this filter.
-        </div>
+        <EmptyState message="No shops match this filter." />
       ) : (
-        <ul className="grid gap-3 xl:grid-cols-2">
+        <ul className="space-y-3">
           {visible.map((v) => {
             const shopName = v.shops?.name || v.shop_id;
             const slug = v.shops?.slug || null;
@@ -393,32 +361,26 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
             return (
               <li
                 key={v.id || v.shop_id}
-                className="dm-card space-y-4 p-5 sm:p-6"
+                className="space-y-4 rounded-lg border border-border p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-display text-lg font-semibold truncate">
+                      <h3 className="truncate text-sm font-semibold">
                         {shopName}
                       </h3>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          STATUS_BADGE[v.status] || STATUS_BADGE.unverified
-                        }`}
-                      >
-                        {v.status}
-                      </span>
+                      <VStatus status={v.status} />
                       {stageLabel ? (
-                        <span className="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800 dark:text-sky-300">
+                        <span className="text-xs text-muted">
                           Applied: {stageLabel}
                         </span>
                       ) : null}
                       {v.shops?.is_active ? (
-                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        <span className="text-xs text-muted">
                           Active
                         </span>
                       ) : (
-                        <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
+                        <span className="text-xs text-muted">
                           Inactive
                         </span>
                       )}
@@ -443,7 +405,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         href={`/shops/${slug}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold hover:bg-foreground/[0.04]"
+                        className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-subtle"
                       >
                         View ↗
                       </a>
@@ -453,7 +415,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                       onClick={() =>
                         setExpanded((s) => ({ ...s, [v.shop_id]: !isOpen }))
                       }
-                      className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold hover:bg-foreground/[0.04]"
+                      className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-subtle"
                     >
                       {isOpen ? "Hide submission" : "Show submission"}
                     </button>
@@ -465,39 +427,18 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                   {sub.badges.map((b) => (
                     <span
                       key={b}
-                      className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold text-foreground/75"
+                      className="text-xs text-foreground/80"
                     >
                       {BADGE_LABELS[b] ?? b}
                     </span>
                   ))}
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      STATUS_BADGE[(sub.stage2Status as VerificationStatus)] ||
-                      STATUS_BADGE.unverified
-                    }`}
-                  >
-                    Identity: {sub.stage2Status}
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      STATUS_BADGE[(sub.stage3Status as VerificationStatus)] ||
-                      STATUS_BADGE.unverified
-                    }`}
-                  >
-                    Business: {sub.stage3Status}
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      STATUS_BADGE[(sub.stage4Status as VerificationStatus)] ||
-                      STATUS_BADGE.unverified
-                    }`}
-                  >
-                    Professional: {sub.stage4Status}
-                  </span>
+                  <VStatus prefix="Identity" status={sub.stage2Status} />
+                  <VStatus prefix="Business" status={sub.stage3Status} />
+                  <VStatus prefix="Professional" status={sub.stage4Status} />
                 </div>
 
                 {isOpen ? (
-                  <div className="space-y-4 rounded-xl border border-border bg-foreground/[0.02] p-4">
+                  <div className="space-y-4 border-t border-border pt-4">
                     {sub.appliedFor.length > 0 ? (
                       <p className="text-xs text-muted">
                         Merchant applied for:{" "}
@@ -513,7 +454,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
 
                     {(sub.phone || sub.whatsapp || sub.location) && (
                       <section className="space-y-2">
-                        <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                        <h4 className="text-xs font-medium text-muted">
                           Submitted contact (Identity)
                         </h4>
                         <dl className="grid gap-2 text-sm sm:grid-cols-2">
@@ -591,9 +532,9 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                 ) : null}
 
                 <label className="block space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <span className="text-sm font-medium">
                     Admin notes{" "}
-                    <span className="font-normal normal-case text-muted/70">
+                    <span className="font-normal text-muted">
                       (required to reject)
                     </span>
                   </span>
@@ -606,7 +547,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                       }))
                     }
                     rows={2}
-                    className="w-full rounded-xl border border-border bg-background p-2 text-sm"
+                    className="w-full rounded-md border border-border bg-background p-2 text-sm"
                     placeholder="Share context with the merchant…"
                   />
                 </label>
@@ -624,7 +565,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                             sub.pendingStage!,
                           )
                         }
-                        className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                        className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
                       >
                         {isBusy
                           ? "Working…"
@@ -640,7 +581,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                             sub.pendingStage!,
                           )
                         }
-                        className="rounded-xl border border-rose-500/60 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-300"
+                        className="text-sm font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
                       >
                         Reject {pendingName}
                       </button>
@@ -658,7 +599,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                               2,
                             )
                           }
-                          className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                          className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
                         >
                           {isBusy ? "Working…" : "Approve Identity"}
                         </button>
@@ -675,7 +616,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                               3,
                             )
                           }
-                          className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                          className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
                         >
                           {isBusy ? "Working…" : "Approve Business"}
                         </button>
@@ -692,7 +633,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                               4,
                             )
                           }
-                          className="rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                          className="inline-flex h-9 items-center rounded-md border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-subtle disabled:opacity-50"
                         >
                           {isBusy ? "Working…" : "Approve Professional"}
                         </button>
@@ -710,7 +651,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                               : 2,
                           )
                         }
-                        className="rounded-xl border border-rose-500/60 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-300"
+                        className="text-sm font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
                       >
                         Reject
                       </button>
@@ -726,7 +667,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                           `${shopName} queued for review.`,
                         )
                       }
-                      className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-foreground/[0.04] disabled:opacity-50"
+                      className="inline-flex h-9 items-center rounded-md border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-subtle disabled:opacity-50"
                     >
                       Queue for review
                     </button>
@@ -757,16 +698,10 @@ function StageDocsBlock({
   return (
     <section className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        <h4 className="text-xs font-medium text-muted">
           {title}
         </h4>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-            STATUS_BADGE[status as VerificationStatus] || STATUS_BADGE.unverified
-          }`}
-        >
-          {status}
-        </span>
+        <VStatus status={status} />
       </div>
       {notes ? (
         <p className="rounded-lg border border-border bg-background p-2.5 text-xs text-foreground/80">
@@ -786,7 +721,7 @@ function StageDocsBlock({
             return (
               <li
                 key={`${doc.url}-${idx}`}
-                className="overflow-hidden rounded-xl border border-border bg-background"
+                className="overflow-hidden rounded-md border border-border bg-background"
               >
                 {isImageUrl(doc.url) ? (
                   // eslint-disable-next-line @next/next/no-img-element -- admin review of uploaded URLs

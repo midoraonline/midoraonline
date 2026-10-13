@@ -7,6 +7,7 @@ import { apiAdmin } from "@/lib/api";
 import type { AdminCategory } from "@/lib/api/admin";
 import CategoryFieldsEditor from "@/components/admin/CategoryFieldsEditor";
 import { CATEGORY_META_FIELD_KEY_OPTIONS, normalizeCategoryFields } from "@/lib/listingMeta";
+import { ErrorState, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
 function slugify(label: string): string {
   return label
@@ -127,7 +128,7 @@ export default function AdminCategoriesClient() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted">Loading categories…</p>;
+    return <PageSkeleton rows={6} label="Loading categories" />;
   }
 
     return (
@@ -138,20 +139,14 @@ export default function AdminCategoriesClient() {
         ))}
       </datalist>
       <div className="space-y-6">
-        <div>
-          <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
-            Categories
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Manage the categories, subcategories, and extra listing fields buyers and sellers see across Midora.
-          </p>
-        </div>
+        <PageHeader
+          title="Categories"
+          description="Categories, subcategories and the extra listing fields sellers fill in."
+        />
 
-        {error ? (
-          <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">{error}</p>
-        ) : null}
+        {error ? <ErrorState message={error} /> : null}
 
-        <div className="dm-card flex flex-wrap items-center gap-2 p-4">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             className="dm-input flex-1 min-w-[200px]"
             value={newParentLabel}
@@ -168,7 +163,7 @@ export default function AdminCategoriesClient() {
             const children = childrenByParent[parent.slug] ?? [];
             const isOpen = expanded[parent.slug] ?? false;
             return (
-              <div key={parent.slug} className="dm-card p-4">
+              <div key={parent.slug} className="rounded-lg border border-border p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
