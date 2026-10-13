@@ -466,6 +466,8 @@ export function submitForVerificationStage(
     submitted_whatsapp?: string;
     submitted_location?: string;
     request_review?: boolean;
+    /** Typed details for the stage (registration number, TIN, licence...). */
+    metadata?: Record<string, string>;
   } = {},
   token?: string | null
 ) {

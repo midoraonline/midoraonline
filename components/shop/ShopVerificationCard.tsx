@@ -111,7 +111,47 @@ const STAGE4_DOCS = [
   { type: "professional_license", label: "License / certificate (optional)" },
 ] as const;
 
+const STAGE3_FIELDS = [
+  { key: "registered_name", label: "Registered business name" },
+  { key: "registration_number", label: "URSB registration number" },
+  { key: "tin", label: "TIN" },
+] as const;
+
+const STAGE4_FIELDS = [
+  { key: "profession", label: "Profession" },
+  { key: "licence_number", label: "Licence / membership number" },
+  { key: "issuing_body", label: "Issuing body" },
+] as const;
+
 type DocType = string;
+type Doc = { type: DocType; url: string; label: string };
+
+function metaRecord(v: Verification | null): Record<string, unknown> {
+  return (v?.metadata as Record<string, unknown>) ?? {};
+}
+
+function storedDocs(v: Verification | null, stage: 2 | 3 | 4): Doc[] {
+  const raw = metaRecord(v)[`stage${stage}_docs`];
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((d) => {
+    const row = d as Record<string, unknown>;
+    return typeof row?.url === "string" && typeof row?.type === "string"
+      ? [{ type: row.type, url: row.url, label: typeof row.label === "string" ? row.label : row.type }]
+      : [];
+  });
+}
+
+function storedFields(v: Verification | null, stage: 3 | 4): Record<string, string> {
+  const raw = metaRecord(v)[`stage${stage}_fields`];
+  return raw && typeof raw === "object" ? (raw as Record<string, string>) : {};
+}
+
+/** Reviewer reason, falling back to the old shared notes key. */
+function reviewerNotes(v: Verification | null, stage: 2 | 3 | 4): string | null {
+  const m = metaRecord(v);
+  const value = m[`stage${stage}_review_notes`] ?? m[`stage${stage}_notes`];
+  return typeof value === "string" && value.trim() ? value : null;
+}
 
 export default function ShopVerificationCard({ shopId }: { shopId: string }) {
   const session = useAppSession();
@@ -127,6 +167,8 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
   const [s2Notes, setS2Notes] = useState("");
   const [s2Docs, setS2Docs] = useState<{ type: DocType; url: string; label: string }[]>([]);
 
+  const [s3Fields, setS3Fields] = useState<Record<string, string>>({});
+  const [s4Fields, setS4Fields] = useState<Record<string, string>>({});
   const [s3Notes, setS3Notes] = useState("");
   const [s3Docs, setS3Docs] = useState<{ type: DocType; url: string; label: string }[]>([]);
   const [s4Notes, setS4Notes] = useState("");
@@ -142,6 +184,13 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       if (v.submitted_phone) setS2Phone(v.submitted_phone);
       if (v.submitted_whatsapp) setS2Whatsapp(v.submitted_whatsapp);
       if (v.submitted_location) setS2Location(v.submitted_location);
+      // "Update documents" starts from what is already on file, so a resubmit
+      // never silently drops earlier uploads.
+      setS2Docs(storedDocs(v, 2));
+      setS3Docs(storedDocs(v, 3));
+      setS4Docs(storedDocs(v, 4));
+      setS3Fields(storedFields(v, 3));
+      setS4Fields(storedFields(v, 4));
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setVerification(null);
@@ -189,8 +238,8 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
               request_review: requestReview,
             }
           : stage === 3
-            ? { notes: s3Notes.trim() || undefined, documents: s3Docs, request_review: requestReview }
-            : { notes: s4Notes.trim() || undefined, documents: s4Docs, request_review: requestReview };
+            ? { notes: s3Notes.trim() || undefined, documents: s3Docs, metadata: s3Fields, request_review: requestReview }
+            : { notes: s4Notes.trim() || undefined, documents: s4Docs, metadata: s4Fields, request_review: requestReview };
       const v = await apiShops.submitForVerificationStage(shopId, stage, body);
       setVerification(v);
       setActiveForm(null);
@@ -269,10 +318,9 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
           hasBadge={badges.includes("identity_verified")}
           description="Optional selfie + national ID / passport / driving permit. Required to list more than 5 items or upgrade to Standard/Premium."
         >
-          {stage2Status === "rejected" && Boolean((verification?.metadata as Record<string, unknown>)?.stage2_notes) && (
+          {stage2Status === "rejected" && reviewerNotes(verification, 2) && (
             <div className="dm-alert dm-alert--error mt-3 px-4 py-3 text-xs">
-              <strong>Reviewer notes:</strong>{" "}
-              {String((verification?.metadata as Record<string, unknown>).stage2_notes)}
+              <strong>Why it was declined:</strong> {reviewerNotes(verification, 2)}
             </div>
           )}
 
@@ -392,7 +440,10 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             onSave={() => void handleSubmit(3, false)}
             onReview={() => void handleSubmit(3, true)}
             onRequestReview={() => void handleRequestReview(3)}
-            metaNotes={(verification?.metadata as Record<string, unknown>)?.stage3_notes}
+            metaNotes={reviewerNotes(verification, 3)}
+            fieldsSpec={STAGE3_FIELDS}
+            fields={s3Fields}
+            setField={(key, value) => setS3Fields((f) => ({ ...f, [key]: value }))}
             captureLabel="Capture business docs →"
           />
         </StageBlock>
@@ -424,7 +475,10 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             onSave={() => void handleSubmit(4, false)}
             onReview={() => void handleSubmit(4, true)}
             onRequestReview={() => void handleRequestReview(4)}
-            metaNotes={(verification?.metadata as Record<string, unknown>)?.stage4_notes}
+            metaNotes={reviewerNotes(verification, 4)}
+            fieldsSpec={STAGE4_FIELDS}
+            fields={s4Fields}
+            setField={(key, value) => setS4Fields((f) => ({ ...f, [key]: value }))}
             captureLabel="Capture credentials →"
           />
         </StageBlock>
@@ -479,7 +533,9 @@ function DocUploadList({
               )}
             </div>
             {existing ? (
-              <div className="flex items-center gap-1.5 text-[10px] font-medium" style={{ color: "var(--success)" }}>
+              <div className="flex items-center gap-2 text-[10px] font-medium" style={{ color: "var(--success)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- private document preview */}
+                <img src={existing.url} alt="" className="size-12 rounded-md border border-border object-cover" />
                 <MaterialSymbol name="check_circle" className="!text-xs" aria-hidden="true" />
                 Uploaded
               </div>
@@ -501,7 +557,11 @@ function DocUploadList({
 function StageActions({
   status, canCapture, active, submitting, notes, setNotes, docsSpec, docs,
   onOpen, onClose, onAdd, onRemove, onSave, onReview, onRequestReview, metaNotes, captureLabel,
+  fieldsSpec, fields, setField,
 }: {
+  fieldsSpec?: readonly { key: string; label: string }[];
+  fields?: Record<string, string>;
+  setField?: (key: string, value: string) => void;
   status: VerificationStatus;
   canCapture: boolean;
   active: boolean;
@@ -524,7 +584,7 @@ function StageActions({
     <>
       {status === "rejected" && Boolean(metaNotes) && (
         <div className="dm-alert dm-alert--error mt-3 px-4 py-3 text-xs">
-          <strong>Reviewer notes:</strong> {String(metaNotes)}
+          <strong>Why it was declined:</strong> {String(metaNotes)}
         </div>
       )}
       {status === "submitted" && (
@@ -555,6 +615,20 @@ function StageActions({
               onSubmit={(e) => { e.preventDefault(); onSave(); }}
               className="mt-4 space-y-4 rounded-xl border border-border bg-surface shadow-xs p-4"
             >
+              {fieldsSpec?.length ? (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {fieldsSpec.map((f) => (
+                    <label key={f.key} className="block space-y-1">
+                      <span className="text-xs font-medium text-foreground/80">{f.label}</span>
+                      <input
+                        className="dm-input"
+                        value={fields?.[f.key] ?? ""}
+                        onChange={(e) => setField?.(f.key, e.target.value)}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ) : null}
               <DocUploadList docs={docsSpec} values={docs} onAdd={onAdd} onRemove={onRemove} />
               <label className="block space-y-1">
                 <span className="text-xs font-medium text-foreground/80">Notes (optional)</span>
