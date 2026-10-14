@@ -15,7 +15,7 @@ export default function ShopPickStep({
   onBack: () => void;
 }) {
   return (
-    <StepFrame title="Which shop is this for?" subtitle="The listing will appear on this shop's page." onBack={onBack} plain>
+    <StepFrame title="Which business is this ad for?" subtitle="The ad will appear on this business's page." onBack={onBack} plain>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {shops.map((shop) => (
           <button key={shop.id} type="button" onClick={() => onSelect(shop.id)} className={OPTION_ROW}>

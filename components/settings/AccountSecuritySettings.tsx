@@ -5,6 +5,8 @@ import { SettingsPanel, SettingsRow } from "@/components/settings/SettingsSectio
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiAuth } from "@/lib/api";
+import PasswordInput from "@/components/PasswordInput";
+import DeleteAccountRow from "@/components/settings/DeleteAccountRow";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function AccountSecuritySettings() {
@@ -69,36 +71,36 @@ export default function AccountSecuritySettings() {
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block space-y-1.5 text-sm font-medium md:col-span-2 md:max-w-[calc(50%-0.5rem)]">
               Current password
-              <input
-                type="password"
+              <PasswordInput
+                withIcon={false}
                 value={current}
                 onChange={(e) => setCurrent(e.target.value)}
                 autoComplete="current-password"
                 required
-                className="dm-input font-normal"
+                className="font-normal"
               />
             </label>
             <label className="block space-y-1.5 text-sm font-medium">
               New password
-              <input
-                type="password"
+              <PasswordInput
+                withIcon={false}
                 value={next}
                 onChange={(e) => setNext(e.target.value)}
                 autoComplete="new-password"
                 required
                 minLength={8}
-                className="dm-input font-normal"
+                className="font-normal"
               />
             </label>
             <label className="block space-y-1.5 text-sm font-medium">
               Confirm new password
-              <input
-                type="password"
+              <PasswordInput
+                withIcon={false}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 autoComplete="new-password"
                 required
-                className="dm-input font-normal"
+                className="font-normal"
               />
             </label>
           </div>
@@ -119,6 +121,7 @@ export default function AccountSecuritySettings() {
           {signingOut ? "Signing out…" : "Sign out"}
         </button>
       </SettingsRow>
+      <DeleteAccountRow />
     </SettingsPanel>
   );
 }

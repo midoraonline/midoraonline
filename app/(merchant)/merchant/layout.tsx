@@ -7,7 +7,7 @@ import DashboardShell, {
 const NAV: DashboardNavItem[] = [
   { href: "/merchant", label: "Overview", icon: <IconHome />, exact: true },
   { href: "/merchant/listings", label: "My listings", icon: <IconListings /> },
-  { href: "/merchant/shops", label: "My shops", icon: <IconStore /> },
+  { href: "/merchant/shops", label: "My business", icon: <IconStore /> },
   { href: "/merchant/conversations", label: "Conversations", icon: <IconChat /> },
   { href: "/merchant/leads", label: "Leads", icon: <IconTrend /> },
 ];

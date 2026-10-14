@@ -29,7 +29,7 @@ const LINK_GROUPS: LinkGroup[] = [
     links: [
       { label: "About Midora", href: "/aboutus" },
       { label: "How it works", href: "/onboarding" },
-      { label: "Open a shop", href: "/open-shop" },
+      { label: "Create business", href: "/open-shop" },
       { label: "Blog", href: "#" },
     ],
   },

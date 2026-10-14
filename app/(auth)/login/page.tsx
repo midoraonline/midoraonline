@@ -4,8 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { apiAuth } from "@/lib/api";
+import PasswordInput from "@/components/PasswordInput";
 import {
   establishClientSession,
   establishSessionFromGoogleCode,
@@ -16,7 +17,6 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,27 +168,14 @@ function LoginPageInner() {
           <label htmlFor="login-password" className="text-sm font-medium text-foreground/80">
             Password
           </label>
-          <div className="relative">
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
-            <input
-              id="login-password"
-              type={showPassword ? "text" : "password"}
-              required
-              autoComplete="current-password"
-              className="min-h-11 w-full rounded-xl border border-border bg-surface pl-10 pr-10 text-sm text-foreground outline-none ring-0 transition-[border-color,box-shadow] focus-visible:border-accent/40 focus-visible:ring-2 focus-visible:ring-accent/10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
-          </div>
+          <PasswordInput
+            id="login-password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
           <div className="flex justify-end">
             <Link
               href="/auth/reset-password"

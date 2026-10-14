@@ -39,7 +39,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
       const res = await apiShops.myShops();
       setShops(res.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't load your shops.");
+      setError(err instanceof Error ? err.message : "Couldn't load your business.");
     }
   }, []);
 
@@ -65,7 +65,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
   return (
     <div>
       <PageHeader
-        title={newProductMode ? "Choose a shop" : "My shops"}
+        title={newProductMode ? "Choose a business" : "My business"}
         description={
           newProductMode
             ? "Pick the shop this listing belongs to and we'll open its catalog."

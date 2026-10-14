@@ -194,7 +194,7 @@ export default function MerchantListingsClient({
         action={
           <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
             <Plus className="size-4" aria-hidden />
-            Add listing
+            Post an ad
           </button>
         }
       />
@@ -237,7 +237,7 @@ export default function MerchantListingsClient({
             tab === "all" ? (
               <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
                 <Plus className="size-4" aria-hidden />
-                Post a listing
+                Post an ad
               </button>
             ) : null
           }

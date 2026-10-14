@@ -121,7 +121,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         setError("Your session expired. Sign in again to load analytics.");
         return;
       }
-      setError(err instanceof Error ? err.message : "Failed to load your shops");
+      setError(err instanceof Error ? err.message : "Couldn't load your business");
     }
   }, [windowDays, session.hydrated, canAnalytics, analyticsOn, platformAnalytics.ready]);
 
@@ -139,7 +139,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         description={
           shops.length
             ? `${fmt(shops.length)} ${shops.length === 1 ? "shop" : "shops"}, ${fmt(active.length)} live`
-            : "Post listings now, or open a shop for a storefront and analytics."
+            : "Post ads now, or create a business for a storefront and analytics."
         }
         action={
           <Link href="/open-shop" className={BTN_PRIMARY}>
@@ -291,7 +291,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       ) : null}
 
       <Section
-        title="Your shops"
+        title="My business"
         action={
           shops.length > 0 ? (
             <Link href="/merchant/shops" className={BTN_TEXT}>
@@ -302,10 +302,10 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       >
         {shops.length === 0 ? (
           <EmptyState
-            message="No shop yet. You can still post listings."
+            message="No business yet. You can still post ads."
             action={
               <Link href="/post-item" className={BTN_SECONDARY}>
-                Post a listing
+                Post an ad
               </Link>
             }
           />

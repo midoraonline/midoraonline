@@ -4,17 +4,16 @@ import { BTN_PRIMARY } from "@/components/dashboard/ui";
 import { SettingsActions, SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import { useEffect, useState } from "react";
 import { apiAuth } from "@/lib/api";
-import { migrationRequired } from "@/lib/accountPreferences";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import ProfileAvatarUpload from "@/components/ProfileAvatarUpload";
 import VerifyContactButton from "@/components/VerifyContactButton";
+import { confirmPhoneCode, startPhoneVerification, verificationMessage } from "@/lib/verification";
 
 export default function ProfileSettings() {
   const session = useAppSession();
   const [fullName, setFullName] = useState("");
-  const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -24,7 +23,6 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (!session.user) return;
     setFullName(session.user.full_name ?? "");
-    setBio(session.user.bio ?? "");
     setPhone(session.user.phone_number ?? "");
     setPhoneVerified(Boolean(session.user.phone_verified));
   }, [session.user]);
@@ -34,24 +32,8 @@ export default function ProfileSettings() {
     setSaving(true);
     setMessage(null);
     setError(null);
-    const profile = {
-      full_name: fullName.trim(),
-      phone_number: phone.trim(),
-      bio: bio.trim(),
-    };
     try {
-      try {
-        await apiAuth.updateProfile(profile);
-      } catch (err) {
-        if (!migrationRequired(err)) throw err;
-        await apiAuth.updateProfile({
-          full_name: profile.full_name,
-          phone_number: profile.phone_number,
-        });
-        notifyAuthChanged();
-        setMessage("Name and phone saved. Bio isn’t available until the account update is applied.");
-        return;
-      }
+      await apiAuth.updateProfile({ full_name: fullName.trim() });
       notifyAuthChanged();
       setMessage("Profile saved.");
     } catch (err) {
@@ -93,24 +75,12 @@ export default function ProfileSettings() {
               />
               <p className="text-xs text-muted">Used to sign in. It can&apos;t be changed here.</p>
             </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <label htmlFor="settings-bio" className="block text-sm font-medium">
-                Bio
-              </label>
-              <textarea
-                id="settings-bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value.slice(0, 500))}
-                maxLength={500}
-                rows={3}
-                placeholder="A short line about you"
-                className="dm-textarea"
-              />
-              <p className="text-right text-xs tabular-nums text-muted">{bio.length}/500</p>
-            </div>
           </div>
         </SettingsRow>
-        <SettingsRow title="Phone" description="Verify it so buyers can trust WhatsApp contact from you.">
+        <SettingsRow
+          title="Phone verification"
+          description="We text you a code. A verified number lets buyers trust WhatsApp contact from you."
+        >
           <div className="space-y-2 md:max-w-md">
             <label htmlFor="settings-phone" className="sr-only">
               Phone
@@ -118,13 +88,23 @@ export default function ProfileSettings() {
             <PhoneNumberInput id="settings-phone" value={phone} onChange={setPhone} autoComplete="tel" />
             <VerifyContactButton
               value={phone}
-              verified={phoneVerified}
+              verified={phoneVerified && phone.trim() === (session.user?.phone_number ?? "").trim()}
               label="phone number"
-              sendCode={() => apiAuth.sendPhoneVerificationCode({ phone_number: phone.trim() })}
+              sendCode={async () => {
+                try {
+                  await startPhoneVerification(phone.trim());
+                } catch (err) {
+                  throw new Error(verificationMessage(err));
+                }
+              }}
               confirmCode={async (code) => {
-                const updated = await apiAuth.confirmPhoneVerificationCode(code);
-                setPhone(updated.phone_number ?? phone);
-                setPhoneVerified(Boolean(updated.phone_verified));
+                try {
+                  const status = await confirmPhoneCode(phone.trim(), code);
+                  setPhone(status.phone ?? phone);
+                  setPhoneVerified(Boolean(status.phone_verified));
+                } catch (err) {
+                  throw new Error(verificationMessage(err));
+                }
               }}
               onSuccess={() => notifyAuthChanged()}
             />
@@ -134,7 +114,7 @@ export default function ProfileSettings() {
           {message ? <p className="mr-auto text-sm text-[color:var(--success)]">{message}</p> : null}
           {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-            {saving ? "Saving…" : "Save profile"}
+            {saving ? "Saving…" : "Save name"}
           </button>
         </SettingsActions>
       </SettingsPanel>

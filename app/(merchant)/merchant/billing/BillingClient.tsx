@@ -141,7 +141,7 @@ export default function BillingClient() {
 
       {shops.length === 0 ? (
         <EmptyState
-          message="Open a shop to subscribe to a plan."
+          message="Create a business to subscribe to a plan."
           action={
             <Link href="/open-shop" className={BTN_SECONDARY}>
               Open a shop

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useUrlStep } from "@/lib/hooks/useUrlStep";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -21,11 +22,11 @@ import { blankHoursDraft, hoursAreBlank, hoursDraftError, shopHoursWritePayload,
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 const STEPS = [
-  { title: "Name your shop", subtitle: "Buyers see this name first. You can change it later." },
+  { title: "Name your business", subtitle: "Buyers see this name first. You can change it later." },
   { title: "Where buyers can find you", subtitle: "Add a location and how buyers can reach you." },
   { title: "Add a logo and banner", subtitle: "Photos keep their full quality. You can add these later." },
   { title: "Opening hours", subtitle: "Times are in Kampala time (EAT). You can add these later." },
-  { title: "Check and create", subtitle: "Make sure everything looks right, then create your shop." },
+  { title: "Check and create", subtitle: "Make sure everything looks right, then create your business." },
 ] as const;
 
 const STEP_LABELS = ["Name", "Contacts", "Logo and banner", "Hours", "Review"] as const;
@@ -80,7 +81,15 @@ export default function OpenShopWizard({
 }) {
   const session = useAppSession();
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  // Wizard step lives in ?part= (1-based) so browser back moves between steps.
+  const part = useUrlStep("part");
+  const [furthest, setFurthest] = useState(0);
+  const parsed = Number(part.value);
+  const step = Number.isInteger(parsed) && parsed >= 1 ? Math.min(parsed - 1, furthest, STEPS.length - 1) : 0;
+  function setStep(next: number) {
+    setFurthest((f) => Math.max(f, next));
+    part.go(String(next + 1));
+  }
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +110,7 @@ export default function OpenShopWizard({
     const message = validate(step);
     setError(message);
     if (message) return;
-    setStep((n) => Math.min(n + 1, STEPS.length - 1));
+    setStep(Math.min(step + 1, STEPS.length - 1));
   }
 
   function skip() {
@@ -111,7 +120,7 @@ export default function OpenShopWizard({
     }
     if (step === 3 && validate(3)) setHours(blankHoursDraft);
     setError(null);
-    setStep((n) => Math.min(n + 1, STEPS.length - 1));
+    setStep(Math.min(step + 1, STEPS.length - 1));
   }
 
   function validate(index: number): string | null {
@@ -134,7 +143,7 @@ export default function OpenShopWizard({
       else router.push("/");
       return;
     }
-    setStep((n) => n - 1);
+    part.back(String(step));
   }
 
   async function handleCreateShop() {
@@ -144,7 +153,7 @@ export default function OpenShopWizard({
       return;
     }
     if (!session.isAuthenticated) {
-      setError("Please log in to open a shop.");
+      setError("Please log in to create a business.");
       return;
     }
     setError(null);
@@ -176,7 +185,7 @@ export default function OpenShopWizard({
           ? MAINTENANCE_MESSAGE
           : err instanceof Error
             ? err.message
-            : "Could not create your shop. Please try again.",
+            : "Could not create your business. Please try again.",
       );
     } finally {
       setCreating(false);
@@ -256,7 +265,7 @@ export default function OpenShopWizard({
               onChange={(e) => setDescription(e.target.value)}
             />
           </Field>
-          <Field label="About your shop" htmlFor="wizard-shop-about" optional>
+          <Field label="About your business" htmlFor="wizard-shop-about" optional>
             <textarea
               id="wizard-shop-about"
               className={TEXTAREA}
@@ -356,7 +365,7 @@ export default function OpenShopWizard({
         ) : (
           <button type="button" onClick={handleCreateShop} disabled={creating} className={BTN_PRIMARY}>
             {creating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            {creating ? "Creating shop…" : "Create shop"}
+            {creating ? "Creating business…" : "Create business"}
           </button>
         )}
       </ActionBar>
@@ -420,7 +429,7 @@ function ShopPreview({
             (name.trim().charAt(0) || "M")
           )}
         </div>
-        <p className="mt-2 truncate text-sm font-semibold text-foreground">{name.trim() || "Your shop name"}</p>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">{name.trim() || "Your business name"}</p>
         <p className="mt-0.5 line-clamp-2 text-xs text-muted">{description.trim() || "A short line about what you sell."}</p>
         <p className="mt-2 truncate text-xs text-muted">{[category, location].filter(Boolean).join(" · ") || "Category · Location"}</p>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LeaveLinks from "@/components/LeaveLinks";
 
 export default function Error({
   reset,
@@ -31,6 +32,7 @@ export default function Error({
             Back to home
           </Link>
         </div>
+        <LeaveLinks className="mt-6" />
       </div>
     </div>
   );

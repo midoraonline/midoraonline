@@ -4,9 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Eye, EyeOff, Loader2, Mail, Lock, User,
+  Loader2, Mail, User,
 } from "lucide-react";
 import { apiAuth } from "@/lib/api";
+import PasswordInput from "@/components/PasswordInput";
 import {
   establishClientSession,
   establishSessionFromGoogleCode,
@@ -19,7 +20,6 @@ function RegisterPageInner() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<"customer" | "merchant">("merchant");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,7 @@ function RegisterPageInner() {
         user_role: role,
       });
       await establishClientSession(tokens);
-      router.push("/");
+      router.push(`/check-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(
         isSignupsClosed(err)
@@ -169,27 +169,14 @@ function RegisterPageInner() {
           <label htmlFor="register-password" className="text-sm font-medium text-foreground/80">
             Password
           </label>
-          <div className="relative">
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
-            <input
-              id="register-password"
-              type={showPassword ? "text" : "password"}
-              required
-              autoComplete="new-password"
-              className="min-h-11 w-full rounded-xl border border-border bg-surface pl-10 pr-10 text-sm text-foreground outline-none ring-0 transition-[border-color,box-shadow] focus-visible:border-accent/40 focus-visible:ring-2 focus-visible:ring-accent/10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
-          </div>
+          <PasswordInput
+            id="register-password"
+            required
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
+          />
         </div>
 
         <div className="space-y-1.5">

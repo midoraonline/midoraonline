@@ -8,6 +8,7 @@ const NAV: DashboardNavItem[] = [
   { href: "/admin", label: "Overview", icon: <IconChart />, exact: true },
   { href: "/admin/insights", label: "Insights", icon: <IconChart /> },
   { href: "/admin/verifications", label: "Verifications", icon: <IconShield /> },
+  { href: "/admin/users", label: "Users", icon: <IconUsers /> },
   { href: "/admin/shops", label: "Shops", icon: <IconStore /> },
   { href: "/admin/reports", label: "Reports", icon: <IconFlag /> },
   { href: "/admin/listings", label: "Listings", icon: <IconPackage /> },
@@ -138,6 +139,17 @@ function IconTune() {
       <path d="M2 14h4" />
       <path d="M10 8h4" />
       <path d="M18 16h4" />
+    </svg>
+  );
+}
+
+function IconUsers() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }

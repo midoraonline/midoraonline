@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { leaveFlow, useUrlStep } from "@/lib/hooks/useUrlStep";
 import { Loader2, PenLine, Sparkles } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
@@ -18,9 +19,26 @@ import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verifica
 type CreationMode = "choose" | "quick" | "manual";
 
 export default function OpenShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <OpenShopFlow />
+    </Suspense>
+  );
+}
+
+const STEP_FOR: Record<CreationMode, string> = { choose: "choose", quick: "ai", manual: "manual" };
+
+function OpenShopFlow() {
   const router = useRouter();
   const session = useAppSession();
-  const [mode, setMode] = useState<CreationMode>("choose");
+  // ?step=choose|ai|manual so the browser back button returns to the choice.
+  const flow = useUrlStep("step");
+  const mode: CreationMode = flow.value === "ai" ? "quick" : flow.value === "manual" ? "manual" : "choose";
+  function setMode(next: CreationMode) {
+    if (next === mode) return;
+    if (next === "choose") flow.back("choose");
+    else flow.go(STEP_FOR[next], next === "manual" ? { extra: { part: "1" } } : undefined);
+  }
   const [createdShop, setCreatedShop] = useState<apiShops.Shop | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
@@ -98,7 +116,7 @@ export default function OpenShopPage() {
         <VerifyChannelStep
           status={verificationStatus}
           onVerified={setVerificationStatus}
-          onBack={() => router.push("/")}
+          onBack={() => leaveFlow(router)}
         />
       </StandaloneShell>
     );
@@ -112,10 +130,10 @@ export default function OpenShopPage() {
   return (
     <StandaloneShell eyebrow="Merchant Studio">
       {createdShop ? (
-        <CreatedSuccess shop={createdShop} onCreateAnother={() => { setCreatedShop(null); setMode("choose"); }} />
+        <CreatedSuccess shop={createdShop} onCreateAnother={() => { setCreatedShop(null); flow.go("choose", { replace: true, extra: { part: null } }); }} />
       ) : (
         <>
-          {mode === "choose" ? <ChooseStart onPick={setMode} onBack={() => router.push("/")} /> : null}
+          {mode === "choose" ? <ChooseStart onPick={setMode} onBack={() => leaveFlow(router)} /> : null}
           <div className={mode === "quick" ? "" : "hidden"}>
             <div className="min-h-[calc(100dvh-4rem)] bg-surface-page">
             <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -159,13 +177,13 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
       mode: "manual" as const,
       icon: PenLine,
       title: "Set up manually",
-      text: "Fill in your shop details yourself, one short step at a time.",
+      text: "Fill in your business details yourself, one short step at a time.",
       badge: null,
     },
   ];
   return (
     <StepFrame
-      title="How do you want to set up your shop?"
+      title="How do you want to set up your business?"
       subtitle="You can change everything later."
       onBack={onBack}
       wide
@@ -199,9 +217,9 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
 function CreatedSuccess({ shop, onCreateAnother }: { shop: apiShops.Shop; onCreateAnother: () => void }) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm text-muted">Your shop is live</p>
+      <p className="text-sm text-muted">Your business is live</p>
       <h1 className="mt-1 text-xl font-semibold text-foreground">{shop.name}</h1>
-      <p className="mt-1 text-sm text-muted">Add your first listing or finish your shop details whenever you&apos;re ready.</p>
+      <p className="mt-1 text-sm text-muted">Post your first ad or finish your business details whenever you&apos;re ready.</p>
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <Link href={`/merchant/shops/${shop.id}`} className={BTN_PRIMARY}>
           Manage shop

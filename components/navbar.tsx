@@ -72,11 +72,9 @@ function ProfileDropdown({
     try {
       await apiAuth.logout();
     } catch {
-      /* ignore */
     } finally {
       notifyAuthChanged();
       onSignOutSettled?.();
-      // A Sign in click during logout opts out so this replace cannot cancel it.
       if (allowHomeRedirect()) router.replace("/");
     }
   };
@@ -86,7 +84,6 @@ function ProfileDropdown({
 
   return (
     <div ref={ref} className="relative">
-      {/* Trigger: User Pill */}
       <button
         type="button"
         onClick={() => setDdOpen((v) => !v)}
@@ -150,7 +147,7 @@ function ProfileDropdown({
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
                 >
                   <MaterialSymbol name="add_box" className="!text-base text-accent shrink-0" />
-                  Post item
+                  Post an ad
                 </Link>
                 {hasShops ? null : (
                   <Link
@@ -160,7 +157,7 @@ function ProfileDropdown({
                   >
                     <MaterialSymbol name="storefront" className="!text-base text-muted shrink-0" />
                     <span className="min-w-0">
-                      <span className="block">Open a shop</span>
+                      <span className="block">Create business</span>
                       <span className="block text-[11px] font-normal text-muted">
                         Analytics, organization, a public storefront
                       </span>
@@ -262,7 +259,6 @@ export default function Navbar({
 
   const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
 
-  /* Close mobile menu on outside click */
   useEffect(() => {
     if (!open) return;
     function onClick(e: MouseEvent) {
@@ -303,7 +299,6 @@ export default function Navbar({
       <header className="sticky top-0 z-sticky border-b border-border bg-background">
       <div ref={menuRef}>
         <div className="dm-container flex h-14 items-center gap-3 sm:gap-5">
-          {/* Logo */}
           <Link
             href={shopLogoUrl ? "#" : "/"}
             className="inline-flex shrink-0 items-center gap-2 rounded-lg py-1 dm-focus"
@@ -328,7 +323,6 @@ export default function Navbar({
             )}
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
             {navItems.map((item) => {
               const active = activeHref !== null && item.href === activeHref;
@@ -349,7 +343,6 @@ export default function Navbar({
             })}
           </nav>
 
-          {/* Search — desktop only */}
           <div className="ml-auto hidden min-w-[14rem] flex-1 lg:flex lg:max-w-md lg:min-w-[14rem]">
             <div className="w-full">
               <ProductSearchBar
@@ -363,9 +356,7 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Right actions */}
           <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0 lg:gap-2" suppressHydrationWarning>
-            {/* Desktop online-presence pill (mobile equivalent lives in BottomNav) */}
             {onlineCount > 0 ? (
               <span
                 className="hidden items-center gap-1.5 rounded-full border border-accent/15 bg-accent/5 px-2.5 py-1 text-[11px] font-semibold text-accent lg:inline-flex"
@@ -382,7 +373,6 @@ export default function Navbar({
               </span>
             ) : null}
 
-            {/* Mobile search toggle */}
             <button
               type="button"
               onClick={() => setSearchOpen((open) => !open)}
@@ -399,7 +389,6 @@ export default function Navbar({
 
             {session.isAuthenticated ? (
               <>
-                {/* Wishlist */}
                 <Link
                   href="/customer/wishlist"
                   className="relative grid size-9 place-items-center rounded-full transition-colors dm-focus text-foreground/60 hover:bg-foreground/[0.06] hover:text-foreground"
@@ -408,7 +397,6 @@ export default function Navbar({
                 >
                   <MaterialSymbol name="favorite" className="!text-lg" />
                 </Link>
-                {/* Chat — desktop only; mobile uses bottom Messages tab */}
                 <Link
                   href="/chat"
                   className={`relative hidden size-9 place-items-center rounded-full transition-colors dm-focus lg:grid ${
@@ -429,10 +417,10 @@ export default function Navbar({
                 <Link
                   href="/post-item"
                   className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md lg:inline-flex"
-                  aria-label="Post an item"
+                  aria-label="Post an ad"
                 >
                   <MaterialSymbol name="add" className="!text-base" />
-                  Post item
+                  Post an ad
                 </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
@@ -440,7 +428,7 @@ export default function Navbar({
                     className="hidden text-xs font-semibold text-muted transition-colors hover:text-foreground lg:inline"
                     title="Analytics, organization, and a shareable storefront"
                   >
-                    Open a shop
+                    Create business
                   </Link>
                 ) : null}
               </>
@@ -475,8 +463,6 @@ export default function Navbar({
                   allowHomeAfterLogout.current = false;
                   const href = signInHref();
                   const go = () => window.location.assign(href);
-                  // Full load skips a client-router redirect cached while the
-                  // access cookie was still present immediately after sign-out.
                   if (logoutSettled.current) {
                     go();
                     return;
@@ -500,7 +486,6 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Mobile search bar */}
         <div
           className={`overflow-hidden transition-all duration-200 ease-out lg:hidden ${
             searchOpen ? "max-h-20 border-t border-border" : "max-h-0"
@@ -521,7 +506,6 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Mobile menu */}
         {open ? (
           <div className="border-t border-border pb-4 pt-2 lg:hidden">
             <div className="flex flex-col gap-0.5 px-2">
@@ -554,7 +538,7 @@ export default function Navbar({
                   className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
                 >
                   <MaterialSymbol name="add" className="!text-lg" />
-                  Post item
+                  Post an ad
                 </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
@@ -564,7 +548,7 @@ export default function Navbar({
                   >
                     <MaterialSymbol name="store" className="!text-lg text-muted" />
                     <span>
-                      <span className="block">Open a shop</span>
+                      <span className="block">Create business</span>
                       <span className="block text-[11px] font-normal text-muted">
                         Analytics, organization, a public storefront
                       </span>
@@ -578,7 +562,6 @@ export default function Navbar({
         ) : null}
       </div>
       
-      {/* Floating Back to Top Button (Global across all pages) */}
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

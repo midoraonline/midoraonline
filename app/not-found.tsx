@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LeaveLinks from "@/components/LeaveLinks";
 
 export default function NotFound() {
   return (
@@ -19,6 +20,7 @@ export default function NotFound() {
         >
           Back to home
         </Link>
+        <LeaveLinks className="mt-6" />
       </div>
     </div>
   );

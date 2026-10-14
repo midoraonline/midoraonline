@@ -199,6 +199,7 @@ export default function ProductFormPage({
   hasBottomNav = true,
   flush = false,
   onShopRequired,
+  onBack,
 }: {
   mode: "add" | "edit";
   product?: Product;
@@ -214,6 +215,8 @@ export default function ProductFormPage({
   /** Known `can_post` from the caller (post-item already fetched it). */
   contactVerified?: boolean;
   backUrl?: string;
+  /** In a step flow: Back goes to the previous step (draft stays mounted). */
+  onBack?: () => void;
   /** Several shops: parent shows the picker. The draft stays mounted. */
   onShopRequired?: () => void;
   // Post-item / standalone flows don't render the mobile BottomNav, so the
@@ -589,9 +592,9 @@ export default function ProductFormPage({
         return;
       }
       if (err instanceof ShopRequiredError) {
-        toast.message("Choose a shop", {
+        toast.message("Choose a business", {
           id: toastId,
-          description: "Pick which shop this listing belongs to, then save again.",
+          description: "Pick which business this ad belongs to, then save again.",
         });
         onShopRequired?.();
         return;
@@ -678,13 +681,24 @@ export default function ProductFormPage({
       {/* Top Breadcrumb Header */}
       <div>
         <div className="space-y-1">
-          <Link
-            href={backUrl}
-            className="inline-flex h-9 items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            Back to listings
-          </Link>
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex h-9 items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="size-3.5" />
+              Back
+            </button>
+          ) : (
+            <Link
+              href={backUrl}
+              className="inline-flex h-9 items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="size-3.5" />
+              Back to listings
+            </Link>
+          )}
           {flush ? null : (
             <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {pageTitle}
