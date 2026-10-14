@@ -150,7 +150,7 @@ function ProfileDropdown({
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
                 >
                   <MaterialSymbol name="add_box" className="!text-base text-accent shrink-0" />
-                  Post item
+                  Post an ad
                 </Link>
                 {hasShops ? null : (
                   <Link
@@ -160,7 +160,7 @@ function ProfileDropdown({
                   >
                     <MaterialSymbol name="storefront" className="!text-base text-muted shrink-0" />
                     <span className="min-w-0">
-                      <span className="block">Open a shop</span>
+                      <span className="block">Create business</span>
                       <span className="block text-[11px] font-normal text-muted">
                         Analytics, organization, a public storefront
                       </span>
@@ -429,10 +429,10 @@ export default function Navbar({
                 <Link
                   href="/post-item"
                   className="hidden items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-all dm-focus hover:bg-accent-hover hover:shadow-md lg:inline-flex"
-                  aria-label="Post an item"
+                  aria-label="Post an ad"
                 >
                   <MaterialSymbol name="add" className="!text-base" />
-                  Post item
+                  Post an ad
                 </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
@@ -440,7 +440,7 @@ export default function Navbar({
                     className="hidden text-xs font-semibold text-muted transition-colors hover:text-foreground lg:inline"
                     title="Analytics, organization, and a shareable storefront"
                   >
-                    Open a shop
+                    Create business
                   </Link>
                 ) : null}
               </>
@@ -554,7 +554,7 @@ export default function Navbar({
                   className="flex items-center gap-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-colors dm-focus hover:bg-accent/20"
                 >
                   <MaterialSymbol name="add" className="!text-lg" />
-                  Post item
+                  Post an ad
                 </Link>
                 {(!session.ownedShopIds || session.ownedShopIds.length === 0) ? (
                   <Link
@@ -564,7 +564,7 @@ export default function Navbar({
                   >
                     <MaterialSymbol name="store" className="!text-lg text-muted" />
                     <span>
-                      <span className="block">Open a shop</span>
+                      <span className="block">Create business</span>
                       <span className="block text-[11px] font-normal text-muted">
                         Analytics, organization, a public storefront
                       </span>

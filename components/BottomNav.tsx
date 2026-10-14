@@ -103,7 +103,7 @@ export default function BottomNav() {
       },
       browseOrMessagesTab,
       {
-        label: "Post Item",
+        label: "Post an ad",
         href: postHref,
         icon: "add",
         center: true,

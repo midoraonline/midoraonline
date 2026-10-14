@@ -589,9 +589,9 @@ export default function ProductFormPage({
         return;
       }
       if (err instanceof ShopRequiredError) {
-        toast.message("Choose a shop", {
+        toast.message("Choose a business", {
           id: toastId,
-          description: "Pick which shop this listing belongs to, then save again.",
+          description: "Pick which business this ad belongs to, then save again.",
         });
         onShopRequired?.();
         return;

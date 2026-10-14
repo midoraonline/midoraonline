@@ -37,7 +37,7 @@ function visibleReply(text: string, hasDraft: boolean): string {
     .replace(/```(?:json)?\s*\{[\s\S]*$/, "")
     .trim();
   if (cleaned) return cleaned;
-  return hasDraft ? "I've drafted your shop. Check the details and change anything that isn't right." : text.trim();
+  return hasDraft ? "I've drafted your business. Check the details and change anything that isn't right." : text.trim();
 }
 
 function slugFromName(name: string): string {
@@ -122,7 +122,7 @@ function ShopPreview({ form }: { form: ConfirmForm }) {
   return (
     <div className={CARD}>
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">Preview</p>
-      <p className="mt-1 text-lg font-semibold text-foreground">{form.name || "Your shop name"}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{form.name || "Your business name"}</p>
       {form.description ? <p className="mt-0.5 text-sm text-muted">{form.description}</p> : null}
       {meta ? <p className="mt-1 text-xs text-muted">{meta}</p> : null}
     </div>
@@ -351,7 +351,7 @@ export default function CreateShopConcierge({
       notifyAuthChanged();
       onShopCreated(shop);
     } catch (err) {
-      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not create shop.");
+      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not create your business.");
     } finally {
       setCreating(false);
     }
@@ -403,7 +403,7 @@ export default function CreateShopConcierge({
       <div className="space-y-5">
         <div>
           <StepProgress step={2} total={2} />
-          <p className="text-base font-semibold text-foreground">Check your shop details</p>
+          <p className="text-base font-semibold text-foreground">Check your business details</p>
           <p className="mt-1 text-sm text-muted">We filled in what we could. Change anything that isn&apos;t right.</p>
         </div>
 
@@ -617,7 +617,7 @@ export default function CreateShopConcierge({
               disabled={creating}
               className={BTN_PRIMARY}
             >
-              {creating ? "Creating your shop…" : "Create shop"}
+              {creating ? "Creating your business…" : "Create business"}
             </button>
             <button
               type="button"

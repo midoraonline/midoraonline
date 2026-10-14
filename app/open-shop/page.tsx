@@ -159,13 +159,13 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
       mode: "manual" as const,
       icon: PenLine,
       title: "Set up manually",
-      text: "Fill in your shop details yourself, one short step at a time.",
+      text: "Fill in your business details yourself, one short step at a time.",
       badge: null,
     },
   ];
   return (
     <StepFrame
-      title="How do you want to set up your shop?"
+      title="How do you want to set up your business?"
       subtitle="You can change everything later."
       onBack={onBack}
       wide
@@ -199,9 +199,9 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
 function CreatedSuccess({ shop, onCreateAnother }: { shop: apiShops.Shop; onCreateAnother: () => void }) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm text-muted">Your shop is live</p>
+      <p className="text-sm text-muted">Your business is live</p>
       <h1 className="mt-1 text-xl font-semibold text-foreground">{shop.name}</h1>
-      <p className="mt-1 text-sm text-muted">Add your first listing or finish your shop details whenever you&apos;re ready.</p>
+      <p className="mt-1 text-sm text-muted">Post your first ad or finish your business details whenever you&apos;re ready.</p>
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <Link href={`/merchant/shops/${shop.id}`} className={BTN_PRIMARY}>
           Manage shop

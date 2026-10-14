@@ -39,7 +39,7 @@ type Props = {
 const SCREEN_NAMES: Record<string, string> = {
   "/merchant":               "Overview",
   "/merchant/listings":      "My Listings",
-  "/merchant/shops":         "My Shops",
+  "/merchant/shops":         "My business",
   "/merchant/conversations": "Conversations",
   "/merchant/leads":         "Leads",
   "/merchant/billing":       "Billing & Plans",

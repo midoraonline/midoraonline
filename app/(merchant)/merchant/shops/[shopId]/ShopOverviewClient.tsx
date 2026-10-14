@@ -97,7 +97,7 @@ export default function ShopOverviewClient({
               Catalog
             </Link>
             <Link href={`/merchant/shops/${shopId}/catalog?openAdd=true`} className={BTN_PRIMARY}>
-              Add listing
+              Post an ad
             </Link>
           </div>
         }

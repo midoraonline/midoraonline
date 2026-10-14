@@ -163,7 +163,7 @@ export default function MerchantLeadsClient({
       </FilterBar>
 
       {!stats ? (
-        <EmptyState message={shops.length ? "No lead data for this shop yet." : "Open a shop to start tracking leads."} />
+        <EmptyState message={shops.length ? "No lead data for this shop yet." : "Create a business to start tracking leads."} />
       ) : (
         <>
           <StatStrip
