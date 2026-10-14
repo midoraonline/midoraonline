@@ -585,3 +585,73 @@ export function listNearDuplicates(params: { limit?: number } = {}) {
     `/api/v1/admin/near-duplicates${suffix}`,
   );
 }
+
+// ---- Users -----------------------------------------------------------------
+
+export type AdminUserRole = "customer" | "merchant" | "admin" | "staff";
+export type AdminUserStatus = "active" | "suspended" | "blocked" | "deleted";
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  phone_number?: string | null;
+  phone_verified?: boolean | null;
+  email_verified?: boolean | null;
+  user_role: AdminUserRole;
+  status: AdminUserStatus;
+  created_at?: string | null;
+  last_seen_at?: string | null;
+  avatar_url?: string | null;
+};
+
+export type AdminUserDetail = {
+  user: AdminUser;
+  shops: { id: string; name: string; slug: string; is_active?: boolean; logo_url?: string | null }[];
+  listings_count: number;
+  verification: { email: boolean; phone: boolean; identity: boolean; business: boolean };
+};
+
+export type AdminUserFilters = {
+  q?: string;
+  role?: AdminUserRole | "";
+  verified?: "email" | "phone" | "unverified" | "";
+  status?: AdminUserStatus | "";
+  page?: number;
+  limit?: number;
+};
+
+export function listUsers(filters: AdminUserFilters = {}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(filters)) {
+    if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
+  }
+  const qs = params.toString();
+  return apiFetch<Paginated<AdminUser> & { total: number; total_pages: number }>(
+    `/api/v1/admin/users${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export function getUser(userId: string) {
+  return apiFetch<AdminUserDetail>(`/api/v1/admin/users/${encodeURIComponent(userId)}`);
+}
+
+export function setUserRole(userId: string, role: AdminUserRole) {
+  return apiFetch<AdminUser>(`/api/v1/admin/users/${encodeURIComponent(userId)}/role`, {
+    method: "PATCH",
+    body: { role },
+  });
+}
+
+export function setUserStatus(userId: string, status: "active" | "suspended") {
+  return apiFetch<AdminUser>(`/api/v1/admin/users/${encodeURIComponent(userId)}/status`, {
+    method: "POST",
+    body: { status },
+  });
+}
+
+export function deleteUser(userId: string) {
+  return apiFetch<{ message: string }>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+}
