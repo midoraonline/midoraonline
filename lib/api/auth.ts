@@ -245,3 +245,10 @@ export function resendVerificationEmail() {
     { method: "POST" },
   );
 }
+
+export function deleteMyAccount() {
+  return authCall<{ message: string }>("/api/v1/auth/me/delete", {
+    method: "POST",
+    body: { confirm: "DELETE" },
+  });
+}

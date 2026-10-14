@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiAuth } from "@/lib/api";
 import PasswordInput from "@/components/PasswordInput";
+import DeleteAccountRow from "@/components/settings/DeleteAccountRow";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function AccountSecuritySettings() {
@@ -120,6 +121,7 @@ export default function AccountSecuritySettings() {
           {signingOut ? "Signing out…" : "Sign out"}
         </button>
       </SettingsRow>
+      <DeleteAccountRow />
     </SettingsPanel>
   );
 }
