@@ -9,13 +9,13 @@ import type {
 import { useSessionStore } from "@/lib/state/session-store";
 
 export const DEFAULT_NOTIFICATIONS: NotificationPreferences = {
-  push: true,
-  email: true,
-  messages: true,
-  listing_approved: true,
-  listing_rejected: true,
-  reviews: true,
-  reports: true,
+  push: false,
+  email: false,
+  messages: false,
+  listing_approved: false,
+  listing_rejected: false,
+  reviews: false,
+  reports: false,
 };
 
 const LOCAL_KEY = "midora-notification-prefs";
