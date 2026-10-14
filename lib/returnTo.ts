@@ -9,7 +9,10 @@ export function recordRoute(route: string) {
   try {
     const cur = sessionStorage.getItem(CUR_KEY);
     if (cur === route) return;
-    if (cur) sessionStorage.setItem(PREV_KEY, cur);
+    // Query-only changes (e.g. ?step= inside a flow) stay on the same page:
+    // update the current entry without losing where the user came from.
+    const samePage = cur ? cur.split("?")[0] === route.split("?")[0] : false;
+    if (cur && !samePage) sessionStorage.setItem(PREV_KEY, cur);
     sessionStorage.setItem(CUR_KEY, route);
   } catch {
     /* storage unavailable */
@@ -21,8 +24,8 @@ export function previousRoute(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const prev = sessionStorage.getItem(PREV_KEY);
-    const here = window.location.pathname + window.location.search;
-    if (!prev || !prev.startsWith("/") || prev === here) return null;
+    const here = window.location.pathname;
+    if (!prev || !prev.startsWith("/") || prev.split("?")[0] === here) return null;
     if (/^\/(login|register|auth\/)/.test(prev)) return null;
     return prev;
   } catch {

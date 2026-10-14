@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useUrlStep } from "@/lib/hooks/useUrlStep";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -80,7 +81,15 @@ export default function OpenShopWizard({
 }) {
   const session = useAppSession();
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  // Wizard step lives in ?part= (1-based) so browser back moves between steps.
+  const part = useUrlStep("part");
+  const [furthest, setFurthest] = useState(0);
+  const parsed = Number(part.value);
+  const step = Number.isInteger(parsed) && parsed >= 1 ? Math.min(parsed - 1, furthest, STEPS.length - 1) : 0;
+  function setStep(next: number) {
+    setFurthest((f) => Math.max(f, next));
+    part.go(String(next + 1));
+  }
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +110,7 @@ export default function OpenShopWizard({
     const message = validate(step);
     setError(message);
     if (message) return;
-    setStep((n) => Math.min(n + 1, STEPS.length - 1));
+    setStep(Math.min(step + 1, STEPS.length - 1));
   }
 
   function skip() {
@@ -111,7 +120,7 @@ export default function OpenShopWizard({
     }
     if (step === 3 && validate(3)) setHours(blankHoursDraft);
     setError(null);
-    setStep((n) => Math.min(n + 1, STEPS.length - 1));
+    setStep(Math.min(step + 1, STEPS.length - 1));
   }
 
   function validate(index: number): string | null {
@@ -134,7 +143,7 @@ export default function OpenShopWizard({
       else router.push("/");
       return;
     }
-    setStep((n) => n - 1);
+    part.back(String(step));
   }
 
   async function handleCreateShop() {

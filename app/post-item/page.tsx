@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -12,11 +12,14 @@ import ShopPickStep from "@/components/post/ShopPickStep";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
 import ProductFormPage from "@/components/shop/ProductFormPage";
 import { useAppSession } from "@/lib/state";
+import { leaveFlow, useUrlStep } from "@/lib/hooks/useUrlStep";
 import { fetchMyShopSummaries, type UserShopSummary } from "@/lib/shop/personalShop";
 import { normalizeListingKind, type ListingKind } from "@/lib/listingMeta";
 import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
 
 type Step = "verify" | "shop" | "type" | "form";
+const ORDER: Step[] = ["verify", "type", "shop", "form"];
+const isStep = (v: string | null): v is Step => !!v && (ORDER as string[]).includes(v);
 
 function PostItemFlow() {
   const searchParams = useSearchParams();
@@ -30,7 +33,9 @@ function PostItemFlow() {
   const [status, setStatus] = useState<VerificationStatus | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<Step | null>(null);
+  const { value: urlStep, go, back } = useUrlStep();
+  const [initialStep, setInitialStep] = useState<Step | null>(null);
+  const [visited, setVisited] = useState<Step[]>([]);
   const [shopId, setShopId] = useState<string | null>(paramShopId);
   const [kind, setKind] = useState<ListingKind | null>(
     paramType ? normalizeListingKind(paramType) : null,
@@ -42,6 +47,32 @@ function PostItemFlow() {
     session.user?.user_role === "merchant" || session.user?.user_role === "admin"
       ? "/merchant/listings"
       : "/";
+
+  // Step lives in ?step= so the browser back button moves between steps.
+  // Fall back to the computed first step when the URL has none (or one that
+  // isn't reachable yet, e.g. the form before a type is chosen).
+  let step: Step | null = isStep(urlStep) && initialStep ? urlStep : initialStep;
+  if (step === "form" && !kind) step = "type";
+  if (step === "shop" && shops.length <= 1) step = kind ? "form" : "type";
+  if (step === "verify" && !status) step = initialStep;
+
+  const setStep = useCallback(
+    (next: Step, opts?: { replace?: boolean }) => {
+      setVisited((v) => (v.includes(next) ? v : [...v, next]));
+      go(next, opts);
+    },
+    [go],
+  );
+
+  /** Previous step the user actually saw, in flow order; none → leave the flow. */
+  function goBack(from: Step) {
+    const idx = ORDER.indexOf(from);
+    const prev = ORDER.slice(0, idx)
+      .reverse()
+      .find((s) => visited.includes(s) && (s !== "shop" || shops.length > 1));
+    if (prev) back(prev);
+    else leaveFlow(router);
+  }
 
   useEffect(() => {
     if (!session.hydrated || session.isAuthenticated) return;
@@ -64,10 +95,18 @@ function PostItemFlow() {
         // Exactly one business: pick it automatically. None: post personally.
         if (list.length === 1 && !paramShopId) setShopId(list[0].id);
         // Order: verify → listing type → business (only when >1) → form.
-        if (!verification.can_post) setStep("verify");
-        else if (!paramType) setStep("type");
-        else if (list.length > 1 && !paramShopId) setStep("shop");
-        else setStep("form");
+        const first: Step = !verification.can_post
+          ? "verify"
+          : !paramType
+            ? "type"
+            : list.length > 1 && !paramShopId
+              ? "shop"
+              : "form";
+        setInitialStep(first);
+        setVisited([first]);
+        if (!isStep(new URLSearchParams(window.location.search).get("step"))) {
+          go(first, { replace: true });
+        }
       })
       .catch(() => {
         if (!active) return;
@@ -79,6 +118,7 @@ function PostItemFlow() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `go` changes with the URL; load once per attempt
   }, [session.hydrated, session.isAuthenticated, paramShopId, paramType, attempt]);
 
   useEffect(() => {
@@ -92,16 +132,6 @@ function PostItemFlow() {
     else setStep("form");
   }
 
-  function backFromShop() {
-    if (!paramType) setStep("type");
-    else if (status && !status.can_post) setStep("verify");
-    else router.push(backUrl);
-  }
-
-  function backFromType() {
-    if (status && !status.can_post) setStep("verify");
-    else router.push(backUrl);
-  }
 
   const shop = shops.find((s) => s.id === shopId) ?? (shops.length === 1 ? shops[0] : null);
   const showShopChange = shops.length > 1;
@@ -134,7 +164,7 @@ function PostItemFlow() {
   return (
     <>
       {step === "verify" && status ? (
-        <VerifyChannelStep status={status} onVerified={afterVerify} onBack={() => router.push(backUrl)} />
+        <VerifyChannelStep status={status} onVerified={afterVerify} onBack={() => goBack("verify")} />
       ) : null}
       {step === "shop" ? (
         <ShopPickStep
@@ -143,7 +173,7 @@ function PostItemFlow() {
             setShopId(id);
             setStep("form");
           }}
-          onBack={backFromShop}
+          onBack={() => goBack("shop")}
         />
       ) : null}
       {step === "type" ? (
@@ -153,7 +183,7 @@ function PostItemFlow() {
             setKind(next);
             setStep(shops.length > 1 && !shopId ? "shop" : "form");
           }}
-          onBack={backFromType}
+          onBack={() => goBack("type")}
         />
       ) : null}
       {formReady && kind ? (
@@ -178,6 +208,7 @@ function PostItemFlow() {
                 .catch(() => setStep("verify"));
             }}
             backUrl={backUrl}
+            onBack={() => goBack("form")}
             hasBottomNav={false}
           />
         </div>
