@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LeaveLinks from "@/components/LeaveLinks";
 import { useCallback, useSyncExternalStore, type ReactNode } from "react";
 import {
   BarChart3,
@@ -430,6 +431,7 @@ export function PageError({ reset, backHref, backLabel }: { reset: () => void; b
           {backLabel}
         </Link>
       </div>
+      <LeaveLinks className="mt-4 !justify-start" />
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useLayoutEffect } from "react";
 import { SWRConfig } from "swr";
+import { Suspense } from "react";
+import RouteMemory from "@/components/RouteMemory";
 import { apiAuth, apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import { currentSessionEpoch, isCurrentSessionWrite } from "@/lib/auth/session-epoch";
@@ -103,6 +105,9 @@ export default function AppStateProvider({ children }: { children: React.ReactNo
         keepPreviousData: true,
       }}
     >
+      <Suspense fallback={null}>
+        <RouteMemory />
+      </Suspense>
       {children}
     </SWRConfig>
   );

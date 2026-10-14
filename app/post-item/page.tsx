@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 
 import StandaloneShell from "@/components/StandaloneShell";
 import { BTN_SECONDARY } from "@/components/dashboard/ui";
+import LeaveLinks from "@/components/LeaveLinks";
 import ListingTypeStep from "@/components/post/ListingTypeStep";
 import ShopPickStep from "@/components/post/ShopPickStep";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
@@ -125,6 +126,7 @@ function PostItemFlow() {
         >
           Try again
         </button>
+        <LeaveLinks className="mt-6" />
       </div>
     );
   }
