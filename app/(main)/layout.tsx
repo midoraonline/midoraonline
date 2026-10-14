@@ -2,6 +2,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MidoraInfoChatWidget from "@/components/midoraInfoChatWidget";
 import BottomNav from "@/components/BottomNav";
+import VerifyReminder from "@/components/VerifyReminder";
 import { Mail, MapPin } from "lucide-react";
 
 export default function MainLayout({
@@ -34,7 +35,10 @@ export default function MainLayout({
       </div>
       <Navbar />
       <main className="flex-1 pb-[calc(var(--bottom-nav-clearance)+2.75rem)] lg:pb-0">
-        <div className="dm-container pt-4 pb-2 sm:pt-5 sm:pb-3 lg:pt-6 lg:pb-4">{children}</div>
+        <div className="dm-container pt-4 pb-2 sm:pt-5 sm:pb-3 lg:pt-6 lg:pb-4">
+          <VerifyReminder />
+          {children}
+        </div>
       </main>
       <Footer />
       <BottomNav />

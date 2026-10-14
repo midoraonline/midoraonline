@@ -238,3 +238,10 @@ export function resetPassword(token: string, password: string) {
     body: { token, password },
   });
 }
+
+export function resendVerificationEmail() {
+  return authCall<{ message: string; already_verified: boolean }>(
+    "/api/v1/auth/verify-email/resend",
+    { method: "POST" },
+  );
+}

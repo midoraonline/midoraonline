@@ -1,5 +1,6 @@
 "use client";
 
+import VerifyReminder from "@/components/VerifyReminder";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -292,6 +293,7 @@ export default function DashboardShell({
             {/* Dashboards use the full content column (AGENTS.md §1.2). */}
             {/* Full width on every dashboard; forms cap their own width. */}
             <div data-width={contentWidth} className="w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+              <VerifyReminder />
               {children}
             </div>
           </main>

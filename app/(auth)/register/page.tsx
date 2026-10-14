@@ -68,7 +68,7 @@ function RegisterPageInner() {
         user_role: role,
       });
       await establishClientSession(tokens);
-      router.push("/");
+      router.push(`/check-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(
         isSignupsClosed(err)
