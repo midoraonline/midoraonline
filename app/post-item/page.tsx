@@ -60,9 +60,12 @@ function PostItemFlow() {
         setShops(list);
         setStatus(verification);
         setLoadError(null);
+        // Exactly one business: pick it automatically. None: post personally.
+        if (list.length === 1 && !paramShopId) setShopId(list[0].id);
+        // Order: verify → listing type → business (only when >1) → form.
         if (!verification.can_post) setStep("verify");
-        else if (list.length > 1 && !paramShopId) setStep("shop");
         else if (!paramType) setStep("type");
+        else if (list.length > 1 && !paramShopId) setStep("shop");
         else setStep("form");
       })
       .catch(() => {
@@ -83,19 +86,19 @@ function PostItemFlow() {
 
   function afterVerify(next: VerificationStatus) {
     setStatus(next);
-    if (shops.length > 1 && !shopId) setStep("shop");
-    else if (!kind) setStep("type");
+    if (!kind) setStep("type");
+    else if (shops.length > 1 && !shopId) setStep("shop");
     else setStep("form");
   }
 
   function backFromShop() {
-    if (status && !status.can_post) setStep("verify");
+    if (!paramType) setStep("type");
+    else if (status && !status.can_post) setStep("verify");
     else router.push(backUrl);
   }
 
   function backFromType() {
-    if (shops.length > 1 && !paramShopId) setStep("shop");
-    else if (status && !status.can_post) setStep("verify");
+    if (status && !status.can_post) setStep("verify");
     else router.push(backUrl);
   }
 
@@ -136,7 +139,7 @@ function PostItemFlow() {
           shops={shops}
           onSelect={(id) => {
             setShopId(id);
-            setStep(kind ? "form" : "type");
+            setStep("form");
           }}
           onBack={backFromShop}
         />
@@ -146,7 +149,7 @@ function PostItemFlow() {
           selected={kind}
           onSelect={(next) => {
             setKind(next);
-            setStep("form");
+            setStep(shops.length > 1 && !shopId ? "shop" : "form");
           }}
           onBack={backFromType}
         />
