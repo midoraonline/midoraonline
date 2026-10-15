@@ -39,11 +39,18 @@ export default function BottomNav() {
           icon: "inventory_2",
           isActive: (p) => p.startsWith("/merchant/listings"),
         }
-      : {
-          label: "Shops",
-          href: "/shops",
-          icon: "storefront",
-        };
+      : session.isAuthenticated && role === "customer"
+        ? {
+            label: "Wishlist",
+            href: "/customer/wishlist",
+            icon: "favorite",
+            isActive: (p) => p.startsWith("/customer/wishlist"),
+          }
+        : {
+            label: "Shops",
+            href: "/shops",
+            icon: "storefront",
+          };
 
     const browseOrMessagesTab: Tab = session.isAuthenticated
       ? {
@@ -90,7 +97,7 @@ export default function BottomNav() {
         label: "Account",
         href: "/customer",
         icon: "account_circle",
-        isActive: (p) => p.startsWith("/customer"),
+        isActive: (p) => p.startsWith("/customer") && !p.startsWith("/customer/wishlist"),
       };
     }
 
