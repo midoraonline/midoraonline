@@ -380,7 +380,7 @@ export default function MerchantShopSettingsPage() {
         <SettingsActions>
           {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </SettingsActions>
           </SettingsPanel>

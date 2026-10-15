@@ -6,8 +6,6 @@ import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { BTN_PRIMARY, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
-import PhoneNumberInput from "@/components/PhoneNumberInput";
-import VerifyContactButton from "@/components/VerifyContactButton";
 
 function Banner({ type, message }: { type: "success" | "error"; message: string }) {
   return (
@@ -24,16 +22,12 @@ export default function CustomerProfilePage() {
   const user = session.user ?? null;
 
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [phoneVerified, setPhoneVerified] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     if (user) {
       setFullName(user.full_name ?? "");
-      setPhone(user.phone_number ?? "");
-      setPhoneVerified(Boolean(user.phone_verified));
     }
   }, [user]);
 
@@ -42,7 +36,7 @@ export default function CustomerProfilePage() {
     setSaving(true);
     setStatus(null);
     try {
-      await apiAuth.updateProfile({ full_name: fullName.trim(), phone_number: phone.trim() || undefined });
+      await apiAuth.updateProfile({ full_name: fullName.trim() });
       notifyAuthChanged();
       setStatus({ type: "success", message: "Profile updated successfully." });
     } catch (err) {
@@ -58,7 +52,7 @@ export default function CustomerProfilePage() {
 
   return (
     <div>
-      <PageHeader title="Profile" description="Your photo, name and phone number." />
+      <PageHeader title="Profile" description="Your photo and name." />
       <div className="space-y-4">
       <section className="space-y-4 rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6">
 
@@ -79,7 +73,7 @@ export default function CustomerProfilePage() {
         <div className="mb-5">
           <div>
             <h2 className="text-sm font-semibold">Edit profile</h2>
-            <p className="text-xs text-muted">Update your display name and phone number.</p>
+            <p className="text-xs text-muted">Update your display name.</p>
           </div>
         </div>
 
@@ -109,29 +103,6 @@ export default function CustomerProfilePage() {
             <p className="text-xs text-muted">Email cannot be changed. Contact support if needed.</p>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="phone" className="block text-sm font-medium text-foreground/80">Phone number</label>
-            <PhoneNumberInput
-              id="phone"
-              value={phone}
-              onChange={setPhone}
-              placeholder="700 000 000"
-              autoComplete="tel"
-            />
-            <VerifyContactButton
-              value={phone}
-              verified={phoneVerified}
-              label="phone number"
-              sendCode={() => apiAuth.sendPhoneVerificationCode({ phone_number: phone.trim() })}
-              confirmCode={async (code) => {
-                const updated = await apiAuth.confirmPhoneVerificationCode(code);
-                setPhone(updated.phone_number ?? phone);
-                setPhoneVerified(Boolean(updated.phone_verified));
-              }}
-              onSuccess={() => notifyAuthChanged()}
-            />
-          </div>
-
           {status && <Banner type={status.type} message={status.message} />}
 
           <div className="pt-1">
@@ -140,7 +111,7 @@ export default function CustomerProfilePage() {
               disabled={saving}
               className={BTN_PRIMARY}
             >
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? "Saving…" : "Save"}
             </button>
           </div>
         </form>
