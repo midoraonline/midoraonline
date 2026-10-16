@@ -8,8 +8,6 @@ export type ItemType =
   | "opportunity";
 
 export type ListingMeta = {
-  /** Photo URLs shown uncropped (full width) on the listing page. */
-  full_width_images?: string[];
   condition?: "new" | "like_new" | "used" | "refurbished";
   brand?: string;
   model?: string;
@@ -533,9 +531,6 @@ export function cleanListingMeta(
   extraFields?: CategoryMetaField[],
 ): ListingMeta {
   const out: ListingMeta = {};
-  if (Array.isArray(raw.full_width_images) && raw.full_width_images.length) {
-    out.full_width_images = raw.full_width_images.filter((u) => typeof u === "string" && u.trim());
-  }
   if (kind === "product") {
     if (raw.condition) out.condition = raw.condition;
     if (raw.brand?.trim()) out.brand = raw.brand.trim();

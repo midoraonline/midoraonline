@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Maximize2, Sparkles, Star, UploadCloud, Video as VideoIcon, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Sparkles, Star, UploadCloud, Video as VideoIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { isVideoUrl } from "@/lib/api/products";
 import { removeBackground } from "@/lib/api/aiImages";
@@ -19,9 +19,6 @@ type MediaDropzoneProps = {
   onReorder?: (from: number, to: number) => void;
   /** Swap one URL for another (server-side background removal and its undo). */
   onReplace?: (index: number, url: string) => void;
-  /** URLs shown full width (uncropped) on the listing page. */
-  fullWidth?: string[];
-  onToggleFullWidth?: (url: string, on: boolean) => void;
   maxPhotos?: number;
   maxVideos?: number;
   /** Products need photos to publish. Services and opportunities do not. */
@@ -51,8 +48,6 @@ export function MediaDropzone({
   onRemove,
   onReorder,
   onReplace,
-  fullWidth = [],
-  onToggleFullWidth,
   maxPhotos = 3,
   maxVideos = 1,
   photosRequired = true,
@@ -157,10 +152,6 @@ export function MediaDropzone({
       if (!next) throw new Error("No photo came back.");
       setOriginals((m) => ({ ...m, [next]: url }));
       onReplace(index, next);
-      if (fullWidth.includes(url)) {
-        onToggleFullWidth?.(url, false);
-        onToggleFullWidth?.(next, true);
-      }
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : "Couldn't remove the background. Try again.");
     } finally {
@@ -279,8 +270,6 @@ export function MediaDropzone({
   const viewUrl = viewIndex !== null ? urls[viewIndex] : null;
   const ARROW =
     "dm-focus flex size-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-30";
-  const CHIP_ON = "border-white/60 bg-white text-black";
-  const CHIP_OFF = "border-white/30 bg-white/10 text-white hover:bg-white/20";
 
   return (
     <div className="space-y-4">
@@ -293,7 +282,6 @@ export function MediaDropzone({
             const video = isVideoUrl(url);
             const isCover = i === firstImageIndex;
             const processed = Boolean(originals[url]);
-            const wide = fullWidth.includes(url);
             const dragging = dragIndex === i;
             const target = dragIndex !== null && overIndex === i && !dragging;
             return (
@@ -309,14 +297,16 @@ export function MediaDropzone({
                   setViewIndex(i);
                 }}
                 style={{ WebkitTouchCallout: "none" }}
-                className={[
-                  "group relative aspect-square cursor-pointer select-none overflow-hidden rounded-xl border bg-surface-subtle shadow-xs transition",
-                  onReorder ? "active:cursor-grabbing" : "",
-                  dragging ? "scale-95 border-accent opacity-60" : "border-border",
-                  target ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : "",
-                  dragIndex !== null ? "touch-none" : "",
-                ].join(" ")}
+                className={["flex flex-col gap-1", dragIndex !== null ? "touch-none" : ""].join(" ")}
               >
+                <div
+                  className={[
+                    "group relative aspect-square cursor-pointer select-none overflow-hidden rounded-xl border bg-surface-subtle shadow-xs transition",
+                    onReorder ? "active:cursor-grabbing" : "",
+                    dragging ? "scale-95 border-accent opacity-60" : "border-border",
+                    target ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : "",
+                  ].join(" ")}
+                >
                 {video ? (
                   <video src={url} muted playsInline preload="metadata" className="pointer-events-none h-full w-full object-cover" />
                 ) : (
@@ -335,20 +325,6 @@ export function MediaDropzone({
                     Cover
                   </span>
                 ) : null}
-                {!video && (processed || wide) ? (
-                  <span className="pointer-events-none absolute bottom-1 left-1 flex gap-0.5">
-                    {processed ? (
-                      <span className="rounded bg-accent p-0.5 text-white" title="Background removed">
-                        <Sparkles className="size-3" aria-hidden />
-                      </span>
-                    ) : null}
-                    {wide ? (
-                      <span className="rounded bg-accent p-0.5 text-white" title="Full width on listing">
-                        <Maximize2 className="size-3" aria-hidden />
-                      </span>
-                    ) : null}
-                  </span>
-                ) : null}
                 {bgBusy[url] ? (
                   <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 text-white">
                     <Loader2 className="size-5 animate-spin" aria-hidden />
@@ -360,7 +336,6 @@ export function MediaDropzone({
                     e.stopPropagation();
                     const orig = originals[url];
                     discardUploads(orig ? [url, orig] : [url]);
-                    if (wide) onToggleFullWidth?.(url, false);
                     onRemove(i);
                   }}
                   className="absolute right-1 top-1 flex size-7 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90"
@@ -396,6 +371,29 @@ export function MediaDropzone({
                     </button>
                   </div>
                 ) : null}
+                </div>
+                {!video && onReplace ? (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={processed}
+                    disabled={Boolean(bgBusy[url])}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void toggleBackground(i, url, !processed);
+                    }}
+                    className={[
+                      "dm-focus inline-flex min-h-8 w-full items-center gap-1 rounded-md border px-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
+                      processed
+                        ? "border-accent/50 bg-accent/10 text-accent"
+                        : "border-border bg-surface text-foreground-muted hover:border-accent/40",
+                    ].join(" ")}
+                  >
+                    {bgBusy[url] ? <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden /> : <Sparkles className="size-3.5 shrink-0" aria-hidden />}
+                    <span className="truncate">Remove background</span>
+                  </button>
+                ) : null}
               </li>
             );
           })}
@@ -403,7 +401,7 @@ export function MediaDropzone({
       ) : null}
       {urls.length > 0 ? (
         <p className="text-[11px] text-muted">
-          Tap a photo to view it full size and set options. Hold and drag (or use the arrows) to reorder. The first photo is the cover.
+          Tap a photo to view it full size. Hold and drag (or use the arrows) to reorder. The first photo is the cover.
         </p>
       ) : null}
 
@@ -413,41 +411,6 @@ export function MediaDropzone({
           index={viewIndex}
           onIndexChange={setViewIndex}
           onClose={() => setViewIndex(null)}
-          footer={
-            !isVideoUrl(viewUrl) && (onReplace || onToggleFullWidth) ? (
-              <>
-                {onToggleFullWidth ? (
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={fullWidth.includes(viewUrl)}
-                    onClick={() => onToggleFullWidth(viewUrl, !fullWidth.includes(viewUrl))}
-                    className={`dm-focus inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-medium ${
-                      fullWidth.includes(viewUrl) ? CHIP_ON : CHIP_OFF
-                    }`}
-                  >
-                    <Maximize2 className="size-4" aria-hidden />
-                    Show full width on listing
-                  </button>
-                ) : null}
-                {onReplace ? (
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={Boolean(originals[viewUrl])}
-                    disabled={Boolean(bgBusy[viewUrl])}
-                    onClick={() => void toggleBackground(viewIndex, viewUrl, !originals[viewUrl])}
-                    className={`dm-focus inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-medium disabled:opacity-60 ${
-                      originals[viewUrl] ? CHIP_ON : CHIP_OFF
-                    }`}
-                  >
-                    {bgBusy[viewUrl] ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
-                    Remove background
-                  </button>
-                ) : null}
-              </>
-            ) : null
-          }
         />
       ) : null}
 
