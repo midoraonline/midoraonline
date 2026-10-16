@@ -1,14 +1,15 @@
 "use client";
 
-import { Package, Plus, Search } from "lucide-react";
+import { CheckCircle2, Package, Plus, Search, X } from "lucide-react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { apiProducts } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import { type Product, type ProductStatus } from "@/lib/api/products";
 import ListingManageCard from "@/components/shop/ListingManageCard";
+import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
 import {
@@ -96,6 +97,10 @@ export default function MerchantListingsClient({
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const searchParams = useSearchParams();
+  const postedId = searchParams.get("posted");
+  const [dismissedPosted, setDismissedPosted] = useState(false);
+  const posted = postedId && !dismissedPosted ? items.find((p) => p.id === postedId) ?? null : null;
 
   const shopById = useMemo(() => {
     const m = new Map<string, ListingShopSummary>();
@@ -198,6 +203,40 @@ export default function MerchantListingsClient({
           </button>
         }
       />
+
+      {posted ? (
+        <section className="mb-5 rounded-xl border border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-4" aria-live="polite">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[color:var(--success)]" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">
+                {posted.status === "active" ? "Your ad is live" : "Your ad is posted"}
+              </p>
+              <p className="mt-0.5 truncate text-sm text-muted">{posted.title}</p>
+              {posted.status === "active" && posted.is_published !== false ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <ListingPromoteActions
+                    listingId={posted.id}
+                    onReposted={(postedAt) => applyProduct({ ...posted, created_at: postedAt })}
+                  />
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-muted">
+                  It&apos;s being checked. Boost, Repost and Find in feed appear once it&apos;s live.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setDismissedPosted(true)}
+              className="dm-focus grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-muted"
+              aria-label="Dismiss"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <UnderlineTabs
         tabs={TAB_META.map((t) => ({ value: t.key, label: (
