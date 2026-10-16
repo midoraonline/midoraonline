@@ -1,5 +1,6 @@
 "use client";
 
+import AdminBoostButton from "@/components/admin/AdminBoostButton";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { Loader2, Search, Users, X } from "lucide-react";
@@ -20,6 +21,7 @@ import {
   Select,
   relativeTime,
   type StatusTone,
+  BTN_TEXT,
 } from "@/components/dashboard/ui";
 import { apiAdmin } from "@/lib/api";
 import type { AdminUserRole, AdminUserStatus } from "@/lib/api/admin";
@@ -259,7 +261,10 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
                       <a href={`/shops/${s.slug}`} target="_blank" rel="noreferrer" className="truncate text-accent hover:underline">
                         {s.name}
                       </a>
-                      {s.is_active === false ? <Badge tone="warn">Inactive</Badge> : null}
+                      <span className="flex shrink-0 items-center gap-2">
+                        {s.is_active === false ? <Badge tone="warn">Inactive</Badge> : null}
+                        <AdminBoostButton target="shop" id={s.id} name={s.name} className={BTN_TEXT} />
+                      </span>
                     </li>
                   ))}
                 </ul>

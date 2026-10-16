@@ -6,6 +6,7 @@ import ListingTypeTag from "@/components/ListingTypeTag";
 import { listingTypeTagKind } from "@/lib/listingType";
 import { productPageSlug } from "@/lib/productUrl";
 import { BTN_SECONDARY, CARD, StatusDot } from "@/components/dashboard/ui";
+import AdminBoostButton from "@/components/admin/AdminBoostButton";
 
 export const dynamic = "force-dynamic";
 
@@ -66,11 +67,14 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
         <Link href="/admin/reports" className={BTN_SECONDARY}>
           <ArrowLeft className="size-4" aria-hidden /> Back to reports
         </Link>
+        <div className="flex flex-wrap gap-2">
+        <AdminBoostButton target="listing" id={l.id} name={title} />
         {status === "active" ? (
           <a href={`/products/${productPageSlug({ id: l.id, title })}`} target="_blank" rel="noreferrer" className={BTN_SECONDARY}>
             <ExternalLink className="size-4" aria-hidden /> Public page
           </a>
         ) : null}
+        </div>
       </div>
 
       <header className="space-y-2">

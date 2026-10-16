@@ -49,3 +49,44 @@ export function createBoostPackage(body: BoostPackagePatch) {
 export function updateBoostPackage(id: string, patch: BoostPackagePatch) {
   return apiFetch<BoostPlan>(`/api/v1/admin/boost-plans/${encodeURIComponent(id)}`, { method: "PATCH", body: patch });
 }
+
+/* Admin-granted boosts (testing): free, no plan allowance. */
+export type BoostGrant = { package_id?: string | null; hours?: number | null; score_bonus?: number | null };
+export type ActiveBoost = {
+  id: string;
+  listing_id: string;
+  seller_id: string;
+  shop_id: string | null;
+  score_bonus: number;
+  starts_at: string;
+  ends_at: string;
+  source: string | null;
+  granted_by: string | null;
+  listing_title: string | null;
+  listing_shop_id: string | null;
+  shop_name: string | null;
+  package_name: string | null;
+  business_wide: boolean;
+};
+export const ADMIN_ACTIVE_BOOSTS_KEY = "admin-active-boosts";
+
+export type BoostTarget = "listing" | "shop";
+const targetPath = (t: BoostTarget, id: string) =>
+  `/api/v1/admin/${t === "listing" ? "listings" : "shops"}/${encodeURIComponent(id)}/boost`;
+
+export function adminGrantBoost(target: BoostTarget, id: string, body: BoostGrant) {
+  return apiFetch<{ boosted: number }>(targetPath(target, id), { method: "POST", body });
+}
+
+export function adminEndBoosts(target: BoostTarget, id: string) {
+  return apiFetch<{ ended: number }>(targetPath(target, id), { method: "DELETE" });
+}
+
+export function adminEndBoost(boostId: string) {
+  return apiFetch<{ ended: number }>(`/api/v1/admin/boosts/${encodeURIComponent(boostId)}/end`, { method: "POST" });
+}
+
+export async function listActiveBoosts(): Promise<ActiveBoost[]> {
+  const data = await apiFetch<{ items: ActiveBoost[] }>("/api/v1/admin/boosts/active");
+  return data.items ?? [];
+}

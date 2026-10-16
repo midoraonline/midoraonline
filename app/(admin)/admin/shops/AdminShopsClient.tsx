@@ -1,5 +1,6 @@
 "use client";
 
+import AdminBoostButton from "@/components/admin/AdminBoostButton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -326,6 +327,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
                       label={`${active ? "Deactivate" : "Activate"} ${s.name}`}
                     />
                   </label>
+                  <AdminBoostButton target="shop" id={s.id} name={s.name} />
                   {verifyStatus !== "verified" ? (
                     <button disabled={busy} onClick={() => verifyAction(s, "approve")} className={BTN_SECONDARY}>
                       Verify
