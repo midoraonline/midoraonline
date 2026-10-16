@@ -1,7 +1,12 @@
 import { ApiError, apiFetch } from "./base";
 
+export type MediaLimits = { maxPhotos: number; maxVideos: number };
+export const DEFAULT_MEDIA_LIMITS: MediaLimits = { maxPhotos: 3, maxVideos: 1 };
+export const MEDIA_LIMITS_KEY = "listing_media_limits";
+
 export type FeatureSwitch = {
   key: string;
+  value?: Record<string, unknown>;
   label: string;
   description: string;
   enabled: boolean;
@@ -81,7 +86,31 @@ function switchFrom(key: string, value: unknown): FeatureSwitch | null {
     enabled,
     updated_by: typeof updatedBy === "string" && updatedBy.trim() ? updatedBy : null,
     updated_at: typeof updatedAt === "string" && updatedAt.trim() ? updatedAt : null,
+    value: asRecord(source.value) ?? undefined,
   };
+}
+
+function intOr(raw: unknown, fallback: number): number {
+  const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
+  return Number.isFinite(n) ? Math.trunc(n) : fallback;
+}
+
+export function parseMediaLimits(raw: unknown): MediaLimits {
+  const row = asRecord(raw);
+  if (!row) return DEFAULT_MEDIA_LIMITS;
+  return {
+    maxPhotos: Math.max(1, intOr(row.max_photos ?? row.maxPhotos, DEFAULT_MEDIA_LIMITS.maxPhotos)),
+    maxVideos: Math.max(0, intOr(row.max_videos ?? row.maxVideos, DEFAULT_MEDIA_LIMITS.maxVideos)),
+  };
+}
+
+export async function updateMediaLimits(limits: MediaLimits): Promise<MediaLimits> {
+  const data = await apiFetch<unknown>("/api/v1/admin/settings", {
+    method: "PATCH",
+    body: { key: MEDIA_LIMITS_KEY, value: { max_photos: limits.maxPhotos, max_videos: limits.maxVideos } },
+  });
+  const found = parseFeatureSwitches(data).find((item) => item.key === MEDIA_LIMITS_KEY);
+  return found?.value ? parseMediaLimits(found.value) : limits;
 }
 
 export function parseFeatureSwitches(data: unknown): FeatureSwitch[] {
@@ -116,14 +145,16 @@ function sortSwitches(items: FeatureSwitch[]): FeatureSwitch[] {
   });
 }
 
-export function parsePublicSettings(data: unknown): { analytics: boolean; flags: Record<string, boolean> } {
+export type PublicSettings = { analytics: boolean; flags: Record<string, boolean>; limits: MediaLimits };
+
+export function parsePublicSettings(data: unknown): PublicSettings {
   const switches = parseFeatureSwitches(data);
   const flags: Record<string, boolean> = {};
   for (const item of switches) flags[item.key] = item.enabled;
   const root = asRecord(data);
   const direct = enabledOf(root?.analytics);
   if (direct != null && flags.analytics == null) flags.analytics = direct;
-  return { analytics: flags.analytics === true, flags };
+  return { analytics: flags.analytics === true, flags, limits: parseMediaLimits(root?.limits) };
 }
 
 export async function listAdminSwitches(): Promise<FeatureSwitch[]> {
@@ -149,13 +180,13 @@ export async function updateAdminSwitch(key: string, enabled: boolean): Promise<
   };
 }
 
-export async function getPublicSettings(): Promise<{ analytics: boolean; flags: Record<string, boolean> }> {
+export async function getPublicSettings(): Promise<PublicSettings> {
   try {
     const data = await apiFetch<unknown>("/api/v1/settings/public");
     return parsePublicSettings(data);
   } catch (err) {
     if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-      return { analytics: false, flags: { analytics: false } };
+      return { analytics: false, flags: { analytics: false }, limits: DEFAULT_MEDIA_LIMITS };
     }
     throw err;
   }

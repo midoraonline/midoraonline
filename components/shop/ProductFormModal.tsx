@@ -25,6 +25,7 @@ import {
 import CategoryPicker from "@/components/CategoryPicker";
 import FormModal from "@/components/FormModal";
 import { ImageUpload } from "@/components/image-upload";
+import { usePublicSettings } from "@/lib/hooks/usePlatformAnalytics";
 import { discardUploads } from "@/lib/uploads/discard";
 import { VideoUpload } from "@/components/video-upload";
 import { resolveCategoryParts } from "@/lib/categories";
@@ -225,6 +226,7 @@ export default function ProductFormModal({
     [mode, product, initialKind],
   );
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
+  const { mediaLimits } = usePublicSettings();
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [serverNotice, setServerNotice] = useState<string | null>(null);
@@ -610,7 +612,8 @@ export default function ProductFormModal({
               <ImageUpload
                 endpoint="productImage"
                 multiple
-                existingCount={draft.image_urls.length}
+                existingCount={draft.image_urls.filter((u) => !isVideoUrl(u)).length}
+                maxFiles={mediaLimits.maxPhotos}
                 label="Add photos"
                 watermarkLogoUrl={shopLogoUrl}
                 onUploadManyComplete={(newUrls) => {
@@ -638,7 +641,7 @@ export default function ProductFormModal({
                 At least 2 photos to publish. First photo is the cover.
               </p>
             ) : (
-              <p className="text-xs text-muted">Optional — up to 3 photos or a short video.</p>
+              <p className="text-xs text-muted">Optional — up to {mediaLimits.maxPhotos} photos{mediaLimits.maxVideos ? " or a short video" : ""}.</p>
             )}
           </div>
         </div>

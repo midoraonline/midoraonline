@@ -2,7 +2,7 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { verifyUploadBearer } from "@/lib/auth/verifyUploadBearer";
 import { registerUpload, type UploadKind } from "@/lib/uploads/register";
-import { MAX_LISTING_PHOTOS } from "@/lib/uploads/policy";
+import { LISTING_PHOTO_CEILING } from "@/lib/uploads/policy";
 
 const f = createUploadthing();
 
@@ -23,7 +23,7 @@ function imageRoute(kind: UploadKind, maxFileCount: number) {
 }
 
 export const ourFileRouter = {
-  productImage: imageRoute("listingPhoto", MAX_LISTING_PHOTOS),
+  productImage: imageRoute("listingPhoto", LISTING_PHOTO_CEILING),
   shopLogo: imageRoute("shopLogo", 1),
   shopBanner: imageRoute("shopBanner", 1),
   verificationDoc: imageRoute("verificationDoc", 1),
@@ -32,7 +32,7 @@ export const ourFileRouter = {
   avatarImage: imageRoute("avatar", 1),
 
   productVideo: f({
-    video: { maxFileSize: "32MB", maxFileCount: 4 },
+    video: { maxFileSize: "32MB", maxFileCount: 5 },
   })
     .middleware(async ({ req }) => requireUser(req))
     .onUploadComplete(async ({ metadata, file }) => {

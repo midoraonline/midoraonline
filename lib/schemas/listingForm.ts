@@ -146,6 +146,9 @@ export type ListingValidationContext = {
   phoneVerified?: boolean;
   /** Shop-level location display used when listing location_name is empty. */
   shopLocationLabel?: string | null;
+  /** Admin-configured caps (defaults 3 photos, 1 video). */
+  maxPhotos?: number;
+  maxVideos?: number;
 };
 
 function parseAmount(v: string): number | null {
@@ -210,8 +213,14 @@ export function validateListingDraft(
   const photoCount = draft.image_urls.filter((u) => u.trim() && !isVideoUrl(u)).length;
   const mediaCount = draft.image_urls.filter((u) => u.trim()).length;
   const needsPhotos = photosRequiredForKind(draft.kind);
-  if (mediaCount > MAX_LISTING_MEDIA) {
-    errors.images = `At most ${MAX_LISTING_MEDIA} photos or videos per listing.`;
+  const maxPhotos = ctx.maxPhotos ?? MAX_LISTING_MEDIA;
+  const maxVideos = ctx.maxVideos ?? 1;
+  if (photoCount > maxPhotos) {
+    errors.images = `At most ${maxPhotos} ${maxPhotos === 1 ? "photo" : "photos"} per listing.`;
+  } else if (mediaCount - photoCount > maxVideos) {
+    errors.images = maxVideos
+      ? `At most ${maxVideos} ${maxVideos === 1 ? "video" : "videos"} per listing.`
+      : "Videos aren't allowed on listings right now.";
   } else if (needsPhotos && draft.is_published && photoCount < MIN_LISTING_PHOTOS) {
     errors.images = `Add at least ${MIN_LISTING_PHOTOS} photos before publishing (videos alone are not enough).`;
   } else if (needsPhotos && !hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
