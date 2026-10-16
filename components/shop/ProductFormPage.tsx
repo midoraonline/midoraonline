@@ -881,13 +881,6 @@ export default function ProductFormPage({
             planName={PLAN_NAMES[planTier] ?? "Basic"}
             upgradeHref="/merchant/billing"
             invalid={invalidSections.has("media")}
-            fullWidth={draft.meta.full_width_images ?? []}
-            onToggleFullWidth={(url, on) => {
-              setDraft((d) => {
-                const current = (d.meta.full_width_images ?? []).filter((u) => u !== url);
-                return { ...d, meta: { ...d.meta, full_width_images: on ? [...current, url] : current } };
-              });
-            }}
             onRemove={(index) => {
               setServerSection((cur) => (cur?.key === "media" ? null : cur));
               setDraft((d) => ({

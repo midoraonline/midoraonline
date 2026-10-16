@@ -109,13 +109,10 @@ export default function ProductImageGallery({
   images,
   title,
   children,
-  fullWidth = [],
 }: {
   images: string[];
   title: string;
   children?: React.ReactNode;
-  /** Photos the seller marked "Full-width view": shown whole, not cropped. */
-  fullWidth?: string[];
 }) {
   const [active, setActive] = useState(0);
   const [dead, setDead] = useState<string[]>([]);
@@ -217,7 +214,7 @@ export default function ProductImageGallery({
               alt={i === 0 ? title : `${title} — image ${i + 1}`}
               fill
               className={[
-                fullWidth.includes(url) ? "bg-surface-subtle object-contain" : "object-cover",
+                "object-cover",
                 "transition-opacity duration-400 ease-out motion-reduce:transition-none",
                 visible ? "opacity-100" : "pointer-events-none opacity-0",
               ].join(" ")}
