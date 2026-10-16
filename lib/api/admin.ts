@@ -552,7 +552,41 @@ export type AdminSellerReport = {
     verified: boolean;
     listing_count: number;
     business_count: number;
+    owner?: AdminSellerOwner | null;
+    businesses?: AdminSellerBusiness[];
   } | null;
+};
+
+export type AdminSellerOwner = {
+  email?: string | null;
+  phone_number?: string | null;
+  phone_verified?: boolean | null;
+  email_verified?: boolean | null;
+  status?: string | null;
+  role?: string | null;
+  joined_at?: string | null;
+};
+
+export type AdminSellerBusiness = {
+  id: string;
+  name?: string | null;
+  slug?: string | null;
+  logo_url?: string | null;
+  location?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  description?: string | null;
+  is_active?: boolean | null;
+  trust_badges?: string[];
+  listing_count?: number;
+  created_at?: string | null;
+};
+
+export type AdminListingDetail = {
+  listing: Record<string, unknown> & { id: string; title?: string; status?: string };
+  shop: (Record<string, unknown> & { id: string; name?: string; slug?: string }) | null;
+  owner: (Record<string, unknown> & { id: string }) | null;
+  reports: { id: string; reason: string; description?: string | null; resolved: boolean; created_at: string }[];
 };
 
 export type AdminNearDupe = {

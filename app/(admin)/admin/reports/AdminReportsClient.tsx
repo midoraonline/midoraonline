@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminNearDupe, AdminReport, AdminSellerReport } from "@/lib/api/admin";
 import ListingTypeTag from "@/components/ListingTypeTag";
 import { listingTypeTagKind } from "@/lib/listingType";
 import { productPageSlug } from "@/lib/productUrl";
-import { BadgeCheck, ExternalLink } from "lucide-react";
+import { BadgeCheck, ExternalLink, Eye } from "lucide-react";
 import {
   BTN_SECONDARY,
   RowThumb,
@@ -155,7 +155,11 @@ export default function AdminReportsClient({ initialReports }: Props) {
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-stretch">
-                    {l?.title ? (
+                    <a href={`/admin/listings/${l?.id ?? r.product_id}`} className={BTN_SECONDARY}>
+                      <Eye className="size-4" aria-hidden />
+                      Admin view
+                    </a>
+                    {l?.title && l.status === "active" ? (
                       <a
                         href={`/products/${productPageSlug({ id: l.id, title: l.title })}`}
                         target="_blank"
@@ -163,7 +167,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
                         className={BTN_SECONDARY}
                       >
                         <ExternalLink className="size-4" aria-hidden />
-                        View listing
+                        Public page
                       </a>
                     ) : null}
                     {r.resolved ? (
@@ -214,6 +218,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
                       <p className="mt-2 text-sm font-medium text-foreground">{r.reason}</p>
                       {r.description ? <p className="mt-0.5 text-sm text-muted">{r.description}</p> : null}
                       {reporterLine(r.reporter, r.created_at)}
+                      {sel ? <SellerDetails seller={sel} /> : null}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-stretch">
@@ -263,5 +268,54 @@ export default function AdminReportsClient({ initialReports }: Props) {
         )
       ) : null}
     </div>
+  );
+}
+
+function fmtDate(iso?: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function DetailRow({ label, value }: { label: string; value?: ReactNode }) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <div className="flex gap-2 text-xs">
+      <dt className="w-24 shrink-0 text-muted">{label}</dt>
+      <dd className="min-w-0 break-words text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function SellerDetails({ seller }: { seller: NonNullable<AdminSellerReport["seller"]> }) {
+  const o = seller.owner;
+  const verified = (v?: boolean | null) => (v ? " (verified)" : v === false ? " (not verified)" : "");
+  return (
+    <details className="mt-3 rounded-lg border border-border bg-surface-muted/40 px-3 py-2">
+      <summary className="cursor-pointer text-xs font-medium text-foreground">Seller &amp; business details</summary>
+      <div className="mt-2 space-y-3">
+        <dl className="space-y-1">
+          <DetailRow label="Owner" value={seller.owner_name} />
+          <DetailRow label="Email" value={o?.email ? `${o.email}${verified(o.email_verified)}` : null} />
+          <DetailRow label="Phone" value={o?.phone_number ? `${o.phone_number}${verified(o.phone_verified)}` : null} />
+          <DetailRow label="Account" value={[o?.role, o?.status].filter(Boolean).join(" · ")} />
+          <DetailRow label="Joined" value={fmtDate(o?.joined_at)} />
+          <DetailRow label="Seller ID" value={<span className="font-mono">{seller.id}</span>} />
+        </dl>
+        {(seller.businesses ?? []).map((b) => (
+          <dl key={b.id} className="space-y-1 border-t border-border pt-2">
+            <DetailRow label="Business" value={<span className="font-medium">{b.name}</span>} />
+            <DetailRow label="Status" value={b.is_active ? "Active" : "Inactive"} />
+            <DetailRow label="Location" value={b.location} />
+            <DetailRow label="WhatsApp" value={b.whatsapp} />
+            <DetailRow label="Email" value={b.email} />
+            <DetailRow label="Badges" value={(b.trust_badges ?? []).join(", ").replace(/_/g, " ")} />
+            <DetailRow label="Ads" value={b.listing_count} />
+            <DetailRow label="Created" value={fmtDate(b.created_at)} />
+            <DetailRow label="About" value={b.description} />
+          </dl>
+        ))}
+      </div>
+    </details>
   );
 }
