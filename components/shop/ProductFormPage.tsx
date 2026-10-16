@@ -27,6 +27,8 @@ import {
 } from "@/lib/api/products";
 import CategoryPicker from "@/components/CategoryPicker";
 import { MediaDropzone } from "@/components/shop/MediaDropzone";
+import { usePublicSettings } from "@/lib/hooks/usePlatformAnalytics";
+import { ApiError } from "@/lib/api/base";
 import CategoryMetaInputs from "@/components/shop/CategoryMetaInputs";
 import ListingTypeSummary from "@/components/shop/ListingTypeSummary";
 import { resolveCategoryParts } from "@/lib/categories";
@@ -49,7 +51,6 @@ import {
 } from "@/lib/listingMeta";
 import {
   evaluateSalePrice,
-  MAX_LISTING_MEDIA,
   validateListingDraft,
   type ListingDraft,
 } from "@/lib/schemas/listingForm";
@@ -66,34 +67,6 @@ const UGX = new Intl.NumberFormat("en-UG", {
 function parseAmount(v: string): number | null {
   const n = Number(v.replace(/,/g, ""));
   return Number.isFinite(n) && n >= 0 ? n : null;
-}
-
-function MediaGridWrapper({
-  urls,
-  onRemove,
-  onImageUploaded,
-  onVideoUploaded,
-  onSetCover,
-  photosRequired,
-}: {
-  urls: string[];
-  onRemove: (index: number) => void;
-  onImageUploaded: (url: string) => void;
-  onVideoUploaded: (url: string) => void;
-  onSetCover: (index: number) => void;
-  photosRequired: boolean;
-}) {
-  return (
-    <MediaDropzone
-      urls={urls}
-      onRemove={onRemove}
-      onImageUploaded={onImageUploaded}
-      onVideoUploaded={onVideoUploaded}
-      onSetCover={onSetCover}
-      maxItems={MAX_LISTING_MEDIA}
-      photosRequired={photosRequired}
-    />
-  );
 }
 
 function QualityPill({ label, ok }: { label: string; ok: boolean }) {
@@ -184,6 +157,36 @@ function draftsEqual(a: FormDraft, b: FormDraft): boolean {
   );
 }
 
+type SectionKey = "media" | "details" | "location" | "price" | "category" | "meta";
+
+const ERROR_SECTIONS: Record<string, SectionKey> = {
+  too_many_media: "media",
+  too_many_photos: "media",
+  too_many_videos: "media",
+  photos_required: "media",
+  invalid_price: "price",
+  price_required: "price",
+  stock_required: "price",
+  category_required: "category",
+  description_required: "details",
+  title_required: "details",
+  location_required: "location",
+  listing_fields_required: "meta",
+};
+
+/** Which form section an API rejection belongs to, so it can be highlighted. */
+function sectionForError(err: unknown): SectionKey | null {
+  if (!(err instanceof ApiError)) return null;
+  if (err.code && ERROR_SECTIONS[err.code]) return ERROR_SECTIONS[err.code];
+  const msg = err.message.toLowerCase();
+  if (/photo|image|video|media/.test(msg)) return "media";
+  if (/price/.test(msg)) return "price";
+  if (/category/.test(msg)) return "category";
+  if (/location|city|area/.test(msg)) return "location";
+  if (/title|description/.test(msg)) return "details";
+  return null;
+}
+
 export default function ProductFormPage({
   mode,
   product,
@@ -191,7 +194,6 @@ export default function ProductFormPage({
   itemType = "product",
   listingKind,
   shopLabel,
-  onChangeType,
   onChangeShop,
   onVerificationRequired,
   contactVerified,
@@ -237,6 +239,9 @@ export default function ProductFormPage({
   const [showErrors, setShowErrors] = useState(false);
   const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});
   const [mediaError, setMediaError] = useState<string | null>(null);
+  /** Section the API rejected (price, images, category…), highlighted until edited. */
+  const [serverSection, setServerSection] = useState<{ key: SectionKey; message: string } | null>(null);
+  const { mediaLimits } = usePublicSettings();
   const [remoteFields, setRemoteFields] = useState<ReturnType<typeof normalizeCategoryFields> | null>(
     null,
   );
@@ -359,8 +364,48 @@ export default function ProductFormPage({
       phoneVerified:
         contactVerified ?? Boolean(sessionUser?.phone_verified || sessionUser?.email_verified),
       shopLocationLabel,
+      maxPhotos: mediaLimits.maxPhotos,
+      maxVideos: mediaLimits.maxVideos,
     });
-  }, [draft, categoryParts, categoryTree, catFields, contactVerified, sessionUser?.phone_verified, sessionUser?.email_verified, shopLocationLabel]);
+  }, [draft, categoryParts, categoryTree, catFields, contactVerified, sessionUser?.phone_verified, sessionUser?.email_verified, shopLocationLabel, mediaLimits.maxPhotos, mediaLimits.maxVideos]);
+
+  const invalidSections = useMemo(() => {
+    const out = new Set<SectionKey>();
+    if (showErrors) {
+      if (errors.images) out.add("media");
+      if (errors.title || errors.description) out.add("details");
+      if (errors.location_name || errors.phone) out.add("location");
+      if (errors.price_ugx || errors.sale_price || errors.stock_quantity || sale.kind === "invalid") out.add("price");
+      if (errors.category) out.add("category");
+      if (errors.meta || Object.keys(serverFieldErrors).length) out.add("meta");
+    }
+    if (mediaError) out.add("media");
+    if (serverSection) out.add(serverSection.key);
+    return out;
+  }, [showErrors, errors, sale.kind, serverFieldErrors, mediaError, serverSection]);
+
+  const sectionClass = (key: SectionKey) =>
+    `scroll-mt-24 space-y-4 rounded-xl border bg-surface p-4 shadow-xs transition-colors sm:p-6 ${
+      invalidSections.has(key)
+        ? "border-[color:var(--error)] ring-1 ring-[color:var(--error)]/30"
+        : "border-border"
+    }`;
+  const sectionMessage = (key: SectionKey) =>
+    serverSection?.key === key ? (
+      <p className="text-xs font-medium text-[color:var(--error)]" role="alert">
+        {serverSection.message}
+      </p>
+    ) : null;
+
+  function scrollToFirstInvalid() {
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>('#product-form-page [data-invalid="true"]');
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const field = el.querySelector<HTMLElement>('[aria-invalid="true"], input:not([type="hidden"]):not([disabled]), textarea, select');
+      field?.focus({ preventScroll: true });
+    });
+  }
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -496,9 +541,11 @@ export default function ProductFormPage({
     submitLock.current = true;
     setShowErrors(true);
     setMediaError(null);
+    setServerSection(null);
     try {
     if (!canSubmit) {
-      toast.error("Fix the required fields before saving.");
+      toast.error("Fix the highlighted fields before saving.");
+      scrollToFirstInvalid();
       return;
     }
 
@@ -607,6 +654,7 @@ export default function ProductFormPage({
         }
         setServerFieldErrors(next);
         setShowErrors(true);
+        scrollToFirstInvalid();
         toast.error(
           err instanceof Error ? err.message : "Add the required category fields.",
           { id: toastId },
@@ -617,6 +665,7 @@ export default function ProductFormPage({
       if (unreachable) {
         setMediaError(unreachable);
         setShowErrors(true);
+        scrollToFirstInvalid();
         toast.error(unreachable, { id: toastId });
         return;
       }
@@ -634,10 +683,13 @@ export default function ProductFormPage({
           return;
         }
       }
-      toast.error(
-        err instanceof Error ? err.message : "Could not save. Try again.",
-        { id: toastId },
-      );
+      const message = err instanceof Error ? err.message : "Could not save. Try again.";
+      const section = sectionForError(err);
+      if (section) {
+        setServerSection({ key: section, message });
+        scrollToFirstInvalid();
+      }
+      toast.error(message, { id: toastId });
     } finally {
       setSaving(false);
     }
@@ -790,12 +842,11 @@ export default function ProductFormPage({
             kind={draft.kind}
             meta={draft.meta}
             shopLabel={shopLabel}
-            onChangeType={onChangeType}
             onChangeShop={onChangeShop}
           />
         </div>
 
-        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+        <section data-invalid={invalidSections.has("media")} className={sectionClass("media")}>
           <div>
             <h2 className="text-sm font-semibold text-foreground">
               {draft.kind === "opportunity"
@@ -806,32 +857,49 @@ export default function ProductFormPage({
             </h2>
             <p className="mt-0.5 text-sm text-muted">
               {draft.kind === "opportunity"
-                ? "Photos are optional. You can still add up to 3 photos or a short video."
+                ? `Photos are optional. You can still add up to ${mediaLimits.maxPhotos} photos${mediaLimits.maxVideos ? " or a short video" : ""}.`
                 : draft.kind === "service"
-                  ? "Photos are optional for services. Add up to 3 if they help clients trust your work. The first photo is the cover; use Set cover to change it."
-                  : "Add up to 3 photos or a short video. At least 2 photos are required to publish. The first photo is the cover; use Set cover to change it."}
+                  ? `Photos are optional for services. Add up to ${mediaLimits.maxPhotos} if they help clients trust your work. The first photo is the cover; drag to reorder.`
+                  : `Add up to ${mediaLimits.maxPhotos} photos${mediaLimits.maxVideos ? " or a short video" : ""}. At least 2 photos are required to publish. The first photo is the cover; drag to reorder.`}
             </p>
           </div>
 
-          <MediaGridWrapper
+          <MediaDropzone
             photosRequired={draft.kind === "product"}
             urls={draft.image_urls}
+            maxPhotos={mediaLimits.maxPhotos}
+            maxVideos={mediaLimits.maxVideos}
+            invalid={invalidSections.has("media")}
+            fullWidth={draft.meta.full_width_images ?? []}
+            onToggleFullWidth={(url, on) => {
+              setDraft((d) => {
+                const current = (d.meta.full_width_images ?? []).filter((u) => u !== url);
+                return { ...d, meta: { ...d.meta, full_width_images: on ? [...current, url] : current } };
+              });
+            }}
             onRemove={(index) => {
+              setServerSection((cur) => (cur?.key === "media" ? null : cur));
               setDraft((d) => ({
                 ...d,
                 image_urls: d.image_urls.filter((_, i) => i !== index),
               }));
             }}
-            onSetCover={(index) => {
-              if (index <= 0) return;
+            onReorder={(from, to) => {
               setDraft((d) => {
                 const next = [...d.image_urls];
-                const [picked] = next.splice(index, 1);
-                next.unshift(picked);
+                const [picked] = next.splice(from, 1);
+                next.splice(to, 0, picked);
                 return { ...d, image_urls: next };
               });
             }}
+            onReplace={(index, url) => {
+              setDraft((d) => ({
+                ...d,
+                image_urls: d.image_urls.map((u, i) => (i === index ? url : u)),
+              }));
+            }}
             onImageUploaded={(url) => {
+              setServerSection((cur) => (cur?.key === "media" ? null : cur));
               setDraft((d) => ({
                 ...d,
                 image_urls: [...d.image_urls, url],
@@ -844,6 +912,7 @@ export default function ProductFormPage({
               }));
             }}
           />
+          {sectionMessage("media")}
 
           {showErrors && errors.images ? (
             <p className="text-xs text-[color:var(--error)]">{errors.images}</p>
@@ -856,7 +925,8 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 2: Basic Info (Title & Description) */}
-        <section className="space-y-5 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+        <section data-invalid={invalidSections.has("details")} className={`${sectionClass("details")} space-y-5`}>
+          {sectionMessage("details")}
           <div>
             <h2 className="text-sm font-semibold text-foreground">Details</h2>
             <p className="mt-0.5 text-sm text-muted">A clear title and a few honest sentences help buyers decide.</p>
@@ -910,7 +980,8 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 3b: Location (required to publish) */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+        <section data-invalid={invalidSections.has("location")} className={sectionClass("location")}>
+          {sectionMessage("location")}
           <div>
             <h2 className="text-sm font-semibold text-foreground">Location</h2>
             <p className="mt-0.5 text-sm text-muted">
@@ -938,7 +1009,8 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 4: Pricing & Stock */}
-        <section className="space-y-5 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+        <section data-invalid={invalidSections.has("price")} className={`${sectionClass("price")} space-y-5`}>
+          {sectionMessage("price")}
           <div>
             <h2 className="text-sm font-semibold text-foreground">Price</h2>
             <p className="mt-0.5 text-sm text-muted">Prices are in UGX.</p>
@@ -954,7 +1026,11 @@ export default function ProductFormPage({
                 className={INPUT}
                 inputMode="numeric"
                 value={draft.price_ugx}
-                onChange={(e) => setDraft((d) => ({ ...d, price_ugx: e.target.value }))}
+                onChange={(e) => {
+                  setServerSection((cur) => (cur?.key === "price" ? null : cur));
+                  setDraft((d) => ({ ...d, price_ugx: e.target.value }));
+                }}
+                aria-invalid={(showErrors && Boolean(errors.price_ugx)) || serverSection?.key === "price"}
                 placeholder={draft.kind === "opportunity" ? "Optional — 0 if unpaid" : "50000"}
               />
               {showErrors && errors.price_ugx ? (
@@ -1007,7 +1083,8 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 5: Category */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+        <section data-invalid={invalidSections.has("category")} className={sectionClass("category")}>
+          {sectionMessage("category")}
           <div>
             <h2 className="text-sm font-semibold text-foreground">Category</h2>
             <p className="mt-0.5 text-sm text-muted">
@@ -1055,7 +1132,8 @@ export default function ProductFormPage({
         </section>
 
         {/* Card 6: Additional Attributes */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
+        <section data-invalid={invalidSections.has("meta")} className={sectionClass("meta")}>
+          {sectionMessage("meta")}
           <div>
             <h2 className="text-sm font-semibold text-foreground">More about this listing</h2>
             <p className="mt-0.5 text-sm text-muted">
