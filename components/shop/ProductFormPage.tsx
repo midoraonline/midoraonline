@@ -157,6 +157,8 @@ function draftsEqual(a: FormDraft, b: FormDraft): boolean {
   );
 }
 
+const PLAN_NAMES: Record<string, string> = { basic: "Basic", standard: "Standard", premium: "Premium" };
+
 type SectionKey = "media" | "details" | "location" | "price" | "category" | "meta";
 
 const ERROR_SECTIONS: Record<string, SectionKey> = {
@@ -241,7 +243,9 @@ export default function ProductFormPage({
   const [mediaError, setMediaError] = useState<string | null>(null);
   /** Section the API rejected (price, images, category…), highlighted until edited. */
   const [serverSection, setServerSection] = useState<{ key: SectionKey; message: string } | null>(null);
-  const { mediaLimits } = usePublicSettings();
+  const { mediaLimitsFor } = usePublicSettings();
+  const planTier = useSessionStore((s) => s.user?.plan_tier) ?? "basic";
+  const mediaLimits = mediaLimitsFor(planTier);
   const [remoteFields, setRemoteFields] = useState<ReturnType<typeof normalizeCategoryFields> | null>(
     null,
   );
@@ -869,6 +873,8 @@ export default function ProductFormPage({
             urls={draft.image_urls}
             maxPhotos={mediaLimits.maxPhotos}
             maxVideos={mediaLimits.maxVideos}
+            planName={PLAN_NAMES[planTier] ?? "Basic"}
+            upgradeHref="/merchant/billing"
             invalid={invalidSections.has("media")}
             fullWidth={draft.meta.full_width_images ?? []}
             onToggleFullWidth={(url, on) => {

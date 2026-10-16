@@ -26,6 +26,7 @@ import CategoryPicker from "@/components/CategoryPicker";
 import FormModal from "@/components/FormModal";
 import { ImageUpload } from "@/components/image-upload";
 import { usePublicSettings } from "@/lib/hooks/usePlatformAnalytics";
+import { useSessionStore } from "@/lib/state/session-store";
 import { discardUploads } from "@/lib/uploads/discard";
 import { VideoUpload } from "@/components/video-upload";
 import { resolveCategoryParts } from "@/lib/categories";
@@ -226,7 +227,9 @@ export default function ProductFormModal({
     [mode, product, initialKind],
   );
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
-  const { mediaLimits } = usePublicSettings();
+  const { mediaLimitsFor } = usePublicSettings();
+  const planTier = useSessionStore((s) => s.user?.plan_tier);
+  const mediaLimits = mediaLimitsFor(planTier);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [serverNotice, setServerNotice] = useState<string | null>(null);
