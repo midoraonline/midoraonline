@@ -19,6 +19,7 @@ const NAV: DashboardNavItem[] = [
 
 const SECONDARY: DashboardNavItem[] = [
   { href: "/admin/chat", label: "Chat", icon: <IconChat /> },
+  { href: "/admin/plans", label: "Plans", icon: <IconReceipt /> },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: <IconReceipt /> },
   { href: "/admin/feedback", label: "Feedback", icon: <IconFeedback /> },
   { href: "/admin/features", label: "Features", icon: <IconTune /> },
