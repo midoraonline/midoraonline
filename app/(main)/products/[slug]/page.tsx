@@ -40,6 +40,8 @@ import {
   parseListingMeta,
 } from "@/lib/listingMeta";
 import ListingTypeTag from "@/components/ListingTypeTag";
+import BoostedTag from "@/components/BoostedTag";
+import { boostEndsLabel } from "@/lib/boostInfo";
 import { listingTypeTagKind } from "@/lib/listingType";
 import {
   buildCanonicalCategoryItems,
@@ -252,10 +254,10 @@ export default async function ProductDetails({
         <div className="min-w-0 space-y-4">
           <header className="space-y-2.5">
             <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-medium">
-              {product.boosted ? (
-                <span className="rounded-md bg-accent px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white">
-                  Hot
-                </span>
+              {product.is_boosted ?? product.boosted ? (
+                <BoostedTag
+                  title={product.boost_ends_at ? `Boosted until ${boostEndsLabel(product.boost_ends_at)}` : undefined}
+                />
               ) : null}
               {shopLive ? (
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 font-semibold uppercase tracking-wide text-white">

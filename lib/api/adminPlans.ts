@@ -66,6 +66,8 @@ export type ActiveBoost = {
   listing_shop_id: string | null;
   shop_name: string | null;
   package_name: string | null;
+  source_label?: string | null;
+  scope?: "shop" | "listing" | null;
   business_wide: boolean;
 };
 export const ADMIN_ACTIVE_BOOSTS_KEY = "admin-active-boosts";

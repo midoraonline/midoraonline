@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 import { toast } from "sonner";
 import { Rocket } from "lucide-react";
 import FormModal from "@/components/FormModal";
 import { ApiError } from "@/lib/api/base";
+import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
+import { refreshAfterRankChange } from "@/lib/api/listingActions";
 import {
-  ADMIN_ACTIVE_BOOSTS_KEY,
   ADMIN_BOOST_PACKAGES_KEY,
   adminEndBoosts,
   adminGrantBoost,
@@ -80,7 +81,7 @@ function BoostDialog({
         custom ? { hours: h, score_bonus: s } : { package_id: selected },
       );
       toast.success(target === "shop" ? `Boosted ${out.boosted} live listings` : "Listing boosted");
-      void mutate(ADMIN_ACTIVE_BOOSTS_KEY);
+      refreshAfterRankChange();
       onClose();
     } catch (err) {
       toast.error(message(err));
@@ -94,7 +95,7 @@ function BoostDialog({
     try {
       const out = await adminEndBoosts(target, id);
       toast.success(out.ended ? `Ended ${out.ended} boost${out.ended === 1 ? "" : "s"}` : "Nothing was boosted");
-      void mutate(ADMIN_ACTIVE_BOOSTS_KEY);
+      refreshAfterRankChange();
       onClose();
     } catch (err) {
       toast.error(message(err));
@@ -127,6 +128,11 @@ function BoostDialog({
         Admin test boost: no payment and no plan allowance used. Replaces any current boost.
         {target === "shop" ? " Applies to every live listing of this business right now." : ""}
       </p>
+      <AdminBoostStatus
+        listingId={target === "listing" ? id : undefined}
+        shopId={target === "shop" ? id : undefined}
+        className="mt-3 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2"
+      />
       <fieldset className="mt-4 space-y-2">
         <legend className="text-xs font-semibold text-foreground-muted">Package</legend>
         {isLoading && !packages ? (

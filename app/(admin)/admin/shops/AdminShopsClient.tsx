@@ -1,6 +1,7 @@
 "use client";
 
 import AdminBoostButton from "@/components/admin/AdminBoostButton";
+import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -316,6 +317,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
+                  <AdminBoostStatus shopId={s.id} className="mt-1" />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 text-xs text-muted">

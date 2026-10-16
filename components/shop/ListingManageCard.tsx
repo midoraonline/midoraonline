@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
+import BoostedTag from "@/components/BoostedTag";
+import { describeBoost, type BoostInfo } from "@/lib/boostInfo";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import FormModal from "@/components/FormModal";
 import { apiProducts } from "@/lib/api";
@@ -47,11 +49,14 @@ export default function ListingManageCard({
   shopName,
   onDelete,
   onUpdated,
+  boost,
 }: {
   product: Product;
   shopName?: string | null;
   onDelete: () => void;
   onUpdated: (product: Product) => void;
+  /** Active boost on this listing, if any. */
+  boost?: BoostInfo | null;
 }) {
   const router = useRouter();
   const menuId = useId();
@@ -299,6 +304,14 @@ export default function ListingManageCard({
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           {shopName ? <span className="truncate text-xs text-muted">{shopName}</span> : null}
         </div>
+        {boost ? (
+          <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-foreground">
+            <BoostedTag />
+            <span className="truncate" title={describeBoost(boost)}>
+              {describeBoost(boost)}
+            </span>
+          </p>
+        ) : null}
         {product.review_notes ? (
           <p
             className={`mt-1 line-clamp-1 text-xs ${

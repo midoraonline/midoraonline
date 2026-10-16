@@ -6,12 +6,15 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { Loader2, LocateFixed, RefreshCw, Rocket } from "lucide-react";
 import FormModal from "@/components/FormModal";
+import { describeBoost } from "@/lib/boostInfo";
 import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/dashboard/ui";
 import {
   boostListing,
+  feedPositionKey,
   getFeedPosition,
   getPromoteOptions,
   promoteKey,
+  refreshAfterRankChange,
   repostListing,
   type FeedPosition,
 } from "@/lib/api/listingActions";
@@ -24,12 +27,6 @@ const UGX = new Intl.NumberFormat("en-UG", { style: "currency", currency: "UGX",
 function durationLabel(hours: number) {
   if (hours % 24 === 0) return `${hours / 24} day${hours === 24 ? "" : "s"}`;
   return `${hours} hours`;
-}
-
-function endsLabel(iso?: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 function Skeleton() {
@@ -53,6 +50,7 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
       const res = await boostListing(listingId, packageId, useAllowance);
       if (res.status === "active") {
         toast.success("Your ad is boosted");
+        refreshAfterRankChange();
         await mutate();
         onClose();
       } else {
@@ -75,7 +73,7 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
         {error ? <p className="text-sm text-[color:var(--error)]">{error instanceof Error ? error.message : "Couldn't load boosts."}</p> : null}
         {data?.active_boost ? (
           <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-foreground">
-            Boosted until {endsLabel(data.active_boost.ends_at)}.
+            <span className="font-semibold">Boosted:</span> {describeBoost(data.active_boost)}
           </p>
         ) : null}
         {data && !data.active_boost ? (
@@ -124,8 +122,10 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
 
 function PositionDialog({ listingId, onClose }: { listingId: string; onClose: () => void }) {
   const router = useRouter();
-  const { data, error, isLoading } = useSWR<FeedPosition>(`feed-position:${listingId}`, () => getFeedPosition(listingId), {
+  const { data, error, isLoading } = useSWR<FeedPosition>(feedPositionKey(listingId), () => getFeedPosition(listingId), {
     revalidateOnFocus: false,
+    revalidateOnMount: true,
+    dedupingInterval: 0,
   });
   const go = () => {
     onClose();
@@ -162,7 +162,7 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
               </p>
             ) : null}
             <p className="text-xs text-muted">
-              Live position for buyers right now{data.boosted ? " · boosted" : ""}. Boost or repost to move up.
+              Live position for buyers right now{data.boost ? ` · Boosted (${describeBoost(data.boost)})` : ""}. Boost or repost to move up.
             </p>
           </div>
         )
@@ -180,6 +180,7 @@ export default function ListingPromoteActions({ listingId, onReposted }: { listi
     try {
       const res = await repostListing(listingId);
       toast.success("Reposted. Your ad is fresh again.");
+      refreshAfterRankChange();
       onReposted?.(res.posted_at);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't repost this ad.");

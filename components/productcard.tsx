@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, ImageIcon, MapPin, Play, Star, Zap } from "lucide-react";
+import { ArrowRight, ImageIcon, MapPin, Play, Star } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -14,6 +14,7 @@ import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
+import BoostedTag from "@/components/BoostedTag";
 import ListingTypeTag from "@/components/ListingTypeTag";
 import BrandedCover from "@/components/BrandedCover";
 import { listingTypeTagKind } from "@/lib/listingType";
@@ -73,6 +74,7 @@ export type ProductCardData = {
   description?: string | null;
   inShopContext?: boolean;
   boosted?: boolean;
+  boost_ends_at?: string | null;
   updated_at?: string | null;
   location_name?: string | null;
   /** product | service | opportunity (job maps to opportunity) */
@@ -421,10 +423,7 @@ export default function ProductCard({
       <div className="flex min-h-9 max-w-[75%] flex-wrap items-center gap-1">
         <ListingTypeTag kind={typeKind} className={CARD_TAG} />
         {isBoosted && (
-          <Badge className="bg-accent text-white">
-            <Zap className="size-2.5" strokeWidth={2.5} aria-hidden />
-            Hot
-          </Badge>
+          <BoostedTag className={CARD_TAG} />
         )}
         {shopLive && (
           <Badge className="bg-emerald-600 text-white">

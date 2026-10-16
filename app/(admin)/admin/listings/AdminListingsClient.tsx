@@ -1,6 +1,7 @@
 "use client";
 
 import AdminBoostButton from "@/components/admin/AdminBoostButton";
+import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminListingProduct } from "@/lib/api/admin";
@@ -111,6 +112,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                         {listing.reports_count ? ` · ${fmt(listing.reports_count)} reports` : ""} ·{" "}
                         <span title={new Date(listing.created_at).toLocaleString()}>{relativeTime(listing.created_at)}</span>
                       </p>
+                      <AdminBoostStatus listingId={listing.id} className="mt-1" />
                       {listing.review_notes ? (
                         <p className="mt-1 text-xs text-muted">Note: {listing.review_notes}</p>
                       ) : null}

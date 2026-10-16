@@ -1,6 +1,7 @@
 "use client";
 
 import AdminBoostButton from "@/components/admin/AdminBoostButton";
+import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { Loader2, Search, Users, X } from "lucide-react";
@@ -257,7 +258,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
               ) : (
                 <ul className="space-y-1.5">
                   {data.shops.map((s) => (
-                    <li key={s.id} className="flex items-center justify-between gap-2">
+                    <li key={s.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                       <a href={`/shops/${s.slug}`} target="_blank" rel="noreferrer" className="truncate text-accent hover:underline">
                         {s.name}
                       </a>
@@ -265,6 +266,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
                         {s.is_active === false ? <Badge tone="warn">Inactive</Badge> : null}
                         <AdminBoostButton target="shop" id={s.id} name={s.name} className={BTN_TEXT} />
                       </span>
+                      <AdminBoostStatus shopId={s.id} className="w-full" />
                     </li>
                   ))}
                 </ul>
