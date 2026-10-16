@@ -189,7 +189,7 @@ function evaluateSalePrice(priceStr: string, saleStr: string): SalePriceState {
   if (price === null || price <= 0)
     return { kind: "invalid", message: "Set the price first." };
   if (sale >= price)
-    return { kind: "invalid", message: "Sale price must be less than the price." };
+    return { kind: "invalid", message: "After discount price must be less than the price." };
   const savings = price - sale;
   const percent = Math.round((savings / price) * 100);
   return { kind: "ok", savings, percent };
@@ -712,7 +712,7 @@ export default function ProductFormModal({
           {draft.kind !== "opportunity" ? (
             <div className="space-y-1.5">
               <label htmlFor="product-sale" className="text-sm font-medium text-foreground">
-                Sale price <span className="font-normal text-muted">(optional)</span>
+                After discount price <span className="font-normal text-muted">(optional)</span>
               </label>
               <input
                 id="product-sale"

@@ -170,7 +170,7 @@ export function evaluateSalePrice(
   if (price === null || price <= 0)
     return { kind: "invalid", message: "Set the price first." };
   if (sale >= price)
-    return { kind: "invalid", message: "Sale price must be less than the price." };
+    return { kind: "invalid", message: "After discount price must be less than the price." };
   const savings = price - sale;
   const percent = Math.round((savings / price) * 100);
   return { kind: "ok", savings, percent };

@@ -389,7 +389,7 @@ export default function ProductFormPage({
       Location: draft.location_name.trim(),
     };
     if (draft.kind !== "opportunity") {
-      details["Sale price (UGX)"] = draft.sale_price.trim();
+      details["After discount price (UGX)"] = draft.sale_price.trim();
       details.Negotiable = draft.is_negotiable ? "yes" : "no";
     }
     if (draft.kind === "product") {
@@ -965,7 +965,7 @@ export default function ProductFormPage({
             {draft.kind !== "opportunity" ? (
               <div className="space-y-1.5">
                 <label htmlFor="product-sale" className="block text-sm font-medium text-foreground">
-                  Sale price <span className="font-normal text-muted">(optional)</span>
+                  After discount price <span className="font-normal text-muted">(optional)</span>
                 </label>
                 <input
                   id="product-sale"
