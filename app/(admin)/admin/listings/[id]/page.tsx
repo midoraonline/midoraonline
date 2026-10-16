@@ -7,6 +7,7 @@ import { listingTypeTagKind } from "@/lib/listingType";
 import { productPageSlug } from "@/lib/productUrl";
 import { BTN_SECONDARY, CARD, StatusDot } from "@/components/dashboard/ui";
 import AdminBoostButton from "@/components/admin/AdminBoostButton";
+import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,7 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
           <ListingTypeTag kind={listingTypeTagKind(str(l.item_type), (l.meta ?? null) as never)} />
           <StatusDot tone={TONE[status] ?? "neutral"}>{status.replace(/_/g, " ")}</StatusDot>
           {status !== "active" ? <span className="text-xs text-muted">Not visible to the public</span> : null}
+          <AdminBoostStatus listingId={l.id} />
         </div>
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{title}</h1>
         <p className="text-base font-semibold text-foreground">

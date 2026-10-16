@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 import { CACHE_TAGS, type CacheTag } from "@/lib/cache";
@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
   // This revalidates across all cache profiles; works for unstable_cache-tagged
   // entries and the newer "use cache" entries alike.
   revalidateTag(tag as CacheTag, "max");
+  if (tag === "products") {
+    // Feed order changed (boost / repost): drop ISR + router cache for feed pages too.
+    revalidatePath("/");
+    revalidatePath("/products");
+  }
 
   return NextResponse.json({ revalidated: true, tag });
 }
