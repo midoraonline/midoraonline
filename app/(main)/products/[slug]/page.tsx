@@ -236,7 +236,7 @@ export default async function ProductDetails({
       >
         {textOnly ? null : (
         <div className="min-w-0 lg:sticky lg:top-20">
-          <ProductImageGallery images={images} title={product.title}>
+          <ProductImageGallery images={images} title={product.title} fullWidth={listingMeta.full_width_images ?? []}>
             {shop ? (
               <ProductShopLogoOverlay
                 shopName={shop.is_personal ? shop.seller_name || shop.name : shop.name}

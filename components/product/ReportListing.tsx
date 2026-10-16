@@ -26,18 +26,22 @@ const REPORT_REASONS = [
 export default function ReportListing({ productId, shopId, category }: Props) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+  const needsDetails = reason === "Other";
+  const canSubmit = !!reason && (!needsDetails || details.trim().length >= 3);
   const [submitting, setSubmitting] = useState(false);
 
   function close() {
     if (submitting) return;
     setOpen(false);
     setReason("");
+    setDetails("");
   }
 
   async function handleSubmit() {
-    if (!reason) return;
+    if (!canSubmit) return;
     setSubmitting(true);
-    const request = apiListingEvents.reportProduct(productId, reason);
+    const request = apiListingEvents.reportProduct(productId, reason, details.trim() || undefined);
     toast.promise(request, {
       loading: "Sending report…",
       success: "Report submitted — our team will review it.",
@@ -100,7 +104,7 @@ export default function ReportListing({ productId, shopId, category }: Props) {
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
-                disabled={!reason || submitting}
+                disabled={!canSubmit || submitting}
                 className="dm-btn dm-btn-primary"
                 style={{ background: "var(--error)" }}
               >
@@ -134,6 +138,25 @@ export default function ReportListing({ productId, shopId, category }: Props) {
                 );
               })}
             </div>
+            {needsDetails ? (
+              <div className="space-y-1">
+                <label htmlFor="report-details" className="text-xs font-medium text-foreground">
+                  Tell us what&apos;s wrong <span className="text-[color:var(--error)]">*</span>
+                </label>
+                <textarea
+                  id="report-details"
+                  value={details}
+                  onChange={(e) => setDetails(e.target.value.slice(0, 500))}
+                  rows={3}
+                  required
+                  autoFocus
+                  placeholder="Describe the problem"
+                  className="dm-textarea text-sm"
+                  aria-invalid={details.trim().length < 3}
+                />
+                <p className="text-[11px] text-muted">Required when you choose Other.</p>
+              </div>
+            ) : null}
           </div>
         </FormModal>
       )}

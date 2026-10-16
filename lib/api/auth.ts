@@ -246,9 +246,9 @@ export function resendVerificationEmail() {
   );
 }
 
-export function deleteMyAccount() {
+export function deleteMyAccount(feedback: { reason?: string | null; details?: string | null } = {}) {
   return authCall<{ message: string }>("/api/v1/auth/me/delete", {
     method: "POST",
-    body: { confirm: "DELETE" },
+    body: { confirm: "DELETE", reason: feedback.reason ?? null, details: feedback.details ?? null },
   });
 }

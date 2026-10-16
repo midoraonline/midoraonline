@@ -376,6 +376,13 @@ export const adminApi = {
     );
   },
 
+  getListing: (id: string) =>
+    safeServerFetch(
+      serverApiFetch<import("@/lib/api/admin").AdminListingDetail>(
+        `/api/v1/admin/listings/${encodeURIComponent(id)}`,
+      ),
+    ),
+
   listConversations: (limit = 100) =>
     safeServerFetch(
       serverApiFetch<{ items: AdminConversation[]; total: number }>(

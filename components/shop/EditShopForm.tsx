@@ -470,7 +470,7 @@ function DetailsTab({
           disabled={saving || (showErrors && !canSubmit)}
           className="dm-btn dm-btn-primary"
         >
-          {saving ? "Saving…" : justSaved ? "Saved" : "Save changes"}
+          {saving ? "Saving…" : justSaved ? "Saved" : "Save"}
         </button>
       </div>
     </form>

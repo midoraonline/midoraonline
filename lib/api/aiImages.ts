@@ -5,7 +5,7 @@ export type RemoveBackgroundResponse = {
 };
 
 export function removeBackground(
-  body: { image_url: string },
+  body: { image_url: string; bg_color?: string },
   token?: string | null,
 ) {
   return apiFetch<RemoveBackgroundResponse>("/api/v1/ai/remove-background", {

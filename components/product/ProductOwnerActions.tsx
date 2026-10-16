@@ -42,7 +42,7 @@ function evaluate(priceStr: string, price: number | undefined): SaleState {
   if (!price || price <= 0)
     return { kind: "invalid", message: "No original price to discount from." };
   if (sale >= price)
-    return { kind: "invalid", message: "Sale price must be less than the price." };
+    return { kind: "invalid", message: "After discount price must be less than the price." };
   return {
     kind: "ok",
     savings: price - sale,
@@ -227,7 +227,7 @@ export default function ProductOwnerActions({
                 htmlFor="owner-sale-price"
                 className="text-sm font-medium text-foreground"
               >
-                Sale price (what the buyer pays)
+                After discount price (what the buyer pays)
               </label>
               <input
                 id="owner-sale-price"

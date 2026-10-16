@@ -28,7 +28,9 @@ export type UseImageUploadsOptions = {
   onUploaded: (url: string) => void;
   /** How many images are already attached (counts against the policy max). */
   existingCount?: number;
-  /** Optional opt-in processing (background removal, logo overlay). */
+  /** Overrides the policy maximum (admin-configured listing photo cap). */
+  maxFiles?: number;
+  /** Optional opt-in processing (logo overlay). */
   transform?: (file: File, setStage: (s: string) => void) => Promise<File>;
 };
 
@@ -44,9 +46,11 @@ export function useImageUploads({
   endpoint,
   onUploaded,
   existingCount = 0,
+  maxFiles,
   transform,
 }: UseImageUploadsOptions) {
-  const policy = IMAGE_POLICY[endpoint];
+  const basePolicy = IMAGE_POLICY[endpoint];
+  const policy = maxFiles && maxFiles > 0 ? { ...basePolicy, maxFiles } : basePolicy;
   const [items, setItems] = useState<UploadItem[]>([]);
   const [stage, setStage] = useState<string | null>(null);
   const controllers = useRef(new Map<string, AbortController>());

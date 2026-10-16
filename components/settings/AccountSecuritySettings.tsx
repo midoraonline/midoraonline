@@ -107,7 +107,7 @@ export default function AccountSecuritySettings() {
           {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
           {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving === "password"} className={BTN_PRIMARY}>
-            {saving === "password" ? "Updating…" : "Update password"}
+            {saving === "password" ? "Saving…" : "Save"}
           </button>
         </form>
       </SettingsRow>

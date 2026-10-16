@@ -27,10 +27,13 @@ type Props = {
   className?: string;
   multiple?: boolean;
   maxDurationSeconds?: number;
+  /** Headless: no button or hint; the parent opens the picker via the handle. */
+  hideButton?: boolean;
 };
 
 export type VideoUploadHandle = {
   submitFiles: (files: File[]) => Promise<void>;
+  open: () => void;
   isBusy: () => boolean;
 };
 
@@ -53,6 +56,7 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
   className = "",
   multiple = false,
   maxDurationSeconds = 180,
+  hideButton = false,
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<Stage | null>(null);
@@ -158,6 +162,7 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
         await ingestFiles(files);
       },
       isBusy: () => busy,
+      open: () => inputRef.current?.click(),
     }),
     [busy, ingestFiles],
   );
@@ -188,7 +193,7 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy}
-          className="dm-btn dm-btn-secondary dm-btn-sm"
+          className={`dm-btn dm-btn-secondary dm-btn-sm ${hideButton ? "hidden" : ""}`}
         >
           {busy ? (
             <>
@@ -202,7 +207,7 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
             </>
           )}
         </button>
-        <p className="text-[11px] text-muted">
+        <p className={`text-[11px] text-muted ${hideButton ? "hidden" : ""}`}>
           Compressed to 720p MP4 in your browser. Max{" "}
           {Math.round(maxDurationSeconds / 60)} min.
         </p>

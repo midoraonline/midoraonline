@@ -133,9 +133,9 @@ export const OPTION_ROW =
   "dm-focus flex min-h-14 w-full items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left shadow-xs transition-colors hover:border-accent/50 hover:bg-surface-muted/40";
 
 export const INPUT =
-  "h-10 w-full rounded-lg border border-border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none placeholder:text-muted/80 focus:border-accent focus:ring-4 focus:ring-accent/25";
+  "h-10 w-full rounded-lg border border-border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none placeholder:text-muted/80 focus:border-accent focus:ring-4 focus:ring-accent/25 aria-invalid:border-[color:var(--error)] aria-invalid:ring-2 aria-invalid:ring-[color:var(--error)]/20";
 export const TEXTAREA =
-  "min-h-28 w-full rounded-xl border border-border-input bg-surface px-3 py-2.5 text-sm text-foreground shadow-xs outline-none placeholder:text-muted/80 focus:border-accent focus:ring-4 focus:ring-accent/25";
+  "min-h-28 w-full rounded-xl border border-border-input bg-surface px-3 py-2.5 text-sm text-foreground shadow-xs outline-none placeholder:text-muted/80 focus:border-accent focus:ring-4 focus:ring-accent/25 aria-invalid:border-[color:var(--error)] aria-invalid:ring-2 aria-invalid:ring-[color:var(--error)]/20";
 
 export function FormField({
   label,

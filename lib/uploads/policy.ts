@@ -1,8 +1,10 @@
 /** One limit for every image: originals up to 16MB are uploaded untouched. */
 export const MAX_IMAGE_BYTES = 16 * 1024 * 1024;
 export const MAX_IMAGE_MB = 16;
-/** A listing holds at most 3 photos in total. */
+/** Default listing photo cap; the live cap is admin-configured (settings/public limits). */
 export const MAX_LISTING_PHOTOS = 3;
+/** Hard ceiling for one UploadThing batch; the API enforces the configured cap on save. */
+export const LISTING_PHOTO_CEILING = 20;
 
 export type ImageEndpoint =
   | "productImage"
@@ -27,7 +29,7 @@ export const IMAGE_POLICY: Record<ImageEndpoint, ImagePolicy> = {
     metadataCheck: true,
     allowBackgroundRemoval: true,
     allowWatermark: true,
-    maxFiles: MAX_LISTING_PHOTOS,
+    maxFiles: LISTING_PHOTO_CEILING,
     noun: "photo",
   },
   shopLogo: {

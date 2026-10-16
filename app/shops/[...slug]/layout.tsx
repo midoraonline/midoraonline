@@ -132,6 +132,8 @@ export default async function ShopLayout({
             shopLogoUrl={shop.logo_url}
             initialLiked={shop.viewer_liked_shop}
             initialFollowed={shop.viewer_following}
+            initialLikeCount={shop.like_count}
+            initialFollowerCount={shop.follower_count}
           />
         </>
       ) : null}

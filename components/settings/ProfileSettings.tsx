@@ -77,6 +77,7 @@ export default function ProfileSettings() {
             </div>
           </div>
         </SettingsRow>
+        {session.user?.user_role === "customer" ? null : (
         <SettingsRow
           title="Phone verification"
           description="We text you a code. A verified number lets buyers trust WhatsApp contact from you."
@@ -110,11 +111,12 @@ export default function ProfileSettings() {
             />
           </div>
         </SettingsRow>
+        )}
         <SettingsActions>
           {message ? <p className="mr-auto text-sm text-[color:var(--success)]">{message}</p> : null}
           {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-            {saving ? "Saving…" : "Save name"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </SettingsActions>
       </SettingsPanel>

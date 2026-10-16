@@ -1,13 +1,13 @@
 "use client";
 
 import useSWR from "swr";
-import { getPublicSettings } from "@/lib/api/platformSettings";
+import { DEFAULT_MEDIA_LIMITS, getPublicSettings } from "@/lib/api/platformSettings";
 
 async function loadPublicSettings() {
   try {
     return await getPublicSettings();
   } catch {
-    return { analytics: false, flags: { analytics: false } };
+    return { analytics: false, flags: { analytics: false }, limits: DEFAULT_MEDIA_LIMITS };
   }
 }
 
@@ -22,6 +22,7 @@ export function usePublicSettings() {
     analytics: flags.analytics === true,
     analyticsAllPlans: flags.analytics_all_plans === true,
     maintenance: flags.maintenance_mode === true,
+    mediaLimits: data?.limits ?? DEFAULT_MEDIA_LIMITS,
     flags,
   };
 }
