@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, Package, Store, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
@@ -295,6 +296,36 @@ export default function HomeLanding({
     return () => observer.disconnect();
   }, [hasMore, isSearching, products.length]);
 
+  /* ?focus=<listingId> from "Find in feed": page through the feed until the
+     listing renders, scroll to it and briefly highlight it. */
+  const focusId = searchParams.get("focus");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const focusPagesRef = useRef(0);
+  const focusDoneRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusId || isSearching || focusDoneRef.current === focusId) return;
+    if (products.some((p) => p.id === focusId)) {
+      focusDoneRef.current = focusId;
+      const raf = requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-listing-id="${CSS.escape(focusId)}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightId(focusId);
+        window.setTimeout(() => setHighlightId(null), 2600);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    if (loadingMore) return;
+    if (hasMore && focusPagesRef.current < 20) {
+      focusPagesRef.current += 1;
+      void loadMoreRef.current();
+      return;
+    }
+    focusDoneRef.current = focusId;
+    toast.message("Couldn't find your ad in this feed", {
+      description: "It may be filtered out here or further down.",
+    });
+  }, [focusId, isSearching, products, hasMore, loadingMore]);
+
   const filledEmptyRef = useRef(false);
   useEffect(() => {
     if (!session.hydrated) return;
@@ -473,7 +504,15 @@ export default function HomeLanding({
             <>
               <div className={browseProductGridClass}>
                 {displayProducts.map((p, idx) => (
-                  <div key={p.id} className={productCardSlotClass(p)}>
+                  <div
+                    key={p.id}
+                    data-listing-id={p.id}
+                    className={`${productCardSlotClass(p)} rounded-xl transition-shadow duration-500 ${
+                      highlightId === p.id
+                        ? "ring-2 ring-[color:var(--accent)] ring-offset-2 ring-offset-background"
+                        : ""
+                    }`}
+                  >
                     <ProductCard
                       product={p}
                       layout="vertical"

@@ -628,10 +628,15 @@ export default function ProductFormPage({
           ? apiProducts.updateProduct(product.id, body)
           : Promise.reject(new Error("Missing product"));
     try {
-      await request;
+      const saved = await request;
       toast.success(done, { id: toastId });
       initialRef.current = draft;
-      router.push(afterSaveHref());
+      const next = afterSaveHref();
+      router.push(
+        mode === "add" && saved?.id && next === "/merchant/listings"
+          ? `${next}?posted=${encodeURIComponent(saved.id)}`
+          : next,
+      );
     } catch (err) {
       if (isMaintenanceMode(err)) {
         toast.error(MAINTENANCE_MESSAGE, { id: toastId });

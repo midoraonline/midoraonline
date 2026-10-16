@@ -7,6 +7,7 @@ import { MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
+import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import FormModal from "@/components/FormModal";
 import { apiProducts } from "@/lib/api";
@@ -307,7 +308,7 @@ export default function ListingManageCard({
             {product.review_notes}
           </p>
         ) : null}
-        <div className="mt-1.5 flex items-center gap-2">
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <Link
             href={editHref}
             className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium shadow-xs transition-colors hover:bg-surface-muted sm:min-h-9"
@@ -315,6 +316,12 @@ export default function ListingManageCard({
             <Pencil className="size-3.5" aria-hidden />
             Edit
           </Link>
+          {status === "active" && product.is_published !== false ? (
+            <ListingPromoteActions
+              listingId={product.id}
+              onReposted={(postedAt) => onUpdated?.({ ...product, created_at: postedAt })}
+            />
+          ) : null}
           <div ref={menuRef} className="relative ml-auto">
             <button
               type="button"
