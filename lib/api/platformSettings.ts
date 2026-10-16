@@ -3,6 +3,27 @@ import { ApiError, apiFetch } from "./base";
 export type MediaLimits = { maxPhotos: number; maxVideos: number };
 export const DEFAULT_MEDIA_LIMITS: MediaLimits = { maxPhotos: 3, maxVideos: 1 };
 export const MEDIA_LIMITS_KEY = "listing_media_limits";
+export const PLAN_KEYS = ["basic", "standard", "premium"] as const;
+export type PlanKey = (typeof PLAN_KEYS)[number];
+export const PLAN_LABEL: Record<PlanKey, string> = { basic: "Basic", standard: "Standard", premium: "Premium" };
+export type PlanMediaLimits = { default: MediaLimits; plans: Record<PlanKey, MediaLimits> };
+
+export function parsePlanMediaLimits(raw: unknown): PlanMediaLimits {
+  const row = asRecord(raw) ?? {};
+  const hasNested = "default" in row || "plans" in row;
+  const def = parseMediaLimits(hasNested ? row.default : row);
+  const plansRaw = asRecord(row.plans) ?? {};
+  const plans = Object.fromEntries(
+    PLAN_KEYS.map((k) => [k, plansRaw[k] ? { ...def, ...parseMediaLimits(plansRaw[k]) } : def]),
+  ) as Record<PlanKey, MediaLimits>;
+  return { default: def, plans };
+}
+
+/** Limits for a plan; unknown/missing plan uses Basic, then the default. */
+export function limitsForPlan(all: PlanMediaLimits, plan?: string | null): MediaLimits {
+  const key = (plan ?? "basic").toLowerCase() as PlanKey;
+  return all.plans[key] ?? all.plans.basic ?? all.default;
+}
 
 export type FeatureSwitch = {
   key: string;
@@ -104,13 +125,22 @@ export function parseMediaLimits(raw: unknown): MediaLimits {
   };
 }
 
-export async function updateMediaLimits(limits: MediaLimits): Promise<MediaLimits> {
+const pairOut = (l: MediaLimits) => ({ max_photos: l.maxPhotos, max_videos: l.maxVideos });
+
+export function planMediaLimitsValue(all: PlanMediaLimits) {
+  return {
+    default: pairOut(all.default),
+    plans: Object.fromEntries(PLAN_KEYS.map((k) => [k, pairOut(all.plans[k])])),
+  };
+}
+
+export async function updatePlanMediaLimits(all: PlanMediaLimits): Promise<PlanMediaLimits> {
   const data = await apiFetch<unknown>("/api/v1/admin/settings", {
     method: "PATCH",
-    body: { key: MEDIA_LIMITS_KEY, value: { max_photos: limits.maxPhotos, max_videos: limits.maxVideos } },
+    body: { key: MEDIA_LIMITS_KEY, value: planMediaLimitsValue(all) },
   });
   const found = parseFeatureSwitches(data).find((item) => item.key === MEDIA_LIMITS_KEY);
-  return found?.value ? parseMediaLimits(found.value) : limits;
+  return found?.value ? parsePlanMediaLimits(found.value) : all;
 }
 
 export function parseFeatureSwitches(data: unknown): FeatureSwitch[] {
@@ -145,7 +175,12 @@ function sortSwitches(items: FeatureSwitch[]): FeatureSwitch[] {
   });
 }
 
-export type PublicSettings = { analytics: boolean; flags: Record<string, boolean>; limits: MediaLimits };
+export type PublicSettings = {
+  analytics: boolean;
+  flags: Record<string, boolean>;
+  limits: MediaLimits;
+  planLimits: PlanMediaLimits;
+};
 
 export function parsePublicSettings(data: unknown): PublicSettings {
   const switches = parseFeatureSwitches(data);
@@ -154,7 +189,9 @@ export function parsePublicSettings(data: unknown): PublicSettings {
   const root = asRecord(data);
   const direct = enabledOf(root?.analytics);
   if (direct != null && flags.analytics == null) flags.analytics = direct;
-  return { analytics: flags.analytics === true, flags, limits: parseMediaLimits(root?.limits) };
+  const limits = parseMediaLimits(root?.limits);
+  const planLimits = parsePlanMediaLimits({ default: root?.limits, plans: root?.plan_limits });
+  return { analytics: flags.analytics === true, flags, limits, planLimits };
 }
 
 export async function listAdminSwitches(): Promise<FeatureSwitch[]> {
@@ -186,7 +223,7 @@ export async function getPublicSettings(): Promise<PublicSettings> {
     return parsePublicSettings(data);
   } catch (err) {
     if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-      return { analytics: false, flags: { analytics: false }, limits: DEFAULT_MEDIA_LIMITS };
+      return { analytics: false, flags: { analytics: false }, limits: DEFAULT_MEDIA_LIMITS, planLimits: parsePlanMediaLimits(null) };
     }
     throw err;
   }

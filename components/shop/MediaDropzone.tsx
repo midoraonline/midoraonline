@@ -27,6 +27,10 @@ type MediaDropzoneProps = {
   photosRequired?: boolean;
   disabled?: boolean;
   invalid?: boolean;
+  /** Poster's plan name for the "Your plan allows…" hint. */
+  planName?: string;
+  /** Where to upgrade for higher limits. */
+  upgradeHref?: string;
 };
 
 const REORDER_TYPE = "application/x-midora-media-index";
@@ -88,6 +92,8 @@ export function MediaDropzone({
   photosRequired = true,
   disabled = false,
   invalid = false,
+  planName,
+  upgradeHref,
 }: MediaDropzoneProps) {
   const imageRef = useRef<ImageUploadHandle>(null);
   const videoRef = useRef<VideoUploadHandle>(null);
@@ -363,6 +369,21 @@ export function MediaDropzone({
           </p>
         </div>
       </div>
+
+      {planName ? (
+        <p className="text-xs text-muted">
+          Your {planName} plan allows {maxPhotos} {maxPhotos === 1 ? "photo" : "photos"}
+          {maxVideos ? ` and ${maxVideos} ${maxVideos === 1 ? "video" : "videos"}` : ""} per ad.
+          {upgradeHref ? (
+            <>
+              {" "}
+              <a href={upgradeHref} className="font-medium text-accent underline underline-offset-2">
+                Upgrade for more
+              </a>
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
       <input
         ref={fileRef}

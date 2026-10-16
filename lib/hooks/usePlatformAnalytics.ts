@@ -1,13 +1,15 @@
 "use client";
 
 import useSWR from "swr";
-import { DEFAULT_MEDIA_LIMITS, getPublicSettings } from "@/lib/api/platformSettings";
+import { DEFAULT_MEDIA_LIMITS, getPublicSettings, limitsForPlan, parsePlanMediaLimits } from "@/lib/api/platformSettings";
+
+const FALLBACK_PLAN_LIMITS = parsePlanMediaLimits(null);
 
 async function loadPublicSettings() {
   try {
     return await getPublicSettings();
   } catch {
-    return { analytics: false, flags: { analytics: false }, limits: DEFAULT_MEDIA_LIMITS };
+    return { analytics: false, flags: { analytics: false }, limits: DEFAULT_MEDIA_LIMITS, planLimits: FALLBACK_PLAN_LIMITS };
   }
 }
 
@@ -23,6 +25,8 @@ export function usePublicSettings() {
     analyticsAllPlans: flags.analytics_all_plans === true,
     maintenance: flags.maintenance_mode === true,
     mediaLimits: data?.limits ?? DEFAULT_MEDIA_LIMITS,
+    /** Caps for the poster's plan (users.plan_tier; missing -> Basic). */
+    mediaLimitsFor: (plan?: string | null) => limitsForPlan(data?.planLimits ?? FALLBACK_PLAN_LIMITS, plan),
     flags,
   };
 }
