@@ -285,8 +285,22 @@ export type AdminReport = {
   resolved: boolean;
   created_at: string;
   product?: { title?: string; shop_id?: string } | null;
-  reporter?: { full_name?: string } | null;
+  reporter?: AdminReporter | null;
+  listing?: {
+    id: string;
+    title?: string | null;
+    price_ugx?: number | null;
+    discount_price?: number | null;
+    item_type?: string | null;
+    status?: string | null;
+    thumbnail_url?: string | null;
+    shop_name?: string | null;
+    shop_slug?: string | null;
+    seller_name?: string | null;
+  } | null;
 };
+
+export type AdminReporter = { id: string; full_name?: string | null; email?: string | null };
 
 export function listReports(params: { resolved?: boolean; limit?: number; page?: number } = {}) {
   const qs = new URLSearchParams();
@@ -528,6 +542,17 @@ export type AdminSellerReport = {
   description?: string | null;
   resolved: boolean;
   created_at: string;
+  reporter?: AdminReporter | null;
+  seller?: {
+    id: string;
+    name: string;
+    owner_name?: string | null;
+    logo_url?: string | null;
+    slug?: string | null;
+    verified: boolean;
+    listing_count: number;
+    business_count: number;
+  } | null;
 };
 
 export type AdminNearDupe = {
