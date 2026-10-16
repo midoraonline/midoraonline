@@ -1,5 +1,6 @@
 "use client";
 
+import AdminBoostButton from "@/components/admin/AdminBoostButton";
 import { useCallback, useEffect, useState } from "react";
 import { apiAdmin } from "@/lib/api";
 import type { AdminListingProduct } from "@/lib/api/admin";
@@ -117,6 +118,9 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                   </div>
                   <div className="flex shrink-0 flex-col gap-2 sm:w-56">
                     <div className="flex flex-wrap gap-2">
+                      {listing.status === "active" ? (
+                        <AdminBoostButton target="listing" id={listing.id} name={listing.title} />
+                      ) : null}
                       {canApprove ? (
                         <button
                           type="button"
