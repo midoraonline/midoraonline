@@ -152,8 +152,20 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
         ) : (
           <div className="space-y-3">
             <p className="text-2xl font-semibold text-foreground">
-              {data.position ? `Your ad is #${data.position} in the feed` : `Not in the top ${data.scanned ?? 0} ads`}
+              {data.position ? `#${data.position} for visitors` : `Not in the top ${data.scanned ?? 0} ads for visitors`}
             </p>
+            <p className="text-sm text-foreground">
+              {data.personalized?.median
+                ? `Around #${data.personalized.median} for signed-in shoppers (in ${data.personalized.in_feeds} of ${data.personalized.sampled} recent feeds)`
+                : data.personalized?.sampled
+                  ? `Not in the top of ${data.personalized.sampled} recent signed-in feeds`
+                  : "Signed-in shoppers each get their own order"}
+            </p>
+            {data.personalized?.boosted_slots ? (
+              <p className="text-sm text-foreground">
+                Also shown in boosted spots (about 1 in every {data.personalized.slot_every ?? 7} ads) to shoppers it matches.
+              </p>
+            ) : null}
             {data.category ? (
               <p className="text-sm text-foreground">
                 {data.category_position
@@ -162,7 +174,8 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
               </p>
             ) : null}
             <p className="text-xs text-muted">
-              Live position for buyers right now{data.boost ? ` · Boosted (${describeBoost(data.boost)})` : ""}. Boost or repost to move up.
+              Visitors = people not logged in. &quot;Show me in the feed&quot; scrolls your own feed, which can differ.
+              {data.boost ? ` Boosted (${describeBoost(data.boost)}).` : ""} Boost or repost to move up.
             </p>
           </div>
         )
