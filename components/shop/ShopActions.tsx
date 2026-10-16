@@ -139,7 +139,7 @@ export default function ShopActions({
         }`}
       >
         <MaterialSymbol name="favorite" className="!text-sm" filled={liked} aria-hidden="true" />
-        {liked ? "Liked" : "Like"}
+        {liked ? "Liked" : "Like shop"}
         {count(likeCount)}
       </button>
 
@@ -157,7 +157,7 @@ export default function ShopActions({
           filled={followed}
           aria-hidden="true"
         />
-        {followed ? "Following" : "Follow"}
+        {followed ? "Following" : "Follow shop"}
         {count(followerCount)}
       </button>
 

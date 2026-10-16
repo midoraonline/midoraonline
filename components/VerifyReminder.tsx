@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
-import { Loader2, ShieldCheck, X } from "lucide-react";
+import { Loader2, Mail, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { apiAuth, apiShops } from "@/lib/api";
@@ -80,7 +80,7 @@ export default function VerifyReminder() {
       role="status"
       className="mb-4 flex flex-col gap-3 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm sm:flex-row sm:items-center"
     >
-      <ShieldCheck className="hidden size-5 shrink-0 text-accent sm:block" aria-hidden />
+      <Mail className="hidden size-5 shrink-0 text-accent sm:block" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="font-medium text-foreground">
           {isMerchant ? "Finish verifying to build buyer trust" : "Verify your email to secure your account"}
