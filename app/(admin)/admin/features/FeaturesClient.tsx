@@ -42,7 +42,7 @@ function MediaLimitsCard({ initial, onSaved }: { initial: MediaLimits; onSaved: 
   }
 
   return (
-    <section className={`${CARD} mt-6 p-4 sm:p-5`}>
+    <section id="media-limits" className={`${CARD} mb-6 scroll-mt-24 p-4 sm:p-5`}>
       <h2 className="text-sm font-semibold text-foreground">Listing media limits</h2>
       <p className="mt-0.5 text-sm text-muted">
         Most photos and videos a seller can add to one ad. Applies to new uploads and saves.
@@ -81,6 +81,7 @@ function failureMessage(label: string, err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401 || err.status === 403) return "Your admin session expired. Sign in again and retry.";
     if (err.code === "migration_required") return "Settings storage isn't set up on the server yet.";
+    if (err.code === "unknown_setting") return "The API doesn't know this setting yet. Deploy the latest API (PR #16) and try again.";
   }
   return `Couldn't update ${label}. It's back to how it was. Try again.`;
 }
@@ -140,8 +141,21 @@ export default function FeaturesClient() {
     <div>
       <PageHeader
         title="Features"
-        description="Switches apply to every seller and save as soon as you flip them."
+        description="Listing media limits and platform switches. Switches save as soon as you flip them."
       />
+      {!loading || items.length ? (
+        <MediaLimitsCard
+          key={`${limits.maxPhotos}-${limits.maxVideos}`}
+          initial={limits}
+          onSaved={(next) =>
+            setItems((prev) =>
+              prev.map((row) =>
+                row.key === MEDIA_LIMITS_KEY ? { ...row, value: { max_photos: next.maxPhotos, max_videos: next.maxVideos } } : row,
+              ),
+            )
+          }
+        />
+      ) : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading && items.length === 0 ? <PageSkeleton rows={4} label="Loading switches" /> : null}
       {!loading && !error && items.length === 0 ? <EmptyState message="No feature switches yet." /> : null}
@@ -158,19 +172,6 @@ export default function FeaturesClient() {
           </li>
         ))}
       </ul>
-      {!loading && !error ? (
-        <MediaLimitsCard
-          key={`${limits.maxPhotos}-${limits.maxVideos}`}
-          initial={limits}
-          onSaved={(next) =>
-            setItems((prev) =>
-              prev.map((row) =>
-                row.key === MEDIA_LIMITS_KEY ? { ...row, value: { max_photos: next.maxPhotos, max_videos: next.maxVideos } } : row,
-              ),
-            )
-          }
-        />
-      ) : null}
     </div>
   );
 }
