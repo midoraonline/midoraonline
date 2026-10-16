@@ -5,6 +5,7 @@ import { ArrowRight, BriefcaseBusiness, Package, Store, Wrench } from "lucide-re
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { FEED_STALE_EVENT, consumeFeedStale, consumedFeedStaleAt, feedStaleAt } from "@/lib/feedFreshness";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
@@ -201,6 +202,51 @@ export default function HomeLanding({
       /* keep empty SSR feed */
     }
   }, []);
+
+  /* Boost / repost / end boost elsewhere: reload page 1 so the new ranking shows
+     on return (localStorage marker survives the client router cache). */
+  const reloadFeed = useCallback(async () => {
+    const requestId = ++feedRequestRef.current;
+    try {
+      const site = publicSiteOrigin();
+      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE, page: 1, catalog: catalogRef.current });
+      if (requestId !== feedRequestRef.current) return;
+      const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
+      if (cards.length === 0) return;
+      prefetchedRef.current = null;
+      seenIdsRef.current = new Set(cards.map((c) => c.id));
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+      setProducts(cards);
+      nextCursorRef.current = data.next_cursor ?? null;
+      setHasMore(Boolean(data.has_more && data.next_cursor));
+    } catch {
+      /* keep current feed */
+    }
+  }, []);
+
+  useEffect(() => {
+    // Compare against the last marker this tab already reloaded for, so returning
+    // to the feed (client router cache, bfcache) after an action reloads once.
+    const check = () => {
+      if (document.visibilityState !== "visible") return;
+      const at = feedStaleAt();
+      if (at && at > consumedFeedStaleAt()) {
+        consumeFeedStale(at);
+        void reloadFeed();
+      }
+    };
+    const t = window.setTimeout(check, 0);
+    window.addEventListener("visibilitychange", check);
+    window.addEventListener("pageshow", check);
+    window.addEventListener(FEED_STALE_EVENT, check);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("visibilitychange", check);
+      window.removeEventListener("pageshow", check);
+      window.removeEventListener(FEED_STALE_EVENT, check);
+    };
+  }, [reloadFeed]);
 
   const prefetchedRef = useRef<{
     cursor: string;

@@ -1,3 +1,5 @@
+import type { BoostInfo } from "@/lib/boostInfo";
+import { feedBustParam } from "@/lib/feedFreshness";
 import { apiFetch } from "./base";
 import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
 
@@ -52,6 +54,9 @@ export type Product = {
   created_at?: string | null;
   updated_at?: string | null;
   boosted?: boolean;
+  is_boosted?: boolean;
+  boost_ends_at?: string | null;
+  boost?: BoostInfo | null;
   average_rating?: number | null;
   review_count?: number | null;
   is_negotiable?: boolean | null;
@@ -445,6 +450,9 @@ export type HomeFeedProduct = {
     last_active_at?: string | null;
   };
   boosted: boolean;
+  is_boosted?: boolean;
+  boost_ends_at?: string | null;
+  boost?: BoostInfo | null;
 };
 
 export type HomeFeedResponse = {
@@ -517,6 +525,8 @@ export function getHomeFeed(opts: {
     ...opts.catalog,
     category: opts.catalog?.category ?? opts.category,
   });
+  const bust = feedBustParam();
+  if (bust) params.set("fv", bust);
   const qs = params.toString();
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
     ...(opts.token ? { token: opts.token } : {}),
