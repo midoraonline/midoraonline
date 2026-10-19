@@ -18,6 +18,7 @@ import {
 import CategoryDisplay from "@/components/CategoryDisplay";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
+import ProductShareButton from "@/components/product/ProductShareButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
 import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
 import PdpStickyActionBar from "@/components/product/PdpStickyActionBar";
@@ -391,6 +392,7 @@ export default async function ProductDetails({
                 initialLikeCount={product.like_count ?? 0}
                 initialLiked={product.viewer_liked ?? undefined}
               />
+              <ProductShareButton title={product.title} url={listingUrl} />
               {shop?.owner_id ? (
                 <div className="min-w-0 flex-1">
                   <MessageSellerButton
