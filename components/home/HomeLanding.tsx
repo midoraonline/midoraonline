@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, Package, Store, Wrench } from "lucide-react";
+import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FEED_STALE_EVENT, consumeFeedStale, consumedFeedStaleAt, feedStaleAt } from "@/lib/feedFreshness";
+import { FEED_ENGAGEMENT_EVENT } from "@/lib/engagementEvents";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import ProductFilters, {
@@ -396,6 +398,36 @@ export default function HomeLanding({
     };
   }, [hasMore, isSearching, products.length]);
 
+  // The API keeps a persistent per-user ranking that slides in place as
+  // signals change (likes, follows, boosts) instead of recomputing on a
+  // timer — this re-fetch is just a cheap cache read, not a full re-rank.
+  // Re-sort the already-rendered cards into the new order (no skeleton, no
+  // page reload); the motion.div `layout` prop on each card animates the
+  // position change into a smooth slide.
+  useEffect(() => {
+    function onFeedEngagement() {
+      if (isSearching || catalogQueryActive(catalogRef.current)) return;
+      void (async () => {
+        try {
+          const fresh = await apiProducts.getHomeFeed({
+            limit: FEED_PAGE_SIZE,
+            catalog: catalogRef.current,
+          });
+          const order = new Map(fresh.algorithm.map((p, i) => [p.id, i]));
+          setProducts((current) => {
+            const known = current.filter((p) => order.has(p.id));
+            const unknown = current.filter((p) => !order.has(p.id));
+            known.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+            return [...known, ...unknown];
+          });
+        } catch {
+          /* background reorder only — a failure here isn't user-visible */
+        }
+      })();
+    }
+    window.addEventListener(FEED_ENGAGEMENT_EVENT, onFeedEngagement);
+    return () => window.removeEventListener(FEED_ENGAGEMENT_EVENT, onFeedEngagement);
+  }, [isSearching]);
 
   const commitSearch = useCallback(
     (term: string) => {
@@ -550,8 +582,10 @@ export default function HomeLanding({
             <>
               <div className={browseProductGridClass}>
                 {displayProducts.map((p, idx) => (
-                  <div
+                  <motion.div
                     key={p.id}
+                    layout
+                    transition={{ type: "spring", stiffness: 350, damping: 32 }}
                     data-listing-id={p.id}
                     className={`${productCardSlotClass(p)} rounded-xl transition-shadow duration-500 ${
                       highlightId === p.id
@@ -566,7 +600,7 @@ export default function HomeLanding({
                       impressionPosition={idx + 1}
                       imagePriority={!isSearching && idx < 4}
                     />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
               <div className="flex flex-col items-center gap-3 pt-2">
