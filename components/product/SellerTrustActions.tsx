@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { apiErrorMessage } from "@/lib/api/base";
 import { apiListingEvents } from "@/lib/api";
 import { SELLER_REPORT_REASONS } from "@/lib/api/listingEvents";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -32,7 +33,7 @@ export default function SellerTrustActions({ sellerId, shopId, shopName }: Props
     toast.promise(req, {
       loading: "Sending report…",
       success: "Seller report submitted — our team will review it.",
-      error: "Couldn't submit report. Try again.",
+      error: (err: unknown) => apiErrorMessage(err, "Couldn't submit report. Try again."),
     });
     try {
       await req;
