@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
+import { refreshAfterRankChange, repostListing } from "@/lib/api/listingActions";
 import BoostedTag from "@/components/BoostedTag";
 import { describeBoost, type BoostInfo } from "@/lib/boostInfo";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -225,7 +226,11 @@ export default function ListingManageCard({
       key: "promote",
       label: "Promote",
       onSelect: () =>
-        void run("Promoted to the latest feed", () => apiProducts.repostProduct(product.id)),
+        void run("Promoted to the latest feed", async () => {
+          await repostListing(product.id);
+          refreshAfterRankChange();
+          return null;
+        }),
     });
   }
   items.push({
