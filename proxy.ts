@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNextPath } from "@/lib/auth/safeNext";
 
 const PERSONAL_BROWSER_CACHE =
   "private, max-age=300, stale-while-revalidate=60";
@@ -18,11 +19,6 @@ function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
-}
-
-function safeInternalPath(value: string | null): string | null {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
-  return value;
 }
 
 function isCatalogPath(pathname: string): boolean {
@@ -45,7 +41,7 @@ export function proxy(req: NextRequest) {
   }
 
   if (AUTH_PAGES.includes(pathname) && req.cookies.get("midora_access")?.value) {
-    const dest = safeInternalPath(req.nextUrl.searchParams.get("next")) || "/";
+    const dest = safeNextPath(req.nextUrl.searchParams.get("next")) || "/";
     const url = req.nextUrl.clone();
     url.pathname = dest;
     url.search = "";
