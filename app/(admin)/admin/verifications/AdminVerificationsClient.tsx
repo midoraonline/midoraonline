@@ -350,7 +350,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
       ) : (
         <ul className="space-y-3">
           {visible.map((v) => {
-            const shopName = v.shops?.name || v.shop_id;
+            const shopName = v.shops?.name?.trim() || "Unnamed shop";
             const slug = v.shops?.slug || null;
             const isBusy = busyShopId === v.shop_id;
             const sub = parseSubmission(v);
