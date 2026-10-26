@@ -14,6 +14,7 @@ import ProductFormPage from "@/components/shop/ProductFormPage";
 import { useAppSession } from "@/lib/state";
 import { leaveFlow, useUrlStep } from "@/lib/hooks/useUrlStep";
 import { fetchMyShopSummaries, type UserShopSummary } from "@/lib/shop/personalShop";
+import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
 import { normalizeListingKind, type ListingKind } from "@/lib/listingMeta";
 import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
 
@@ -127,6 +128,8 @@ function PostItemFlow() {
 
   function afterVerify(next: VerificationStatus) {
     setStatus(next);
+    // Both channels are required; stay here until the second one is done.
+    if (!next.can_post) return;
     if (!kind) setStep("type");
     else if (shops.length > 1 && !shopId) setStep("shop");
     else setStep("form");
@@ -164,7 +167,12 @@ function PostItemFlow() {
   return (
     <>
       {step === "verify" && status ? (
-        <VerifyChannelStep status={status} onVerified={afterVerify} onBack={() => goBack("verify")} />
+        <VerifyChannelStep
+          key={status.required_channel ?? "done"}
+          status={status}
+          onVerified={afterVerify}
+          onBack={() => goBack("verify")}
+        />
       ) : null}
       {step === "shop" ? (
         <ShopPickStep
@@ -193,7 +201,7 @@ function PostItemFlow() {
             shopId={shopId ?? undefined}
             itemType={kind}
             listingKind={kind}
-            shopLabel={shop?.name ?? null}
+            shopLabel={shop?.name ?? (shops.length === 0 ? PERSONAL_SELLER_LABEL : null)}
             onChangeType={() => setStep("type")}
             onChangeShop={showShopChange ? () => setStep("shop") : undefined}
             contactVerified={status?.can_post}

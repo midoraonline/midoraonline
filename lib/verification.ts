@@ -23,7 +23,7 @@ const COPY: Record<string, string> = {
   too_many_attempts: "Too many tries. Request a new code.",
   phone_in_use:
     "That phone number is already linked to another Midora account. Sign in with that account, or use a different number.",
-  verification_required: "Verify your phone or email before you post.",
+  verification_required: "Verify your phone and email before you post.",
 };
 
 /** Envelope is `{ detail, code }`. Nested `detail.code` is only a safety net. */
@@ -60,14 +60,14 @@ function statusFromProfile(profile: MeResponse): VerificationStatus {
   const email = profile.email?.trim() || null;
   const phoneVerified = Boolean(profile.phone_verified);
   const emailVerified = Boolean(profile.email_verified);
-  const canPost = phoneVerified || emailVerified;
+  const canPost = phoneVerified && emailVerified;
   return {
     phone,
     phone_verified: phoneVerified,
     email,
     email_verified: emailVerified,
     can_post: canPost,
-    required_channel: canPost ? null : phone ? "phone" : "email",
+    required_channel: canPost ? null : phoneVerified ? "email" : "phone",
   };
 }
 

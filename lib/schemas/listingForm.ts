@@ -142,7 +142,7 @@ export type ListingValidationContext = {
   /** Resolved category metadata fields (DB-configured or fallback). Falls
    *  back to `categoryMetaFields(parentCategoryLabel)` when omitted. */
   metaFields?: ReturnType<typeof categoryMetaFields>;
-  /** When publishing, require a verified phone OR email (API `can_post`). */
+  /** When publishing, require a verified phone AND email (API `can_post`). */
   phoneVerified?: boolean;
   /** Shop-level location display used when listing location_name is empty. */
   shopLocationLabel?: string | null;

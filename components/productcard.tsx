@@ -32,6 +32,7 @@ import {
   type ListingMeta,
 } from "@/lib/listingMeta";
 import { isOnlineLocation } from "@/lib/listingLocation";
+import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
 
 
 const CARD_TAG = "px-2.5 py-1.5 text-[15px]";
@@ -95,6 +96,7 @@ function PersonalSellerLine({ shop }: { shop: ProductCardData["shop"] }) {
   return (
     <p className="truncate text-[11px] leading-snug text-muted">
       <span className="font-medium text-foreground/80">{name}</span>
+      <span> · {PERSONAL_SELLER_LABEL}</span>
       {joined ? <span> · Joined {joined}</span> : null}
       {active ? <span> · {active}</span> : null}
     </p>

@@ -55,6 +55,7 @@ import {
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
 import { isOnlineLocation } from "@/lib/listingLocation";
+import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -430,6 +431,7 @@ export default async function ProductDetails({
                     {shop.seller_name || shop.name}
                   </p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted">
+                    <span className="font-medium text-foreground/80">{PERSONAL_SELLER_LABEL}</span>
                     {formatMemberSince(shop.joined_at ?? shop.created_at) ? (
                       <span>Joined {formatMemberSince(shop.joined_at ?? shop.created_at)}</span>
                     ) : null}
