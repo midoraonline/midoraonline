@@ -7,6 +7,7 @@ import StepFrame from "@/components/post/StepFrame";
 import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/dashboard/ui";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { normalizePhone } from "@/lib/phone";
+import { useSettingsHref } from "@/lib/settingsHref";
 import {
   confirmEmailCode,
   confirmPhoneCode,
@@ -37,6 +38,7 @@ export default function VerifyChannelStep({
   const [busy, setBusy] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const busyRef = useRef(false);
+  const settingsLink = useSettingsHref();
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -154,7 +156,7 @@ export default function VerifyChannelStep({
         ) : (
           <p className="text-sm text-muted">
             Add an email in{" "}
-            <Link href="/merchant/settings" className="font-medium text-foreground underline underline-offset-2">
+            <Link href={settingsLink} className="font-medium text-foreground underline underline-offset-2">
               settings
             </Link>{" "}
             before posting.
