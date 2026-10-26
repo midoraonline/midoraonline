@@ -376,10 +376,10 @@ export default async function ProductDetails({
                 listingUrl={listingUrl}
                 title={product.title}
               >
-                <div className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
+                <span className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
                   <WhatsAppIcon className="size-4 shrink-0 text-white" />
                   WhatsApp
-                </div>
+                </span>
               </SellerContactConsent>
             ) : shop ? (
               <p className="rounded-xl border border-border bg-surface-subtle px-4 py-3 text-center text-xs text-muted">

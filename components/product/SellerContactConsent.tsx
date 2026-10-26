@@ -51,13 +51,15 @@ export default function SellerContactConsent({
     setShowConsent(false);
   }, [shopId, productId, whatsappNumber, listingUrl, title]);
 
-  if (consented) {
-    return <>{children}</>;
-  }
-
   return (
     <>
-      <div onClick={() => setShowConsent(true)}>{children}</div>
+      <button
+        type="button"
+        onClick={() => (consented ? handleOpenWhatsApp() : setShowConsent(true))}
+        className="block min-h-11 w-full rounded-xl dm-focus"
+      >
+        {children}
+      </button>
 
       {showConsent && (
         <div
