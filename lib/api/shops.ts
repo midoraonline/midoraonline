@@ -254,84 +254,74 @@ export function myStats() {
   return apiFetch<MerchantStats>("/api/v1/shops/me/stats");
 }
 
-export type MerchantAnalyticsSummary = {
-  total_shops: number;
-  active_shops: number;
-  total_products: number;
-  published_products: number;
-  total_impressions: number;
-  total_product_views: number;
-  total_whatsapp_clicks: number;
-  total_messages: number;
-  total_shop_views: number;
-  total_followers: number;
-  total_shop_likes: number;
-};
-
-export type MerchantAnalyticsShop = {
-  id: string;
-  name: string;
-  slug: string;
-  is_active: boolean;
-  shop_type?: string | null;
-  view_count: number;
-  follower_count: number;
-  like_count: number;
+export type ListingActivity = {
   impressions: number;
+  reach: number;
+  boosted_impressions: number;
+  views: number;
+  unique_viewers: number;
+  whatsapp_clicks: number;
+  call_clicks: number;
+  messages: number;
+  shares: number;
+  likes: number;
+  comments: number;
+  reviews: number;
+  reports: number;
+  contacts: number;
+  view_rate: number;
+  contact_rate: number;
 };
 
-export type MerchantAnalyticsProduct = {
+export type ActivityDay = { day: string; impressions: number; views: number; contacts: number };
+
+export type MerchantAnalyticsListing = ListingActivity & {
   id: string;
   title: string;
   category?: string | null;
   shop_id: string;
-  impressions: number;
-  views: number;
-  whatsapp_clicks: number;
-  messages: number;
-  likes: number;
-  ctr: number;
   price_ugx: number;
-};
-
-export type MerchantAnalyticsTrends = {
-  impressions: Array<{ day: string; count: number }>;
-  views: Array<{ day: string; count: number }>;
-  whatsapp: Array<{ day: string; count: number }>;
-  messages: Array<{ day: string; count: number }>;
-};
-
-export type MerchantAnalyticsFunnel = {
-  impressions: number;
-  views: number;
-  whatsapp_clicks: number;
-  messages: number;
-  view_rate: number;
-  wa_rate: number;
-  msg_rate: number;
+  image_url?: string | null;
+  live: boolean;
 };
 
 export type MerchantAnalytics = {
   generated_at: string;
   window_days: number;
-  summary: MerchantAnalyticsSummary;
-  per_shop: MerchantAnalyticsShop[];
-  top_products: MerchantAnalyticsProduct[];
-  trends: MerchantAnalyticsTrends;
-  funnel: MerchantAnalyticsFunnel;
-  pool_mix: Array<{ label: string; value: number }>;
+  summary: ListingActivity & {
+    total_shops: number;
+    active_shops: number;
+    total_products: number;
+    live_products: number;
+  };
+  listings: MerchantAnalyticsListing[];
+  daily: ActivityDay[];
+};
+
+export type ListingStats = {
+  generated_at: string;
+  window_days: number;
+  listing: { id: string; title: string; category?: string | null; live: boolean; posted_at?: string | null };
+  stats: ListingActivity;
+  daily: ActivityDay[];
 };
 
 export function isAnalyticsDisabledBody(data: unknown): boolean {
   if (!data || typeof data !== "object") return false;
-  const row = data as { enabled?: unknown; code?: unknown; summary?: unknown };
-  return row.enabled === false && row.code === "analytics_disabled" && row.summary == null;
+  const row = data as { enabled?: unknown; code?: unknown };
+  return row.enabled === false && row.code === "analytics_disabled";
 }
 
 export function myAnalytics(days = 30) {
   return apiFetch<MerchantAnalytics>(
     `/api/v1/shops/me/analytics?days=${encodeURIComponent(days)}`,
     { timeoutMs: 45_000 },
+  );
+}
+
+export function listingStats(listingId: string, days = 30) {
+  return apiFetch<ListingStats>(
+    `/api/v1/shops/me/listings/${encodeURIComponent(listingId)}/stats?days=${encodeURIComponent(days)}`,
   );
 }
 

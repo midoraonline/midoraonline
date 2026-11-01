@@ -55,6 +55,7 @@ import {
   SHOP_TRUST_LABEL,
 } from "@/lib/productCardMap";
 import { isOnlineLocation } from "@/lib/listingLocation";
+import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -375,10 +376,10 @@ export default async function ProductDetails({
                 listingUrl={listingUrl}
                 title={product.title}
               >
-                <div className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
+                <span className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
                   <WhatsAppIcon className="size-4 shrink-0 text-white" />
                   WhatsApp
-                </div>
+                </span>
               </SellerContactConsent>
             ) : shop ? (
               <p className="rounded-xl border border-border bg-surface-subtle px-4 py-3 text-center text-xs text-muted">
@@ -430,6 +431,7 @@ export default async function ProductDetails({
                     {shop.seller_name || shop.name}
                   </p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted">
+                    <span className="font-medium text-foreground/80">{PERSONAL_SELLER_LABEL}</span>
                     {formatMemberSince(shop.joined_at ?? shop.created_at) ? (
                       <span>Joined {formatMemberSince(shop.joined_at ?? shop.created_at)}</span>
                     ) : null}

@@ -8,6 +8,7 @@ import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import UserAvatar from "@/components/UserAvatar";
+import { settingsHref } from "@/lib/settingsHref";
 
 // ── Logout confirmation modal ────────────────────────────────────────────────
 function LogoutModal({
@@ -194,8 +195,7 @@ export default function DashboardHeader({
     }
   }
 
-  const settingsHref =
-    role === "admin" ? "/admin/settings" : role === "customer" ? "/customer/settings" : "/merchant/settings";
+  const settingsLink = settingsHref(role);
 
   return (
     <>
@@ -217,7 +217,7 @@ export default function DashboardHeader({
             displayName={displayName}
             email={email}
             avatarUrl={avatarUrl}
-            settingsHref={settingsHref}
+            settingsHref={settingsLink}
             onLogout={() => setShowLogout(true)}
           />
         </div>

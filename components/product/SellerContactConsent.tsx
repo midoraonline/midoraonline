@@ -3,11 +3,11 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useSessionStore } from "@/lib/state/session-store";
+import { useSettingsHref } from "@/lib/settingsHref";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiLeads } from "@/lib/api";
 import { track } from "@/lib/analytics";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { whatsappDigits } from "@/lib/whatsappProduct";
 
 type Props = {
@@ -31,6 +31,7 @@ export default function SellerContactConsent({
   const [consented, setConsented] = useState(false);
   const [photoNudgeDismissed, setPhotoNudgeDismissed] = useState(false);
   const avatarUrl = useSessionStore((s) => s.user?.avatar_url);
+  const profilePhotoHref = useSettingsHref("profile-photo");
 
   const handleOpenWhatsApp = useCallback(() => {
     const text = `Hi, I'm interested in "${title}"${listingUrl ? `\n\n${listingUrl}` : ""}`;
@@ -43,19 +44,20 @@ export default function SellerContactConsent({
       shopId,
       clickSource: "product_detail",
     });
-    notifyFeedEngagement();
 
     window.open(waUrl, "_blank", "noopener,noreferrer");
     setShowConsent(false);
   }, [shopId, productId, whatsappNumber, listingUrl, title]);
 
-  if (consented) {
-    return <>{children}</>;
-  }
-
   return (
     <>
-      <div onClick={() => setShowConsent(true)}>{children}</div>
+      <button
+        type="button"
+        onClick={() => (consented ? handleOpenWhatsApp() : setShowConsent(true))}
+        className="block min-h-11 w-full rounded-xl dm-focus"
+      >
+        {children}
+      </button>
 
       {showConsent && (
         <div
@@ -99,7 +101,7 @@ export default function SellerContactConsent({
             {!avatarUrl && !photoNudgeDismissed ? (
               <div className="mt-3 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-[11px] text-foreground/85">
                 Tip: a profile photo helps sellers trust your message.{" "}
-                <Link href="/customer/settings#profile-photo" className="font-semibold text-accent underline">
+                <Link href={profilePhotoHref} className="font-semibold text-accent underline">
                   Add one
                 </Link>
                 {" · "}

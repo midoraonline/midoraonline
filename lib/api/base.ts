@@ -412,3 +412,10 @@ async function dispatchRequest(
 }
 
 export { AUTH_CHANGED_EVENT };
+
+/** Server-written 4xx message (e.g. "already reported"), else the caller's fallback. */
+export function apiErrorMessage(err: unknown, fallback: string): string {
+  if (!(err instanceof ApiError) || err.status >= 500) return fallback;
+  const message = err.message.trim();
+  return message && !/^Request failed with status/.test(message) ? message : fallback;
+}

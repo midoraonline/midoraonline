@@ -57,6 +57,7 @@ import {
 import LocationInput from "@/components/LocationInput";
 import { listingPlaceFields } from "@/lib/listingLocation";
 import { useSessionStore } from "@/lib/state/session-store";
+import { useSettingsHref } from "@/lib/settingsHref";
 
 const UGX = new Intl.NumberFormat("en-UG", {
   style: "currency",
@@ -250,6 +251,7 @@ export default function ProductFormPage({
     null,
   );
   const sessionUser = useSessionStore((s) => s.user);
+  const profilePhotoHref = useSettingsHref("profile-photo");
   const [shopLocationLabel, setShopLocationLabel] = useState("");
 
   const [aiCheck, setAiCheck] = useState<ListingQualityResponse | null>(null);
@@ -830,7 +832,7 @@ export default function ProductFormPage({
             </p>
             <div className="flex shrink-0 items-center gap-2">
               <a
-                href="/merchant/settings#profile-photo"
+                href={profilePhotoHref}
                 className={BTN_SECONDARY}
               >
                 Add photo
@@ -1005,7 +1007,7 @@ export default function ProductFormPage({
           {showErrors && errors.phone ? (
             <p className="text-xs text-[color:var(--error)]">
               {errors.phone}{" "}
-              <a href="/merchant/settings#profile-photo" className="underline">
+              <a href={profilePhotoHref} className="underline">
                 Verify now
               </a>
             </p>

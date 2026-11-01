@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import { track } from "@/lib/analytics";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
 type Props = {
@@ -45,7 +44,6 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
 
       if (shopId) {
         track("listing:messaged", { productId, shopId });
-        notifyFeedEngagement();
       }
 
       router.push(`/chat?conversation=${conv.id}`);

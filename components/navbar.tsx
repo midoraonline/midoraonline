@@ -10,6 +10,7 @@ import { usePresenceStore } from "@/lib/state/presence-store";
 import { apiAuth } from "@/lib/api";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { useSessionStore } from "@/lib/state/session-store";
+import { settingsHref } from "@/lib/settingsHref";
 import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { Menu, X } from "lucide-react";
@@ -176,7 +177,7 @@ function ProfileDropdown({
             ) : null}
 
             <Link
-              href={role === "merchant" ? "/merchant/settings" : role === "admin" ? "/admin/settings" : "/customer/settings"}
+              href={settingsHref(role)}
               onClick={close}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-surface-subtle dm-focus"
             >

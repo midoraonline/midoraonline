@@ -6,7 +6,6 @@ import { Clock, Search, TrendingUp, X } from "lucide-react";
 import useSWR from "swr";
 
 import { apiSearch } from "@/lib/api";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 import { searchItemToCard } from "@/lib/searchMap";
 import { isTextOnlyListing } from "@/lib/listingMeta";
@@ -129,7 +128,6 @@ export default function ProductSearchBar({
   function handleSuggestionTap(query: string) {
     onChange(query);
     setFocused(false);
-    notifyFeedEngagement();
     onSubmit?.(query);
   }
 
@@ -138,7 +136,6 @@ export default function ProductSearchBar({
       const q = value.trim();
       if (q) {
         setFocused(false);
-        notifyFeedEngagement();
         onSubmit?.(q);
       }
     }

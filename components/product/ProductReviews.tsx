@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import UserAvatar from "@/components/UserAvatar";
 import { Star } from "lucide-react";
@@ -92,6 +93,7 @@ function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) 
 }
 
 export default function ProductReviews({ productId, initialStats }: Props) {
+  const pathname = usePathname();
   const session = useAppSession();
   const [stats, setStats] = useState<ReviewStats | null>(initialStats ?? null);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
@@ -346,7 +348,10 @@ export default function ProductReviews({ productId, initialStats }: Props) {
             </div>
           ) : (
             <p className="text-xs text-muted">
-              <Link href="/login" className="font-semibold text-accent hover:text-accent-hover">
+              <Link
+                href={`/login?next=${encodeURIComponent(pathname)}`}
+                className="font-semibold text-accent hover:text-accent-hover"
+              >
                 Log in
               </Link>{" "}
               to leave a rating and review.

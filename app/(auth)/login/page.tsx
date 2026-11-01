@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeNextPath } from "@/lib/auth/safeNext";
 
 import { Loader2, Mail } from "lucide-react";
 import { apiAuth } from "@/lib/api";
@@ -37,8 +38,7 @@ function LoginPageInner() {
     setError(null);
     void establishSessionFromGoogleCode(code, state)
       .then(() => {
-        const next = searchParams.get("next");
-        router.replace(next && next.startsWith("/") ? next : "/");
+        router.replace(safeNextPath(searchParams.get("next")) ?? "/");
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -63,8 +63,7 @@ function LoginPageInner() {
     try {
       const tokens = await apiAuth.login({ email, password });
       await establishClientSession(tokens);
-      const next = searchParams.get("next");
-      router.push(next && next.startsWith("/") ? next : "/");
+      router.push(safeNextPath(searchParams.get("next")) ?? "/");
     } catch (err) {
       setError(
         err instanceof Error

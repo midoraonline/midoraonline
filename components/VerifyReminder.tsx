@@ -5,6 +5,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Loader2, Mail, X } from "lucide-react";
 import { toast } from "sonner";
+import { settingsHref } from "@/lib/settingsHref";
 
 import { apiAuth, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
@@ -34,7 +35,7 @@ export default function VerifyReminder() {
   if (!session.isAuthenticated || !user || dismissed) return null;
   if (role === "admin" || role === "staff") return null;
 
-  const settingsHref = isMerchant ? "/merchant/settings" : "/customer/settings";
+  const settingsLink = settingsHref(role);
 
   async function resend() {
     if (sending || cooldown) return;
@@ -60,7 +61,7 @@ export default function VerifyReminder() {
 
   const steps: Step[] = [{ key: "email", label: "Verify your email", done: !!user.email_verified }];
   if (isMerchant) {
-    steps.push({ key: "phone", label: "Verify your phone", done: !!user.phone_verified, href: settingsHref });
+    steps.push({ key: "phone", label: "Verify your phone", done: !!user.phone_verified, href: settingsLink });
     const firstShop = shops?.[0];
     const identityDone = !!shops?.some((s) => s.trust_badges?.includes("identity_verified"));
     steps.push({
@@ -102,7 +103,7 @@ export default function VerifyReminder() {
               </li>
             ) : (
               <li key={s.key}>
-                <Link href={s.href ?? settingsHref} className="font-medium text-accent underline-offset-2 hover:underline">
+                <Link href={s.href ?? settingsLink} className="font-medium text-accent underline-offset-2 hover:underline">
                   {s.label}
                 </Link>
               </li>

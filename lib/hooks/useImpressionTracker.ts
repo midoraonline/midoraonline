@@ -6,23 +6,15 @@
 
 import { useEffect, useRef } from "react";
 import { track } from "@/lib/analytics";
+import type { FeedPlacement } from "@/lib/api/products";
 
 const DEFAULT_THRESHOLD = 0.5;
 const DEFAULT_DWELL_MS = 1000;
 
-export type ImpressionPool =
-  | "organic"
-  | "boosted"
-  | "sponsored"
-  | "super_boost"
-  | "premium_store"
-  | "fresh"
-  | "exploration";
-
 export type ImpressionTrackerOptions = {
   listingId: string | null | undefined;
   shopId?: string | null;
-  pool?: ImpressionPool;
+  pool?: FeedPlacement;
   position?: number;
   threshold?: number;
   dwellMs?: number;

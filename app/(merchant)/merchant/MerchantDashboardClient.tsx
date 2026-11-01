@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
@@ -11,11 +10,11 @@ import { usePlatformAnalytics } from "@/lib/hooks/usePlatformAnalytics";
 import type { MerchantAnalytics, MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { useAppSession } from "@/lib/state";
+import { ActivityChart, ActivityHeadline, PERIODS, type Period } from "@/components/dashboard/ListingActivity";
 import {
   BTN_PRIMARY,
   BTN_SECONDARY,
   BTN_TEXT,
-  CARD,
   EmptyState,
   ErrorState,
   LIST,
@@ -31,33 +30,6 @@ import {
   TH,
   formatCount as fmt,
 } from "@/components/dashboard/ui";
-
-const GRID = "var(--border)";
-const AXIS = "var(--foreground-muted)";
-
-function formatDay(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function mergeSeries(trends: MerchantAnalytics["trends"]) {
-  const byDay = new Map<string, { day: string; impressions: number; views: number }>();
-  for (const key of ["impressions", "views"] as const) {
-    for (const p of trends[key] ?? []) {
-      const row = byDay.get(p.day) ?? { day: p.day, impressions: 0, views: 0 };
-      row[key] = p.count;
-      byDay.set(p.day, row);
-    }
-  }
-  return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
-}
-
-const WINDOWS = [
-  { value: "7", label: "7 days" },
-  { value: "30", label: "30 days" },
-  { value: "90", label: "90 days" },
-] as const;
 
 type Props = {
   initialShops: Shop[];
@@ -187,7 +159,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         <Section title="Analytics">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface shadow-xs p-5">
             <p className="text-sm text-muted">
-              Impressions, trends and the contact funnel are on the Standard plan and above.
+              Impressions, reach, views and contacts for each listing are on the Standard plan and above.
             </p>
             <Link href="/merchant/billing" className={BTN_SECONDARY}>
               See plans
@@ -199,87 +171,59 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       {analyticsOn && analytics ? (
         <>
           <Section
-            title={`${fmt(analytics.summary.total_impressions)} impressions in the last ${analytics.window_days} days`}
-            description={`${fmt(analytics.summary.total_product_views)} listing views from those impressions.`}
-          >
-            <div className={`${CARD} p-4 sm:p-5`}>
-            <div className="mb-4 flex justify-end">
+            title={`How your ads did in the last ${analytics.window_days} days`}
+            description="Impressions count every time an ad was on someone's screen for at least a second, even without a tap."
+            action={
               <Select
                 label="Period"
                 hideLabel
                 className="w-40"
-                options={WINDOWS}
-                value={String(windowDays) as (typeof WINDOWS)[number]["value"]}
+                options={PERIODS}
+                value={String(windowDays) as Period}
                 onChange={(v) => setWindowDays(Number(v))}
               />
-            </div>
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mergeSeries(analytics.trends)} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="dashAccentFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.22} />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} stroke={GRID} strokeDasharray="3 3" strokeOpacity={0.8} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} tickFormatter={formatDay} minTickGap={28} />
-                  <YAxis tick={{ fontSize: 11, fill: AXIS }} allowDecimals={false} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    labelFormatter={formatDay}
-                    contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", fontSize: 12, boxShadow: "var(--shadow-md)" }}
-                  />
-                  <Area type="monotone" dataKey="views" name="Views" stroke={AXIS} strokeWidth={1.5} strokeDasharray="4 3" fill="transparent" />
-                  <Area type="monotone" dataKey="impressions" name="Impressions" stroke="var(--accent)" strokeWidth={2} fill="url(#dashAccentFill)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            </div>
+            }
+          >
+            <ActivityHeadline stats={analytics.summary} />
+            <ActivityChart daily={analytics.daily} />
           </Section>
 
-          <Section title="Contact funnel" description={`Last ${analytics.window_days} days.`}>
-            <ul className={LIST}>
-              {[
-                { label: "Impressions", value: analytics.funnel.impressions, rate: null },
-                { label: "Listing views", value: analytics.funnel.views, rate: analytics.funnel.view_rate },
-                { label: "WhatsApp clicks", value: analytics.funnel.whatsapp_clicks, rate: analytics.funnel.wa_rate },
-                { label: "Messages", value: analytics.funnel.messages, rate: analytics.funnel.msg_rate },
-              ].map((row) => (
-                <li key={row.label} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                  <span className="flex-1">{row.label}</span>
-                  <span className="tabular-nums">{fmt(row.value)}</span>
-                  <span className="w-14 text-right text-xs tabular-nums text-muted">
-                    {row.rate == null ? "" : `${(row.rate * 100).toFixed(1)}%`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-
-          {analytics.top_products.length > 0 ? (
-            <Section title="Top listings" description="Ranked by impressions.">
+          {analytics.listings.length > 0 ? (
+            <Section title="Your listings" description="Ranked by impressions. Tap a listing for its full breakdown.">
               <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border bg-surface-subtle">
                     <tr>
                       <th className={TH}>Listing</th>
                       <th className={`${TH} text-right`}>Impressions</th>
-                      <th className={`${TH} hidden text-right sm:table-cell`}>Views</th>
-                      <th className={`${TH} hidden text-right sm:table-cell`}>CTR</th>
-                      <th className={`${TH} text-right`}>WhatsApp</th>
+                      <th className={`${TH} hidden text-right md:table-cell`}>Reach</th>
+                      <th className={`${TH} text-right`}>Views</th>
+                      <th className={`${TH} hidden text-right sm:table-cell`}>WhatsApp</th>
+                      <th className={`${TH} hidden text-right md:table-cell`}>Messages</th>
+                      <th className={`${TH} hidden text-right lg:table-cell`}>Likes</th>
+                      <th className={`${TH} hidden text-right lg:table-cell`}>Comments</th>
+                      <th className={`${TH} hidden text-right lg:table-cell`}>Reports</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {analytics.top_products.map((p) => (
+                    {analytics.listings.map((p) => (
                       <tr key={p.id} className="transition-colors hover:bg-surface-subtle">
-                        <td className={`${TD} max-w-[12rem]`}>
-                          <p className="truncate font-medium">{p.title}</p>
-                          {p.category ? <p className="truncate text-xs text-muted">{p.category}</p> : null}
+                        <td className={`${TD} max-w-[14rem]`}>
+                          <Link href={`/merchant/listings/${p.id}/stats`} className="block hover:underline">
+                            <span className="block truncate font-medium">{p.title || "Untitled"}</span>
+                            <span className="block truncate text-xs text-muted">
+                              {p.live ? p.category ?? "Live" : "Not live"}
+                            </span>
+                          </Link>
                         </td>
                         <td className={`${TD} ${NUM}`}>{fmt(p.impressions)}</td>
-                        <td className={`${TD} ${NUM} hidden sm:table-cell`}>{fmt(p.views)}</td>
-                        <td className={`${TD} ${NUM} hidden sm:table-cell`}>{(p.ctr * 100).toFixed(1)}%</td>
-                        <td className={`${TD} ${NUM}`}>{fmt(p.whatsapp_clicks)}</td>
+                        <td className={`${TD} ${NUM} hidden md:table-cell`}>{fmt(p.reach)}</td>
+                        <td className={`${TD} ${NUM}`}>{fmt(p.views)}</td>
+                        <td className={`${TD} ${NUM} hidden sm:table-cell`}>{fmt(p.whatsapp_clicks)}</td>
+                        <td className={`${TD} ${NUM} hidden md:table-cell`}>{fmt(p.messages)}</td>
+                        <td className={`${TD} ${NUM} hidden lg:table-cell`}>{fmt(p.likes)}</td>
+                        <td className={`${TD} ${NUM} hidden lg:table-cell`}>{fmt(p.comments)}</td>
+                        <td className={`${TD} ${NUM} hidden lg:table-cell`}>{fmt(p.reports)}</td>
                       </tr>
                     ))}
                   </tbody>
