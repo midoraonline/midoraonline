@@ -6,79 +6,71 @@ import { apiAdmin } from "@/lib/api";
 import type { FeedConfigResponse, FeedConfigTestResponse } from "@/lib/api/admin";
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, ErrorState, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
-// Group overridable keys into logical sections for the UI.
 const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   {
-    title: "Score bonuses",
-    description: "Additive points contributed by each ranking signal.",
+    title: "Score weights",
+    description: "Share of the 0–100 score from each signal. Engagement only counts from stage 5.",
     keys: [
-      "VECTOR_SCORE_SCALE",
-      "CATEGORY_MATCH_BOOST",
-      "SEARCH_MATCH_PER_MATCH",
-      "SEARCH_MATCH_MAX_HITS",
+      "QUALITY_WEIGHT",
+      "FRESHNESS_WEIGHT",
+      "TRUST_WEIGHT",
+      "ENGAGEMENT_WEIGHT",
+      "EXPOSURE_WEIGHT",
+      "FRESHNESS_HALF_LIFE_HOURS",
+      "FRAUD_MEDIUM_PENALTY",
       "FOLLOWED_SHOP_BOOST",
-      "NEW_SELLER_BONUS",
-      "EXPLORATION_BONUS",
-      "SELLER_QUALITY_CAP",
-      "GLOBAL_POPULARITY_CAP",
-      "PREMIUM_STORE_BONUS",
-      "SPONSORED_LISTING_BONUS",
-      "LISTING_BOOST_BONUS",
-      "SUPER_BOOST_BONUS",
     ],
   },
   {
-    title: "Freshness & velocity",
-    description: "How much recency and short-window engagement matter.",
+    title: "Quality gates",
+    description: "Minimum listing quality for the feed, exploration and paid spots.",
+    keys: ["QUALITY_MIN", "EXPLORATION_MIN_QUALITY", "EXPLORATION_MAX_IMPRESSIONS", "PAID_MIN_QUALITY"],
+  },
+  {
+    title: "Growth stages",
+    description: "Eligible listing counts that switch on stricter rules.",
     keys: [
-      "FRESHNESS_FALLBACK",
-      "FRESHNESS_MAX_AGE_DAYS",
-      "VELOCITY_WINDOW_HOURS",
-      "VELOCITY_MAX_BONUS",
-      "VELOCITY_HALF_LIFE",
+      "STAGE_1_MIN",
+      "STAGE_2_MIN",
+      "STAGE_3_MIN",
+      "STAGE_4_MIN",
+      "STAGE_5_MIN",
+      "STAGE_6_MIN",
+      "PAID_MIN_STAGE",
+      "TYPE_MIX_MIN_STAGE",
+      "ENGAGEMENT_MIN_STAGE",
+      "EXPLORATION_STAGE_3",
+      "EXPLORATION_STAGE_4",
     ],
   },
   {
-    title: "New seller cold-start",
-    description: "Protection window for new sellers before regular ranking.",
+    title: "Blocks and mix",
+    description: "Block size, seller cap, paid position and Home type shares.",
     keys: [
-      "NEW_SELLER_MAX_AGE_DAYS",
-      "NEW_SELLER_MAX_IMPRESSIONS",
-      "NEW_SELLER_GUARANTEED_IMPRESSIONS",
+      "BLOCK_SIZE",
+      "SELLER_CAP_PER_BLOCK",
+      "PAID_SLOT_POSITION",
+      "TYPE_DEPTH_BLOCKS",
+      "PRODUCT_SHARE",
+      "SERVICE_SHARE",
+      "OPPORTUNITY_SHARE",
     ],
   },
   {
-    title: "Penalties & diversity",
-    description: "Demotions, vendor rotation, and per-window seller caps.",
-    keys: [
-      "SEEN_DEMOTION",
-      "VENDOR_DIVERSITY_K",
-      "VENDOR_DIVERSITY_CAP",
-      "VENDOR_WINDOW_SIZE",
-      "VENDOR_WINDOW_MAX_PER_SELLER",
-    ],
-  },
-  {
-    title: "Exposure multiplier",
-    description: "Rotates over-exposed sellers off the top of the feed.",
+    title: "Exposure and repeats",
+    description: "Rotate over-shown sellers and hide listings a viewer has seen often.",
     keys: [
       "EXPOSURE_TARGET_IMPRESSIONS",
-      "EXPOSURE_EXPONENT",
       "EXPOSURE_MIN_MULTIPLIER",
       "EXPOSURE_WINDOW_HOURS",
+      "FATIGUE_THRESHOLD",
+      "FATIGUE_WINDOW_HOURS",
     ],
   },
   {
-    title: "Impression fatigue & pagination",
-    description: "How aggressively repeated listings are hidden.",
-    keys: [
-      "FATIGUE_THRESHOLD",
-      "FATIGUE_WINDOW_HOURS",
-      "DEDUP_WINDOW_HOURS",
-      "DEDUP_MAX_LOOKBACK",
-      "CANDIDATE_POOL_MAX",
-      "DECAY_LAMBDA_PER_DAY",
-    ],
+    title: "Badges and refresh",
+    description: "Badge windows and how long the shared order is reused.",
+    keys: ["NEW_BADGE_HOURS", "CLOSING_SOON_HOURS", "SNAPSHOT_TTL_SECONDS"],
   },
 ];
 
@@ -199,7 +191,7 @@ export default function FeedConfigClient() {
     <div className="space-y-8">
       <PageHeader
         title="Feed tuning"
-        description="Score bonuses, penalties, freshness and vendor diversity for the ranking engine. Changes apply within a minute."
+        description="Weights, quality gates, growth stages and block rules for the shared feed. Changes rebuild the feed order."
         action={
           <div className="flex flex-wrap items-center gap-3">
             <button onClick={reset} disabled={saving} className={BTN_TEXT}>
@@ -305,7 +297,7 @@ export default function FeedConfigClient() {
             <div>
               <h2 className="text-sm font-semibold">Dry-run results</h2>
               <p className="mt-0.5 text-xs text-muted">
-                Scored {test.summary.sample_size} of the most-viewed live listings
+                Scored {test.summary.sample_size} of the newest live listings
                 against the proposed values.
               </p>
             </div>

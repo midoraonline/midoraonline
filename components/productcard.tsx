@@ -2,20 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, ImageIcon, MapPin, Play, Star } from "lucide-react";
+import { ArrowRight, Clock, ImageIcon, MapPin, Play, Sparkles, Star } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
-import { isVideoUrl } from "@/lib/api/products";
+import { isVideoUrl, type CardStatus, type FeedPlacement } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { track } from "@/lib/analytics";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
-import { useImpressionTracker, type ImpressionPool } from "@/lib/hooks/useImpressionTracker";
+import { useImpressionTracker } from "@/lib/hooks/useImpressionTracker";
 import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 import BoostedTag from "@/components/BoostedTag";
-import ListingTypeTag from "@/components/ListingTypeTag";
 import BrandedCover from "@/components/BrandedCover";
 import { listingTypeTagKind } from "@/lib/listingType";
 import {
@@ -74,8 +72,8 @@ export type ProductCardData = {
   category?: string | null;
   description?: string | null;
   inShopContext?: boolean;
-  boosted?: boolean;
-  boost_ends_at?: string | null;
+  placement?: FeedPlacement;
+  status?: CardStatus | null;
   updated_at?: string | null;
   location_name?: string | null;
   /** product | service | opportunity (job maps to opportunity) */
@@ -232,37 +230,32 @@ function ListingCover({
   );
 }
 
-/** Freshness / trust cue from listing time. */
-function timeLabel(iso: string | null | undefined): {
-  label: string;
-  tone: "hot" | "fresh" | "muted";
-} | null {
+function timeLabel(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const diffMs = Date.now() - new Date(iso).getTime();
   if (diffMs < 0) return null;
   const mins = Math.floor(diffMs / 60000);
-  if (mins < 5) return { label: "Just now", tone: "hot" };
-  if (mins < 60) return { label: `Hot · ${mins}m`, tone: "hot" };
+  if (mins < 5) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return { label: `${hours}h ago`, tone: "fresh" };
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return { label: `${days}d ago`, tone: "muted" };
-  const months = Math.floor(days / 30);
-  return { label: `${months}mo ago`, tone: "muted" };
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
 }
 
-function Badge({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className: string;
-}) {
+function StatusBadge({ status }: { status: CardStatus }) {
+  if (status === "boosted") return <BoostedTag className={CARD_TAG} />;
+  const closing = status === "closing_soon";
+  const Icon = closing ? Clock : Sparkles;
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide shadow-sm ${className}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-md font-semibold leading-none text-white ${
+        closing ? "bg-amber-600" : "bg-rose-500"
+      } ${CARD_TAG}`}
     >
-      {children}
+      <Icon className="size-[1em]" strokeWidth={2.5} aria-hidden />
+      {closing ? "Closing soon" : "New"}
     </span>
   );
 }
@@ -313,7 +306,6 @@ function WhatsAppCta({
               clickSource: "search_result",
             });
           }
-          notifyFeedEngagement();
           window.open(waHref, "_blank", "noopener,noreferrer");
         }}
       >
@@ -337,20 +329,18 @@ function WhatsAppCta({
 export default function ProductCard({
   product,
   layout = "vertical",
-  impressionPool,
   impressionPosition,
   imagePriority = false,
 }: {
   product: ProductCardData;
   layout?: "vertical" | "horizontal";
-  impressionPool?: ImpressionPool;
   impressionPosition?: number;
   imagePriority?: boolean;
 }) {
   const impressionRef = useImpressionTracker<HTMLElement>({
     listingId: product.id,
     shopId: product.shop.id,
-    pool: impressionPool ?? (product.boosted ? "boosted" : "organic"),
+    pool: product.placement ?? "organic",
     position: impressionPosition,
   });
 
@@ -362,8 +352,6 @@ export default function ProductCard({
     : null;
   const productHref = `/products/${product.slug}`;
   const tInfo = timeLabel(product.updated_at || null);
-  const isBoosted = product.boosted === true;
-  const shopLive = product.shop.available_now === true;
   const locationRaw =
     product.location_name?.trim() || product.shop.location?.trim() || null;
   const locationOnline = isOnlineLocation(locationRaw);
@@ -373,12 +361,6 @@ export default function ProductCard({
     product.discountPriceUGX != null &&
     product.discountPriceUGX > 0 &&
     (product.originalPriceUGX ?? product.priceUGX) > product.discountPriceUGX;
-  const discountPct = isDiscounted
-    ? Math.round(
-        (1 - product.discountPriceUGX! / (product.originalPriceUGX ?? product.priceUGX)) *
-          100,
-      )
-    : 0;
   const price = isDiscounted ? product.discountPriceUGX! : product.priceUGX;
   const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
   const listingMeta = parseListingMeta(product.listing_meta);
@@ -420,38 +402,11 @@ export default function ProductCard({
       />
     );
 
-  const imageBadges = (
-    <div className="pointer-events-none absolute inset-x-2 top-2 z-[6] flex items-start justify-between gap-2">
-      <div className="flex min-h-9 max-w-[75%] flex-wrap items-center gap-1">
-        <ListingTypeTag kind={typeKind} className={CARD_TAG} />
-        {isBoosted && (
-          <BoostedTag className={CARD_TAG} />
-        )}
-        {shopLive && (
-          <Badge className="bg-emerald-600 text-white">
-            <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden />
-            Live now
-          </Badge>
-        )}
-        {tInfo && listingKind === "product" && (
-          <Badge
-            className={
-              tInfo.tone === "hot"
-                ? "bg-accent text-white"
-                : tInfo.tone === "fresh"
-                  ? "bg-primary/80 text-primary-foreground backdrop-blur-sm"
-                  : "bg-black/55 text-white backdrop-blur-sm"
-            }
-          >
-            {tInfo.label}
-          </Badge>
-        )}
-        {isDiscounted && (
-          <Badge className="bg-amber-400 text-primary">-{discountPct}%</Badge>
-        )}
-      </div>
+  const imageBadges = product.status ? (
+    <div className="pointer-events-none absolute left-2 top-2 z-[6] max-w-[75%]">
+      <StatusBadge status={product.status} />
     </div>
-  );
+  ) : null;
 
   const likeFloating = (
     <div className="absolute top-2 right-2 z-[7]">
@@ -491,7 +446,7 @@ export default function ProductCard({
       </span>
     );
 
-  const whenLabel = deadlineChip(listingMeta.deadline) ?? tInfo?.label ?? null;
+  const whenLabel = deadlineChip(listingMeta.deadline) ?? tInfo;
   const metaRow = (
     <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
       <span className="inline-flex min-w-0 flex-1 items-center gap-0.5">

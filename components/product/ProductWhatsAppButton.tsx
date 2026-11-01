@@ -2,7 +2,6 @@
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { track } from "@/lib/analytics";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 
 type Props = {
@@ -34,7 +33,6 @@ export default function ProductWhatsAppButton({
         clickSource,
       });
     }
-    notifyFeedEngagement();
     window.open(waHref, "_blank", "noopener,noreferrer");
   };
 

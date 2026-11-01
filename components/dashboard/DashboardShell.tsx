@@ -74,6 +74,9 @@ function resolveScreenName(pathname: string): string {
   if (pathname.startsWith("/merchant/listings/") && pathname.endsWith("/edit")) {
     return "Edit listing";
   }
+  if (pathname.startsWith("/merchant/listings/") && pathname.endsWith("/stats")) {
+    return "Listing stats";
+  }
   if (pathname.startsWith("/merchant/shops/") && pathname.includes("/settings")) return "Shop Settings";
   if (pathname.includes("/verification")) return "Verification";
   if (pathname.startsWith("/merchant/shops/")) return "Shop Dashboard";

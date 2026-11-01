@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiProducts } from "@/lib/api";
 import { track } from "@/lib/analytics";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 
 const btnBase =
@@ -106,7 +105,6 @@ export default function ProductLikeButton({
           track("listing:unfavorited", { productId, shopId });
         }
       }
-      notifyFeedEngagement();
       void sync();
     } catch {
       // Rollback on error

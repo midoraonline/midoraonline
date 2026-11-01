@@ -449,17 +449,16 @@ export type HomeFeedProduct = {
     joined_at?: string | null;
     last_active_at?: string | null;
   };
-  boosted: boolean;
-  is_boosted?: boolean;
-  boost_ends_at?: string | null;
-  boost?: BoostInfo | null;
+  placement?: FeedPlacement;
+  status?: CardStatus | null;
+  first_posted_at?: string | null;
 };
+
+export type FeedPlacement = "organic" | "exploration" | "boosted";
+export type CardStatus = "boosted" | "closing_soon" | "new";
 
 export type HomeFeedResponse = {
   algorithm: HomeFeedProduct[];
-  trending: HomeFeedProduct[];
-  premium: HomeFeedProduct[];
-  fresh: HomeFeedProduct[];
   page: number;
   limit: number;
   total: number;
@@ -506,7 +505,7 @@ export function getSimilarProducts(productId: string, limit = 8) {
   );
 }
 
-export const HOME_FEED_PAGE_SIZE = 36;
+export const HOME_FEED_PAGE_SIZE = 40;
 
 export function getHomeFeed(opts: {
   limit?: number;

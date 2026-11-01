@@ -9,7 +9,6 @@ import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { apiShops } from "@/lib/api";
 import type { ShopEngagement } from "@/lib/api/shops";
 import { track } from "@/lib/analytics";
-import { notifyFeedEngagement } from "@/lib/engagementEvents";
 import { useAppSession } from "@/lib/state";
 
 /**
@@ -95,7 +94,6 @@ export default function ShopActions({
         },
         { optimisticData: optimistic, rollbackOnError: true, revalidate: false, populateCache: true },
       );
-      notifyFeedEngagement();
       if (kind === "follow") track(on ? "shop:followed" : "shop:unfollowed", { shopId });
     } catch {
       toast.error(kind === "like" ? "Couldn't update your like. Try again." : "Couldn't update follow. Try again.");

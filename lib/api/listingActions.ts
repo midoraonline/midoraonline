@@ -37,20 +37,9 @@ export type FeedPosition = {
   category?: string | null;
   category_position: number | null;
   category_scanned?: number;
-  /** e.g. "#12 for visitors" (logged-out ranking, boosted slots included). */
-  position_label?: string | null;
-  /** Typical position in signed-in shoppers' feeds, sampled from recent cached feeds. */
-  personalized?: {
-    median: number | null;
-    best: number | null;
-    in_feeds: number;
-    sampled: number;
-    label: string | null;
-    boosted_slots?: boolean;
-    slot_every?: number | null;
-  } | null;
   boosted?: boolean;
   boost?: BoostInfo | null;
+  paid_placement?: boolean;
   computed_at?: string;
 };
 

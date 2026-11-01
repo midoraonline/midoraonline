@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Pencil } from "lucide-react";
+import { BarChart3, MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
@@ -333,6 +333,13 @@ export default function ListingManageCard({
           >
             <Pencil className="size-3.5" aria-hidden />
             Edit
+          </Link>
+          <Link
+            href={`/merchant/listings/${product.id}/stats`}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium shadow-xs transition-colors hover:bg-surface-muted sm:min-h-9"
+          >
+            <BarChart3 className="size-3.5" aria-hidden />
+            Stats
           </Link>
           {status === "active" && product.is_published !== false ? (
             <ListingPromoteActions

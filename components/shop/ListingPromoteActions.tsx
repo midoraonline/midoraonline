@@ -152,18 +152,13 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
         ) : (
           <div className="space-y-3">
             <p className="text-2xl font-semibold text-foreground">
-              {data.position ? `#${data.position} for visitors` : `Not in the top ${data.scanned ?? 0} ads for visitors`}
+              {data.position ? `#${data.position} in the home feed` : `Not in the top ${data.scanned ?? 0} ads`}
             </p>
-            <p className="text-sm text-foreground">
-              {data.personalized?.median
-                ? `Around #${data.personalized.median} for signed-in shoppers (in ${data.personalized.in_feeds} of ${data.personalized.sampled} recent feeds)`
-                : data.personalized?.sampled
-                  ? `Not in the top of ${data.personalized.sampled} recent signed-in feeds`
-                  : "Signed-in shoppers each get their own order"}
-            </p>
-            {data.personalized?.boosted_slots ? (
+            {data.boosted ? (
               <p className="text-sm text-foreground">
-                Also shown in boosted spots (about 1 in every {data.personalized.slot_every ?? 7} ads) to shoppers it matches.
+                {data.paid_placement
+                  ? "Also shown in boosted spots across the feed."
+                  : "Boosted spots open once Midora has more listings. Until then every ad is ranked on quality and freshness."}
               </p>
             ) : null}
             {data.category ? (
@@ -174,8 +169,8 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
               </p>
             ) : null}
             <p className="text-xs text-muted">
-              Visitors = people not logged in. &quot;Show me in the feed&quot; scrolls your own feed, which can differ.
-              {data.boost ? ` Boosted (${describeBoost(data.boost)}).` : ""} Boost or repost to move up.
+              Everyone sees the same order. Shops a shopper follows move up a little in their feed.
+              {data.boost ? ` Boosted (${describeBoost(data.boost)}).` : ""} Repost to freshen your ad.
             </p>
           </div>
         )
