@@ -38,7 +38,7 @@ export default function ListingStatsPage({ params }: { params: Promise<{ id: str
     return (
       <Section title="Listing stats">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-5 shadow-xs">
-          <p className="text-sm text-muted">Listing stats are on the Standard plan and above.</p>
+          <p className="text-sm text-muted">Listing stats aren&apos;t included in your plan.</p>
           <Link href="/merchant/billing" className={BTN_SECONDARY}>
             See plans
           </Link>

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
-import { planHasAnalytics } from "@/lib/api/payments";
 import { usePlatformAnalytics } from "@/lib/hooks/usePlatformAnalytics";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
@@ -40,11 +39,6 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     if (!session.isAuthenticated || !platformAnalytics.ready) return;
     setLoading(true);
     setError(null);
-    if (!platformAnalytics.allPlans && !planHasAnalytics(session.user?.plan_tier)) {
-      setPlanLocked(true);
-      setLoading(false);
-      return;
-    }
     setPlanLocked(false);
     try {
       const dash = await apiShops.getShopDashboard(shop.id);
@@ -62,7 +56,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     } finally {
       setLoading(false);
     }
-  }, [shop.id, session.isAuthenticated, session.user?.plan_tier, platformAnalytics.ready, platformAnalytics.allPlans]);
+  }, [shop.id, session.isAuthenticated, platformAnalytics.ready]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -127,7 +121,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
   if (planLocked) {
     return (
       <EmptyState
-        message="Shop analytics is on the Standard plan and above."
+        message="Shop analytics isn't included in your plan."
         action={
           <Link href="/merchant/billing" className={BTN_SECONDARY}>
             See plans
