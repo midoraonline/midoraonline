@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
-import { planHasAnalytics } from "@/lib/api/payments";
 import { usePlatformAnalytics } from "@/lib/hooks/usePlatformAnalytics";
 import type { MerchantAnalytics, MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
@@ -47,20 +46,16 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
   const [error, setError] = useState<string | null>(null);
   const platformAnalytics = usePlatformAnalytics();
   const analyticsOn = platformAnalytics.ready && platformAnalytics.enabled;
-  const canAnalytics = platformAnalytics.allPlans || planHasAnalytics(session.user?.plan_tier);
 
   const load = useCallback(async () => {
     if (!session.hydrated) return;
     setError(null);
-    if (!analyticsOn || !canAnalytics) {
-      setAnalyticsLocked(!analyticsOn ? false : !canAnalytics);
-      setAnalytics(null);
-    }
+    if (!analyticsOn) setAnalytics(null);
     try {
       const [shopsRes, statsRes, analyticsRes] = await Promise.all([
         apiShops.myShops(),
         apiShops.myStats().catch(() => null),
-        analyticsOn && canAnalytics
+        analyticsOn
           ? apiShops.myAnalytics(windowDays).catch((err) => {
               if (err instanceof ApiError && err.code === "analytics_disabled") {
                 setAnalyticsEndpointOff(true);
@@ -95,7 +90,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       }
       setError(err instanceof Error ? err.message : "Couldn't load your business");
     }
-  }, [windowDays, session.hydrated, canAnalytics, analyticsOn, platformAnalytics.ready]);
+  }, [windowDays, session.hydrated, analyticsOn]);
 
   useEffect(() => { void load(); }, [load]);
   useRealtimeTable({ table: "shops", channel: "merchant-shops-overview" }, () => { void load(); });
@@ -159,7 +154,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         <Section title="Analytics">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface shadow-xs p-5">
             <p className="text-sm text-muted">
-              Impressions, reach, views and contacts for each listing are on the Standard plan and above.
+              Impressions, reach, views and contacts for each listing aren&apos;t included in your plan.
             </p>
             <Link href="/merchant/billing" className={BTN_SECONDARY}>
               See plans

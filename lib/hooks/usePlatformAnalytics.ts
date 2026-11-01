@@ -22,7 +22,6 @@ export function usePublicSettings() {
   return {
     ready: !isLoading,
     analytics: flags.analytics === true,
-    analyticsAllPlans: flags.analytics_all_plans === true,
     maintenance: flags.maintenance_mode === true,
     mediaLimits: data?.limits ?? DEFAULT_MEDIA_LIMITS,
     /** Caps for the poster's plan (users.plan_tier; missing -> Basic). */
@@ -36,6 +35,5 @@ export function usePlatformAnalytics() {
   return {
     ready: settings.ready,
     enabled: settings.analytics,
-    allPlans: settings.analyticsAllPlans,
   };
 }
