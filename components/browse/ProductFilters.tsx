@@ -9,12 +9,16 @@ import {
   type ReactNode,
 } from "react";
 import {
+  BadgeCheck,
   ChevronDown,
+  CircleCheck,
+  Flame,
   Loader2,
   MapPin,
   Navigation,
   SlidersHorizontal,
   Star,
+  TrendingUp,
   X,
 } from "lucide-react";
 import type { ProductCardData } from "@/components/productcard";
@@ -99,6 +103,12 @@ const SORT_LABELS: Record<SortOption, string> = {
   trust_score: "Trust",
 };
 
+const QUICK_SORTS = [
+  { sort: "newest", label: "Newest", icon: Flame, tone: "text-orange-500" },
+  { sort: "most_viewed", label: "Trending", icon: TrendingUp, tone: "text-emerald-500" },
+  { sort: "best_rated", label: "Top rated", icon: Star, tone: "text-amber-500" },
+] as const satisfies readonly { sort: SortOption; label: string; icon: typeof Star; tone: string }[];
+
 const PRICE_PRESETS = [
   { label: "Deals", min: null as number | null, max: 100_000 as number | null },
   { label: "Under 50k", min: null as number | null, max: 50_000 as number | null },
@@ -176,10 +186,10 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={Boolean(active)}
-      className={`inline-flex h-7 shrink-0 snap-start items-center gap-1 rounded-md px-2 text-[11px] transition-colors sm:h-8 sm:gap-1.5 sm:px-2.5 sm:text-xs ${
+      className={`inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors ${
         active
-          ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-          : "bg-background text-foreground/70 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
+          ? "bg-accent text-white shadow-sm shadow-accent/25"
+          : "bg-surface text-foreground/80 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
       } ${className}`}
     >
       {children}
@@ -200,37 +210,6 @@ function MenuPanel({
     >
       {children}
     </div>
-  );
-}
-
-function SortDropdown({
-  value,
-  onChange,
-}: {
-  value: SortOption;
-  onChange: (v: SortOption) => void;
-}) {
-  const active = value !== "relevance";
-  const options = useMemo(
-    () =>
-      (Object.keys(SORT_LABELS) as SortOption[]).map((key) => ({
-        value: key,
-        label: SORT_LABELS[key],
-      })),
-    [],
-  );
-  const selected = options.find((o) => o.value === value) ?? options[0];
-
-  return (
-    <ThemedSelect<{ value: SortOption; label: string }>
-      instanceId="filter-sort"
-      aria-label="Sort products"
-      active={active}
-      minControlWidth="min-w-[6.25rem] sm:min-w-[7rem]"
-      value={selected}
-      options={options}
-      onChange={(opt) => opt && onChange(opt.value)}
-    />
   );
 }
 
@@ -693,69 +672,46 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   const showLocationControl = true;
 
   return (
-    <div className="space-y-1.5 rounded-xl border border-border bg-surface-subtle/70 p-2 sm:p-2.5">
-      <div className="mb-0.5 flex items-center gap-1.5 px-0.5">
-        <SlidersHorizontal className="size-3 text-muted" strokeWidth={2} aria-hidden />
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted sm:text-xs sm:normal-case sm:tracking-tight">
-          Filters
-        </p>
-        {hasActiveFilters ? (
-          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary">
-            {activeFilterCount(filters)}
-          </span>
-        ) : null}
-      </div>
-      {/* Primary filter strip — neutral chips (distinct from category browse) */}
+    <div className="space-y-1.5">
       <div className="relative">
-        <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:gap-1.5 sm:overflow-visible">
-          {/* Mobile: single "Sort & filter" entry — inline dropdowns get
-              clipped by the horizontal scroll strip's overflow. Desktop
-              keeps the individual dropdown chips. */}
-          <Chip
-            active={hasActiveFilters}
-            onClick={() => setDrawerOpen(true)}
-            className="sm:hidden"
-          >
-            <SlidersHorizontal className="size-3 shrink-0" strokeWidth={2} aria-hidden />
-            <span className={hasActiveFilters ? "font-semibold" : "font-medium"}>
-              Sort &amp; filter
-            </span>
-            {hasActiveFilters ? (
-              <span className="ml-0.5 rounded-full bg-white/25 px-1 text-[10px] font-semibold tabular-nums">
-                {count}
-              </span>
-            ) : null}
-          </Chip>
-
-          <div className="hidden sm:contents">
-            <SortDropdown value={filters.sort} onChange={(v) => update({ sort: v })} />
-
-            <PriceDropdown
-              minPrice={filters.minPrice}
-              maxPrice={filters.maxPrice}
-              onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
-            />
-          </div>
-
-          <Chip
-            active={filters.availableNow}
-            onClick={() => update({ availableNow: !filters.availableNow })}
-          >
-            <span className={filters.availableNow ? "font-semibold" : "font-medium"}>
-              Available
-            </span>
-          </Chip>
+        <div className="flex gap-2 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible">
+          {QUICK_SORTS.map(({ sort, label, icon: Icon, tone }) => {
+            const on = filters.sort === sort;
+            return (
+              <Chip
+                key={sort}
+                active={on}
+                onClick={() => update({ sort: on ? "relevance" : sort })}
+              >
+                <Icon className={`size-3.5 shrink-0 ${on ? "" : tone}`} strokeWidth={2} aria-hidden />
+                {label}
+              </Chip>
+            );
+          })}
 
           <Chip
             active={filters.verifiedOnly}
             onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
           >
-            <span className={filters.verifiedOnly ? "font-semibold" : "font-medium"}>
-              {showKindToggle ? "Verified only" : "Verified"}
-            </span>
+            <BadgeCheck className={`size-3.5 shrink-0 ${filters.verifiedOnly ? "" : "text-sky-500"}`} strokeWidth={2} aria-hidden />
+            Verified
           </Chip>
 
+          <Chip
+            active={filters.availableNow}
+            onClick={() => update({ availableNow: !filters.availableNow })}
+          >
+            <CircleCheck className={`size-3.5 shrink-0 ${filters.availableNow ? "" : "text-emerald-500"}`} strokeWidth={2} aria-hidden />
+            Available
+          </Chip>
+
+          {/* Inline dropdowns would be clipped by the mobile scroll strip. */}
           <div className="hidden sm:contents">
+            <PriceDropdown
+              minPrice={filters.minPrice}
+              maxPrice={filters.maxPrice}
+              onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
+            />
             {showLocationControl && (
               <LocationDropdown
                 locations={locations}
@@ -766,24 +722,23 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                 onSelectNearMe={activateNearMe}
               />
             )}
-
-            {/* Rating opens the drawer on desktop too */}
-            <Chip
-              active={filters.minRating !== null}
-              onClick={() => setDrawerOpen(true)}
-            >
-              <Star className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-              <span className={filters.minRating !== null ? "font-semibold" : "font-medium"}>
-                {filters.minRating !== null ? `${filters.minRating}+ ★` : "Rating"}
-              </span>
-            </Chip>
           </div>
+
+          <Chip active={hasActiveFilters} onClick={() => setDrawerOpen(true)}>
+            <SlidersHorizontal className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+            Sort &amp; filter
+            {hasActiveFilters ? (
+              <span className="rounded-full bg-white/25 px-1.5 text-[10px] font-semibold tabular-nums">
+                {count}
+              </span>
+            ) : null}
+          </Chip>
 
           {hasActiveFilters && (
             <button
               type="button"
               onClick={clearAll}
-              className="inline-flex h-7 shrink-0 items-center px-1.5 text-[11px] font-medium text-primary transition-colors hover:text-foreground sm:h-8 sm:text-xs"
+              className="inline-flex h-9 shrink-0 items-center px-1.5 text-xs font-medium text-accent transition-colors hover:text-foreground"
             >
               Clear
             </button>
