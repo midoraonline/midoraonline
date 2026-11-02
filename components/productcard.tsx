@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, Clock, ImageIcon, MapPin, Play, Sparkles, Star } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, Flame, ImageIcon, MapPin, Play, Rocket, Star } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl, type CardStatus, type FeedPlacement } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -13,7 +13,6 @@ import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
-import BoostedTag from "@/components/BoostedTag";
 import BrandedCover from "@/components/BrandedCover";
 import { listingTypeTagKind } from "@/lib/listingType";
 import {
@@ -22,6 +21,7 @@ import {
 } from "@/lib/productCardMap";
 import {
   COMPENSATION_OPTIONS,
+  CONDITION_OPTIONS,
   isTextOnlyListing,
   needHeadline,
   normalizeListingKind,
@@ -33,7 +33,7 @@ import { isOnlineLocation } from "@/lib/listingLocation";
 import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
 
 
-const CARD_TAG = "px-2.5 py-1.5 text-[15px]";
+const CARD_TAG = "px-2.5 py-1 text-[11px] sm:text-xs";
 
 export type ProductCardData = {
   id: string;
@@ -244,18 +244,42 @@ function timeLabel(iso: string | null | undefined): string | null {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
+const STATUS_STYLE: Record<CardStatus, { label: string; icon: typeof Clock; tone: string }> = {
+  new: { label: "New", icon: Flame, tone: "bg-orange-500" },
+  closing_soon: { label: "Closing soon", icon: Clock, tone: "bg-violet-600" },
+  boosted: { label: "Boosted", icon: Rocket, tone: "bg-indigo-600" },
+};
+
 function StatusBadge({ status }: { status: CardStatus }) {
-  if (status === "boosted") return <BoostedTag className={CARD_TAG} />;
-  const closing = status === "closing_soon";
-  const Icon = closing ? Clock : Sparkles;
+  const { label, icon: Icon, tone } = STATUS_STYLE[status];
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-md font-semibold leading-none text-white ${
-        closing ? "bg-amber-600" : "bg-rose-500"
-      } ${CARD_TAG}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full font-semibold leading-none text-white shadow-sm ${tone} ${CARD_TAG}`}
     >
-      <Icon className="size-[1em]" strokeWidth={2.5} aria-hidden />
-      {closing ? "Closing soon" : "New"}
+      <Icon className="size-[1.1em]" strokeWidth={2.5} aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+function ShopLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
+  const [failed, setFailed] = useState(false);
+  const initial = name.trim().charAt(0).toUpperCase() || "M";
+  return (
+    <span className="pointer-events-none absolute bottom-2 left-2 z-[6] grid size-10 place-items-center overflow-hidden rounded-full bg-white text-sm font-bold text-accent shadow-md ring-2 ring-white sm:size-11">
+      {logoUrl && !failed ? (
+        <FallbackImage
+          urls={[logoUrl]}
+          alt={`${name} logo`}
+          fill
+          sizes="44px"
+          className="object-cover"
+          onExhausted={() => setFailed(true)}
+          fallback={<span aria-hidden>{initial}</span>}
+        />
+      ) : (
+        <span aria-hidden>{initial}</span>
+      )}
     </span>
   );
 }
@@ -268,6 +292,7 @@ function WhatsAppCta({
   category,
   hasDiscount,
   compact = false,
+  label = "WhatsApp",
 }: {
   waHref: string | null;
   productId: string;
@@ -276,6 +301,7 @@ function WhatsAppCta({
   category?: string;
   hasDiscount?: boolean;
   compact?: boolean;
+  label?: string;
 }) {
   const className = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white transition-colors ${
     waHref
@@ -288,7 +314,7 @@ function WhatsAppCta({
   const whatsappLabel = (
     <>
       <WhatsAppIcon className="size-3.5 shrink-0 text-white sm:size-4" />
-      WhatsApp
+      {label}
     </>
   );
 
@@ -421,7 +447,7 @@ export default function ProductCard({
 
   const videoBadge = product.hasVideo ? (
     <span
-      className="pointer-events-none absolute bottom-2 left-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm"
+      className="pointer-events-none absolute bottom-2 right-2 z-[6] inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm"
       title="Video available"
     >
       <Play className="size-2.5 fill-current" aria-hidden />
@@ -447,21 +473,50 @@ export default function ProductCard({
     );
 
   const whenLabel = deadlineChip(listingMeta.deadline) ?? tInfo;
-  const metaRow = (
-    <div className="flex items-center gap-1.5 text-[10px] text-muted sm:text-[11px]">
-      <span className="inline-flex min-w-0 flex-1 items-center gap-0.5">
-        {locationOnline ? null : (
-          <MapPin className="size-3 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-        )}
-        <span className="truncate font-medium text-foreground/80">{locationLabel}</span>
-      </span>
-      {listingKind === "product" || textFirst ? trustMark : null}
-      {listingKind === "product" ? null : whenLabel ? (
-        <span className="shrink-0 whitespace-nowrap font-medium">{whenLabel}</span>
-      ) : null}
-      <CardRating rating={product.rating} count={product.reviewCount} />
+  const conditionLabel =
+    listingKind === "product" ? optionLabel(CONDITION_OPTIONS, listingMeta.condition) : null;
+  const serviceArea =
+    listingKind === "service" ? listingMeta.service_area?.trim() || null : null;
+  const placeText = serviceArea
+    ? `Serves ${serviceArea}`
+    : conditionLabel
+      ? `${conditionLabel} · ${locationLabel}`
+      : locationLabel;
+
+  const shopRow = product.shop.is_personal ? (
+    <PersonalSellerLine shop={product.shop} />
+  ) : (
+    <div className="flex min-w-0 items-center gap-1 text-[11px] text-muted sm:text-xs">
+      <span className="truncate font-medium">{product.shop.name}</span>
+      {trustMark}
     </div>
   );
+
+  const rating =
+    product.rating != null && product.rating > 0 ? (
+      <div className="text-[11px] sm:text-xs">
+        <CardRating rating={product.rating} count={product.reviewCount} />
+      </div>
+    ) : null;
+
+  const metaRow = (
+    <div className="space-y-0.5 text-[10px] text-muted sm:text-[11px]">
+      {listingKind === "opportunity" && whenLabel ? (
+        <p className="flex items-center gap-1">
+          <CalendarDays className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+          <span className="truncate font-medium text-foreground/80">{whenLabel}</span>
+        </p>
+      ) : null}
+      <p className="flex items-center gap-1">
+        {locationOnline && !serviceArea ? null : (
+          <MapPin className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+        )}
+        <span className="truncate font-medium text-foreground/80">{placeText}</span>
+      </p>
+    </div>
+  );
+  const ctaLabel = listingKind === "opportunity" ? "Apply now" : "WhatsApp";
+  const showShop = !product.inShopContext;
 
   if (layout === "horizontal") {
     return (
@@ -475,15 +530,17 @@ export default function ProductCard({
           </Link>
           {imageBadges}
           {likeFloating}
+          {showShop ? <ShopLogo name={product.shop.name} logoUrl={product.shopLogoUrl} /> : null}
           {videoBadge}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3 sm:p-3.5">
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Link href={productHref} className="dm-focus block outline-none">
               <h3 className={titleClass}>{headline}</h3>
             </Link>
-            <PersonalSellerLine shop={product.shop} />
+            {showShop ? shopRow : null}
+            {rating}
             <div className="flex flex-wrap items-baseline gap-1.5">
               <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">{displayPrice}</span>
               {isDiscounted && (
@@ -504,6 +561,7 @@ export default function ProductCard({
             shopId={product.shop.id}
             category={product.category ?? undefined}
             hasDiscount={isDiscounted}
+            label={ctaLabel}
             compact
           />
         </div>
@@ -522,14 +580,16 @@ export default function ProductCard({
         </Link>
         {imageBadges}
         {likeFloating}
+        {showShop ? <ShopLogo name={product.shop.name} logoUrl={product.shopLogoUrl} /> : null}
         {videoBadge}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
+      <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
         <Link href={productHref} className="dm-focus block outline-none">
           <h3 className={titleClass}>{headline}</h3>
         </Link>
-        <PersonalSellerLine shop={product.shop} />
+        {showShop ? shopRow : null}
+        {rating}
 
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">{displayPrice}</span>
@@ -543,7 +603,6 @@ export default function ProductCard({
           )}
         </div>
 
-        {listingKind !== "product" ? trustMark : null}
         {metaRow}
 
         <div className="mt-auto pt-1.5">
@@ -554,6 +613,7 @@ export default function ProductCard({
             shopId={product.shop.id}
             category={product.category ?? undefined}
             hasDiscount={isDiscounted}
+            label={ctaLabel}
           />
         </div>
       </div>

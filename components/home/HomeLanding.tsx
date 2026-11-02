@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, Package, Store, Wrench } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, LayoutGrid, Package, Store, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -475,19 +475,28 @@ export default function HomeLanding({
 
       <div id="products-feed" className="space-y-4 sm:space-y-5">
         <section className="space-y-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h2 className="min-w-0 flex-1 text-sm font-semibold tracking-tight text-foreground sm:text-base">
-              {isSearching
-                ? search.loading
-                  ? `Searching “${query.trim()}”…`
-                  : `Results for “${query.trim()}”`
-                : feedLoading
-                  ? "Loading listings…"
-                  : filters.nearMe
-                    ? "Closest to you"
-                    : `Listings${filterHint}`}
-            </h2>
-            <div className="flex shrink-0 items-center gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+                {isSearching
+                  ? search.loading
+                    ? `Searching “${query.trim()}”…`
+                    : `Results for “${query.trim()}”`
+                  : feedLoading
+                    ? "Loading listings…"
+                    : filters.nearMe
+                      ? "Closest to you"
+                      : anyFiltersActive
+                        ? `Listings${filterHint}`
+                        : "Latest listings"}
+              </h2>
+              {!isSearching && !anyFiltersActive ? (
+                <p className="text-[11px] text-muted sm:text-xs">
+                  Products, services and opportunities in one place
+                </p>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-3 pt-1">
               {isSearching ? (
                 <button
                   type="button"
@@ -607,14 +616,14 @@ function ListingTypeTabs({
   onSelect: (kind: ListingKind | null) => void;
 }) {
   const tabs = [
-    { label: "All", kind: null, icon: Package },
+    { label: "All", kind: null, icon: LayoutGrid },
     { label: "Products", kind: "product" as const, icon: Package },
     { label: "Services", kind: "service" as const, icon: Wrench },
     { label: "Opportunities", kind: "opportunity" as const, icon: BriefcaseBusiness },
   ];
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto border-b border-border scrollbar-none" role="group" aria-label="Browse listing types">
+    <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none" role="group" aria-label="Browse listing types">
       {tabs.map(({ label, kind, icon: Icon }) => {
         const active = selected === kind;
         return (
@@ -623,10 +632,10 @@ function ListingTypeTabs({
             type="button"
             aria-pressed={active}
             onClick={() => onSelect(kind)}
-            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
+            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold transition-colors sm:text-sm ${
               active
-                ? "border-accent text-accent"
-                : "border-transparent text-muted hover:text-foreground"
+                ? "bg-accent text-white shadow-md shadow-accent/25"
+                : "bg-surface text-foreground/80 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
             }`}
           >
             <Icon className="size-4" aria-hidden />
@@ -636,7 +645,7 @@ function ListingTypeTabs({
       })}
       <Link
         href="/shops"
-        className="ml-auto inline-flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-3 text-xs font-semibold text-muted transition-colors hover:text-foreground sm:px-4 sm:text-sm"
+        className="ml-auto inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-xs font-semibold text-foreground/80 ring-1 ring-border transition-colors hover:bg-surface-subtle hover:text-foreground sm:text-sm"
       >
         <Store className="size-4" aria-hidden />
         Shops
