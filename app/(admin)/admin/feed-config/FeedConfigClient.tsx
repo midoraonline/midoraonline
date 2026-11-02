@@ -18,6 +18,7 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
       "EXPOSURE_WEIGHT",
       "FRESHNESS_HALF_LIFE_HOURS",
       "FRAUD_MEDIUM_PENALTY",
+      "FOLLOWED_SHOP_LIFT",
       "FOLLOWED_SHOP_BOOST",
     ],
   },
@@ -58,14 +59,12 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
     ],
   },
   {
-    title: "Exposure and repeats",
-    description: "Rotate over-shown sellers and hide listings a viewer has seen often.",
+    title: "Exposure",
+    description: "Rotate sellers that were shown very often in the last window. The feed never hides listings per viewer.",
     keys: [
       "EXPOSURE_TARGET_IMPRESSIONS",
       "EXPOSURE_MIN_MULTIPLIER",
       "EXPOSURE_WINDOW_HOURS",
-      "FATIGUE_THRESHOLD",
-      "FATIGUE_WINDOW_HOURS",
     ],
   },
   {
@@ -82,6 +81,10 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
     ],
   },
 ];
+
+const TOGGLE_LABELS: Record<string, string> = {
+  FOLLOWED_SHOP_LIFT: "Lift followed shops for signed-in viewers",
+};
 
 function fmt(n: number) {
   if (Number.isNaN(n)) return "—";
@@ -262,6 +265,24 @@ export default function FeedConfigClient() {
                   const def = config.defaults[key];
                   const cur = values[key] ?? "";
                   const isChanged = String(def ?? "") !== cur;
+                  const toggleLabel = TOGGLE_LABELS[key];
+                  if (toggleLabel) {
+                    const on = Number(cur) > 0;
+                    return (
+                      <label key={key} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                        <span>
+                          <span className="block text-xs font-mono font-medium text-foreground/80">{key}</span>
+                          <span className="block text-[11px] text-muted">{toggleLabel}</span>
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.checked ? "1" : "0" }))}
+                          className="size-4 accent-[color:var(--accent)]"
+                        />
+                      </label>
+                    );
+                  }
                   return (
                     <label key={key} className="block">
                       <div className="flex items-center justify-between">

@@ -77,25 +77,29 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       engagement?.view_count ?? shopProfile?.view_count ?? 0
     );
     return [
+      { name: "Times shown", value: products.reduce((n, p) => n + Number(p.impressions ?? 0), 0) },
+      { name: "People reached", value: products.reduce((n, p) => n + Number(p.reach ?? 0), 0) },
       { name: "Page views", value: views },
       { name: "Likes", value: Number(engagement?.like_count ?? 0) },
       { name: "Followers", value: Number(engagement?.follower_count ?? 0) },
       { name: "WhatsApp", value: Number(engagement?.whatsapp_clicks ?? 0) },
       { name: "Messages", value: Number(engagement?.messages ?? 0) },
     ];
-  }, [engagement, shopProfile]);
+  }, [engagement, shopProfile, products]);
 
   const productViewRows = useMemo(() => {
     return [...products]
       .map((p) => ({
         name: p.title.length > 26 ? `${p.title.slice(0, 24)}…` : p.title,
         fullTitle: p.title,
+        shown: Number(p.impressions ?? 0),
+        reach: Number(p.reach ?? 0),
         views: Number(p.view_count ?? 0),
         likes: Number(p.like_count ?? 0),
         whatsapp: Number(p.whatsapp_clicks ?? 0),
         messages: Number(p.messages ?? 0),
       }))
-      .sort((a, b) => b.views - a.views)
+      .sort((a, b) => b.shown - a.shown || b.views - a.views)
       .slice(0, 16);
   }, [products]);
 
@@ -139,7 +143,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
 
       <StatStrip items={shopBars.map((row) => ({ label: row.name, value: formatCount(row.value) }))} />
 
-      <Section title="Listings" description="Top listings by views.">
+      <Section title="Listings" description="Times shown counts every time a listing was on someone's screen for at least a second (last 30 days).">
         {productViewRows.length === 0 ? (
           <EmptyState message="No listings in this shop yet." />
         ) : (
@@ -148,6 +152,8 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
               <thead className="border-b border-border bg-surface-subtle">
                 <tr>
                   <th className={TH}>Listing</th>
+                  <th className={`${TH} text-right`}>Shown</th>
+                  <th className={`${TH} hidden text-right sm:table-cell`}>People</th>
                   <th className={`${TH} text-right`}>Views</th>
                   <th className={`${TH} hidden text-right sm:table-cell`}>Likes</th>
                   <th className={`${TH} text-right`}>WhatsApp</th>
@@ -160,6 +166,8 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
                     <td className={`${TD} max-w-[12rem] truncate font-medium`} title={r.fullTitle}>
                       {r.fullTitle}
                     </td>
+                    <td className={`${TD} ${NUM}`}>{formatCount(r.shown)}</td>
+                    <td className={`${TD} ${NUM} hidden sm:table-cell`}>{formatCount(r.reach)}</td>
                     <td className={`${TD} ${NUM}`}>{formatCount(r.views)}</td>
                     <td className={`${TD} ${NUM} hidden sm:table-cell`}>{formatCount(r.likes)}</td>
                     <td className={`${TD} ${NUM}`}>{formatCount(r.whatsapp)}</td>

@@ -3,12 +3,15 @@
 import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import { Store, X } from "lucide-react";
+import type { IconType } from "react-icons";
+import { PiStorefrontFill } from "react-icons/pi";
+import { X } from "lucide-react";
 import { useAppSession } from "@/lib/state";
 import {
   ALL_CATEGORIES_ICON,
+  ALL_CATEGORIES_TONE,
   resolveCategoryIcon,
+  resolveCategoryTone,
 } from "@/lib/homeCategoryIcons";
 import {
   type CategoryFilterSelection,
@@ -112,7 +115,7 @@ export default function CategoryBrowseSection({
           {showCreateShop ? (
             <CategoryChip
               label="Create an online shop"
-              icon={Store}
+              icon={PiStorefrontFill}
               selected={false}
               active={false}
               prominent
@@ -256,7 +259,7 @@ function CategoryChip({
   href,
 }: {
   label: string;
-  icon: LucideIcon;
+  icon: IconType;
   selected: boolean;
   active: boolean;
   onClick?: () => void;
@@ -266,10 +269,11 @@ function CategoryChip({
 }) {
   const emphasized = active || selected;
   const tone = prominent ? prominentChipTone(label) : null;
-  const className = `inline-flex items-center gap-1 rounded-full transition-colors sm:h-10 sm:gap-2 sm:px-3 sm:text-xs ${
+  const bubble = label === "All" ? ALL_CATEGORIES_TONE : resolveCategoryTone(label);
+  const className = `inline-flex items-center gap-1.5 rounded-full font-semibold transition-all active:scale-95 sm:h-10 sm:gap-2 sm:text-xs ${
     prominent
       ? "min-h-11 min-w-0 flex-1 justify-center px-1.5 text-center text-[10px] leading-tight sm:w-auto sm:flex-none sm:px-3 sm:text-xs"
-      : "h-9 shrink-0 snap-start px-2.5 text-[11px]"
+      : "h-10 shrink-0 snap-start pl-1.5 pr-3 text-xs"
   } ${
     tone
       ? `${listingToneClass(tone)} ring-1 ${listingToneRing(tone)} ${
@@ -278,18 +282,22 @@ function CategoryChip({
       : active
         ? "bg-accent text-white shadow-md shadow-accent/30"
         : selected
-          ? "bg-accent/15 text-accent ring-1 ring-accent/30"
-          : "bg-white/80 text-foreground/75 ring-1 ring-accent/15 hover:bg-accent/10 hover:text-accent hover:ring-accent/25 dark:bg-surface"
+          ? "bg-accent/15 text-accent ring-1 ring-accent/40"
+          : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
   }`;
   const inner = (
     <>
-      <Icon
-        className={`size-3.5 shrink-0 sm:size-4 ${
-          tone ? "text-current" : active ? "text-white" : selected ? "text-accent" : "text-accent/80"
-        }`}
-        strokeWidth={emphasized ? 2 : 1.75}
-        aria-hidden
-      />
+      {tone ? (
+        <Icon className="size-4 shrink-0 text-current" aria-hidden />
+      ) : (
+        <span
+          className={`grid size-7 shrink-0 place-items-center rounded-full ${
+            active ? "bg-white/20 text-white" : bubble
+          }`}
+        >
+          <Icon className="size-4" aria-hidden />
+        </span>
+      )}
       <span
         className={`${
           prominent ? "min-w-0 text-balance sm:whitespace-nowrap" : "whitespace-nowrap"

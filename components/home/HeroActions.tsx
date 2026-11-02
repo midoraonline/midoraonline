@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Store } from "lucide-react";
+import { PiPlusCircleFill, PiStorefrontFill } from "react-icons/pi";
 import { useAppSession } from "@/lib/state";
 
 export default function HeroActions() {
@@ -27,7 +27,7 @@ export default function HeroActions() {
         aria-label="Add an item to your listings"
         className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-accent/90 active:scale-95"
       >
-        <Plus className="size-3.5" strokeWidth={3} aria-hidden />
+        <PiPlusCircleFill className="size-[18px]" aria-hidden />
         Add an Item
       </button>
 
@@ -37,7 +37,7 @@ export default function HeroActions() {
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold text-muted transition-all hover:border-border-strong hover:text-foreground active:scale-95"
           title="Analytics, organization, and a shareable storefront"
         >
-          <Store className="size-3.5" strokeWidth={2.5} aria-hidden />
+          <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
           Open a shop
         </Link>
       ) : (
@@ -45,7 +45,7 @@ export default function HeroActions() {
           href="/merchant/shops"
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold text-muted transition-all hover:border-border-strong hover:text-foreground active:scale-95"
         >
-          <Store className="size-3.5" strokeWidth={2.5} aria-hidden />
+          <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
           Manage shops
         </Link>
       )}

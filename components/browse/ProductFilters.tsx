@@ -777,7 +777,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
           <PiSlidersHorizontalBold className="size-[18px]" aria-hidden />
           <span>Filters</span>
           {hasActiveFilters ? (
-            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-white text-[10px] font-bold tabular-nums text-accent ring-2 ring-accent">
+            <span className="grid min-w-5 place-items-center rounded-full bg-white px-1 text-[10px] font-bold leading-5 tabular-nums text-accent">
               {count}
             </span>
           ) : null}

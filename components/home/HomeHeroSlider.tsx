@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { PiFireFill, PiLightningFill, PiMapPinFill, PiShieldCheckFill } from "react-icons/pi";
 
 type Slide = {
   id: string;
@@ -79,8 +79,8 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
         {/* Features Row (Consistent Orange Icons) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-white/10">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
-              <MaterialSymbol name="verified_user" className="!text-sm" />
+            <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 shrink-0">
+              <PiShieldCheckFill className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-neutral-100 leading-none">Verified sellers</p>
@@ -88,8 +88,8 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
-              <MaterialSymbol name="location_on" className="!text-sm" />
+            <span className="p-1.5 rounded-lg bg-sky-500/15 text-sky-400 shrink-0">
+              <PiMapPinFill className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-neutral-100 leading-none">Local deals</p>
@@ -97,8 +97,8 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
-              <MaterialSymbol name="bolt" className="!text-sm" />
+            <span className="p-1.5 rounded-lg bg-amber-500/15 text-amber-400 shrink-0">
+              <PiLightningFill className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-neutral-100 leading-none">Fast response</p>
@@ -109,7 +109,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
 
         {/* Bottom capsule */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/45 backdrop-blur-xs text-[10px] font-semibold text-neutral-200 rounded-full border border-white/5 shadow-sm">
-          <MaterialSymbol name="local_fire_department" className="!text-xs text-orange-500" />
+          <PiFireFill className="size-3.5 text-orange-500" aria-hidden />
           <span>128 new listings added today in Kampala</span>
         </div>
       </div>

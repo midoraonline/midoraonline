@@ -152,6 +152,12 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
           { label: "Listings", value: fmt(s.total_products), hint: `${fmt(s.total_product_views)} views` },
           { label: "Users", value: fmt(s.total_users) },
           { label: "Subscription revenue", value: formatUGXShort(s.total_subscription_revenue_ugx) },
+          {
+            label: `Times listings were shown (${data.window_days}d)`,
+            value: fmt(s.total_impressions ?? 0),
+            hint: `${fmt(s.impressions_last_24h ?? 0)} in the last 24 h`,
+          },
+          { label: "People reached", value: fmt(s.total_reach ?? 0), hint: "Different people or devices" },
         ]}
       />
 
@@ -195,6 +201,30 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
         </Section>
       ) : null}
 
+      {data.most_seen && data.most_seen.length > 0 ? (
+        <Section
+          title="Most seen listings"
+          description={`Times each listing was on someone's screen for at least a second, last ${data.window_days} days.`}
+        >
+          <ul className={LIST}>
+            {data.most_seen.map((p) => (
+              <li key={p.id}>
+                <Link href={`/admin/listings/${p.id}`} className={ROW}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{p.title || "Untitled"}</span>
+                    <span className="block truncate text-xs text-muted">{p.shop_name || "No shop"}</span>
+                  </span>
+                  <span className="text-right text-xs tabular-nums">
+                    <span className="block font-semibold text-foreground">{fmt(p.impressions)} shown</span>
+                    <span className="block text-muted">{fmt(p.reach)} people</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+
       <div className="grid gap-x-8 lg:grid-cols-2">
         <Section title="Top shops" action={<Link href="/admin/shops" className="text-sm text-muted hover:text-foreground">All shops</Link>}>
           {data.top_shops.length === 0 ? (
@@ -209,7 +239,10 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
                       {fmt(shop.product_count)} listings · {fmt(shop.follower_count)} followers
                     </span>
                   </span>
-                  <span className="text-xs tabular-nums text-muted">{fmt(shop.view_count)} views</span>
+                  <span className="text-right text-xs tabular-nums text-muted">
+                    <span className="block">{fmt(shop.impressions ?? 0)} shown</span>
+                    <span className="block">{fmt(shop.view_count)} views</span>
+                  </span>
                 </li>
               ))}
             </ul>

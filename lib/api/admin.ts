@@ -125,6 +125,7 @@ export type AdminStatsSummary = {
   total_messages: number;
   total_impressions?: number;
   impressions_last_24h?: number;
+  total_reach?: number;
   whatsapp_clicks_window?: number;
   messages_window?: number;
   whatsapp_clicks_today?: number;
@@ -182,6 +183,7 @@ export type AdminStatsOverview = {
   };
   top_shops: TopShop[];
   top_products: TopProduct[];
+  most_seen?: Array<{ id: string; title: string | null; shop_name?: string | null; impressions: number; reach: number }>;
   distributions: {
     shop_types: DistributionSlice[];
     product_categories: DistributionSlice[];
@@ -587,6 +589,17 @@ export type AdminListingDetail = {
   shop: (Record<string, unknown> & { id: string; name?: string; slug?: string }) | null;
   owner: (Record<string, unknown> & { id: string }) | null;
   reports: { id: string; reason: string; description?: string | null; resolved: boolean; created_at: string }[];
+  stats?: {
+    window_days: number;
+    impressions: number;
+    reach: number;
+    boosted_impressions: number;
+    views: number;
+    unique_viewers: number;
+    contacts: number;
+    likes: number;
+    view_rate: number;
+  } | null;
 };
 
 export type AdminNearDupe = {
