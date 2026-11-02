@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import UserAvatar from "@/components/UserAvatar";
 import { Star } from "lucide-react";
+import { track } from "@/lib/analytics";
 import { apiFetch } from "@/lib/api/base";
 import { createProductReview, reviewFailureMessage } from "@/lib/api/reviews";
 import { useAppSession } from "@/lib/state";
@@ -104,6 +105,7 @@ export default function ProductReviews({ productId, initialStats }: Props) {
   const [myReview, setMyReview] = useState<ProductReview | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const promptedRef = useRef<string | null>(null);
 
   const load = useCallback(async (refreshStats = false) => {
     try {
@@ -151,6 +153,9 @@ export default function ProductReviews({ productId, initialStats }: Props) {
         setMyReview(res);
         setRating(res.rating);
         setComment(res.comment || "");
+      } else if (promptedRef.current !== productId) {
+        promptedRef.current = productId;
+        track("trust:rating_prompted", { productId });
       }
     } catch {
       /* not authenticated / none yet */

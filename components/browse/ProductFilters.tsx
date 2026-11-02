@@ -9,20 +9,25 @@ import {
   type ReactNode,
 } from "react";
 import {
-  BadgeCheck,
   ChevronDown,
-  CircleCheck,
-  Flame,
-  Gem,
   Loader2,
   MapPin,
   Navigation,
-  Rocket,
   SlidersHorizontal,
   Star,
-  TrendingUp,
   X,
 } from "lucide-react";
+import type { IconType } from "react-icons";
+import {
+  PiCheckCircleFill,
+  PiDiamondFill,
+  PiFireFill,
+  PiRocketLaunchFill,
+  PiSealCheckFill,
+  PiSlidersHorizontalBold,
+  PiTrendUpBold,
+  PiXBold,
+} from "react-icons/pi";
 import type { ProductCardData } from "@/components/productcard";
 import { isOnlineLocation } from "@/lib/listingLocation";
 import {
@@ -110,11 +115,11 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 
 const BADGE_CHIPS = [
-  { badge: "new_today", label: "New today", icon: Flame, tone: "text-orange-500" },
-  { badge: "trending", label: "Trending", icon: TrendingUp, tone: "text-emerald-500" },
-  { badge: "boosted", label: "Boosted", icon: Rocket, tone: "text-indigo-500" },
-  { badge: "sponsored", label: "Sponsored", icon: Gem, tone: "text-sky-500" },
-] as const satisfies readonly { badge: FeedBadge; label: string; icon: typeof Star; tone: string }[];
+  { badge: "new_today", label: "New today", icon: PiFireFill, tone: "bg-orange-500/15 text-orange-500" },
+  { badge: "trending", label: "Trending", icon: PiTrendUpBold, tone: "bg-emerald-500/15 text-emerald-500" },
+  { badge: "boosted", label: "Boosted", icon: PiRocketLaunchFill, tone: "bg-indigo-500/15 text-indigo-500" },
+  { badge: "sponsored", label: "Sponsored", icon: PiDiamondFill, tone: "bg-rose-500/15 text-rose-500" },
+] as const satisfies readonly { badge: FeedBadge; label: string; icon: IconType; tone: string }[];
 
 export async function withNearMe(filters: FilterState): Promise<FilterState> {
   const coords = await getBrowserLocation();
@@ -200,23 +205,36 @@ function Chip({
   onClick,
   children,
   className = "",
+  icon: Icon,
+  tone = "bg-accent/15 text-accent",
 }: {
   active?: boolean;
   onClick: () => void;
   children: ReactNode;
   className?: string;
+  icon?: IconType;
+  tone?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={Boolean(active)}
-      className={`inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors ${
+      className={`inline-flex h-10 shrink-0 snap-start items-center gap-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 ${
+        Icon ? "pl-1.5 pr-3.5" : "px-3.5"
+      } ${
         active
-          ? "bg-accent text-white shadow-sm shadow-accent/25"
-          : "bg-surface text-foreground/80 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
+          ? "bg-accent text-white shadow-md shadow-accent/30"
+          : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
       } ${className}`}
     >
+      {Icon ? (
+        <span
+          className={`grid size-7 shrink-0 place-items-center rounded-full ${active ? "bg-white/20 text-white" : tone}`}
+        >
+          <Icon className="size-4" aria-hidden />
+        </span>
+      ) : null}
       {children}
     </button>
   );
@@ -492,15 +510,15 @@ function AppliedChip({
   tone?: ListingTone;
 }) {
   return (
-    <span className={`inline-flex max-w-[10rem] items-center gap-0.5 truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium ring-1 sm:max-w-none ${tone ? `${listingToneClass(tone)} ${listingToneRing(tone)}` : "bg-accent/10 text-accent ring-accent/15"}`}>
+    <span className={`inline-flex max-w-[12rem] items-center gap-1 truncate rounded-full py-1 pl-2.5 pr-1 text-xs font-semibold ring-1 sm:max-w-none ${tone ? `${listingToneClass(tone)} ${listingToneRing(tone)}` : "bg-accent/10 text-accent ring-accent/25"}`}>
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label}`}
-        className="shrink-0 rounded p-0.5 hover:bg-accent/15"
+        className="grid size-5 shrink-0 place-items-center rounded-full hover:bg-accent/20"
       >
-        <X className="size-2.5" strokeWidth={2.5} aria-hidden />
+        <PiXBold className="size-3" aria-hidden />
       </button>
     </span>
   );
@@ -690,86 +708,95 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   }
 
   return (
-    <div className="space-y-1.5">
-      <div className="relative">
-        <div className="flex gap-2 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible">
-          {BADGE_CHIPS.map(({ badge, label, icon: Icon, tone }) => {
-            const on = filters.badge === badge;
-            return (
-              <Chip
-                key={badge}
-                active={on}
-                onClick={() => update({ badge: on ? null : badge })}
-              >
-                <Icon className={`size-3.5 shrink-0 ${on ? "" : tone}`} strokeWidth={2} aria-hidden />
-                {label}
-              </Chip>
-            );
-          })}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1 [mask-image:linear-gradient(to_right,black_85%,transparent)] sm:[mask-image:none]">
+          <div className="flex gap-2 overflow-x-auto py-1 pr-6 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible sm:pr-0">
+            {BADGE_CHIPS.map(({ badge, label, icon, tone }) => {
+              const on = filters.badge === badge;
+              return (
+                <Chip
+                  key={badge}
+                  active={on}
+                  icon={icon}
+                  tone={tone}
+                  onClick={() => update({ badge: on ? null : badge })}
+                >
+                  {label}
+                </Chip>
+              );
+            })}
 
-          <Chip
-            active={filters.verifiedOnly}
-            onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
-          >
-            <BadgeCheck className={`size-3.5 shrink-0 ${filters.verifiedOnly ? "" : "text-sky-500"}`} strokeWidth={2} aria-hidden />
-            Verified
-          </Chip>
-
-          <Chip
-            active={filters.availableNow}
-            onClick={() => update({ availableNow: !filters.availableNow })}
-          >
-            <CircleCheck className={`size-3.5 shrink-0 ${filters.availableNow ? "" : "text-emerald-500"}`} strokeWidth={2} aria-hidden />
-            Available
-          </Chip>
-
-          {/* Inline dropdowns would be clipped by the mobile scroll strip. */}
-          <div className="hidden sm:contents">
-            <PriceDropdown
-              minPrice={filters.minPrice}
-              maxPrice={filters.maxPrice}
-              onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
-            />
-            {showLocation && (
-              <LocationDropdown
-                locations={locations}
-                nearMe={filters.nearMe}
-                userGeo={filters.userGeo}
-                value={filters.location}
-                onChangeLocation={selectNamedLocation}
-                onSelectNearMe={activateNearMe}
-              />
-            )}
-          </div>
-
-          <Chip active={hasActiveFilters} onClick={() => setDrawerOpen(true)}>
-            <SlidersHorizontal className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            Sort &amp; filter
-            {hasActiveFilters ? (
-              <span className="rounded-full bg-white/25 px-1.5 text-[10px] font-semibold tabular-nums">
-                {count}
-              </span>
-            ) : null}
-          </Chip>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="inline-flex h-9 shrink-0 items-center px-1.5 text-xs font-medium text-accent transition-colors hover:text-foreground"
+            <Chip
+              active={filters.verifiedOnly}
+              icon={PiSealCheckFill}
+              tone="bg-sky-500/15 text-sky-500"
+              onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
             >
-              Clear
-            </button>
-          )}
+              Verified
+            </Chip>
+
+            <Chip
+              active={filters.availableNow}
+              icon={PiCheckCircleFill}
+              tone="bg-emerald-500/15 text-emerald-500"
+              onClick={() => update({ availableNow: !filters.availableNow })}
+            >
+              Available
+            </Chip>
+
+            {/* Inline dropdowns would be clipped by the mobile scroll strip. */}
+            <div className="hidden sm:contents">
+              <PriceDropdown
+                minPrice={filters.minPrice}
+                maxPrice={filters.maxPrice}
+                onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
+              />
+              {showLocation && (
+                <LocationDropdown
+                  locations={locations}
+                  nearMe={filters.nearMe}
+                  userGeo={filters.userGeo}
+                  value={filters.location}
+                  onChangeLocation={selectNamedLocation}
+                  onSelectNearMe={activateNearMe}
+                />
+              )}
+            </div>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          aria-label={hasActiveFilters ? `Sort and filter, ${count} active` : "Sort and filter"}
+          className={`relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold shadow-sm transition-all active:scale-95 ${
+            hasActiveFilters ? "bg-accent text-white shadow-accent/30" : "bg-foreground text-background"
+          }`}
+        >
+          <PiSlidersHorizontalBold className="size-[18px]" aria-hidden />
+          <span>Filters</span>
+          {hasActiveFilters ? (
+            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-white text-[10px] font-bold tabular-nums text-accent ring-2 ring-accent">
+              {count}
+            </span>
+          ) : null}
+        </button>
       </div>
 
       {/* Applied filters overview (Baymard) */}
       {appliedChips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1.5">
           {appliedChips.map((chip) => (
             <AppliedChip key={chip.key} label={chip.label} onRemove={chip.clear} tone={chip.tone} />
           ))}
+          <button
+            type="button"
+            onClick={clearAll}
+            className="px-1.5 text-xs font-bold text-accent underline-offset-2 hover:underline"
+          >
+            Clear all
+          </button>
         </div>
       )}
 

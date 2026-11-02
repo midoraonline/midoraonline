@@ -4,14 +4,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@/lib/api/base";
 import { apiListingEvents } from "@/lib/api";
-import { track } from "@/lib/analytics";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import FormModal from "@/components/FormModal";
 
 type Props = {
   productId: string;
-  shopId?: string;
-  category?: string;
 };
 
 const REPORT_REASONS = [
@@ -24,7 +21,7 @@ const REPORT_REASONS = [
   "Other",
 ];
 
-export default function ReportListing({ productId, shopId, category }: Props) {
+export default function ReportListing({ productId }: Props) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
@@ -50,24 +47,6 @@ export default function ReportListing({ productId, shopId, category }: Props) {
     });
     try {
       await request;
-      if (shopId) {
-        // Map free-text reasons onto the enum the analytics schema expects.
-        const reasonKey: "scam" | "inaccurate_info" | "prohibited_item" | "unresponsive" | "other" =
-          /scam|fraud/i.test(reason)
-            ? "scam"
-            : /prohibited/i.test(reason)
-              ? "prohibited_item"
-              : /misleading|wrong/i.test(reason)
-                ? "inaccurate_info"
-                : "other";
-        track("trust:report_submitted", {
-          targetType: "product",
-          targetId: productId,
-          shopId,
-          category,
-          reason: reasonKey,
-        });
-      }
       close();
     } catch {
       /* sonner surfaced */

@@ -55,13 +55,13 @@ export type AnalyticsEvents = {
 
   'listing:favorited': SystemMetadata & {
     productId: string;
-    shopId: string;
-    category: string;
+    shopId?: string;
+    category?: string;
   };
 
   'listing:unfavorited': SystemMetadata & {
     productId: string;
-    shopId: string;
+    shopId?: string;
   };
 
   'shop:viewed': SystemMetadata & {
@@ -103,7 +103,7 @@ export type AnalyticsEvents = {
   };
 
   'trust:rating_prompted': SystemMetadata & {
-    shopId: string;
+    shopId?: string;
     productId?: string;
   };
 
@@ -171,7 +171,7 @@ export const EVENT_TARGET_MAP: {
     targetType: 'shop',
     getTargetId: (p) => p.shopId,
   },
-  'trust:rating_prompted': { targetType: 'shop', getTargetId: (p) => p.shopId },
+  'trust:rating_prompted': { targetType: 'product', getTargetId: (p) => p.productId ?? p.shopId ?? null },
   'trust:rating_submitted': { targetType: 'shop', getTargetId: (p) => p.shopId },
   'trust:report_submitted': { targetType: 'target', getTargetId: (p) => p.targetId },
 };

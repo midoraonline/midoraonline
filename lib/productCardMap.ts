@@ -213,6 +213,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     ...readCardRating(item),
     negotiable: item.is_negotiable !== false,
     listing_meta: item.listing_meta ?? null,
+    status: item.card_status ?? null,
   };
 }
 
@@ -265,6 +266,7 @@ export function productToCard(
     ...readCardRating(product),
     negotiable: product.is_negotiable !== false,
     listing_meta: product.listing_meta ?? null,
+    status: product.card_status ?? null,
   };
 }
 
@@ -313,6 +315,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
     ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
+    status: p.card_status ?? null,
   };
 }
 

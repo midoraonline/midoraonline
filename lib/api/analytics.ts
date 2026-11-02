@@ -15,13 +15,14 @@ export type AnalyticsAck = {
   rejected: number;
 };
 
-export function ingestEvents(events: AnalyticsEventPayload[]) {
+export function ingestEvents(events: AnalyticsEventPayload[], opts: { keepalive?: boolean } = {}) {
   return apiFetch<AnalyticsAck>("/api/v1/analytics/events", {
     method: "POST",
     body: { events },
     // Anonymous callers are allowed server-side; if there's no auth cookie
     // we don't want the client trying to refresh one just to log an event.
     skipAuthRefresh: true,
+    keepalive: opts.keepalive,
   });
 }
 
