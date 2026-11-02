@@ -1,9 +1,14 @@
 "use client";
 
+import { createElement } from "react";
 import { ChevronRight } from "lucide-react";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
-import { resolveCategoryIcon } from "@/lib/homeCategoryIcons";
+import { resolveCategoryIcon, resolveCategoryTone } from "@/lib/homeCategoryIcons";
+
+function Icon({ category, className }: { category: string; className: string }) {
+  return createElement(resolveCategoryIcon(category), { className, "aria-hidden": true });
+}
 
 type Props = {
   label: string | null | undefined;
@@ -23,7 +28,8 @@ export default function CategoryDisplay({
 
   if (!parentLabel && !subcategoryLabel) return null;
 
-  const Icon = resolveCategoryIcon(parentLabel ?? subcategoryLabel ?? "");
+  const categoryKey = parentLabel ?? subcategoryLabel ?? "";
+  const tone = resolveCategoryTone(categoryKey);
 
   if (variant === "chip") {
     return (
@@ -34,7 +40,7 @@ export default function CategoryDisplay({
             : "border-neutral-200 bg-neutral-50 text-neutral-700"
         } ${className}`}
       >
-        <Icon className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
+        <Icon category={categoryKey} className="size-3.5 shrink-0" />
         <span className="truncate">
           {parentLabel}
           {subcategoryLabel ? (
@@ -51,7 +57,7 @@ export default function CategoryDisplay({
   if (variant === "compact") {
     return (
       <span className={`inline-flex min-w-0 items-center gap-1 text-[10px] text-muted sm:text-[11px] ${className}`}>
-        <Icon className="size-2.5 shrink-0 text-accent/80 sm:size-3" strokeWidth={1.75} aria-hidden />
+        <Icon category={categoryKey} className="size-3 shrink-0 text-accent sm:size-3.5" />
         <span className="truncate">
           {parentLabel}
           {subcategoryLabel ? ` · ${subcategoryLabel}` : ""}
@@ -64,8 +70,10 @@ export default function CategoryDisplay({
     return (
       <div className={`flex flex-wrap items-center gap-2 ${className}`}>
         {parentLabel ? (
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700">
-            <Icon className="size-3.5 text-neutral-500" strokeWidth={1.75} aria-hidden />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 py-1 pl-1 pr-2.5 text-xs font-semibold text-neutral-700">
+            <span className={`grid size-6 place-items-center rounded-full ${tone}`}>
+              <Icon category={categoryKey} className="size-3.5" />
+            </span>
             {parentLabel}
           </span>
         ) : null}

@@ -49,6 +49,8 @@ export type Product = {
   like_count?: number | null;
   viewer_liked?: boolean | null;
   whatsapp_clicks?: number | null;
+  impressions?: number | null;
+  reach?: number | null;
   messages?: number | null;
   review_notes?: string | null;
   reviewed_at?: string | null;

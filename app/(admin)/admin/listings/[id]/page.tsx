@@ -111,6 +111,25 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
         </div>
       ) : null}
 
+      {data.stats ? (
+        <Card title={`Visibility (last ${data.stats.window_days} days)`}>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: "Times shown", value: data.stats.impressions, hint: `${data.stats.boosted_impressions.toLocaleString()} from boosted spots` },
+              { label: "People reached", value: data.stats.reach, hint: "Different people or devices" },
+              { label: "Opened", value: data.stats.views, hint: `${Math.round(data.stats.view_rate * 100)}% of times shown` },
+              { label: "Contacts", value: data.stats.contacts, hint: `${data.stats.likes.toLocaleString()} likes` },
+            ].map((s) => (
+              <div key={s.label} className="rounded-lg border border-border px-3 py-2">
+                <p className="text-xs text-muted">{s.label}</p>
+                <p className="text-lg font-semibold tabular-nums text-foreground">{s.value.toLocaleString()}</p>
+                <p className="text-[11px] text-muted">{s.hint}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Listing">
           <dl>

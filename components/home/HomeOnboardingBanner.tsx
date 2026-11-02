@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { PiSignInFill, PiSparkleFill, PiXBold } from "react-icons/pi";
 
 type Props = {
   variant: "signed-in" | "unsigned";
@@ -14,7 +14,7 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
       <div className="mb-6 flex animate-fadeIn flex-col items-start justify-between gap-4 rounded-2xl border border-accent/30 bg-accent p-4 shadow-md sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <span className="shrink-0 rounded-xl bg-white/20 p-2">
-            <MaterialSymbol name="login" className="!text-xl text-white" />
+            <PiSignInFill className="size-5 text-white" aria-hidden />
           </span>
           <div>
             <h4 className="text-sm font-bold text-white">Unlock the full Midora experience</h4>
@@ -36,7 +36,7 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
             className="rounded-full p-1 text-white/90 transition-colors hover:bg-white/10"
             title="Dismiss"
           >
-            <MaterialSymbol name="close" className="!text-lg" />
+            <PiXBold className="size-4" aria-hidden />
           </button>
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
     <div className="mb-6 flex animate-fadeIn flex-col items-start justify-between gap-4 rounded-2xl border border-border bg-surface-subtle p-4 shadow-sm sm:flex-row sm:items-center">
       <div className="flex items-center gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
-          <MaterialSymbol name="auto_awesome" className="!text-xl" filled />
+          <PiSparkleFill className="size-5" aria-hidden />
         </span>
         <div>
           <h4 className="text-sm font-bold text-foreground">Welcome to Midora</h4>
@@ -71,7 +71,7 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
           title="Dismiss"
           aria-label="Dismiss"
         >
-          <MaterialSymbol name="close" className="!text-lg" />
+          <PiXBold className="size-4" aria-hidden />
         </button>
       </div>
     </div>

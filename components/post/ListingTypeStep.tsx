@@ -1,27 +1,28 @@
 "use client";
 
-import { Briefcase, Package, Sparkles, Wrench, type LucideIcon } from "lucide-react";
+import type { IconType } from "react-icons";
+import { PiBriefcaseFill, PiPackageFill, PiSparkleFill, PiWrenchFill } from "react-icons/pi";
 import StepFrame from "@/components/post/StepFrame";
 import { LISTING_KIND_OPTIONS, type ListingKind } from "@/lib/listingMeta";
 
-const TILE: Record<string, { icon: LucideIcon; chip: string; ring: string }> = {
+const TILE: Record<string, { icon: IconType; chip: string; ring: string }> = {
   product: {
-    icon: Package,
+    icon: PiPackageFill,
     chip: "bg-listing-product text-listing-product-foreground",
     ring: "border-listing-product-accent ring-4 ring-listing-product-accent/15",
   },
   service: {
-    icon: Wrench,
+    icon: PiWrenchFill,
     chip: "bg-listing-service text-listing-service-foreground",
     ring: "border-listing-service-accent ring-4 ring-listing-service-accent/15",
   },
   opportunity: {
-    icon: Briefcase,
+    icon: PiBriefcaseFill,
     chip: "bg-listing-opportunity text-listing-opportunity-foreground",
     ring: "border-listing-opportunity-accent ring-4 ring-listing-opportunity-accent/15",
   },
 };
-const FALLBACK = { icon: Sparkles, chip: "bg-accent/10 text-accent", ring: "border-accent ring-4 ring-accent/10" };
+const FALLBACK = { icon: PiSparkleFill, chip: "bg-accent/10 text-accent", ring: "border-accent ring-4 ring-accent/10" };
 
 export default function ListingTypeStep({
   selected,
@@ -48,8 +49,8 @@ export default function ListingTypeStep({
                 on ? t.ring : "border-border hover:border-border-strong"
               }`}
             >
-              <span className={`grid size-10 shrink-0 place-items-center rounded-lg ${t.chip}`} aria-hidden>
-                <t.icon className="size-5" />
+              <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${t.chip}`} aria-hidden>
+                <t.icon className="size-6" />
               </span>
               <span className="min-w-0 sm:mt-3">
                 <span className="block text-sm font-semibold text-foreground">{opt.label}</span>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { resolveCategoryParts } from "@/lib/categories";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { ChevronDown } from "lucide-react";
-import { resolveCategoryIcon } from "@/lib/homeCategoryIcons";
+import { resolveCategoryIcon, resolveCategoryTone } from "@/lib/homeCategoryIcons";
 
 type Props = {
   value: string;
@@ -222,14 +222,12 @@ export default function CategoryPicker({
               : "border-accent/20 bg-accent/5")
           }
         >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface shadow-sm">
-            {SelectedIcon ? (
-              <SelectedIcon
-                className={`size-3.5 ${needsSubcategory ? "text-[color:var(--warning)]" : "text-accent"}`}
-                strokeWidth={2}
-                aria-hidden
-              />
-            ) : null}
+          <span
+            className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+              needsSubcategory ? "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" : resolveCategoryTone(activeGroup.parent.label)
+            }`}
+          >
+            {SelectedIcon ? <SelectedIcon className="size-[18px]" aria-hidden /> : null}
           </span>
           <div className="min-w-0">
             <span className="font-semibold text-foreground">
