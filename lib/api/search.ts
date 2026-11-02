@@ -1,5 +1,6 @@
 import { apiFetch } from "./base";
 import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
+import type { CardStatus } from "./products";
 
 export type SearchMode = "vector" | "keyword" | "hybrid";
 
@@ -26,6 +27,7 @@ export type SearchProductShop = {
 
 export type SearchProductItem = {
   id: string;
+  card_status?: CardStatus | null;
   shop_id: string;
   title: string;
   price_ugx: number;

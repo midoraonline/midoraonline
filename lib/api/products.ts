@@ -27,6 +27,7 @@ export type ProductStatus =
 export type Product = {
   id: string;
   shop_id: string;
+  card_status?: CardStatus | null;
   item_type?: ItemType | null;
   title: string;
   description?: string | null;
@@ -467,6 +468,7 @@ export type HomeFeedResponse = {
 };
 
 export type SimilarProduct = {
+  card_status?: CardStatus | null;
   id: string;
   shop_id: string;
   title: string;
