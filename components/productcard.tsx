@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, CalendarDays, Clock, Flame, ImageIcon, MapPin, Play, Rocket, Star } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, Flame, Gem, ImageIcon, MapPin, Play, Rocket, Star, TrendingUp } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl, type CardStatus, type FeedPlacement } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -245,9 +245,11 @@ function timeLabel(iso: string | null | undefined): string | null {
 }
 
 const STATUS_STYLE: Record<CardStatus, { label: string; icon: typeof Clock; tone: string }> = {
-  new: { label: "New", icon: Flame, tone: "bg-orange-500" },
-  closing_soon: { label: "Closing soon", icon: Clock, tone: "bg-violet-600" },
+  sponsored: { label: "Sponsored", icon: Gem, tone: "bg-rose-600" },
   boosted: { label: "Boosted", icon: Rocket, tone: "bg-indigo-600" },
+  closing_soon: { label: "Closing soon", icon: Clock, tone: "bg-violet-600" },
+  trending: { label: "Trending", icon: TrendingUp, tone: "bg-emerald-600" },
+  new: { label: "New", icon: Flame, tone: "bg-orange-500" },
 };
 
 function StatusBadge({ status }: { status: CardStatus }) {

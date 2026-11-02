@@ -76,7 +76,14 @@ export default function BoostsClient() {
                       {boostScopeLabel(b)}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-foreground">{boostPackageLabel(b)}</td>
+                  <td className="px-3 py-2 text-foreground">
+                    {boostPackageLabel(b)}
+                    {b.kind === "sponsored" ? (
+                      <span className="ml-1.5 rounded-md bg-rose-600/15 px-1.5 py-0.5 text-xs font-semibold text-rose-600">
+                        Sponsored
+                      </span>
+                    ) : null}
+                  </td>
                   <td className="px-3 py-2 text-foreground">{boostSourceLabel(b)}</td>
                   <td className="px-3 py-2 tabular-nums text-foreground">+{b.score_bonus}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-muted">

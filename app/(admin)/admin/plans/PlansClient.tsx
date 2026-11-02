@@ -5,7 +5,7 @@ import useSWR, { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import SettingsSwitch from "@/components/settings/SettingsSwitch";
 import { ApiError } from "@/lib/api/base";
-import type { BoostPlan } from "@/lib/api/boostPlans";
+import type { BoostKind, BoostPlan } from "@/lib/api/boostPlans";
 import {
   ADMIN_BOOST_PACKAGES_KEY,
   ADMIN_PLANS_KEY,
@@ -221,13 +221,21 @@ function PlanCard({ plan }: { plan: AdminPlan }) {
   );
 }
 
-type PkgDraft = { name: string; duration_hours: string; price_amount: string; score_bonus: string; is_active: boolean };
+type PkgDraft = {
+  name: string;
+  duration_hours: string;
+  price_amount: string;
+  score_bonus: string;
+  is_active: boolean;
+  kind: BoostKind;
+};
 const pkgDraft = (p?: BoostPlan): PkgDraft => ({
   name: p?.name ?? "",
   duration_hours: p ? String(p.duration_hours) : "168",
   price_amount: p ? String(p.price_amount) : "10000",
   score_bonus: p ? String(p.score_bonus) : "50",
   is_active: p?.is_active ?? true,
+  kind: p?.kind === "sponsored" ? "sponsored" : "boost",
 });
 function pkgValid(d: PkgDraft) {
   const h = Number(d.duration_hours);
@@ -257,6 +265,7 @@ function PackageRow({ pkg, onSaved }: { pkg?: BoostPlan; onSaved: (p: BoostPlan)
       price_amount: Number(d.price_amount),
       score_bonus: Number(d.score_bonus),
       is_active: d.is_active,
+      kind: d.kind,
     };
     try {
       const saved = pkg ? await updateBoostPackage(pkg.id, body) : await createBoostPackage(body);
@@ -272,9 +281,14 @@ function PackageRow({ pkg, onSaved }: { pkg?: BoostPlan; onSaved: (p: BoostPlan)
 
   const cell = `${INPUT} min-w-0`;
   return (
-    <div className="grid grid-cols-2 gap-2 py-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr_auto_auto] sm:items-center">
+    <div className="grid grid-cols-2 gap-2 py-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto_auto] sm:items-center">
       <input aria-label="Package name" placeholder="e.g. Boost 7 days" value={d.name} maxLength={60}
         onChange={(e) => setD({ ...d, name: e.target.value })} className={`${cell} col-span-2 sm:col-span-1`} />
+      <select aria-label="Placement type" value={d.kind}
+        onChange={(e) => setD({ ...d, kind: e.target.value === "sponsored" ? "sponsored" : "boost" })} className={cell}>
+        <option value="boost">Boosted</option>
+        <option value="sponsored">Sponsored</option>
+      </select>
       <input aria-label="Duration hours" type="number" inputMode="numeric" min={1} max={2160} value={d.duration_hours}
         onChange={(e) => setD({ ...d, duration_hours: e.target.value })} className={cell} />
       <input aria-label="Price UGX" type="number" inputMode="numeric" min={0} value={d.price_amount}
@@ -305,16 +319,16 @@ function BoostPackagesCard() {
       <h2 className="text-base font-semibold text-foreground">Boost packages</h2>
       <p className="mt-0.5 text-sm text-muted">
         A boost adds its score weight to the listing&apos;s ranking for the duration and shows a Boosted badge. 50 ≈ the
-        old standard boost.
+        old standard boost. Sponsored packages fill a separate paid slot per 20 cards and show a Sponsored badge.
       </p>
-      <div className="mt-3 hidden grid-cols-[1.5fr_1fr_1fr_1fr_auto_auto] gap-2 text-xs font-semibold text-foreground-muted sm:grid">
-        <span>Name</span><span>Hours</span><span>Price (UGX)</span><span>Score weight</span><span>Status</span><span />
+      <div className="mt-3 hidden grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto_auto] gap-2 text-xs font-semibold text-foreground-muted sm:grid">
+        <span>Name</span><span>Type</span><span>Hours</span><span>Price (UGX)</span><span>Score weight</span><span>Status</span><span />
       </div>
       {error ? <ErrorState message={failure("Boost packages", error)} onRetry={() => void mutate()} /> : null}
       {isLoading && !data ? <PageSkeleton rows={2} label="Loading boost packages" /> : null}
       <div className="divide-y divide-border">
         {(data ?? []).map((p) => (
-          <PackageRow key={`${p.id}-${p.name}-${p.price_amount}-${p.duration_hours}-${p.score_bonus}-${p.is_active}`} pkg={p} onSaved={upsert} />
+          <PackageRow key={`${p.id}-${p.name}-${p.price_amount}-${p.duration_hours}-${p.score_bonus}-${p.is_active}-${p.kind}`} pkg={p} onSaved={upsert} />
         ))}
         {data ? <PackageRow key={`new-${data.length}`} onSaved={upsert} /> : null}
       </div>

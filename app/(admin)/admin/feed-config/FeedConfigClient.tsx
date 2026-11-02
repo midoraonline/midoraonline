@@ -45,11 +45,12 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   },
   {
     title: "Blocks and mix",
-    description: "Block size, seller cap, paid position and Home type shares.",
+    description: "Block size, seller cap, paid positions and Home type shares.",
     keys: [
       "BLOCK_SIZE",
       "SELLER_CAP_PER_BLOCK",
       "PAID_SLOT_POSITION",
+      "SPONSORED_SLOT_POSITION",
       "TYPE_DEPTH_BLOCKS",
       "PRODUCT_SHARE",
       "SERVICE_SHARE",
@@ -69,8 +70,16 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   },
   {
     title: "Badges and refresh",
-    description: "Badge windows and how long the shared order is reused.",
-    keys: ["NEW_BADGE_HOURS", "CLOSING_SOON_HOURS", "SNAPSHOT_TTL_SECONDS"],
+    description: "Badge windows, Trending thresholds and how long the shared order is reused.",
+    keys: [
+      "NEW_BADGE_HOURS",
+      "CLOSING_SOON_HOURS",
+      "TRENDING_WINDOW_HOURS",
+      "TRENDING_MIN_UNIQUE_VIEWERS",
+      "TRENDING_MIN_ACTIONS",
+      "TRENDING_TOP_SHARE",
+      "SNAPSHOT_TTL_SECONDS",
+    ],
   },
 ];
 

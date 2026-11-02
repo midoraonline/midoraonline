@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { FEED_STALE_EVENT, consumeFeedStale, consumedFeedStaleAt, feedStaleAt } from "@/lib/feedFreshness";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
+import LocationPill from "@/components/browse/LocationPill";
 import ProductFilters, {
   DEFAULT_FILTERS,
   type FilterState,
@@ -425,7 +426,8 @@ export default function HomeLanding({
     filters.listingKind !== null ||
     filters.opportunityKind !== null ||
     filters.compensation !== null ||
-    filters.pricingModel !== null;
+    filters.pricingModel !== null ||
+    filters.badge !== null;
 
   const displayProducts = isSearching ? search.items : products;
   const feedEmpty = isSearching
@@ -448,6 +450,7 @@ export default function HomeLanding({
               pricingModel: null,
             }));
           }}
+          trailing={<LocationPill filters={filters} onChange={setFilters} />}
         />
         <CategoryBrowseSection
           selection={categoryFilter}
@@ -470,6 +473,7 @@ export default function HomeLanding({
           filters={filters}
           onChange={setFilters}
           contextParentLabel={categoryFilter.parentLabel}
+          showLocation={false}
         />
       </div>
 
@@ -611,9 +615,11 @@ export default function HomeLanding({
 function ListingTypeTabs({
   selected,
   onSelect,
+  trailing,
 }: {
   selected: ListingKind | null;
   onSelect: (kind: ListingKind | null) => void;
+  trailing?: React.ReactNode;
 }) {
   const tabs = [
     { label: "All", kind: null, icon: LayoutGrid },
@@ -643,13 +649,16 @@ function ListingTypeTabs({
           </button>
         );
       })}
-      <Link
-        href="/shops"
-        className="ml-auto inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-xs font-semibold text-foreground/80 ring-1 ring-border transition-colors hover:bg-surface-subtle hover:text-foreground sm:text-sm"
-      >
-        <Store className="size-4" aria-hidden />
-        Shops
-      </Link>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {trailing}
+        <Link
+          href="/shops"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-xs font-semibold text-foreground/80 ring-1 ring-border transition-colors hover:bg-surface-subtle hover:text-foreground sm:text-sm"
+        >
+          <Store className="size-4" aria-hidden />
+          Shops
+        </Link>
+      </div>
     </div>
   );
 }
