@@ -15,6 +15,8 @@ export type CatalogQuery = {
   opportunity_kind?: string | null;
   compensation?: string | null;
   pricing_model?: string | null;
+  /** new_today | trending | boosted | sponsored */
+  badge?: string | null;
   /** Omit or "relevance" to use the API default. */
   sort?: string | null;
 };
@@ -52,6 +54,7 @@ export function appendCatalogParams(
   setText(params, "opportunity_kind", query.opportunity_kind);
   setText(params, "compensation", query.compensation);
   setText(params, "pricing_model", query.pricing_model);
+  setText(params, "badge", query.badge);
   if (query.sort && query.sort !== "relevance") params.set("sort", query.sort);
 }
 

@@ -21,6 +21,7 @@ export function toCatalogQuery(
     opportunity_kind: filters.opportunityKind,
     compensation: filters.compensation,
     pricing_model: filters.pricingModel,
+    badge: filters.badge,
     sort: filters.sort,
   };
 }

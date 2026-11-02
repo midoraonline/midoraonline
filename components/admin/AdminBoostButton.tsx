@@ -15,12 +15,13 @@ import {
   listBoostPackages,
   type BoostTarget,
 } from "@/lib/api/adminPlans";
+import type { BoostKind } from "@/lib/api/boostPlans";
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, INPUT } from "@/components/dashboard/ui";
 
 const CUSTOM = "custom";
 
 function message(err: unknown) {
-  if (err instanceof ApiError) return err.status === 503 ? "Run migration 059 first." : err.message;
+  if (err instanceof ApiError) return err.status === 503 ? "Run the pending boost migrations (059, 064) first." : err.message;
   return "Something went wrong.";
 }
 
@@ -62,6 +63,7 @@ function BoostDialog({
   const [choice, setChoice] = useState<string>("");
   const [hours, setHours] = useState("24");
   const [score, setScore] = useState("50");
+  const [kind, setKind] = useState<BoostKind>("boost");
   const [busy, setBusy] = useState<"grant" | "end" | null>(null);
 
   const selected = choice || packages?.find((p) => p.is_active)?.id || CUSTOM;
@@ -78,7 +80,7 @@ function BoostDialog({
       const out = await adminGrantBoost(
         target,
         id,
-        custom ? { hours: h, score_bonus: s } : { package_id: selected },
+        custom ? { hours: h, score_bonus: s, kind } : { package_id: selected },
       );
       toast.success(target === "shop" ? `Boosted ${out.boosted} live listings` : "Listing boosted");
       refreshAfterRankChange();
@@ -149,6 +151,7 @@ function BoostDialog({
               {!p.is_active ? <span className="text-muted"> (inactive)</span> : null}
             </span>
             <span className="text-xs text-muted">
+              {p.kind === "sponsored" ? "Sponsored · " : ""}
               {p.duration_hours}h · +{p.score_bonus}
             </span>
           </label>
@@ -160,6 +163,14 @@ function BoostDialog({
       </fieldset>
       {custom ? (
         <div className="mt-3 grid grid-cols-2 gap-3">
+          <label className="col-span-2 text-xs font-medium text-foreground-muted">
+            Placement
+            <select value={kind} onChange={(e) => setKind(e.target.value === "sponsored" ? "sponsored" : "boost")}
+              className={`${INPUT} mt-1`}>
+              <option value="boost">Boosted</option>
+              <option value="sponsored">Sponsored</option>
+            </select>
+          </label>
           <label className="text-xs font-medium text-foreground-muted">
             Hours (1–2160)
             <input type="number" inputMode="numeric" min={1} max={2160} value={hours}

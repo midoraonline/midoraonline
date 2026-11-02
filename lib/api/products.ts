@@ -454,8 +454,8 @@ export type HomeFeedProduct = {
   first_posted_at?: string | null;
 };
 
-export type FeedPlacement = "organic" | "exploration" | "boosted";
-export type CardStatus = "boosted" | "closing_soon" | "new";
+export type FeedPlacement = "organic" | "exploration" | "boosted" | "sponsored";
+export type CardStatus = "sponsored" | "boosted" | "closing_soon" | "trending" | "new";
 
 export type HomeFeedResponse = {
   algorithm: HomeFeedProduct[];
@@ -530,6 +530,12 @@ export function getHomeFeed(opts: {
   return apiFetch<HomeFeedResponse>(`/api/v1/feed/home${qs ? `?${qs}` : ""}`, {
     ...(opts.token ? { token: opts.token } : {}),
   });
+}
+
+export type PopularLocation = { name: string; count: number };
+
+export function getPopularLocations(limit = 12) {
+  return apiFetch<{ items: PopularLocation[] }>(`/api/v1/feed/locations?limit=${limit}`);
 }
 
 export function generateFromImage(

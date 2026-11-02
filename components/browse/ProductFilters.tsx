@@ -13,9 +13,11 @@ import {
   ChevronDown,
   CircleCheck,
   Flame,
+  Gem,
   Loader2,
   MapPin,
   Navigation,
+  Rocket,
   SlidersHorizontal,
   Star,
   TrendingUp,
@@ -55,6 +57,8 @@ export type SortOption =
   | "best_rated"
   | "trust_score";
 
+export type FeedBadge = "new_today" | "trending" | "boosted" | "sponsored";
+
 export type FilterState = {
   sort: SortOption;
   minPrice: number | null;
@@ -75,6 +79,7 @@ export type FilterState = {
   compensation: string | null;
   /** Services: fixed | hourly | starting_at | quote */
   pricingModel: string | null;
+  badge: FeedBadge | null;
 };
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -91,6 +96,7 @@ export const DEFAULT_FILTERS: FilterState = {
   opportunityKind: null,
   compensation: null,
   pricingModel: null,
+  badge: null,
 };
 
 const SORT_LABELS: Record<SortOption, string> = {
@@ -103,11 +109,29 @@ const SORT_LABELS: Record<SortOption, string> = {
   trust_score: "Trust",
 };
 
-const QUICK_SORTS = [
-  { sort: "newest", label: "Newest", icon: Flame, tone: "text-orange-500" },
-  { sort: "most_viewed", label: "Trending", icon: TrendingUp, tone: "text-emerald-500" },
-  { sort: "best_rated", label: "Top rated", icon: Star, tone: "text-amber-500" },
-] as const satisfies readonly { sort: SortOption; label: string; icon: typeof Star; tone: string }[];
+const BADGE_CHIPS = [
+  { badge: "new_today", label: "New today", icon: Flame, tone: "text-orange-500" },
+  { badge: "trending", label: "Trending", icon: TrendingUp, tone: "text-emerald-500" },
+  { badge: "boosted", label: "Boosted", icon: Rocket, tone: "text-indigo-500" },
+  { badge: "sponsored", label: "Sponsored", icon: Gem, tone: "text-sky-500" },
+] as const satisfies readonly { badge: FeedBadge; label: string; icon: typeof Star; tone: string }[];
+
+export async function withNearMe(filters: FilterState): Promise<FilterState> {
+  const coords = await getBrowserLocation();
+  let label = "Near me";
+  try {
+    label = labelFromReverse(await reverseGeocode(coords), "Near me");
+  } catch {
+    /* GPS alone is enough to rank */
+  }
+  return {
+    ...filters,
+    location: null,
+    nearMe: true,
+    userGeo: { lat: coords.lat, lng: coords.lng, label },
+    sort: "relevance",
+  };
+}
 
 const PRICE_PRESETS = [
   { label: "Deals", min: null as number | null, max: 100_000 as number | null },
@@ -152,6 +176,7 @@ function activeFilterCount(f: FilterState): number {
   if (f.opportunityKind !== null) n++;
   if (f.compensation !== null) n++;
   if (f.pricingModel !== null) n++;
+  if (f.badge !== null) n++;
   return n;
 }
 
@@ -487,9 +512,11 @@ type Props = {
   onChange: (filters: FilterState) => void;
   /** Active top-level category label (e.g. Services / Opportunities) for contextual chips. */
   contextParentLabel?: string | null;
+  /** Hide the inline location control when the page shows its own location picker. */
+  showLocation?: boolean;
 };
 
-export default function ProductFilters({ products, filters, onChange, contextParentLabel }: Props) {
+export default function ProductFilters({ products, filters, onChange, contextParentLabel, showLocation = true }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLocating, setDrawerLocating] = useState(false);
   const [drawerNearMeError, setDrawerNearMeError] = useState<string | null>(null);
@@ -533,21 +560,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   }
 
   async function activateNearMe() {
-    const coords = await getBrowserLocation();
-    let label = "Near me";
-    try {
-      const rev = await reverseGeocode(coords);
-      label = labelFromReverse(rev, "Near me");
-    } catch {
-      /* GPS alone is enough to rank */
-    }
-    onChange({
-      ...filters,
-      location: null,
-      nearMe: true,
-      userGeo: { lat: coords.lat, lng: coords.lng, label },
-      sort: "relevance",
-    });
+    onChange(await withNearMe(filters));
   }
 
   async function activateNearMeFromDrawer() {
@@ -667,21 +680,26 @@ export default function ProductFilters({ products, filters, onChange, contextPar
       clear: () => update({ pricingModel: null }),
     });
   }
-
-// Always show location control so Near me works even before listings load places.
-  const showLocationControl = true;
+  if (filters.badge) {
+    const badge = filters.badge;
+    appliedChips.push({
+      key: "badge",
+      label: BADGE_CHIPS.find((c) => c.badge === badge)?.label ?? badge,
+      clear: () => update({ badge: null }),
+    });
+  }
 
   return (
     <div className="space-y-1.5">
       <div className="relative">
         <div className="flex gap-2 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible">
-          {QUICK_SORTS.map(({ sort, label, icon: Icon, tone }) => {
-            const on = filters.sort === sort;
+          {BADGE_CHIPS.map(({ badge, label, icon: Icon, tone }) => {
+            const on = filters.badge === badge;
             return (
               <Chip
-                key={sort}
+                key={badge}
                 active={on}
-                onClick={() => update({ sort: on ? "relevance" : sort })}
+                onClick={() => update({ badge: on ? null : badge })}
               >
                 <Icon className={`size-3.5 shrink-0 ${on ? "" : tone}`} strokeWidth={2} aria-hidden />
                 {label}
@@ -712,7 +730,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
               maxPrice={filters.maxPrice}
               onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
             />
-            {showLocationControl && (
+            {showLocation && (
               <LocationDropdown
                 locations={locations}
                 nearMe={filters.nearMe}

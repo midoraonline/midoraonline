@@ -1,5 +1,5 @@
 import { apiFetch } from "./base";
-import type { BoostPlan } from "./boostPlans";
+import type { BoostKind, BoostPlan } from "./boostPlans";
 
 export type AdminPlan = {
   key: "basic" | "standard" | "premium";
@@ -23,7 +23,7 @@ export type AdminPlan = {
 };
 
 export type AdminPlanPatch = Partial<Omit<AdminPlan, "key" | "updated_at">>;
-export type BoostPackagePatch = Partial<Pick<BoostPlan, "name" | "duration_hours" | "price_amount" | "score_bonus" | "is_active">>;
+export type BoostPackagePatch = Partial<Pick<BoostPlan, "name" | "duration_hours" | "price_amount" | "score_bonus" | "is_active" | "kind">>;
 
 export const ADMIN_PLANS_KEY = "admin-plans";
 export const ADMIN_BOOST_PACKAGES_KEY = "admin-boost-packages";
@@ -51,7 +51,12 @@ export function updateBoostPackage(id: string, patch: BoostPackagePatch) {
 }
 
 /* Admin-granted boosts (testing): free, no plan allowance. */
-export type BoostGrant = { package_id?: string | null; hours?: number | null; score_bonus?: number | null };
+export type BoostGrant = {
+  package_id?: string | null;
+  hours?: number | null;
+  score_bonus?: number | null;
+  kind?: BoostKind | null;
+};
 export type ActiveBoost = {
   id: string;
   listing_id: string;
@@ -67,6 +72,7 @@ export type ActiveBoost = {
   shop_name: string | null;
   package_name: string | null;
   source_label?: string | null;
+  kind?: BoostKind | null;
   scope?: "shop" | "listing" | null;
   business_wide: boolean;
 };

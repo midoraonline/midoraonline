@@ -1,5 +1,7 @@
 import { apiFetch } from "./base";
 
+export type BoostKind = "boost" | "sponsored";
+
 export type BoostPlan = {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export type BoostPlan = {
   price_amount: number;
   score_bonus: number;
   is_active: boolean;
+  kind?: BoostKind | null;
   created_at: string;
 };
 
