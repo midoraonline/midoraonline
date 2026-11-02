@@ -94,16 +94,10 @@ export default function ProductLikeButton({
       } else {
         await apiProducts.unlikeProduct(productId);
       }
-      if (shopId) {
-        if (next) {
-          track("listing:favorited", {
-            productId,
-            shopId,
-            category: category ?? "",
-          });
-        } else {
-          track("listing:unfavorited", { productId, shopId });
-        }
+      if (next) {
+        track("listing:favorited", { productId, shopId, category: category || undefined });
+      } else {
+        track("listing:unfavorited", { productId, shopId });
       }
       void sync();
     } catch {

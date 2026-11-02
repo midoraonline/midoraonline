@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, Loader2, MapPin, Navigation, X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
+import { PiCaretDownBold, PiMapPinFill, PiNavigationArrowFill } from "react-icons/pi";
 import { getPopularLocations, type PopularLocation } from "@/lib/api/products";
 import { GeoLocationError } from "@/lib/geo";
 import { withNearMe, type FilterState } from "@/components/browse/ProductFilters";
@@ -66,19 +67,19 @@ export default function LocationPill({ filters, onChange }: Props) {
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className={`inline-flex h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-colors sm:text-sm ${
+        className={`inline-flex h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-xl px-3 text-[13px] font-bold shadow-sm transition-all active:scale-95 sm:text-sm ${
           active
-            ? "bg-accent/10 text-accent ring-1 ring-accent/30"
-            : "bg-surface text-foreground/80 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
+            ? "bg-accent/10 text-accent ring-1 ring-accent/40"
+            : "bg-surface text-foreground ring-1 ring-foreground/15 hover:ring-accent/40"
         }`}
       >
         {filters.nearMe ? (
-          <Navigation className="size-4 shrink-0" aria-hidden />
+          <PiNavigationArrowFill className="size-[18px] shrink-0 text-accent" aria-hidden />
         ) : (
-          <MapPin className="size-4 shrink-0" aria-hidden />
+          <PiMapPinFill className="size-[18px] shrink-0 text-accent" aria-hidden />
         )}
         <span className="truncate">{label}</span>
-        <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+        <PiCaretDownBold className="size-3.5 shrink-0" aria-hidden />
       </button>
 
       {open && (
@@ -107,7 +108,7 @@ export default function LocationPill({ filters, onChange }: Props) {
                   {locating ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden />
                   ) : (
-                    <Navigation className="size-4" aria-hidden />
+                    <PiNavigationArrowFill className="size-[18px] text-accent" aria-hidden />
                   )}
                   {locating ? "Locating…" : "Near me"}
                 </span>
@@ -116,7 +117,7 @@ export default function LocationPill({ filters, onChange }: Props) {
               {error ? <p className="px-3 text-[11px] font-medium text-rose-600">{error}</p> : null}
               <button type="button" onClick={() => pick(null)} className={row(!active)}>
                 <span className="inline-flex items-center gap-2">
-                  <MapPin className="size-4 opacity-60" aria-hidden />
+                  <PiMapPinFill className="size-[18px] text-accent" aria-hidden />
                   All of Uganda
                 </span>
                 {!active ? <Check className="size-4" aria-hidden /> : null}

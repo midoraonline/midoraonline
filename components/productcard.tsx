@@ -440,6 +440,8 @@ export default function ProductCard({
     <div className="absolute top-2 right-2 z-[7]">
       <ProductLikeButton
         productId={product.id}
+        shopId={product.shop.id}
+        category={product.category ?? undefined}
         variant="floating"
         initialLiked={product.isLiked}
         initialLikeCount={product.likeCount}

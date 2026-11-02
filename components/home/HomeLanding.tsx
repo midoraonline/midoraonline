@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, LayoutGrid, Package, Store, Wrench } from "lucide-react";
+import { ArrowRight, Package } from "lucide-react";
+import { PiBriefcaseFill, PiPackageFill, PiSquaresFourFill, PiStorefrontFill, PiWrenchFill } from "react-icons/pi";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import { apiProducts } from "@/lib/api";
 import { HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
+import { track } from "@/lib/analytics";
 import type { ListingKind } from "@/lib/listingMeta";
 
 const FEED_PAGE_SIZE = HOME_FEED_PAGE_SIZE;
@@ -157,6 +159,14 @@ export default function HomeLanding({
         const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
         seenIdsRef.current = new Set(cards.map((c) => c.id));
         setProducts(cards);
+        const browsed = catalogRef.current.category;
+        if (browsed) {
+          track("marketplace:search", {
+            category: browsed,
+            resultCount: data.total ?? cards.length,
+            verifiedCount: cards.filter((c) => c.shop.verified).length,
+          });
+        }
         const more = Boolean(data.has_more && data.next_cursor);
         setHasMore(more);
         nextCursorRef.current = data.next_cursor ?? null;
@@ -622,10 +632,10 @@ function ListingTypeTabs({
   trailing?: React.ReactNode;
 }) {
   const tabs = [
-    { label: "All", kind: null, icon: LayoutGrid },
-    { label: "Products", kind: "product" as const, icon: Package },
-    { label: "Services", kind: "service" as const, icon: Wrench },
-    { label: "Opportunities", kind: "opportunity" as const, icon: BriefcaseBusiness },
+    { label: "All", kind: null, icon: PiSquaresFourFill },
+    { label: "Products", kind: "product" as const, icon: PiPackageFill },
+    { label: "Services", kind: "service" as const, icon: PiWrenchFill },
+    { label: "Opportunities", kind: "opportunity" as const, icon: PiBriefcaseFill },
   ];
 
   return (
@@ -638,13 +648,13 @@ function ListingTypeTabs({
             type="button"
             aria-pressed={active}
             onClick={() => onSelect(kind)}
-            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold transition-colors sm:text-sm ${
+            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-bold transition-all active:scale-95 sm:text-sm ${
               active
-                ? "bg-accent text-white shadow-md shadow-accent/25"
-                : "bg-surface text-foreground/80 ring-1 ring-border hover:bg-surface-subtle hover:text-foreground"
+                ? "bg-accent text-white shadow-md shadow-accent/30"
+                : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
             }`}
           >
-            <Icon className="size-4" aria-hidden />
+            <Icon className={`size-[18px] ${active ? "" : "text-accent"}`} aria-hidden />
             {label}
           </button>
         );
@@ -653,9 +663,9 @@ function ListingTypeTabs({
         {trailing}
         <Link
           href="/shops"
-          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-xs font-semibold text-foreground/80 ring-1 ring-border transition-colors hover:bg-surface-subtle hover:text-foreground sm:text-sm"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-[13px] font-bold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95 sm:text-sm"
         >
-          <Store className="size-4" aria-hidden />
+          <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
           Shops
         </Link>
       </div>

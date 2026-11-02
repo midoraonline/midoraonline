@@ -390,6 +390,8 @@ export default async function ProductDetails({
             <div className="flex items-center gap-2">
               <ProductLikeButton
                 productId={product.id}
+                shopId={shop?.id}
+                category={product.category ?? undefined}
                 initialLikeCount={product.like_count ?? 0}
                 initialLiked={product.viewer_liked ?? undefined}
               />
