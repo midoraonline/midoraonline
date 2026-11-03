@@ -25,7 +25,7 @@ export default function PresenceTracker() {
     return { role: "guest" as const };
   }, [session.isAuthenticated, session.user]);
 
-  const count = usePresenceCount(PRESENCE_CHANNEL, presenceState, true);
+  const count = usePresenceCount(PRESENCE_CHANNEL, presenceState, session.hydrated);
 
   useEffect(() => {
     usePresenceStore.getState().setCount(count);

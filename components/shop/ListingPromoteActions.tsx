@@ -76,7 +76,13 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
             <span className="font-semibold">Boosted:</span> {describeBoost(data.active_boost)}
           </p>
         ) : null}
-        {data && !data.active_boost ? (
+        {data && !data.active_boost && data.boosts_open === false ? (
+          <p className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground">
+            Boosts open once Midora has more listings. Until then every ad is ranked the same way, on quality,
+            freshness and fair exposure. Repost to freshen your ad.
+          </p>
+        ) : null}
+        {data && !data.active_boost && data.boosts_open !== false ? (
           <>
             <p className="text-sm text-foreground">
               {allowance && allowance.per_month > 0

@@ -36,6 +36,15 @@ export type ListingMeta = {
   pricing_model?: "fixed" | "hourly" | "starting_at" | "quote";
   availability?: string;
   service_area?: string;
+  /** Area keys (kampala, wakiso, …) the seller delivers to. */
+  delivery_areas?: string[];
+  nationwide_delivery?: string;
+  /** Area keys the service covers. */
+  service_areas?: string[];
+  travels_to_customer?: string;
+  remote_service?: string;
+  work_mode?: "on_site" | "remote" | "hybrid";
+  relocation_supported?: string;
   opportunity_kind?: "job" | "gig" | "collaboration" | "internship" | "maids" | "other";
   compensation?: "paid" | "unpaid" | "commission" | "negotiable";
   deadline?: string;
@@ -531,14 +540,28 @@ export function cleanListingMeta(
   extraFields?: CategoryMetaField[],
 ): ListingMeta {
   const out: ListingMeta = {};
+  const keepList = (key: "delivery_areas" | "service_areas") => {
+    const list = (raw[key] ?? []).filter((v) => typeof v === "string" && v.trim());
+    if (list.length) out[key] = list;
+  };
+  const keepFlag = (key: "nationwide_delivery" | "travels_to_customer" | "remote_service" | "relocation_supported") => {
+    if (raw[key] === "yes") out[key] = "yes";
+  };
   if (kind === "product") {
     if (raw.condition) out.condition = raw.condition;
     if (raw.brand?.trim()) out.brand = raw.brand.trim();
+    keepList("delivery_areas");
+    keepFlag("nationwide_delivery");
   } else if (kind === "service") {
     if (raw.pricing_model) out.pricing_model = raw.pricing_model;
     if (raw.availability?.trim()) out.availability = raw.availability.trim();
     if (raw.service_area?.trim()) out.service_area = raw.service_area.trim();
+    keepList("service_areas");
+    keepFlag("travels_to_customer");
+    keepFlag("remote_service");
   } else {
+    if (raw.work_mode) out.work_mode = raw.work_mode;
+    keepFlag("relocation_supported");
     if (raw.opportunity_kind) out.opportunity_kind = raw.opportunity_kind;
     if (raw.compensation) out.compensation = raw.compensation;
     if (raw.deadline?.trim()) out.deadline = raw.deadline.trim();

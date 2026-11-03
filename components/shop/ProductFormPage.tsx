@@ -55,6 +55,7 @@ import {
   type ListingDraft,
 } from "@/lib/schemas/listingForm";
 import LocationInput from "@/components/LocationInput";
+import ListingReachFields from "@/components/post/ListingReachFields";
 import { listingPlaceFields } from "@/lib/listingLocation";
 import { useSessionStore } from "@/lib/state/session-store";
 import { useSettingsHref } from "@/lib/settingsHref";
@@ -1004,6 +1005,11 @@ export default function ProductFormPage({
           {showErrors && errors.location_name ? (
             <p className="text-xs text-[color:var(--error)]">{errors.location_name}</p>
           ) : null}
+          <ListingReachFields
+            kind={draft.kind}
+            meta={draft.meta}
+            onChange={(meta) => setDraft((d) => ({ ...d, meta }))}
+          />
           {showErrors && errors.phone ? (
             <p className="text-xs text-[color:var(--error)]">
               {errors.phone}{" "}

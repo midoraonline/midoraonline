@@ -8,7 +8,7 @@ import { PageHeader, UnderlineTabs, useTabParam } from "@/components/dashboard/u
 
 const SECTIONS = [
   { value: "profile", label: "Profile" },
-  { value: "appearance", label: "Appearance" },
+  { value: "appearance", label: "Appearance & area" },
   { value: "notifications", label: "Notifications" },
   { value: "account", label: "Account" },
 ] as const;

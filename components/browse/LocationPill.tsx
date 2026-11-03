@@ -6,13 +6,18 @@ import { PiCaretDownBold, PiMapPinFill, PiNavigationArrowFill } from "react-icon
 import { getPopularLocations, type PopularLocation } from "@/lib/api/products";
 import { GeoLocationError } from "@/lib/geo";
 import { withNearMe, type FilterState } from "@/components/browse/ProductFilters";
+import { ALL_UGANDA, BROWSE_AREAS, areaLabel } from "@/lib/browseArea";
 
 type Props = {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
+  /** Home browsing preference: nearby inventory first, wider Uganda after. */
+  area?: string | null;
+  onAreaChange?: (area: string) => void;
+  signedIn?: boolean;
 };
 
-export default function LocationPill({ filters, onChange }: Props) {
+export default function LocationPill({ filters, onChange, area, onAreaChange, signedIn }: Props) {
   const [open, setOpen] = useState(false);
   const [places, setPlaces] = useState<PopularLocation[] | null>(null);
   const [locating, setLocating] = useState(false);
@@ -30,9 +35,16 @@ export default function LocationPill({ filters, onChange }: Props) {
   }, [open, places]);
 
   const active = filters.nearMe || filters.location !== null;
+  const hasArea = Boolean(onAreaChange && area && area !== ALL_UGANDA);
   const label = filters.nearMe
     ? filters.userGeo?.label || "Near me"
-    : filters.location ?? "Uganda";
+    : filters.location ?? (hasArea ? `Near ${areaLabel(area)}` : "Uganda");
+
+  function pickArea(next: string) {
+    if (active) onChange({ ...filters, location: null, nearMe: false, userGeo: null });
+    onAreaChange?.(next);
+    setOpen(false);
+  }
 
   function pick(location: string | null) {
     onChange({ ...filters, location, nearMe: false, userGeo: null });
@@ -103,6 +115,34 @@ export default function LocationPill({ filters, onChange }: Props) {
               </button>
             </div>
             <div className="flex-1 space-y-1 overflow-y-auto p-2">
+              {onAreaChange ? (
+                <>
+                  <p className="px-3 pb-1 pt-1 text-xs text-muted">
+                    Where would you like to browse? Listings there come first, then nearby and the rest of Uganda.
+                    {signedIn ? " We'll remember this on your account." : " Sign in to keep it on every device."}
+                  </p>
+                  {BROWSE_AREAS.map((a) => {
+                    const on = !active && area === a.value;
+                    return (
+                      <button key={a.value} type="button" onClick={() => pickArea(a.value)} className={row(on)}>
+                        <span className="inline-flex items-center gap-2">
+                          <PiMapPinFill className="size-[18px] text-accent" aria-hidden />
+                          {a.label}
+                        </span>
+                        {on ? <Check className="size-4" aria-hidden /> : null}
+                      </button>
+                    );
+                  })}
+                  <button type="button" onClick={() => pickArea(ALL_UGANDA)} className={row(!active && !hasArea)}>
+                    <span className="inline-flex items-center gap-2">
+                      <PiMapPinFill className="size-[18px] text-accent" aria-hidden />
+                      All of Uganda
+                    </span>
+                    {!active && !hasArea ? <Check className="size-4" aria-hidden /> : null}
+                  </button>
+                  <p className="px-3 pb-1 pt-3 text-xs font-semibold text-muted">Only show one place</p>
+                </>
+              ) : null}
               <button type="button" onClick={() => void nearMe()} disabled={locating} className={row(filters.nearMe)}>
                 <span className="inline-flex items-center gap-2">
                   {locating ? (
@@ -115,13 +155,15 @@ export default function LocationPill({ filters, onChange }: Props) {
                 {filters.nearMe ? <Check className="size-4" aria-hidden /> : null}
               </button>
               {error ? <p className="px-3 text-[11px] font-medium text-rose-600">{error}</p> : null}
-              <button type="button" onClick={() => pick(null)} className={row(!active)}>
-                <span className="inline-flex items-center gap-2">
-                  <PiMapPinFill className="size-[18px] text-accent" aria-hidden />
-                  All of Uganda
-                </span>
-                {!active ? <Check className="size-4" aria-hidden /> : null}
-              </button>
+              {onAreaChange ? null : (
+                <button type="button" onClick={() => pick(null)} className={row(!active)}>
+                  <span className="inline-flex items-center gap-2">
+                    <PiMapPinFill className="size-[18px] text-accent" aria-hidden />
+                    All of Uganda
+                  </span>
+                  {!active ? <Check className="size-4" aria-hidden /> : null}
+                </button>
+              )}
               {places === null ? (
                 <p className="flex items-center gap-2 px-3 py-2 text-xs text-muted">
                   <Loader2 className="size-3.5 animate-spin" aria-hidden />

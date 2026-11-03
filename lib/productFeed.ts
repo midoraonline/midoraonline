@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 
 import type { ProductCardData } from "@/components/productcard";
 import { homeFeedProductToCard } from "@/lib/productCardMap";
@@ -37,8 +38,13 @@ export const loadHomeFeed = cache(async function loadHomeFeed(
     const catalog: CatalogQuery = { category };
     const params = new URLSearchParams({ limit: String(limit) });
     appendCatalogParams(params, catalog);
+    const store = await cookies();
+    const sessionId = store.get("midora_session_id")?.value;
+    const area = store.get("midora_area")?.value;
+    if (area && !category) params.set("area", area);
     const data = await serverApiFetch<HomeFeedResponse>(
       `/api/v1/feed/home?${params.toString()}`,
+      sessionId ? { headers: { "X-Midora-Session": sessionId } } : {},
     );
     const products = toCards(data.algorithm ?? []);
     if (products.length) {

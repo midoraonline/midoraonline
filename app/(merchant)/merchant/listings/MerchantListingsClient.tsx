@@ -11,7 +11,7 @@ import { type Product, type ProductStatus } from "@/lib/api/products";
 import ListingManageCard from "@/components/shop/ListingManageCard";
 import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
 import useSWR from "swr";
-import { getMyBoosts, myBoostsKey } from "@/lib/api/listingActions";
+import { getListingAttention, getMyBoosts, myBoostsKey } from "@/lib/api/listingActions";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ListingShopSummary } from "./types";
 import {
@@ -105,6 +105,7 @@ export default function MerchantListingsClient({
   );
   const boostsKey = myBoostsKey(liveIds);
   const { data: boosts } = useSWR(boostsKey, () => getMyBoosts(liveIds), { revalidateOnFocus: true });
+  const { data: attention } = useSWR("listing-attention", getListingAttention, { revalidateOnFocus: true });
   const searchParams = useSearchParams();
   const postedId = searchParams.get("posted");
   const [dismissedPosted, setDismissedPosted] = useState(false);
@@ -299,6 +300,7 @@ export default function MerchantListingsClient({
                 onDelete={() => setPendingDelete(p)}
                 onUpdated={applyProduct}
                 boost={boosts?.[p.id] ?? null}
+                attention={attention?.[p.id] ?? null}
               />
             </li>
           ))}

@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import { track } from "@/lib/analytics";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
+import SignInPrompt from "@/components/SignInPrompt";
 
 type Props = {
   shopId: string;
@@ -28,15 +31,15 @@ export default function ShopContactButtons({
 }: Props) {
   const router = useRouter();
   const session = useAppSession();
+  const [askSignIn, setAskSignIn] = useState(false);
 
   const recordWhatsAppClick = () => {
     track("conversion:whatsapp_click", { shopId, clickSource: "shop_page" });
   };
 
   const doCreateConversation = async () => {
-    track("listing:messaged", { shopId });
-    if (!session.isAuthenticated) {
-      router.push("/login");
+    if (session.hydrated && !session.isAuthenticated) {
+      setAskSignIn(true);
       return;
     }
     if (!ownerId) return;
@@ -46,9 +49,10 @@ export default function ShopContactButtons({
         shop_id: shopId,
       });
       if (!conv || "error" in conv) return;
+      track("listing:messaged", { shopId });
       router.push(`/chat?conversation=${conv.id}`);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) setAskSignIn(true);
     }
   };
 
@@ -102,6 +106,9 @@ export default function ShopContactButtons({
             </button>
           )}
         </TradeDisclaimer>
+      ) : null}
+      {askSignIn ? (
+        <SignInPrompt action="message this seller" onClose={() => setAskSignIn(false)} />
       ) : null}
     </div>
   );

@@ -156,6 +156,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
     category: p.category ?? null,
     description: p.description ?? null,
     placement: p.placement ?? "organic",
+    locationReason: p.location_reason ?? null,
     status: p.status ?? null,
     updated_at: p.updated_at ?? p.created_at ?? null,
     location_name: p.location_name ?? null,

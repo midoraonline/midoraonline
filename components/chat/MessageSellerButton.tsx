@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import { track } from "@/lib/analytics";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import SignInPrompt from "@/components/SignInPrompt";
 
 type Props = {
   sellerId: string;
@@ -20,10 +22,11 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
   const router = useRouter();
   const session = useAppSession();
   const [loading, setLoading] = useState(false);
+  const [askSignIn, setAskSignIn] = useState(false);
 
   const doCreateConversation = async () => {
-    if (!session.isAuthenticated) {
-      router.push("/login");
+    if (session.hydrated && !session.isAuthenticated) {
+      setAskSignIn(true);
       return;
     }
     if (!sellerId) {
@@ -47,7 +50,11 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
       }
 
       router.push(`/chat?conversation=${conv.id}`);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setAskSignIn(true);
+        return;
+      }
       toast.error("Couldn't start the conversation. Try again.");
     } finally {
       setLoading(false);
@@ -67,6 +74,9 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
           {loading ? "Starting…" : "Message seller"}
         </span>
       </button>
+      {askSignIn ? (
+        <SignInPrompt action="message this seller" onClose={() => setAskSignIn(false)} />
+      ) : null}
     </div>
   );
 }

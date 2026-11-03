@@ -9,8 +9,8 @@ import { Loader2, Mail } from "lucide-react";
 import { apiAuth } from "@/lib/api";
 import PasswordInput from "@/components/PasswordInput";
 import {
-  establishClientSession,
   establishSessionFromGoogleCode,
+  startClientSession,
 } from "@/lib/auth/establish-session";
 
 function LoginPageInner() {
@@ -62,8 +62,8 @@ function LoginPageInner() {
     setError(null);
     try {
       const tokens = await apiAuth.login({ email, password });
-      await establishClientSession(tokens);
-      router.push(safeNextPath(searchParams.get("next")) ?? "/");
+      await startClientSession(tokens);
+      router.replace(safeNextPath(searchParams.get("next")) ?? "/");
     } catch (err) {
       setError(
         err instanceof Error

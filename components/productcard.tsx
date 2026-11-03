@@ -73,6 +73,8 @@ export type ProductCardData = {
   description?: string | null;
   inShopContext?: boolean;
   placement?: FeedPlacement;
+  /** Why a card outside the buyer's area is still relevant, e.g. "Delivers to Kampala". */
+  locationReason?: string | null;
   status?: CardStatus | null;
   updated_at?: string | null;
   location_name?: string | null;
@@ -481,11 +483,13 @@ export default function ProductCard({
     listingKind === "product" ? optionLabel(CONDITION_OPTIONS, listingMeta.condition) : null;
   const serviceArea =
     listingKind === "service" ? listingMeta.service_area?.trim() || null : null;
-  const placeText = serviceArea
-    ? `Serves ${serviceArea}`
-    : conditionLabel
-      ? `${conditionLabel} · ${locationLabel}`
-      : locationLabel;
+  const placeText = product.locationReason
+    ? product.locationReason
+    : serviceArea
+      ? `Serves ${serviceArea}`
+      : conditionLabel
+        ? `${conditionLabel} · ${locationLabel}`
+        : locationLabel;
 
   const shopRow = product.shop.is_personal ? (
     <PersonalSellerLine shop={product.shop} />
