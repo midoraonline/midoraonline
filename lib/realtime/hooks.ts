@@ -298,8 +298,20 @@ export function usePresence<M extends PresenceMeta>(
   return snapshot;
 }
 
+/** One entry per person: signed-in users across several tabs count once, guests count per tab. */
+function presencePeople(snap: Record<string, PresenceMeta[]>): PresenceMeta[] {
+  const people = new Map<string, PresenceMeta>();
+  for (const [key, entries] of Object.entries(snap)) {
+    const meta = entries[0] ?? {};
+    const id = typeof meta.user_id === "string" && meta.user_id ? `u:${meta.user_id}` : `k:${key}`;
+    const prev = people.get(id);
+    if (!prev || (meta.available === true && prev.available !== true)) people.set(id, meta);
+  }
+  return [...people.values()];
+}
+
 /**
- * Count the number of unique presence keys currently on `channel`.
+ * Count the people currently on `channel`.
  * Convenience helper for "N users online" indicators.
  */
 export function usePresenceCount(
@@ -308,7 +320,7 @@ export function usePresenceCount(
   enabled = true,
 ): number {
   const snap = usePresence({ channel, state, enabled });
-  return Object.keys(snap).length;
+  return useMemo(() => presencePeople(snap).length, [snap]);
 }
 
 /**
@@ -330,12 +342,12 @@ export function usePresenceBreakdown(
   const snap = usePresence(
     { channel, state, enabled },
   ) as Record<string, Array<Record<string, unknown>>>;
+  const people = presencePeople(snap);
   let authenticated = 0;
   let guests = 0;
   let merchants = 0;
   let availableMerchants = 0;
-  for (const entries of Object.values(snap)) {
-    const meta = entries[0] ?? {};
+  for (const meta of people) {
     const role = String(meta.role ?? "guest");
     if (meta.user_id) authenticated += 1;
     else guests += 1;
@@ -343,7 +355,7 @@ export function usePresenceBreakdown(
     if (role === "merchant" && meta.available === true) availableMerchants += 1;
   }
   return {
-    total: Object.keys(snap).length,
+    total: people.length,
     authenticated,
     guests,
     merchants,

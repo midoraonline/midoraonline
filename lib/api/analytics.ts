@@ -28,6 +28,13 @@ export function ingestEvents(events: AnalyticsEventPayload[], opts: { keepalive?
 
 // ── Admin insight endpoints ────────────────────────────────────────────
 
+export type DemandRow = { kind: "request" | "zero_results"; what: string; where: string; count: number };
+export type DemandResponse = { window_days: number; rows: DemandRow[] };
+
+export function unmetDemand(window_days = 30) {
+  return apiFetch<DemandResponse>(`/api/v1/admin/analytics/demand?window_days=${window_days}`);
+}
+
 export type CategoryFillRateRow = {
   category: string;
   browses: number;

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import FallbackImage from "@/components/media/FallbackImage";
 import StatusBadge from "@/components/shop/StatusBadge";
 import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
-import { refreshAfterRankChange, repostListing } from "@/lib/api/listingActions";
+import { refreshAfterRankChange, repostListing, type ListingAttention } from "@/lib/api/listingActions";
 import BoostedTag from "@/components/BoostedTag";
 import { describeBoost, type BoostInfo } from "@/lib/boostInfo";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -51,6 +51,7 @@ export default function ListingManageCard({
   onDelete,
   onUpdated,
   boost,
+  attention,
 }: {
   product: Product;
   shopName?: string | null;
@@ -58,6 +59,7 @@ export default function ListingManageCard({
   onUpdated: (product: Product) => void;
   /** Active boost on this listing, if any. */
   boost?: BoostInfo | null;
+  attention?: ListingAttention | null;
 }) {
   const router = useRouter();
   const menuId = useId();
@@ -75,6 +77,12 @@ export default function ListingManageCard({
   const editHref = `/merchant/listings/${product.id}/edit`;
   const status = product.status;
   const published = product.is_published !== false && status !== "hidden" && status !== "draft";
+  const showAttention = Boolean(
+    attention &&
+      (attention.kind === "listing_expired"
+        ? status === "expired"
+        : status === "active" && String(product.stock_quantity ?? "") === (attention.stock ?? "")),
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -315,6 +323,11 @@ export default function ListingManageCard({
             <span className="truncate" title={describeBoost(boost)}>
               {describeBoost(boost)}
             </span>
+          </p>
+        ) : null}
+        {showAttention ? (
+          <p className="mt-1 rounded-md bg-[color:var(--warning)]/10 px-2 py-1 text-xs text-foreground">
+            {attention?.message}
           </p>
         ) : null}
         {product.review_notes ? (

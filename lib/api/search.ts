@@ -61,6 +61,8 @@ export type SearchProductsResponse = {
   limit: number;
   total_pages: number;
   query: string;
+  /** Place taken from the query ("plumber in Masaka"); results are limited to it. */
+  query_location?: string | null;
   mode: SearchMode;
 };
 

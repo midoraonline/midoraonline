@@ -56,7 +56,6 @@ export default function MerchantPresenceHeartbeat(): null {
       if (document.visibilityState === "visible") void ping(instanceId);
     };
 
-    beat();
     const interval = window.setInterval(beat, HEARTBEAT_MS);
     const onVisibility = () => {
       if (document.visibilityState === "visible") beat();

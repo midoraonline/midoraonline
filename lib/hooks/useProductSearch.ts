@@ -133,6 +133,8 @@ export function useProductSearch({
     loadingMore,
     error: error instanceof Error ? error.message : error ? "Search failed" : null,
     mode: (data?.mode ?? null) as SearchMode | null,
+    queryLocation: active ? (data?.query_location ?? null) : null,
+    searchedText: data?.query ?? null,
     total: data?.total ?? 0,
     page,
     totalPages,

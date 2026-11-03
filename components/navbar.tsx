@@ -259,6 +259,11 @@ export default function Navbar({
 
 
   const authLoading = session.hydrated && session.isAuthenticated && session.user === undefined;
+  const signedOut = session.hydrated && !session.isAuthenticated;
+
+  useEffect(() => {
+    if (signedOut) router.prefetch("/login");
+  }, [signedOut, router]);
 
   useEffect(() => {
     if (!open) return;
@@ -463,12 +468,11 @@ export default function Navbar({
                   e.preventDefault();
                   allowHomeAfterLogout.current = false;
                   const href = signInHref();
-                  const go = () => window.location.assign(href);
                   if (logoutSettled.current) {
-                    go();
+                    router.push(href);
                     return;
                   }
-                  void apiAuth.logout().finally(go);
+                  void apiAuth.logout().finally(() => window.location.assign(href));
                 }}
               >
                 Sign in

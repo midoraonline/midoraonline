@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Package } from "lucide-react";
+import { ArrowRight, ArrowUp, Package } from "lucide-react";
 import { PiBriefcaseFill, PiPackageFill, PiSquaresFourFill, PiStorefrontFill, PiWrenchFill } from "react-icons/pi";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -27,10 +27,12 @@ import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
 import { toCatalogQuery } from "@/lib/catalogQuery";
 import { useProductSearch } from "@/lib/hooks/useProductSearch";
 import GuestGetNoticedBanner from "@/components/home/GuestGetNoticedBanner";
+import DemandCapture, { NeedForm } from "@/components/home/DemandCapture";
 import { ProductCardSkeleton } from "@/components/skeletons/Skeleton";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
-import { HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
+import { getNewListingCount, HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
+import { useBrowseArea } from "@/lib/hooks/useBrowseArea";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { track } from "@/lib/analytics";
@@ -79,6 +81,8 @@ export default function HomeLanding({
   const session = useAppSession();
   const [query, setQuery] = useState(() => searchParams.get("q")?.trim() ?? "");
   const [loadingMore, setLoadingMore] = useState(false);
+  const [newCount, setNewCount] = useState(0);
+  const browse = useBrowseArea();
   const initialContinuation = continuationFrom(
     initialProducts.length,
     initialHasMore,
@@ -216,13 +220,14 @@ export default function HomeLanding({
 
   /* Boost / repost / end boost elsewhere: reload page 1 so the new ranking shows
      on return (localStorage marker survives the client router cache). */
-  const reloadFeed = useCallback(async () => {
+  const reloadFeed = useCallback(async (refresh = true) => {
     const requestId = ++feedRequestRef.current;
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE, page: 1, catalog: catalogRef.current });
+      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE, page: 1, catalog: catalogRef.current, refresh });
       if (requestId !== feedRequestRef.current) return;
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
+      setNewCount(0);
       if (cards.length === 0) return;
       prefetchedRef.current = null;
       seenIdsRef.current = new Set(cards.map((c) => c.id));
@@ -258,6 +263,19 @@ export default function HomeLanding({
       window.removeEventListener(FEED_STALE_EVENT, check);
     };
   }, [reloadFeed]);
+
+  const isBrowsingHome = !isSearching && !catalogQueryActive(catalog);
+  useEffect(() => {
+    if (!isBrowsingHome) return;
+    const poll = () => {
+      if (document.visibilityState !== "visible") return;
+      getNewListingCount()
+        .then((r) => setNewCount(r.count ?? 0))
+        .catch(() => {});
+    };
+    const id = window.setInterval(poll, 90_000);
+    return () => window.clearInterval(id);
+  }, [isBrowsingHome]);
 
   const prefetchedRef = useRef<{
     cursor: string;
@@ -460,7 +478,19 @@ export default function HomeLanding({
               pricingModel: null,
             }));
           }}
-          trailing={<LocationPill filters={filters} onChange={setFilters} />}
+          trailing={
+            <LocationPill
+              filters={filters}
+              onChange={setFilters}
+              area={browse.area}
+              signedIn={browse.signedIn}
+              onAreaChange={(next) => {
+                browse.setArea(next, true);
+                window.scrollTo({ top: 0 });
+                void reloadFeed(false);
+              }}
+            />
+          }
         />
         <CategoryBrowseSection
           selection={categoryFilter}
@@ -487,6 +517,21 @@ export default function HomeLanding({
         />
       </div>
 
+      {newCount > 0 && isBrowsingHome ? (
+        <div className="pointer-events-none sticky top-20 z-sticky flex justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              void reloadFeed(true);
+            }}
+            className="dm-focus pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg"
+          >
+            <ArrowUp className="size-4" aria-hidden />
+            {newCount === 1 ? "1 new listing" : `${newCount} new listings`}
+          </button>
+        </div>
+      ) : null}
       <div id="products-feed" className="space-y-4 sm:space-y-5">
         <section className="space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
@@ -495,7 +540,9 @@ export default function HomeLanding({
                 {isSearching
                   ? search.loading
                     ? `Searching “${query.trim()}”…`
-                    : `Results for “${query.trim()}”`
+                    : search.queryLocation
+                      ? `Results for “${query.trim()}” · ${search.queryLocation} only`
+                      : `Results for “${query.trim()}”`
                   : feedLoading
                     ? "Loading listings…"
                     : filters.nearMe
@@ -559,15 +606,29 @@ export default function HomeLanding({
               ))}
             </div>
           ) : feedEmpty && !feedError ? (
-            <EmptyState
-              message={
-                isSearching
-                  ? `No listings match “${query.trim()}”. Try another search.`
-                  : anyFiltersActive
-                    ? "No listings match your filters. Try a different category or clear filters."
-                    : "No listings yet — check back soon."
-              }
-            />
+            isSearching ? (
+              <div className="space-y-4 rounded-xl border border-dashed border-border p-5">
+                <p className="text-sm text-foreground">
+                  {search.queryLocation
+                    ? `No “${search.searchedText ?? query.trim()}” listings in ${search.queryLocation} yet.`
+                    : `No listings match “${query.trim()}” yet.`}
+                </p>
+                {search.queryLocation && search.searchedText ? (
+                  <button
+                    type="button"
+                    onClick={() => commitSearch(search.searchedText ?? "")}
+                    className="dm-btn dm-btn-ghost dm-btn-sm"
+                  >
+                    Search all of Uganda instead
+                  </button>
+                ) : null}
+                <NeedForm initialNeed={query.trim()} area={browse.area} />
+              </div>
+            ) : anyFiltersActive ? (
+              <EmptyState message="No listings match your filters. Try a different category or clear filters." />
+            ) : (
+              <DemandCapture area={browse.area} />
+            )
           ) : (
             <>
               <div className={browseProductGridClass}>

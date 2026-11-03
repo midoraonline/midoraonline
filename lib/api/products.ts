@@ -1,4 +1,5 @@
 import type { BoostInfo } from "@/lib/boostInfo";
+import { currentBrowseArea } from "@/lib/browseArea";
 import { feedBustParam } from "@/lib/feedFreshness";
 import { apiFetch } from "./base";
 import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
@@ -453,6 +454,8 @@ export type HomeFeedProduct = {
     last_active_at?: string | null;
   };
   placement?: FeedPlacement;
+  placement_reason?: string | null;
+  location_reason?: string | null;
   status?: CardStatus | null;
   first_posted_at?: string | null;
 };
@@ -467,6 +470,7 @@ export type HomeFeedResponse = {
   total: number;
   has_more?: boolean;
   next_cursor?: string | null;
+  session?: string | null;
 };
 
 export type SimilarProduct = {
@@ -519,11 +523,18 @@ export function getHomeFeed(opts: {
   category?: string | null;
   catalog?: CatalogQuery | null;
   token?: string;
+  /** Browsing-area preference (not a filter). */
+  area?: string | null;
+  /** Start a fresh Home session. */
+  refresh?: boolean;
 } = {}) {
   const params = new URLSearchParams();
   if (opts.limit) params.set("limit", String(Math.min(200, Math.max(1, opts.limit))));
   if (opts.page && !opts.cursor) params.set("page", String(opts.page));
   if (opts.cursor) params.set("cursor", opts.cursor);
+  const area = opts.area !== undefined ? opts.area : typeof window !== "undefined" ? currentBrowseArea() : null;
+  if (area) params.set("area", area);
+  if (opts.refresh) params.set("refresh", "true");
   appendCatalogParams(params, {
     ...opts.catalog,
     category: opts.catalog?.category ?? opts.category,
@@ -537,6 +548,10 @@ export function getHomeFeed(opts: {
 }
 
 export type PopularLocation = { name: string; count: number };
+
+export function getNewListingCount() {
+  return apiFetch<{ count: number }>("/api/v1/feed/home/new");
+}
 
 export function getPopularLocations(limit = 12) {
   return apiFetch<{ items: PopularLocation[] }>(`/api/v1/feed/locations?limit=${limit}`);

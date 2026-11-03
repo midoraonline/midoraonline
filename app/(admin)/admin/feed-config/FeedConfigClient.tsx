@@ -8,24 +8,42 @@ import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, ErrorState, PageHeader, PageSkele
 
 const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   {
-    title: "Score weights",
-    description: "Share of the 0–100 score from each signal. Engagement only counts from stage 5.",
+    title: "Score weights by stage",
+    description:
+      "Quality / freshness / fair-exposure weights for 1–49, 50–99 and 100+ qualified listings. Trust and engagement stay off in the MVP.",
     keys: [
-      "QUALITY_WEIGHT",
-      "FRESHNESS_WEIGHT",
+      "EARLY_QUALITY_WEIGHT",
+      "EARLY_FRESHNESS_WEIGHT",
+      "EARLY_EXPOSURE_WEIGHT",
+      "MID_QUALITY_WEIGHT",
+      "MID_FRESHNESS_WEIGHT",
+      "MID_EXPOSURE_WEIGHT",
+      "LATE_QUALITY_WEIGHT",
+      "LATE_FRESHNESS_WEIGHT",
+      "LATE_EXPOSURE_WEIGHT",
+      "MVP_MID_MIN",
+      "MVP_LATE_MIN",
       "TRUST_WEIGHT",
       "ENGAGEMENT_WEIGHT",
-      "EXPOSURE_WEIGHT",
-      "FRESHNESS_HALF_LIFE_HOURS",
       "FRAUD_MEDIUM_PENALTY",
       "FOLLOWED_SHOP_LIFT",
       "FOLLOWED_SHOP_BOOST",
     ],
   },
   {
+    title: "Freshness",
+    description: "Services and opportunities age more slowly. Meaningful edits refresh freshness at most once per cooldown.",
+    keys: ["SERVICE_FRESHNESS_STRETCH", "OPPORTUNITY_FRESHNESS_STRETCH", "FRESHNESS_RESET_COOLDOWN_HOURS"],
+  },
+  {
+    title: "Location",
+    description: "How much the buyer's browsing area counts: 50–99 listings, then per type from 100.",
+    keys: ["LOCATION_WEIGHT_MID", "LOCATION_WEIGHT_PRODUCT", "LOCATION_WEIGHT_SERVICE", "LOCATION_WEIGHT_OPPORTUNITY"],
+  },
+  {
     title: "Quality gates",
-    description: "Minimum listing quality for the feed, exploration and paid spots.",
-    keys: ["QUALITY_MIN", "EXPLORATION_MIN_QUALITY", "EXPLORATION_MAX_IMPRESSIONS", "PAID_MIN_QUALITY"],
+    description: "Minimum listing quality for the feed, the first block, exploration and paid spots.",
+    keys: ["QUALITY_MIN", "FIRST_BLOCK_QUALITY_FLOOR", "EXPLORATION_MIN_QUALITY", "EXPLORATION_MAX_IMPRESSIONS", "PAID_MIN_QUALITY"],
   },
   {
     title: "Growth stages",
@@ -50,6 +68,8 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
     keys: [
       "BLOCK_SIZE",
       "SELLER_CAP_PER_BLOCK",
+      "MAX_SAME_TYPE_RUN",
+      "MAX_SAME_SUBCATEGORY_RUN",
       "PAID_SLOT_POSITION",
       "SPONSORED_SLOT_POSITION",
       "TYPE_DEPTH_BLOCKS",
@@ -60,12 +80,13 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   },
   {
     title: "Exposure",
-    description: "Rotate sellers that were shown very often in the last window. The feed never hides listings per viewer.",
-    keys: [
-      "EXPOSURE_TARGET_IMPRESSIONS",
-      "EXPOSURE_MIN_MULTIPLIER",
-      "EXPOSURE_WINDOW_HOURS",
-    ],
+    description: "Listings seen less in this window get a fair-exposure lift. Seller-own views never count.",
+    keys: ["EXPOSURE_WINDOW_HOURS"],
+  },
+  {
+    title: "Sessions",
+    description: "How long a buyer's Home order stays stable, and how long recently shown cards wait before repeating.",
+    keys: ["FEED_SESSION_HOURS", "RECENTLY_SHOWN_HOURS"],
   },
   {
     title: "Badges and refresh",
@@ -73,6 +94,7 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
     keys: [
       "NEW_BADGE_HOURS",
       "CLOSING_SOON_HOURS",
+      "TRENDING_MIN_STAGE",
       "TRENDING_WINDOW_HOURS",
       "TRENDING_MIN_UNIQUE_VIEWERS",
       "TRENDING_MIN_ACTIONS",

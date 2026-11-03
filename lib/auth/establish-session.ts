@@ -79,6 +79,26 @@ export async function establishClientSession(tokens: TokenPair): Promise<void> {
   await rememberUser(user, tokens.access_token);
 }
 
+/** Store the cookies and let the caller navigate now; the profile loads in the background. */
+export async function startClientSession(tokens: TokenPair): Promise<void> {
+  const cookieRes = await axios.post("/api/auth/set-cookies", tokens, {
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
+    validateStatus: () => true,
+  });
+  if (cookieRes.status < 200 || cookieRes.status >= 300) {
+    throw new Error(SESSION_ERROR);
+  }
+  claimSessionWrite();
+  useSessionStore.getState().setSession({
+    hydrated: true,
+    isAuthenticated: true,
+    user: undefined,
+    profileError: null,
+  });
+  notifyAuthChanged({ accessToken: tokens.access_token });
+}
+
 const googleCodeSessions = new Map<string, Promise<void>>();
 
 /** Exchange a frontend OAuth code once, even if the callback effect re-runs. */

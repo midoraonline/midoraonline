@@ -19,6 +19,7 @@ import { apiAnalytics } from "@/lib/api";
 import { platformActionMessage } from "@/lib/platformMessages";
 import type {
   CategoryFillRateResponse,
+  DemandResponse,
   DiscountEngagementResponse,
   RatingCoverageResponse,
   ReportRateResponse,
@@ -114,6 +115,7 @@ export default function InsightsClient() {
     () => apiAnalytics.discountEngagement(window_),
     [window_],
   );
+  const demand = useLoader<DemandResponse>(() => apiAnalytics.unmetDemand(window_), [window_]);
 
   return (
     <div>
@@ -169,6 +171,42 @@ export default function InsightsClient() {
           </div>
         ) : (
           <Empty message="No search events yet — waiting for shoppers to browse categories." />
+        )}
+      </Section>
+
+      {/* Unmet demand */}
+      <Section
+        title="Unmet demand"
+        description="What buyers asked for or searched without results, by area. Use it to recruit sellers. Buyer identities are never shown."
+        error={demand.error}
+        loading={demand.loading}
+        onRefresh={demand.refresh}
+      >
+        {demand.data && demand.data.rows.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted">
+                  <th className="pb-2">What</th>
+                  <th className="pb-2">Where</th>
+                  <th className="pb-2">Source</th>
+                  <th className="pb-2 text-right">Times</th>
+                </tr>
+              </thead>
+              <tbody>
+                {demand.data.rows.map((r) => (
+                  <tr key={`${r.kind}:${r.what}:${r.where}`} className="border-b border-border/30">
+                    <td className="py-2 pr-3 font-medium text-foreground">{r.what}</td>
+                    <td className="py-2 pr-3 capitalize">{r.where}</td>
+                    <td className="py-2 pr-3 text-muted">{r.kind === "request" ? "Asked" : "Search, no results"}</td>
+                    <td className="py-2 text-right tabular-nums">{fmt(r.count)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty message="No unmet demand recorded in this window." />
         )}
       </Section>
 

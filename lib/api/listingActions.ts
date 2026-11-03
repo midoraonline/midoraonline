@@ -23,6 +23,7 @@ export type RepostStatus = {
 export type PromoteOptions = {
   listing_id: string;
   plan: { key?: string; name?: string };
+  boosts_open?: boolean;
   packages: BoostPackage[];
   allowance: { per_month: number; used: number; remaining: number };
   active_boost: (BoostInfo & { id: string; ends_at: string }) | null;
@@ -42,6 +43,12 @@ export type FeedPosition = {
   paid_placement?: boolean;
   computed_at?: string;
 };
+
+export type ListingAttention = { kind: "stock_nudge" | "listing_expired"; message: string; at: string; stock?: string };
+
+export function getListingAttention() {
+  return apiFetch<{ items: Record<string, ListingAttention> }>("/api/v1/listings/attention").then((r) => r.items ?? {});
+}
 
 export const promoteKey = (id: string) => `listing-promote:${id}`;
 export const feedPositionKey = (id: string) => `feed-position:${id}`;

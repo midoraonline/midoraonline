@@ -42,6 +42,7 @@ export type NotificationPreferences = {
 
 export type UserPreferences = {
   theme: ThemePreference;
+  default_area?: string | null;
   notifications: NotificationPreferences;
 };
 
@@ -161,6 +162,7 @@ export type UpdateProfileRequest = {
   bio?: string | null;
   preferences?: {
     theme?: ThemePreference;
+    default_area?: string | null;
     notifications?: Partial<NotificationPreferences>;
   };
 };
