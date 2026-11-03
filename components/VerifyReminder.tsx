@@ -100,6 +100,9 @@ export default function VerifyReminder() {
                   {sending ? <Loader2 className="size-3 animate-spin" aria-hidden /> : null}
                   {cooldown ? "Sent" : "Resend"}
                 </button>
+                <Link href={settingsLink} className="text-xs font-medium text-accent underline-offset-2 hover:underline">
+                  Use a code instead
+                </Link>
               </li>
             ) : (
               <li key={s.key}>
