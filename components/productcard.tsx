@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, CalendarDays, Clock, Flame, Gem, ImageIcon, MapPin, Play, Rocket, Star, TrendingUp } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, Flame, Gem, ImageIcon, MapPin, Play, Repeat2, Rocket, Star, TrendingUp } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
 import { isVideoUrl, type CardStatus, type FeedPlacement } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
@@ -76,6 +76,8 @@ export type ProductCardData = {
   /** Why a card outside the buyer's area is still relevant, e.g. "Delivers to Kampala". */
   locationReason?: string | null;
   status?: CardStatus | null;
+  /** Reposted by the seller in the last 24 hours. */
+  reposted?: boolean;
   updated_at?: string | null;
   location_name?: string | null;
   /** product | service | opportunity (job maps to opportunity) */
@@ -432,11 +434,22 @@ export default function ProductCard({
       />
     );
 
-  const imageBadges = product.status ? (
-    <div className="pointer-events-none absolute left-2 top-2 z-[6] max-w-[75%]">
-      <StatusBadge status={product.status} />
-    </div>
-  ) : null;
+  const imageBadges =
+    product.status || product.reposted ? (
+      <div className="pointer-events-none absolute left-2 top-2 z-[6] flex max-w-[75%] items-center gap-1">
+        {product.status ? <StatusBadge status={product.status} /> : null}
+        {product.reposted ? (
+          <span
+            role="img"
+            aria-label="Reposted in the last 24 hours"
+            title="Reposted today"
+            className="inline-flex size-6 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm"
+          >
+            <Repeat2 className="size-3.5" aria-hidden />
+          </span>
+        ) : null}
+      </div>
+    ) : null;
 
   const likeFloating = (
     <div className="absolute top-2 right-2 z-[7]">

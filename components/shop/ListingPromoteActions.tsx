@@ -158,8 +158,18 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
         ) : (
           <div className="space-y-3">
             <p className="text-2xl font-semibold text-foreground">
-              {data.position ? `#${data.position} in the home feed` : `Not in the top ${data.scanned ?? 0} ads`}
+              {data.position
+                ? `#${data.position} in the home feed`
+                : data.in_ranking === false
+                  ? "Not in the home feed yet"
+                  : `Not in the top ${data.scanned ?? 0} ads`}
             </p>
+            {data.in_ranking === false ? (
+              <p className="text-sm text-foreground">
+                Ads with more photos, a clear description, a price and a location are shown first. Add what&apos;s missing
+                and it will join the feed.
+              </p>
+            ) : null}
             {data.boosted ? (
               <p className="text-sm text-foreground">
                 {data.paid_placement
@@ -175,7 +185,8 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
               </p>
             ) : null}
             <p className="text-xs text-muted">
-              Everyone sees the same order. Shops a shopper follows move up a little in their feed.
+              This is the position for a shopper opening Midora for the first time. Each shopper sees cards they
+              haven&apos;t seen yet first, and listings in their chosen area come earlier.
               {data.boost ? ` Boosted (${describeBoost(data.boost)}).` : ""} Repost to freshen your ad.
             </p>
           </div>

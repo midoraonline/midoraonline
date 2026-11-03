@@ -158,6 +158,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
     placement: p.placement ?? "organic",
     locationReason: p.location_reason ?? null,
     status: p.status ?? null,
+    reposted: p.reposted === true,
     updated_at: p.updated_at ?? p.created_at ?? null,
     location_name: p.location_name ?? null,
     item_type: p.item_type ?? null,
@@ -215,6 +216,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     negotiable: item.is_negotiable !== false,
     listing_meta: item.listing_meta ?? null,
     status: item.card_status ?? null,
+    reposted: item.reposted === true,
   };
 }
 
@@ -268,6 +270,7 @@ export function productToCard(
     negotiable: product.is_negotiable !== false,
     listing_meta: product.listing_meta ?? null,
     status: product.card_status ?? null,
+    reposted: product.reposted === true,
   };
 }
 
@@ -317,6 +320,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
     status: p.card_status ?? null,
+    reposted: p.reposted === true,
   };
 }
 
