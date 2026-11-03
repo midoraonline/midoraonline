@@ -1,7 +1,7 @@
 "use client";
 
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Eye, Flag, Heart, MessageCircle, MessagesSquare, MousePointerClick, Phone, Share2, Star, Users } from "lucide-react";
+import { Eye, Flag, Heart, MessageCircle, MessagesSquare, MousePointerClick, Share2, Star, Users } from "lucide-react";
 
 import type { ActivityDay, ListingActivity } from "@/lib/api/shops";
 import { CARD, LIST, StatStrip, formatCount as fmt } from "@/components/dashboard/ui";
@@ -47,7 +47,6 @@ export function ActivityBreakdown({ stats }: { stats: ListingActivity }) {
     { label: "Listing views", hint: "Times someone opened the ad", value: stats.views, icon: MousePointerClick },
     { label: "Unique viewers", hint: "Different people who opened it", value: stats.unique_viewers, icon: Users },
     { label: "WhatsApp clicks", value: stats.whatsapp_clicks, icon: MessageCircle },
-    { label: "Calls", value: stats.call_clicks, icon: Phone },
     { label: "Messages", value: stats.messages, icon: MessagesSquare },
     { label: "Shares", value: stats.shares, icon: Share2 },
     { label: "Likes", value: stats.likes, icon: Heart },

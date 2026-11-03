@@ -59,6 +59,12 @@ export type AnalyticsEvents = {
     category?: string;
   };
 
+  'listing:shared': SystemMetadata & {
+    productId: string;
+    shopId?: string;
+    method: 'native' | 'copy';
+  };
+
   'listing:unfavorited': SystemMetadata & {
     productId: string;
     shopId?: string;
@@ -151,6 +157,7 @@ export const EVENT_TARGET_MAP: {
     getTargetId: (p) => p.productId ?? p.shopId,
   },
   'listing:favorited': { targetType: 'product', getTargetId: (p) => p.productId },
+  'listing:shared': { targetType: 'product', getTargetId: (p) => p.productId },
   'listing:unfavorited': { targetType: 'product', getTargetId: (p) => p.productId },
   'shop:viewed': { targetType: 'shop', getTargetId: (p) => p.shopId },
   'shop:followed': { targetType: 'shop', getTargetId: (p) => p.shopId },

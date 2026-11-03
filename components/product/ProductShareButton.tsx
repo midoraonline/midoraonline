@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { track } from "@/lib/analytics";
 
 const btnBase =
   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition-all duration-200 ease-out select-none cursor-pointer active:scale-95 border-foreground/[0.08] bg-foreground/[0.03] text-foreground/70 hover:border-accent/40 hover:bg-accent/5 hover:text-accent";
@@ -9,10 +10,14 @@ const btnBase =
 export default function ProductShareButton({
   title,
   url,
+  productId,
+  shopId,
   className = "",
 }: {
   title: string;
   url: string;
+  productId: string;
+  shopId?: string;
   className?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied">("idle");
@@ -21,13 +26,15 @@ export default function ProductShareButton({
     try {
       if (navigator.share) {
         await navigator.share({ title, url });
+        track("listing:shared", { productId, shopId, method: "native" });
         return;
       }
-    } catch {
-      /* fall through to copy */
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
     }
     try {
       await navigator.clipboard.writeText(url);
+      track("listing:shared", { productId, shopId, method: "copy" });
       setState("copied");
       setTimeout(() => setState("idle"), 2200);
     } catch {

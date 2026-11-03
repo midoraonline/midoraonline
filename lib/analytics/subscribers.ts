@@ -13,6 +13,7 @@ const SEND_NOW: ReadonlySet<EventKey> = new Set<EventKey>([
   'listing:messaged',
   'listing:favorited',
   'listing:unfavorited',
+  'listing:shared',
   'shop:followed',
   'shop:unfollowed',
   'trust:rating_prompted',
