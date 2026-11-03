@@ -32,7 +32,7 @@ import { ProductCardSkeleton } from "@/components/skeletons/Skeleton";
 import { useAppSession } from "@/lib/state";
 import { apiProducts } from "@/lib/api";
 import { getNewListingCount, HOME_FEED_PAGE_SIZE } from "@/lib/api/products";
-import { useBrowseArea } from "@/lib/browseArea";
+import { useBrowseArea } from "@/lib/hooks/useBrowseArea";
 import { homeFeedProductToCard } from "@/lib/homeFeedCards";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { track } from "@/lib/analytics";

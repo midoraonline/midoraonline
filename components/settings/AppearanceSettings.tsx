@@ -5,7 +5,8 @@ import { SettingsPanel, SettingsRow } from "@/components/settings/SettingsSectio
 import ThemeSelector from "@/components/ThemeSelector";
 import type { ThemePreference } from "@/lib/api/auth";
 import { saveAccountPreferences } from "@/lib/accountPreferences";
-import { ALL_UGANDA, BROWSE_AREAS, useBrowseArea } from "@/lib/browseArea";
+import { ALL_UGANDA, BROWSE_AREAS } from "@/lib/browseArea";
+import { useBrowseArea } from "@/lib/hooks/useBrowseArea";
 
 export default function AppearanceSettings() {
   const browse = useBrowseArea();
