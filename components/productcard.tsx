@@ -413,11 +413,11 @@ export default function ProductCard({
   }
   const hasMedia = coverUrls.length > 0;
   const textFirst = listingKind !== "product" && (!hasMedia || coverFailed);
-  const coverLabel =
-    product.category?.trim() || product.shop.category?.trim() || headline;
+  const coverCategory = product.category?.trim() || product.shop.category?.trim() || null;
+  const titleHeading = <h3 className={textFirst ? "sr-only" : titleClass}>{headline}</h3>;
   const coverFrame = (sizes: string) =>
     textFirst ? (
-      <BrandedCover kind={typeKind} label={coverLabel} />
+      <BrandedCover kind={typeKind} title={headline} category={coverCategory} />
     ) : coverFailed || coverUrls.length === 0 ? (
       <CoverPlaceholder />
     ) : (
@@ -540,9 +540,13 @@ export default function ProductCard({
 
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3 sm:p-3.5">
           <div className="space-y-1">
-            <Link href={productHref} className="dm-focus block outline-none">
-              <h3 className={titleClass}>{headline}</h3>
-            </Link>
+            {textFirst ? (
+              titleHeading
+            ) : (
+              <Link href={productHref} className="dm-focus block outline-none">
+                {titleHeading}
+              </Link>
+            )}
             {showShop ? shopRow : null}
             {rating}
             <div className="flex flex-wrap items-baseline gap-1.5">
@@ -589,9 +593,13 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
-        <Link href={productHref} className="dm-focus block outline-none">
-          <h3 className={titleClass}>{headline}</h3>
-        </Link>
+        {textFirst ? (
+          titleHeading
+        ) : (
+          <Link href={productHref} className="dm-focus block outline-none">
+            {titleHeading}
+          </Link>
+        )}
         {showShop ? shopRow : null}
         {rating}
 

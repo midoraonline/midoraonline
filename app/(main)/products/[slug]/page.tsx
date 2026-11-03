@@ -395,7 +395,7 @@ export default async function ProductDetails({
                 initialLikeCount={product.like_count ?? 0}
                 initialLiked={product.viewer_liked ?? undefined}
               />
-              <ProductShareButton title={product.title} url={listingUrl} />
+              <ProductShareButton title={product.title} url={listingUrl} productId={product.id} shopId={shop?.id} />
               {shop?.owner_id ? (
                 <div className="min-w-0 flex-1">
                   <MessageSellerButton
