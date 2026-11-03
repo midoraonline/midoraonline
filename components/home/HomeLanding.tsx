@@ -220,11 +220,11 @@ export default function HomeLanding({
 
   /* Boost / repost / end boost elsewhere: reload page 1 so the new ranking shows
      on return (localStorage marker survives the client router cache). */
-  const reloadFeed = useCallback(async (refresh = true) => {
+  const reloadFeed = useCallback(async (refresh = true, neutral = false) => {
     const requestId = ++feedRequestRef.current;
     try {
       const site = publicSiteOrigin();
-      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE, page: 1, catalog: catalogRef.current, refresh });
+      const data = await apiProducts.getHomeFeed({ limit: FEED_PAGE_SIZE, page: 1, catalog: catalogRef.current, refresh, neutral });
       if (requestId !== feedRequestRef.current) return;
       const cards = (data.algorithm ?? []).map((p) => homeFeedProductToCard(p, site));
       setNewCount(0);
@@ -377,8 +377,14 @@ export default function HomeLanding({
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const focusPagesRef = useRef(0);
   const focusDoneRef = useRef<string | null>(null);
+  const focusResetRef = useRef<string | null>(null);
   useEffect(() => {
     if (!focusId || isSearching || focusDoneRef.current === focusId) return;
+    if (focusResetRef.current !== focusId) {
+      focusResetRef.current = focusId;
+      void reloadFeed(true, true);
+      return;
+    }
     if (products.some((p) => p.id === focusId)) {
       focusDoneRef.current = focusId;
       const raf = requestAnimationFrame(() => {
@@ -399,7 +405,7 @@ export default function HomeLanding({
     toast.message("Couldn't find your ad in this feed", {
       description: "It may be filtered out here or further down.",
     });
-  }, [focusId, isSearching, products, hasMore, loadingMore]);
+  }, [focusId, isSearching, products, hasMore, loadingMore, reloadFeed]);
 
   const filledEmptyRef = useRef(false);
   useEffect(() => {

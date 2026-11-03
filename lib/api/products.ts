@@ -29,6 +29,7 @@ export type Product = {
   id: string;
   shop_id: string;
   card_status?: CardStatus | null;
+  reposted?: boolean;
   item_type?: ItemType | null;
   title: string;
   description?: string | null;
@@ -457,6 +458,7 @@ export type HomeFeedProduct = {
   placement_reason?: string | null;
   location_reason?: string | null;
   status?: CardStatus | null;
+  reposted?: boolean;
   first_posted_at?: string | null;
 };
 
@@ -475,6 +477,7 @@ export type HomeFeedResponse = {
 
 export type SimilarProduct = {
   card_status?: CardStatus | null;
+  reposted?: boolean;
   id: string;
   shop_id: string;
   title: string;
@@ -527,6 +530,8 @@ export function getHomeFeed(opts: {
   area?: string | null;
   /** Start a fresh Home session. */
   refresh?: boolean;
+  /** Fresh session with no chosen area or history, the order Find in feed reports. */
+  neutral?: boolean;
 } = {}) {
   const params = new URLSearchParams();
   if (opts.limit) params.set("limit", String(Math.min(200, Math.max(1, opts.limit))));
@@ -535,6 +540,7 @@ export function getHomeFeed(opts: {
   const area = opts.area !== undefined ? opts.area : typeof window !== "undefined" ? currentBrowseArea() : null;
   if (area) params.set("area", area);
   if (opts.refresh) params.set("refresh", "true");
+  if (opts.neutral) params.set("neutral", "true");
   appendCatalogParams(params, {
     ...opts.catalog,
     category: opts.catalog?.category ?? opts.category,

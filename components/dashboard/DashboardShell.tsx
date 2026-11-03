@@ -46,7 +46,6 @@ const SCREEN_NAMES: Record<string, string> = {
   "/merchant/settings":      "Settings",
   // customer
   "/customer":               "Overview",
-  "/customer/profile":       "My Profile",
   "/customer/saved":         "Saved Shops",
   "/customer/wishlist":      "Wishlist",
   "/customer/settings":      "Settings",

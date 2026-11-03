@@ -28,6 +28,7 @@ export type SearchProductShop = {
 export type SearchProductItem = {
   id: string;
   card_status?: CardStatus | null;
+  reposted?: boolean;
   shop_id: string;
   title: string;
   price_ugx: number;

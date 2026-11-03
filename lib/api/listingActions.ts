@@ -34,6 +34,7 @@ export type FeedPosition = {
   listing_id: string;
   live: boolean;
   position: number | null;
+  in_ranking?: boolean;
   scanned?: number;
   category?: string | null;
   category_position: number | null;
