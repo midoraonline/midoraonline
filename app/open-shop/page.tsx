@@ -11,7 +11,7 @@ import CreateShopConcierge from "@/components/createShopConcierge";
 import OpenShopWizard from "@/components/openShopWizard";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
 import StepFrame from "@/components/post/StepFrame";
-import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT } from "@/components/dashboard/ui";
+import { BTN_GHOST, BTN_PRIMARY, BTN_PRIMARY_LG, BTN_SECONDARY, BTN_SECONDARY_LG, BTN_TEXT } from "@/components/dashboard/ui";
 import { useAppSession } from "@/lib/state";
 import type { apiShops } from "@/lib/api";
 import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
@@ -145,7 +145,8 @@ function OpenShopFlow() {
                 verifiedContacts={verifiedContacts}
                 enabled={mode === "quick"}
               />
-              <button type="button" onClick={() => setMode("manual")} className={`${BTN_TEXT} mt-6`}>
+              <button type="button" onClick={() => setMode("manual")} className={`${BTN_SECONDARY_LG} mt-6 w-full`}>
+                <PenLine className="size-4" aria-hidden />
                 Fill in the form myself instead
               </button>
             </div>
@@ -172,6 +173,7 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
       title: "Use AI",
       text: "Describe your business in a sentence or two. We draft the shop and you check it before it goes live.",
       badge: "Fastest",
+      cta: "Start with AI",
     },
     {
       mode: "manual" as const,
@@ -179,6 +181,7 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
       title: "Set up manually",
       text: "Fill in your business details yourself, one short step at a time.",
       badge: null,
+      cta: "Fill in the form",
     },
   ];
   return (
@@ -189,26 +192,37 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
       wide
       plain
     >
-      <div className="grid gap-3 sm:grid-cols-2">
-        {options.map((o) => (
-          <button
-            key={o.mode}
-            type="button"
-            onClick={() => onPick(o.mode)}
-            className="dm-focus relative flex min-h-40 flex-col items-start rounded-xl border border-border bg-surface p-5 text-left shadow-xs transition-colors hover:border-accent/60"
-          >
-            <span className="grid size-10 place-items-center rounded-lg bg-accent/10 text-accent" aria-hidden>
-              <o.icon className="size-5" />
-            </span>
-            {o.badge ? (
-              <span className="absolute right-4 top-4 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                {o.badge}
+      <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 sm:gap-4">
+        {options.map((o) => {
+          const primary = o.mode === "quick";
+          return (
+            <div
+              key={o.mode}
+              className={`relative flex flex-col rounded-xl border-2 p-5 shadow-xs sm:p-6 ${
+                primary ? "border-accent bg-accent/[0.04]" : "border-border bg-surface"
+              }`}
+            >
+              <span className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent" aria-hidden>
+                <o.icon className="size-6" />
               </span>
-            ) : null}
-            <span className="mt-4 text-sm font-semibold text-foreground">{o.title}</span>
-            <span className="mt-1 text-sm text-muted">{o.text}</span>
-          </button>
-        ))}
+              {o.badge ? (
+                <span className="absolute right-4 top-4 rounded-md bg-accent px-2 py-0.5 text-xs font-semibold text-white">
+                  {o.badge}
+                </span>
+              ) : null}
+              <h2 className="mt-4 text-base font-semibold text-foreground">{o.title}</h2>
+              <p className="mt-1 flex-1 text-sm text-muted">{o.text}</p>
+              <button
+                type="button"
+                onClick={() => onPick(o.mode)}
+                className={`mt-5 w-full ${primary ? BTN_PRIMARY_LG : BTN_SECONDARY_LG}`}
+              >
+                <o.icon className="size-4" aria-hidden />
+                {o.cta}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </StepFrame>
   );

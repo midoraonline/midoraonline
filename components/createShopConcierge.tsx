@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { StepProgress, INPUT, TEXTAREA, FormError } from "@/components/post/StepFrame";
-import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT } from "@/components/dashboard/ui";
+import { BTN_PRIMARY, BTN_PRIMARY_LG, BTN_SECONDARY, BTN_SECONDARY_LG } from "@/components/dashboard/ui";
 import { apiChat, apiShops } from "@/lib/api";
 import type { SuggestedShop } from "@/lib/api/chat";
 import CategoryPicker from "@/components/CategoryPicker";
@@ -106,10 +106,10 @@ function AISuggestion({
       </p>
       <p className="mt-1 text-sm text-foreground">{value}</p>
       <div className="mt-3 flex gap-2">
-        <button type="button" onClick={onAccept} className={BTN_SECONDARY}>
+        <button type="button" onClick={onAccept} className={BTN_PRIMARY}>
           Use this
         </button>
-        <button type="button" onClick={onEdit} className={BTN_GHOST}>
+        <button type="button" onClick={onEdit} className={BTN_SECONDARY}>
           Write my own
         </button>
       </div>
@@ -611,11 +611,11 @@ export default function CreateShopConcierge({
 
           {error ? <FormError>{error}</FormError> : null}
 
-          <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-border bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:p-0">
+          <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-2 border-t border-border bg-background px-4 py-3 sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:p-0 sm:[&>*:first-child]:order-last [&>*]:w-full sm:[&>*]:w-auto sm:[&>*]:min-w-44">
             <button
               type="submit"
               disabled={creating}
-              className={BTN_PRIMARY}
+              className={BTN_PRIMARY_LG}
             >
               {creating ? "Creating your business…" : "Create business"}
             </button>
@@ -626,7 +626,7 @@ export default function CreateShopConcierge({
                 setConfirmForm(null);
                 setLocationCoords(null);
               }}
-              className={BTN_TEXT}
+              className={BTN_SECONDARY_LG}
             >
               Back to chat
             </button>
@@ -705,7 +705,12 @@ export default function CreateShopConcierge({
           onChange={(e) => setInput(e.target.value)}
           disabled={loading}
         />
-        <button type="submit" disabled={loading || !input.trim()} aria-label="Send" className={`${BTN_PRIMARY} w-10 shrink-0 px-0`}>
+        <button
+          type="submit"
+          disabled={loading || !input.trim()}
+          aria-label="Send"
+          className="dm-focus grid size-10 shrink-0 place-items-center rounded-lg border-2 border-accent bg-accent text-white transition-colors hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
           {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
         </button>
       </form>

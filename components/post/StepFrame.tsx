@@ -172,7 +172,7 @@ export function FormError({ children }: { children: ReactNode }) {
 
 export function ActionBar({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 -mb-4 mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-border bg-surface/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-6 sm:-mb-6 sm:rounded-b-xl sm:px-6 [&>*:first-child]:order-last">
+    <div className="sticky bottom-0 z-20 -mx-4 -mb-4 mt-6 flex flex-col gap-2 border-t border-border bg-surface/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:rounded-b-xl sm:px-6 sm:[&>*:first-child]:order-last [&>*]:w-full sm:[&>*]:w-auto sm:[&>*]:min-w-40">
       {children}
     </div>
   );
