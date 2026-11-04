@@ -35,17 +35,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
                     sizes="36px"
                   />
                 </div>
-              ) : (
-                <div className="relative size-9 shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/[0.06]">
-                  <Image
-                    src="/logo.png"
-                    alt="Midora Online"
-                    fill
-                    className="object-contain p-1"
-                    sizes="36px"
-                  />
-                </div>
-              )}
+              ) : null}
               <p className="text-sm font-semibold tracking-tight">{shop.name}</p>
             </div>
             {location && (

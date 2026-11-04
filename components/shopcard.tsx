@@ -1,6 +1,5 @@
 import Link from "next/link";
 import CategoryDisplay from "@/components/CategoryDisplay";
-import Logo from "@/components/Logo";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import StarRating from "@/components/StarRating";
@@ -38,23 +37,16 @@ export default function ShopCard({ shop, className = "" }: { shop: ShopCardData;
       <div className="flex flex-1 flex-col p-2.5 sm:p-3.5">
         {/* Top row: logo + identity */}
         <div className="flex min-w-0 items-start gap-2">
-          <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-surface ring-1 ring-border sm:size-12">
-            {shop.logoUrl ? (
+          {shop.logoUrl ? (
+            <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-surface ring-1 ring-border sm:size-12">
               <img
                 src={shop.logoUrl}
                 alt={`${shop.name} logo`}
                 className="size-full object-cover"
                 loading="lazy"
               />
-            ) : (
-              <Logo
-                alt="Midora Online"
-                fill
-                className="object-contain p-1.5"
-                sizes="48px"
-              />
-            )}
-          </div>
+            </div>
+          ) : null}
 
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-col items-start gap-1">

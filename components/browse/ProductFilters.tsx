@@ -20,9 +20,7 @@ import {
 import type { IconType } from "react-icons";
 import {
   PiCheckCircleFill,
-  PiDiamondFill,
   PiFireFill,
-  PiRocketLaunchFill,
   PiSealCheckFill,
   PiSlidersHorizontalBold,
   PiTrendUpBold,
@@ -62,7 +60,7 @@ export type SortOption =
   | "best_rated"
   | "trust_score";
 
-export type FeedBadge = "new_today" | "trending" | "boosted" | "sponsored";
+export type FeedBadge = "new_today" | "trending";
 
 export type FilterState = {
   sort: SortOption;
@@ -104,7 +102,7 @@ export const DEFAULT_FILTERS: FilterState = {
   badge: null,
 };
 
-const SORT_LABELS: Record<SortOption, string> = {
+export const SORT_LABELS: Record<SortOption, string> = {
   relevance: "Relevance",
   price_asc: "Price ↑",
   price_desc: "Price ↓",
@@ -117,8 +115,6 @@ const SORT_LABELS: Record<SortOption, string> = {
 const BADGE_CHIPS = [
   { badge: "new_today", label: "New today", icon: PiFireFill, tone: "bg-orange-500/15 text-orange-500" },
   { badge: "trending", label: "Trending", icon: PiTrendUpBold, tone: "bg-emerald-500/15 text-emerald-500" },
-  { badge: "boosted", label: "Boosted", icon: PiRocketLaunchFill, tone: "bg-indigo-500/15 text-indigo-500" },
-  { badge: "sponsored", label: "Sponsored", icon: PiDiamondFill, tone: "bg-rose-500/15 text-rose-500" },
 ] as const satisfies readonly { badge: FeedBadge; label: string; icon: IconType; tone: string }[];
 
 export async function withNearMe(filters: FilterState): Promise<FilterState> {
@@ -138,7 +134,7 @@ export async function withNearMe(filters: FilterState): Promise<FilterState> {
   };
 }
 
-const PRICE_PRESETS = [
+export const PRICE_PRESETS = [
   { label: "Deals", min: null as number | null, max: 100_000 as number | null },
   { label: "Under 50k", min: null as number | null, max: 50_000 as number | null },
   { label: "50–200k", min: 50_000 as number | null, max: 200_000 as number | null },
@@ -146,18 +142,18 @@ const PRICE_PRESETS = [
   { label: "500k+", min: 500_000 as number | null, max: null as number | null },
 ] as const;
 
-function parsePriceInput(v: string): number | null {
+export function parsePriceInput(v: string): number | null {
   const n = parseInt(v.replace(/[^0-9]/g, ""), 10);
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-function formatPriceInput(n: number | null): string {
+export function formatPriceInput(n: number | null): string {
   return n === null ? "" : n.toLocaleString("en-UG");
 }
 
-type LocationEntry = { name: string; count: number };
+export type LocationEntry = { name: string; count: number };
 
-function collectLocationEntries(products: ProductCardData[]): LocationEntry[] {
+export function collectLocationEntries(products: ProductCardData[]): LocationEntry[] {
   const counts = new Map<string, number>();
   for (const p of products) {
     const raw = p.location_name?.trim() || p.shop.location?.trim();
@@ -169,7 +165,7 @@ function collectLocationEntries(products: ProductCardData[]): LocationEntry[] {
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
-function activeFilterCount(f: FilterState): number {
+export function activeFilterCount(f: FilterState): number {
   let n = 0;
   if (f.sort !== "relevance") n++;
   if (f.minPrice !== null || f.maxPrice !== null) n++;
@@ -542,6 +538,10 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   const locations = useMemo(() => collectLocationEntries(products), [products]);
   const count = activeFilterCount(filters);
   const hasActiveFilters = count > 0;
+  const hasVerified = products.some((p) => p.shop.verified);
+  const hasAvailable = products.some((p) => p.shop.available_now);
+  const hasRatings = products.some((p) => (p.rating ?? 0) > 0);
+  const showShopSection = filters.availableNow || filters.verifiedOnly || hasAvailable || hasVerified;
 
   const parentCtx = (contextParentLabel ?? "").trim().toLowerCase();
   const showOpportunityFilters =
@@ -732,6 +732,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
               icon={PiSealCheckFill}
               tone="bg-sky-500/15 text-sky-500"
               onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
+              className={filters.verifiedOnly || hasVerified ? "" : "hidden"}
             >
               Verified
             </Chip>
@@ -741,6 +742,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
               icon={PiCheckCircleFill}
               tone="bg-emerald-500/15 text-emerald-500"
               onClick={() => update({ availableNow: !filters.availableNow })}
+              className={filters.availableNow || hasAvailable ? "" : "hidden"}
             >
               Available
             </Chip>
@@ -995,6 +997,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                 ) : null}
               </FilterSection>
 
+              {filters.minRating !== null || hasRatings ? (
               <FilterSection title="Minimum rating">
                 <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((star) => {
@@ -1024,6 +1027,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                   })}
                 </div>
               </FilterSection>
+              ) : null}
 
               {showKindToggle ? (
                 <FilterSection title="Listing type">
@@ -1154,8 +1158,10 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                 </FilterSection>
               ) : null}
 
+              {showShopSection ? (
               <FilterSection title="Shop">
                 <div className="flex flex-wrap gap-1.5">
+                  {filters.availableNow || hasAvailable ? (
                   <button
                     type="button"
                     onClick={() => update({ availableNow: !filters.availableNow })}
@@ -1167,6 +1173,8 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                   >
                     Available now
                   </button>
+                  ) : null}
+                  {filters.verifiedOnly || hasVerified ? (
                   <button
                     type="button"
                     onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
@@ -1178,8 +1186,10 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                   >
                     Verified only
                   </button>
+                  ) : null}
                 </div>
               </FilterSection>
+              ) : null}
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
