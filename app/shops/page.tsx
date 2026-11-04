@@ -5,7 +5,6 @@ import ShopsBrowsePage from "@/components/shop/ShopsBrowsePage";
 import { listPublicShopsPage } from "@/lib/api/server";
 import { loadShopProductCategoryMap } from "@/lib/productFeed";
 import { SHOPS_PAGE_SIZE } from "@/lib/api/shops";
-import Image from "next/image";
 import { Mail, MapPin } from "lucide-react";
 
 export const revalidate = 60;
@@ -52,23 +51,8 @@ export default async function ShopListing() {
       </div>
       <Navbar />
 
-      {/* Hero banner */}
-      <div className="relative h-44 sm:h-56 lg:h-64 overflow-hidden">
-        <Image src="/shops_banner.png" alt="" fill className="object-cover object-center" priority />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
-        <div className="relative z-10 flex h-full flex-col justify-center dm-container">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Discover</p>
-          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
-            Browse Shops
-          </h1>
-          <p className="mt-2 max-w-md text-sm text-white/75">
-            Find verified local sellers across Uganda — from crafts to fashion, food to tech.
-          </p>
-        </div>
-      </div>
-
       <main className="flex-1">
-        <div className="dm-container py-5 sm:py-8 lg:py-10">
+        <div className="dm-container pt-4 pb-2 sm:pt-5 sm:pb-3 lg:pt-6 lg:pb-4">
           <ShopsBrowsePage
             initialShops={shops}
             initialHasMore={hasMore}
