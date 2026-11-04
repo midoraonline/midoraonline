@@ -228,7 +228,7 @@ export default function CreateShopConcierge({
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
   useEffect(() => {
@@ -300,8 +300,16 @@ export default function CreateShopConcierge({
         setPendingSuggestions(suggested);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "";
+      setError(
+        /timed out|timeout/i.test(msg)
+          ? "The assistant took too long to reply. Send your message again."
+          : /503|busy|rate/i.test(msg)
+            ? "The assistant is busy right now. Try again in a moment."
+            : msg || "Something went wrong.",
+      );
       setMessages((prev) => prev.filter((m) => m.id !== pendingId));
+      setInput(text);
     } finally {
       setLoading(false);
     }
@@ -637,83 +645,110 @@ export default function CreateShopConcierge({
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <StepProgress step={1} total={2} />
-        <p className="text-base font-semibold text-foreground">Tell us about your business</p>
-        <p className="mt-1 text-sm text-muted">
-          What you offer (products, services or opportunities), who buys, where you work and your price range in UGX.
-          English, Swahili or Luganda is fine. Your verified email and phone are reused.
-        </p>
+    <div className="flex h-[calc(100dvh-12rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xs sm:h-[min(72dvh,680px)]">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-white" aria-hidden>
+          <Sparkles className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">Midora shop assistant</p>
+          <p className="truncate text-xs text-muted">
+            {loading ? "Typing…" : sessionId ? "Online · drafts your business in a few messages" : "Connecting…"}
+          </p>
+        </div>
       </div>
 
-      {messages.length === 0 ? (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Or start from an example</p>
-          <div className="flex flex-wrap gap-2">
+      <div className="flex-1 space-y-3 overflow-y-auto bg-surface-subtle/50 px-3 py-4 sm:px-4" aria-live="polite">
+        <AssistantBubble>
+          Hi! Tell me about your business: what you offer, who buys, where you work and your price range in UGX.
+          English, Swahili or Luganda is fine. Your verified email and phone are reused.
+        </AssistantBubble>
+
+        {messages.length === 0 ? (
+          <div className="flex flex-wrap gap-2 pl-10">
             {STARTER_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 disabled={loading || !sessionId}
                 onClick={() => void sendMessage(prompt)}
-                className="dm-focus rounded-full border border-border bg-surface px-3 py-1.5 text-left text-sm text-foreground transition-colors hover:border-accent/50 hover:bg-accent/5 disabled:opacity-50"
+                className="dm-focus rounded-full border border-accent/40 bg-surface px-3 py-1.5 text-left text-xs text-foreground transition-colors hover:border-accent hover:bg-accent/5 disabled:opacity-50 sm:text-sm"
               >
                 {prompt}
               </button>
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="max-h-[55dvh] space-y-3 overflow-y-auto rounded-xl border border-border bg-surface-subtle/60 p-3 sm:p-4" aria-live="polite">
-          {messages.map((m) => (
-            <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-              <div
-                className={
-                  "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm " +
-                  (m.role === "user"
-                    ? "rounded-br-md bg-accent text-white"
-                    : "rounded-bl-md border border-border bg-surface text-foreground shadow-xs")
-                }
-              >
-                {m.content === "Thinking…" ? (
-                  <span className="inline-flex items-center gap-2 text-muted">
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    Thinking…
-                  </span>
-                ) : (
-                  m.content
-                )}
+        ) : null}
+
+        {messages.map((m) =>
+          m.role === "user" ? (
+            <div key={m.id} className="flex justify-end">
+              <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-accent px-3.5 py-2.5 text-sm text-white">
+                {m.content}
               </div>
             </div>
-          ))}
-          <div ref={chatEndRef} />
+          ) : (
+            <AssistantBubble key={m.id}>
+              {m.content === "Thinking…" ? (
+                <span className="inline-flex items-center gap-1 py-1" aria-label="Assistant is typing">
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted [animation-delay:-0.3s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted [animation-delay:-0.15s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted" />
+                </span>
+              ) : (
+                m.content
+              )}
+            </AssistantBubble>
+          ),
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {error ? (
+        <div className="shrink-0 border-t border-border px-4 py-2">
+          <FormError>{error}</FormError>
         </div>
-      )}
+      ) : null}
 
-      {error ? <FormError>{error}</FormError> : null}
-
-      <form onSubmit={handleSend} className="flex gap-2">
+      <form
+        onSubmit={handleSend}
+        className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]"
+      >
         <label htmlFor="concierge-input" className="sr-only">
           Describe your business
         </label>
         <input
           id="concierge-input"
-          className={`${INPUT} min-w-0 flex-1`}
-          placeholder="e.g. I sell second-hand phones in Ntinda"
+          className="h-11 min-w-0 flex-1 rounded-full border border-border-input bg-surface-subtle px-4 text-sm text-foreground outline-none placeholder:text-muted/80 focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/20"
+          placeholder="Message the assistant…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
+          disabled={loading || !sessionId}
+          enterKeyHint="send"
+          autoComplete="off"
         />
         <button
           type="submit"
-          disabled={loading || !input.trim()}
+          disabled={loading || !sessionId || !input.trim()}
           aria-label="Send"
-          className="dm-focus grid size-10 shrink-0 place-items-center rounded-lg border-2 border-accent bg-accent text-white transition-colors hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="dm-focus grid size-11 shrink-0 place-items-center rounded-full border-2 border-accent bg-accent text-white transition-colors hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
         </button>
       </form>
+    </div>
+  );
+}
+
+function AssistantBubble({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-end gap-2">
+      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent/10 text-accent" aria-hidden>
+        <Sparkles className="size-3.5" />
+      </span>
+      <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-bl-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground shadow-xs">
+        {children}
+      </div>
     </div>
   );
 }

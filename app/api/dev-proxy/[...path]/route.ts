@@ -21,6 +21,9 @@ import { forbidCrossOrigin } from "@/lib/http/sameOrigin";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
+// AI chat replies can take ~40s; the platform default would cut them off.
+export const maxDuration = 60;
+
 function rewriteSetCookie(value: string, isHttps: boolean): string {
   let cookie = value.replace(/;\s*domain=[^;,]*/gi, "");
   if (!isHttps) cookie = cookie.replace(/;\s*secure(?=;|,|$)/gi, "");
