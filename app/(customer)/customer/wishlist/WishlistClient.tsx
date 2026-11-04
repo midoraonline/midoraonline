@@ -38,7 +38,7 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
         title="Wishlist"
         description={`${fmt(total)} saved ${total === 1 ? "item" : "items"}.`}
         action={
-          <Link href="/products" className={BTN_SECONDARY}>
+          <Link href="/" className={BTN_SECONDARY}>
             Browse listings
           </Link>
         }
@@ -49,7 +49,7 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
         <EmptyState
           message="Nothing saved yet. Tap the heart on any listing to save it here."
           action={
-            <Link href="/products" className={BTN_SECONDARY}>
+            <Link href="/" className={BTN_SECONDARY}>
               Browse listings
             </Link>
           }

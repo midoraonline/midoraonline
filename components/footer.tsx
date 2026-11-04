@@ -19,9 +19,8 @@ const LINK_GROUPS: LinkGroup[] = [
     heading: "Explore",
     links: [
       { label: "Shops", href: "/shops" },
-      { label: "Categories", href: "/products" },
-      { label: "All deals", href: "/products?q=deals" },
-      { label: "Near me", href: "/products?sort=near_me" },
+      { label: "Browse listings", href: "/" },
+      { label: "All deals", href: "/?q=deals" },
     ],
   },
   {

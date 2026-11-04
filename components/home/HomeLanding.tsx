@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUp, Package } from "lucide-react";
+import { ArrowUp, Package } from "lucide-react";
 import { PiBriefcaseFill, PiPackageFill, PiSquaresFourFill, PiStorefrontFill, PiWrenchFill } from "react-icons/pi";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -495,9 +495,10 @@ export default function HomeLanding({
   return (
     <div className="relative w-full">
       <GuestGetNoticedBanner />
-      <div className="mb-3 space-y-2 sm:mb-4">
+      <div className="mb-1.5 space-y-2 sm:mb-2">
         <ListingTypeTabs
           selected={filters.listingKind}
+          allActive={filters.listingKind === null && !categoryFilterActive}
           onSelect={(listingKind) => {
             setCategoryFilter(EMPTY_CATEGORY_FILTER);
             setFilters((current) => ({
@@ -522,8 +523,8 @@ export default function HomeLanding({
             }));
           }}
           showHeader={false}
-          browseAllHref="/products"
           showListingShortcuts={false}
+          showAllChip={false}
         />
         <div className={isSearching ? "lg:hidden" : undefined}>
           <ProductFilters
@@ -562,8 +563,8 @@ export default function HomeLanding({
           className="sticky top-24 hidden max-h-[calc(100vh-7rem)] overflow-y-auto lg:block"
         />
       ) : null}
-      <div id="products-feed" className="min-w-0 space-y-4 sm:space-y-5">
-        <section className="space-y-3">
+      <div id="products-feed" className="min-w-0 space-y-2">
+        <section className="space-y-2">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
@@ -608,13 +609,6 @@ export default function HomeLanding({
                   {displayProducts.length} result{displayProducts.length !== 1 ? "s" : ""} · Clear
                 </button>
               ) : null}
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-accent transition-colors hover:text-accent-hover sm:text-xs"
-              >
-                See all
-                <ArrowRight className="size-3" aria-hidden />
-              </Link>
             </div>
           </div>
 
@@ -716,9 +710,11 @@ export default function HomeLanding({
 
 function ListingTypeTabs({
   selected,
+  allActive,
   onSelect,
 }: {
   selected: ListingKind | null;
+  allActive: boolean;
   onSelect: (kind: ListingKind | null) => void;
 }) {
   const tabs = [
@@ -731,7 +727,7 @@ function ListingTypeTabs({
   return (
     <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none" role="group" aria-label="Browse listing types">
       {tabs.map(({ label, kind, icon: Icon }) => {
-        const active = selected === kind;
+        const active = kind === null ? allActive : selected === kind;
         return (
           <button
             key={label}

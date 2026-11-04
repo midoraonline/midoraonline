@@ -63,7 +63,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
         {/* Buttons */}
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/products"
+            href="/"
             className="px-6 py-3 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs rounded-full transition-all shadow-lg hover:shadow-orange-600/10 active:scale-95 cursor-pointer"
           >
             Browse listings

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Search, X } from "lucide-react";
+import { PiPackageFill, PiSquaresFourFill, PiWrenchFill } from "react-icons/pi";
 
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
+import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import ShopListRealtime from "@/components/shop/ShopListRealtime";
+import { DEFAULT_SHOP_FILTERS, type ShopFilterState } from "@/components/shop/ShopFilters";
 import {
   browseShopGridClass,
   categoryFilterDisplayLabel,
@@ -12,7 +14,47 @@ import {
   isCategoryFilterActive,
   type CategoryFilterSelection,
 } from "@/lib/browseCategories";
-import type { Shop } from "@/lib/api/shops";
+import type { Shop, ShopType } from "@/lib/api/shops";
+
+const TYPE_TABS = [
+  { label: "All", type: null, icon: PiSquaresFourFill },
+  { label: "Products", type: "product" as const, icon: PiPackageFill },
+  { label: "Services", type: "service" as const, icon: PiWrenchFill },
+];
+
+function ShopTypeTabs({
+  selected,
+  allActive,
+  onSelect,
+}: {
+  selected: ShopType | null;
+  allActive: boolean;
+  onSelect: (type: ShopType | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none" role="group" aria-label="Shop types">
+      {TYPE_TABS.map(({ label, type, icon: Icon }) => {
+        const active = type === null ? allActive : selected === type;
+        return (
+          <button
+            key={label}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onSelect(type)}
+            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-bold transition-all active:scale-95 sm:text-sm ${
+              active
+                ? "bg-accent text-white shadow-md shadow-accent/30"
+                : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
+            }`}
+          >
+            <Icon className={`size-[18px] ${active ? "" : "text-accent"}`} aria-hidden />
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ShopsBrowsePage({
   initialShops,
@@ -25,8 +67,10 @@ export default function ShopsBrowsePage({
   initialTotal?: number | null;
   shopProductCategories: Record<string, string[]>;
 }) {
+  const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterSelection>(EMPTY_CATEGORY_FILTER);
+  const [filters, setFilters] = useState<ShopFilterState>(DEFAULT_SHOP_FILTERS);
 
   const categoryFilterActive = isCategoryFilterActive(categoryFilter);
   const categoryFilterLabel = categoryFilterDisplayLabel(categoryFilter);
@@ -39,8 +83,7 @@ export default function ShopsBrowsePage({
 
   return (
     <div className="w-full">
-      {/* Page header */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-4 sm:mb-5">
         <div className="flex flex-wrap items-baseline gap-3">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Browse Shops</h1>
           {totalShops > 0 && (
@@ -52,39 +95,39 @@ export default function ShopsBrowsePage({
         </p>
       </div>
 
-      {/* Search bar */}
-      <div className="mb-4">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search shops by name…"
-            className="dm-input dm-focus w-full rounded-xl border-border bg-surface py-2.5 pl-10 pr-10 text-sm placeholder:text-muted/60"
-          />
-          {q.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Category filter bar */}
-      <div className="mb-3 sm:mb-4">
+      <div className="mb-1.5 space-y-2 sm:mb-2">
+        <ProductSearchBar
+          value={draft}
+          onChange={(value) => {
+            setDraft(value);
+            if (!value.trim()) setQuery("");
+          }}
+          onSubmit={setQuery}
+          placeholder="Search shops by name, category or place…"
+          ariaLabel="Search shops"
+          showSuggestions={false}
+        />
+        <ShopTypeTabs
+          selected={filters.type}
+          allActive={filters.type === null && !categoryFilterActive}
+          onSelect={(type) => {
+            setCategoryFilter(EMPTY_CATEGORY_FILTER);
+            setFilters((current) => ({ ...current, type }));
+          }}
+        />
         <CategoryBrowseSection
           selection={categoryFilter}
-          onSelectionChange={setCategoryFilter}
+          onSelectionChange={(selection) => {
+            setCategoryFilter(selection);
+            setFilters((current) => ({ ...current, type: null }));
+          }}
           showHeader={false}
+          showListingShortcuts={false}
+          showAllChip={false}
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {(q.length > 0 || categoryFilterActive) && (
           <p className="text-sm text-muted">
             {q.length > 0 ? (
@@ -99,7 +142,10 @@ export default function ShopsBrowsePage({
                 {" · "}
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
+                  onClick={() => {
+                    setDraft("");
+                    setQuery("");
+                  }}
                   className="font-semibold text-foreground underline-offset-2 hover:underline"
                 >
                   clear search
@@ -130,6 +176,8 @@ export default function ShopsBrowsePage({
           categoryFilter={categoryFilter}
           searchQuery={query}
           gridClassName={browseShopGridClass}
+          filters={filters}
+          onFiltersChange={setFilters}
         />
       </div>
     </div>

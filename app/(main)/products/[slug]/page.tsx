@@ -218,8 +218,8 @@ export default async function ProductDetails({
       />
 
       <nav className="flex items-center gap-1 text-[11px] sm:text-xs" aria-label="Breadcrumb">
-        <Link href="/products" className="font-medium text-muted transition-colors hover:text-accent">
-          Products
+        <Link href="/" className="font-medium text-muted transition-colors hover:text-accent">
+          Home
         </Link>
         <ChevronRight className="size-3 shrink-0 text-muted/40" aria-hidden />
         {product.category ? (

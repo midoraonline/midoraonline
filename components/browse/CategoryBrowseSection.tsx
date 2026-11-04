@@ -29,20 +29,21 @@ type Props = {
   selection: CategoryFilterSelection;
   onSelectionChange: (next: CategoryFilterSelection) => void;
   showHeader?: boolean;
-  browseAllHref?: string;
   /** Home only: shop creation sits with Services and Opportunities. */
   showCreateShop?: boolean;
   /** Hide type shortcuts when the page provides a dedicated type tab bar. */
   showListingShortcuts?: boolean;
+  /** Hide the leading "All" chip when another control already resets the filters. */
+  showAllChip?: boolean;
 };
 
 export default function CategoryBrowseSection({
   selection,
   onSelectionChange,
   showHeader = true,
-  browseAllHref,
   showCreateShop = false,
   showListingShortcuts = true,
+  showAllChip = true,
 }: Props) {
   const { tree, counts } = useCategoryItems();
   const session = useAppSession();
@@ -127,6 +128,7 @@ export default function CategoryBrowseSection({
 
       <div className="relative">
         <div className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory">
+          {showAllChip ? (
           <CategoryChip
             label="All"
             icon={ALL_CATEGORIES_ICON}
@@ -134,6 +136,7 @@ export default function CategoryBrowseSection({
             active={isParentActive(null)}
             onClick={() => onSelectionChange(EMPTY_CATEGORY_FILTER)}
           />
+          ) : null}
 
           {otherGroups.map(({ parent }) => (
             <CategoryChip

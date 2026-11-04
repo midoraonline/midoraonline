@@ -61,10 +61,9 @@ export default function BottomNav() {
           isActive: (p) => p.startsWith("/chat"),
         }
       : {
-          label: "Browse",
-          href: "/products",
-          icon: "explore",
-          isActive: (p) => p.startsWith("/products"),
+          label: "Messages",
+          href: `/login?next=${encodeURIComponent("/chat")}`,
+          icon: "chat",
         };
 
     let accountTab: Tab;
