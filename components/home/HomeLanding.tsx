@@ -466,6 +466,28 @@ export default function HomeLanding({
     filters.badge !== null;
 
   const displayProducts = isSearching ? search.items : products;
+  const locationAndShops = (
+    <>
+      <LocationPill
+        filters={filters}
+        onChange={setFilters}
+        area={browse.area}
+        signedIn={browse.signedIn}
+        onAreaChange={(next) => {
+          browse.setArea(next, true);
+          window.scrollTo({ top: 0 });
+          void reloadFeed(false);
+        }}
+      />
+      <Link
+        href="/shops"
+        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[13px] font-semibold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95"
+      >
+        <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
+        Shops
+      </Link>
+    </>
+  );
   const feedEmpty = isSearching
     ? !search.loading && displayProducts.length === 0
     : !feedLoading && displayProducts.length === 0;
@@ -486,19 +508,6 @@ export default function HomeLanding({
               pricingModel: null,
             }));
           }}
-          trailing={
-            <LocationPill
-              filters={filters}
-              onChange={setFilters}
-              area={browse.area}
-              signedIn={browse.signedIn}
-              onAreaChange={(next) => {
-                browse.setArea(next, true);
-                window.scrollTo({ top: 0 });
-                void reloadFeed(false);
-              }}
-            />
-          }
         />
         <CategoryBrowseSection
           selection={categoryFilter}
@@ -523,8 +532,10 @@ export default function HomeLanding({
             onChange={setFilters}
             contextParentLabel={categoryFilter.parentLabel}
             showLocation={false}
+            extras={locationAndShops}
           />
         </div>
+        {isSearching ? <div className="hidden flex-wrap items-center gap-2 lg:flex">{locationAndShops}</div> : null}
       </div>
 
       {newCount > 0 && isBrowsingHome ? (
@@ -706,11 +717,9 @@ export default function HomeLanding({
 function ListingTypeTabs({
   selected,
   onSelect,
-  trailing,
 }: {
   selected: ListingKind | null;
   onSelect: (kind: ListingKind | null) => void;
-  trailing?: React.ReactNode;
 }) {
   const tabs = [
     { label: "All", kind: null, icon: PiSquaresFourFill },
@@ -740,16 +749,6 @@ function ListingTypeTabs({
           </button>
         );
       })}
-      <div className="ml-auto flex shrink-0 items-center gap-2">
-        {trailing}
-        <Link
-          href="/shops"
-          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-[13px] font-bold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95 sm:text-sm"
-        >
-          <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
-          Shops
-        </Link>
-      </div>
     </div>
   );
 }

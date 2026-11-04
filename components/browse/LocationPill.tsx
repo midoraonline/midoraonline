@@ -79,7 +79,7 @@ export default function LocationPill({ filters, onChange, area, onAreaChange, si
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className={`inline-flex h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-xl px-3 text-[13px] font-bold shadow-sm transition-all active:scale-95 sm:text-sm ${
+        className={`inline-flex h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold shadow-sm transition-all active:scale-95 sm:text-sm ${
           active
             ? "bg-accent/10 text-accent ring-1 ring-accent/40"
             : "bg-surface text-foreground ring-1 ring-foreground/15 hover:ring-accent/40"

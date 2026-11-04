@@ -519,9 +519,11 @@ type Props = {
   contextParentLabel?: string | null;
   /** Hide the inline location control when the page shows its own location picker. */
   showLocation?: boolean;
+  /** Extra controls rendered beside Price (e.g. area pill, Shops link). */
+  extras?: ReactNode;
 };
 
-export default function ProductFilters({ products, filters, onChange, contextParentLabel, showLocation = true }: Props) {
+export default function ProductFilters({ products, filters, onChange, contextParentLabel, showLocation = true, extras }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLocating, setDrawerLocating] = useState(false);
   const [drawerNearMeError, setDrawerNearMeError] = useState<string | null>(null);
@@ -717,6 +719,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
               onSelectNearMe={activateNearMe}
             />
           )}
+          {extras}
         </div>
 
         <button
