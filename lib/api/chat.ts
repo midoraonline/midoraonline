@@ -1,5 +1,8 @@
 import { apiFetch } from "./base";
 
+// AI replies take longer than normal API calls; the server caps them at 40s.
+const AI_TIMEOUT_MS = 55_000;
+
 export type ChatSession = {
   id: string;
   shop_id?: string | null;
@@ -61,7 +64,7 @@ export type SuggestedShop = {
 export function sendMessage(sessionId: string, body: { message: string }, token?: string) {
   return apiFetch<SendMessageResponse>(
     `/api/v1/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
-    { method: "POST", token, body: JSON.stringify(body) }
+    { method: "POST", token, body: JSON.stringify(body), timeoutMs: AI_TIMEOUT_MS }
   );
 }
 
