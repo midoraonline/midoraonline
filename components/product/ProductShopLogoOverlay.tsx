@@ -16,23 +16,16 @@ export default function ProductShopLogoOverlay({
   shopHref?: string;
   className?: string;
 }) {
+  if (!logoUrl) return null;
   const inner = (
-    <>
-      {logoUrl ? (
-        <Image
-          src={logoUrl}
-          alt={`${shopName} logo`}
-          width={44}
-          height={44}
-          className="size-11 object-cover"
-          unoptimized={logoUnopt(logoUrl)}
-        />
-      ) : (
-        <span className="grid size-11 place-items-center text-[11px] font-bold text-foreground/45">
-          {shopName.slice(0, 2).toUpperCase()}
-        </span>
-      )}
-    </>
+    <Image
+      src={logoUrl}
+      alt={`${shopName} logo`}
+      width={44}
+      height={44}
+      className="size-11 object-cover"
+      unoptimized={logoUnopt(logoUrl)}
+    />
   );
 
   const shell =

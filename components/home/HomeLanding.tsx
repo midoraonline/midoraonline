@@ -14,10 +14,12 @@ import ProductFilters, {
   DEFAULT_FILTERS,
   type FilterState,
 } from "@/components/browse/ProductFilters";
+import SmartFilterPanel from "@/components/browse/SmartFilterPanel";
 import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import type { ProductCardData } from "@/components/productcard";
 import {
   browseProductGridClass,
+  searchResultsGridClass,
   categoryFilterDisplayLabel,
   EMPTY_CATEGORY_FILTER,
   isCategoryFilterActive,
@@ -514,13 +516,15 @@ export default function HomeLanding({
           browseAllHref="/products"
           showListingShortcuts={false}
         />
-        <ProductFilters
-          products={products}
-          filters={filters}
-          onChange={setFilters}
-          contextParentLabel={categoryFilter.parentLabel}
-          showLocation={false}
-        />
+        <div className={isSearching ? "lg:hidden" : undefined}>
+          <ProductFilters
+            products={isSearching ? search.items : products}
+            filters={filters}
+            onChange={setFilters}
+            contextParentLabel={categoryFilter.parentLabel}
+            showLocation={false}
+          />
+        </div>
       </div>
 
       {newCount > 0 && isBrowsingHome ? (
@@ -538,7 +542,16 @@ export default function HomeLanding({
           </button>
         </div>
       ) : null}
-      <div id="products-feed" className="space-y-4 sm:space-y-5">
+      <div className={isSearching ? "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-6" : undefined}>
+      {isSearching ? (
+        <SmartFilterPanel
+          products={search.items}
+          filters={filters}
+          onChange={setFilters}
+          className="sticky top-24 hidden max-h-[calc(100vh-7rem)] overflow-y-auto lg:block"
+        />
+      ) : null}
+      <div id="products-feed" className="min-w-0 space-y-4 sm:space-y-5">
         <section className="space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <div className="min-w-0 flex-1">
@@ -637,7 +650,7 @@ export default function HomeLanding({
             )
           ) : (
             <>
-              <div className={browseProductGridClass}>
+              <div className={isSearching ? searchResultsGridClass : browseProductGridClass}>
                 {displayProducts.map((p, idx) => (
                   <div
                     key={p.id}
@@ -683,6 +696,7 @@ export default function HomeLanding({
             </>
           )}
         </section>
+      </div>
       </div>
 
     </div>

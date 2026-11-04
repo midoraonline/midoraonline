@@ -270,22 +270,17 @@ function StatusBadge({ status }: { status: CardStatus }) {
 
 function ShopLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
   const [failed, setFailed] = useState(false);
-  const initial = name.trim().charAt(0).toUpperCase() || "M";
+  if (!logoUrl || failed) return null;
   return (
-    <span className="pointer-events-none absolute bottom-2 left-2 z-[6] grid size-10 place-items-center overflow-hidden rounded-full bg-white text-sm font-bold text-accent shadow-md ring-2 ring-white sm:size-11">
-      {logoUrl && !failed ? (
-        <FallbackImage
-          urls={[logoUrl]}
-          alt={`${name} logo`}
-          fill
-          sizes="44px"
-          className="object-cover"
-          onExhausted={() => setFailed(true)}
-          fallback={<span aria-hidden>{initial}</span>}
-        />
-      ) : (
-        <span aria-hidden>{initial}</span>
-      )}
+    <span className="pointer-events-none absolute bottom-2 left-2 z-[6] grid size-10 place-items-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white sm:size-11">
+      <FallbackImage
+        urls={[logoUrl]}
+        alt={`${name} logo`}
+        fill
+        sizes="44px"
+        className="object-cover"
+        onExhausted={() => setFailed(true)}
+      />
     </span>
   );
 }

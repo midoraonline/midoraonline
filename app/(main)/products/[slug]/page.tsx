@@ -413,21 +413,17 @@ export default async function ProductDetails({
           {shop ? (
             shop.is_personal ? (
               <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
-                <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
-                  {shop.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                {shop.logo_url ? (
+                  <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={shop.logo_url}
                       alt=""
                       className="size-full object-cover"
                       loading="lazy"
                     />
-                  ) : (
-                    <div className="flex size-full items-center justify-center text-xs font-bold text-muted">
-                      {(shop.seller_name || shop.name).charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ) : null}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">
                     {shop.seller_name || shop.name}
@@ -461,21 +457,17 @@ export default async function ProductDetails({
               href={`/shops/${shop.slug}`}
               className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/30 hover:bg-accent/[0.03]"
             >
-              <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
-                {shop.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+              {shop.logo_url ? (
+                <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-surface-subtle ring-1 ring-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={shop.logo_url}
                     alt=""
                     className="size-full object-cover"
                     loading="lazy"
                   />
-                ) : (
-                  <div className="flex size-full items-center justify-center text-xs font-bold text-muted">
-                    {shop.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : null}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{shop.name}</p>
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted">

@@ -116,6 +116,7 @@ export default async function ShopHeader({
       >
         {/* Brand mark — storefront identity */}
         <div className="flex flex-col items-center gap-2.5">
+          {shop.logo_url ? (
           <div
             className={
               immersive
@@ -132,24 +133,15 @@ export default async function ShopHeader({
             }
           >
             <FallbackImage
-              urls={shop.logo_url ? [shop.logo_url] : []}
+              urls={[shop.logo_url]}
               alt=""
               fill
               className="object-cover"
               sizes="72px"
               priority
-              fallback={
-                <div
-                  className={`flex size-full items-center justify-center text-xl font-bold sm:text-2xl ${
-                    immersive ? "" : "text-accent"
-                  }`}
-                  style={immersive ? { color: "var(--hero-text-strong)" } : undefined}
-                >
-                  {shop.name.charAt(0).toUpperCase()}
-                </div>
-              }
             />
           </div>
+          ) : null}
 
           <h1
             className={

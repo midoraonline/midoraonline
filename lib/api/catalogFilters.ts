@@ -15,7 +15,7 @@ export type CatalogQuery = {
   opportunity_kind?: string | null;
   compensation?: string | null;
   pricing_model?: string | null;
-  /** new_today | trending | boosted | sponsored */
+  /** new_today | trending */
   badge?: string | null;
   /** Omit or "relevance" to use the API default. */
   sort?: string | null;

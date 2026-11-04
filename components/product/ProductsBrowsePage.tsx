@@ -16,8 +16,10 @@ import {
   categoryFilterDisplayLabel,
   EMPTY_CATEGORY_FILTER,
   isCategoryFilterActive,
+  searchResultsGridClass,
   type CategoryFilterSelection,
 } from "@/lib/browseCategories";
+import SmartFilterPanel from "@/components/browse/SmartFilterPanel";
 import { catalogQueryActive, catalogQueryKey } from "@/lib/api/catalogFilters";
 import { toCatalogQuery } from "@/lib/catalogQuery";
 import { apiProducts } from "@/lib/api";
@@ -167,15 +169,26 @@ export default function ProductsBrowsePage({
           onSelectionChange={setCategoryFilter}
           showHeader={false}
         />
-        <ProductFilters
-          products={allItems}
-          filters={filters}
-          onChange={setFilters}
-          contextParentLabel={categoryFilter.parentLabel}
-        />
+        <div className={isSearching ? "lg:hidden" : undefined}>
+          <ProductFilters
+            products={isSearching ? search.items : allItems}
+            filters={filters}
+            onChange={setFilters}
+            contextParentLabel={categoryFilter.parentLabel}
+          />
+        </div>
       </div>
 
-      <div className="space-y-4 sm:space-y-6">
+      <div className={isSearching ? "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-6" : undefined}>
+      {isSearching ? (
+        <SmartFilterPanel
+          products={search.items}
+          filters={filters}
+          onChange={setFilters}
+          className="sticky top-24 hidden max-h-[calc(100vh-7rem)] overflow-y-auto lg:block"
+        />
+      ) : null}
+      <div className="min-w-0 space-y-4 sm:space-y-6">
         {(isSearching || categoryFilterActive) && (
           <p className="text-sm text-muted">
             {isSearching ? (
@@ -265,7 +278,7 @@ export default function ProductsBrowsePage({
                 {(isSearching ? search.total : displayItems.length) === 1 ? "" : "s"}
                 {!isSearching && categoryFilterActive ? " (filtered)" : ""}
               </p>
-              <div className={browseProductGridClass}>
+              <div className={isSearching ? searchResultsGridClass : browseProductGridClass}>
                 {displayItems.map((p) => (
                   <div key={p.id} className={productCardSlotClass(p)}>
                     <ProductCard product={p} />
@@ -298,6 +311,7 @@ export default function ProductsBrowsePage({
             </>
           )}
         </section>
+      </div>
       </div>
     </div>
   );
