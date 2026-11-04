@@ -238,7 +238,7 @@ export default function OnboardingPage() {
                 Get Started
               </Link>
               <Link
-                href="/products"
+                href="/"
                 className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-xs rounded-full backdrop-blur-xs transition-all cursor-pointer"
               >
                 Browse Feed

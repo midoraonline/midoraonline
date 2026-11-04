@@ -172,7 +172,7 @@ export function activeFilterCount(f: FilterState): number {
   return n;
 }
 
-function useClickOutside(
+export function useClickOutside(
   ref: RefObject<HTMLElement | null>,
   onClose: () => void,
   enabled: boolean,
@@ -187,7 +187,7 @@ function useClickOutside(
   }, [ref, onClose, enabled]);
 }
 
-function Chip({
+export function Chip({
   active,
   onClick,
   children,
@@ -227,7 +227,7 @@ function Chip({
   );
 }
 
-function MenuPanel({
+export function MenuPanel({
   children,
   className = "",
 }: {

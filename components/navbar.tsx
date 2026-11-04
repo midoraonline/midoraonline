@@ -296,7 +296,7 @@ export default function Navbar({
     const term = (q ?? searchQuery).trim();
     if (!term) return;
     setSearchOpen(false);
-    const path = pathname === "/" ? `/?q=${encodeURIComponent(term)}` : `/products?q=${encodeURIComponent(term)}`;
+    const path = `/?q=${encodeURIComponent(term)}`;
     router.push(path);
   }
 

@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ShopCard from "@/components/shopcard";
+import ShopFilterBar, {
+  DEFAULT_SHOP_FILTERS,
+  applyShopFilters,
+  collectShopLocations,
+  type ShopFilterState,
+} from "@/components/shop/ShopFilters";
 import type { Shop } from "@/lib/api/shops";
 import { SHOPS_PAGE_SIZE } from "@/lib/api/shops";
 import { browseShopGridClass, shopMatchesCategoryFilter, type CategoryFilterSelection } from "@/lib/browseCategories";
@@ -50,6 +56,8 @@ export default function ShopListRealtime({
   categoryFilter = { parentLabel: null, subcategoryLabel: null },
   searchQuery = "",
   gridClassName,
+  filters = DEFAULT_SHOP_FILTERS,
+  onFiltersChange,
 }: {
   initialShops: Shop[];
   initialHasMore?: boolean;
@@ -58,6 +66,8 @@ export default function ShopListRealtime({
   categoryFilter?: CategoryFilterSelection;
   searchQuery?: string;
   gridClassName?: string;
+  filters?: ShopFilterState;
+  onFiltersChange?: (next: ShopFilterState) => void;
 }) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
   const [categories, setCategories] = useState(initialCategories);
@@ -217,8 +227,16 @@ export default function ShopListRealtime({
     if (!serverSearch) {
       list = list.filter((s) => matchesShopSearch(s, searchQuery, categories[s.id]));
     }
-    return list;
-  }, [activeShops, categoryFilter, categoryItems, searchQuery, serverSearch, categories]);
+    return applyShopFilters(list, filters, (s) => locationDisplay(s.location));
+  }, [activeShops, categoryFilter, categoryItems, searchQuery, serverSearch, categories, filters]);
+
+  const locations = useMemo(
+    () => collectShopLocations(activeShops, (s) => locationDisplay(s.location)),
+    [activeShops],
+  );
+  const toolbar = onFiltersChange ? (
+    <ShopFilterBar filters={filters} onChange={onFiltersChange} locations={locations} />
+  ) : null;
 
   const grid = gridClassName ?? browseShopGridClass;
   const totalLabel =
@@ -248,8 +266,10 @@ export default function ShopListRealtime({
 
   if (visible.length === 0) {
     return (
+      <div className="space-y-3">
+        {toolbar}
       <div className="dm-card p-6 sm:p-8">
-        <p className="text-sm text-muted">No shops match your search or category. Try clearing filters.</p>
+        <p className="text-sm text-muted">No shops match your search or filters. Try clearing filters.</p>
         {hasMore ? (
           <button
             type="button"
@@ -261,11 +281,13 @@ export default function ShopListRealtime({
           </button>
         ) : null}
       </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {toolbar}
       <div className={grid}>
         {visible.map((shop) => (
           <ShopCard
