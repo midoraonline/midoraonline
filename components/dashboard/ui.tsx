@@ -351,13 +351,17 @@ export const LIST = "divide-y divide-border overflow-hidden rounded-xl border bo
 export const ROW = "flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-muted/60 sm:px-5";
 const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 export const BTN_PRIMARY =
-  `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white shadow-xs transition-colors hover:bg-accent-hover disabled:opacity-50 sm:h-9 ${FOCUS}`;
+  `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white shadow-xs transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 ${FOCUS}`;
 export const BTN_SECONDARY =
   `inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-surface-muted disabled:opacity-50 sm:h-9 ${FOCUS}`;
 export const BTN_GHOST =
   `inline-flex h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:opacity-50 sm:h-9 ${FOCUS}`;
-export const BTN_TEXT =
-  "inline-flex min-h-10 items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover hover:underline sm:min-h-0";
+export const BTN_TEXT = "inline-flex min-h-10 items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover hover:underline sm:min-h-0";
+const BTN_LG = `inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`;
+/** Large flow buttons: same height everywhere, width set by the parent. */
+export const BTN_PRIMARY_LG = `${BTN_LG} border-2 border-accent bg-accent text-white shadow-xs hover:border-accent-hover hover:bg-accent-hover`;
+export const BTN_SECONDARY_LG = `${BTN_LG} border-2 border-border-strong bg-surface text-foreground hover:border-accent hover:bg-accent/5 hover:text-accent`;
+export const BTN_OUTLINE_ACCENT_LG = `${BTN_LG} border-2 border-accent bg-accent/5 text-accent hover:bg-accent/10`;
 export const INPUT =
   "h-10 w-full rounded-lg border border-border-input bg-surface px-3 text-sm text-foreground shadow-xs placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/25";
 export const TABLE_WRAP = "overflow-hidden rounded-xl border border-border bg-surface shadow-xs";

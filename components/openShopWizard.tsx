@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useUrlStep } from "@/lib/hooks/useUrlStep";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 import { apiShops } from "@/lib/api";
 import CategoryPicker from "@/components/CategoryPicker";
@@ -12,7 +12,7 @@ import { discardUploads } from "@/lib/uploads/discard";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import StepFrame, { ActionBar, FormError, FormField, INPUT, TEXTAREA } from "@/components/post/StepFrame";
-import { BTN_PRIMARY, BTN_TEXT } from "@/components/dashboard/ui";
+import { BTN_OUTLINE_ACCENT_LG, BTN_PRIMARY_LG, BTN_SECONDARY_LG } from "@/components/dashboard/ui";
 import { useAppSession } from "@/lib/state";
 import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
@@ -275,7 +275,8 @@ export default function OpenShopWizard({
             />
           </Field>
           {onPreferAi ? (
-            <button type="button" onClick={onPreferAi} className={BTN_TEXT}>
+            <button type="button" onClick={onPreferAi} className={`${BTN_OUTLINE_ACCENT_LG} w-full`}>
+              <Sparkles className="size-4" aria-hidden />
               Describe your shop to AI instead
             </button>
           ) : null}
@@ -353,17 +354,17 @@ export default function OpenShopWizard({
       <ActionBar>
         {step < STEPS.length - 1 ? (
           <>
-            <button type="button" onClick={goNext} className={BTN_PRIMARY}>
+            <button type="button" onClick={goNext} className={BTN_PRIMARY_LG}>
               Continue
             </button>
             {step > 0 ? (
-              <button type="button" onClick={skip} className={BTN_TEXT}>
+              <button type="button" onClick={skip} className={BTN_SECONDARY_LG}>
                 Skip for now
               </button>
             ) : null}
           </>
         ) : (
-          <button type="button" onClick={handleCreateShop} disabled={creating} className={BTN_PRIMARY}>
+          <button type="button" onClick={handleCreateShop} disabled={creating} className={BTN_PRIMARY_LG}>
             {creating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
             {creating ? "Creating business…" : "Create business"}
           </button>

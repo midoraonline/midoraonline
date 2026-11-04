@@ -1149,7 +1149,7 @@ export default function ProductFormPage({
           <div>
             <h2 className="text-sm font-semibold text-foreground">More about this listing</h2>
             <p className="mt-0.5 text-sm text-muted">
-              Extra metadata for this {LISTING_KIND_LABEL[draft.kind].toLowerCase()}
+              Details that help buyers compare this {LISTING_KIND_LABEL[draft.kind].toLowerCase()}
               {categoryParts.parentLabel ? ` · ${categoryParts.parentLabel}` : ""}
             </p>
           </div>
@@ -1248,15 +1248,7 @@ export default function ProductFormPage({
             ? !catFields.some((f) => f.key === "brand")
             : draft.kind === "service" ||
               !(catFields.some((f) => f.key === "deadline") && catFields.some((f) => f.key === "requirements"))) ? (
-            <details
-              className="group rounded-md border border-border"
-              open={Boolean(draft.meta.brand || draft.meta.availability || draft.meta.service_area || draft.meta.deadline || draft.meta.requirements) || undefined}
-            >
-              <summary className="flex h-10 cursor-pointer list-none items-center justify-between px-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
-                Add more details
-                <span className="text-muted transition-transform group-open:rotate-45" aria-hidden>+</span>
-              </summary>
-              <div className="space-y-4 border-t border-border p-3">
+            <div className="space-y-4">
                 {draft.kind === "product" ? (
                   <>
               {!catFields.some((f) => f.key === "brand") ? (
@@ -1352,8 +1344,7 @@ export default function ProductFormPage({
               ) : null}
                   </>
                 ) : null}
-              </div>
-            </details>
+            </div>
           ) : null}
 
           {catFields.length > 0 ? (
@@ -1497,7 +1488,7 @@ export default function ProductFormPage({
                   ? "The AI review found problems. Edit the listing first."
                   : undefined
             }
-            className={`${BTN_PRIMARY} min-w-28`}
+            className={`${BTN_PRIMARY} min-w-36`}
           >
             {saving
               ? "Saving…"
