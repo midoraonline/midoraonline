@@ -19,11 +19,7 @@ import {
 } from "lucide-react";
 import type { IconType } from "react-icons";
 import {
-  PiCheckCircleFill,
-  PiFireFill,
-  PiSealCheckFill,
   PiSlidersHorizontalBold,
-  PiTrendUpBold,
   PiXBold,
 } from "react-icons/pi";
 import type { ProductCardData } from "@/components/productcard";
@@ -111,11 +107,6 @@ export const SORT_LABELS: Record<SortOption, string> = {
   best_rated: "Top rated",
   trust_score: "Trust",
 };
-
-const BADGE_CHIPS = [
-  { badge: "new_today", label: "New today", icon: PiFireFill, tone: "bg-orange-500/15 text-orange-500" },
-  { badge: "trending", label: "Trending", icon: PiTrendUpBold, tone: "bg-emerald-500/15 text-emerald-500" },
-] as const satisfies readonly { badge: FeedBadge; label: string; icon: IconType; tone: string }[];
 
 export async function withNearMe(filters: FilterState): Promise<FilterState> {
   const coords = await getBrowserLocation();
@@ -702,7 +693,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
     const badge = filters.badge;
     appliedChips.push({
       key: "badge",
-      label: BADGE_CHIPS.find((c) => c.badge === badge)?.label ?? badge,
+      label: badge === "new_today" ? "New today" : "Trending",
       clear: () => update({ badge: null }),
     });
   }
@@ -710,62 +701,22 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1 [mask-image:linear-gradient(to_right,black_85%,transparent)] sm:[mask-image:none]">
-          <div className="flex gap-2 overflow-x-auto py-1 pr-6 scrollbar-none snap-x snap-mandatory sm:flex-wrap sm:overflow-visible sm:pr-0">
-            {BADGE_CHIPS.map(({ badge, label, icon, tone }) => {
-              const on = filters.badge === badge;
-              return (
-                <Chip
-                  key={badge}
-                  active={on}
-                  icon={icon}
-                  tone={tone}
-                  onClick={() => update({ badge: on ? null : badge })}
-                >
-                  {label}
-                </Chip>
-              );
-            })}
-
-            <Chip
-              active={filters.verifiedOnly}
-              icon={PiSealCheckFill}
-              tone="bg-sky-500/15 text-sky-500"
-              onClick={() => update({ verifiedOnly: !filters.verifiedOnly })}
-              className={filters.verifiedOnly || hasVerified ? "" : "hidden"}
-            >
-              Verified
-            </Chip>
-
-            <Chip
-              active={filters.availableNow}
-              icon={PiCheckCircleFill}
-              tone="bg-emerald-500/15 text-emerald-500"
-              onClick={() => update({ availableNow: !filters.availableNow })}
-              className={filters.availableNow || hasAvailable ? "" : "hidden"}
-            >
-              Available
-            </Chip>
-
-            {/* Inline dropdowns would be clipped by the mobile scroll strip. */}
-            <div className="hidden sm:contents">
-              <PriceDropdown
-                minPrice={filters.minPrice}
-                maxPrice={filters.maxPrice}
-                onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
-              />
-              {showLocation && (
-                <LocationDropdown
-                  locations={locations}
-                  nearMe={filters.nearMe}
-                  userGeo={filters.userGeo}
-                  value={filters.location}
-                  onChangeLocation={selectNamedLocation}
-                  onSelectNearMe={activateNearMe}
-                />
-              )}
-            </div>
-          </div>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-1">
+          <PriceDropdown
+            minPrice={filters.minPrice}
+            maxPrice={filters.maxPrice}
+            onChange={(min, max) => update({ minPrice: min, maxPrice: max })}
+          />
+          {showLocation && (
+            <LocationDropdown
+              locations={locations}
+              nearMe={filters.nearMe}
+              userGeo={filters.userGeo}
+              value={filters.location}
+              onChangeLocation={selectNamedLocation}
+              onSelectNearMe={activateNearMe}
+            />
+          )}
         </div>
 
         <button
