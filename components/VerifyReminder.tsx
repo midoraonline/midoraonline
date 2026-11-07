@@ -9,6 +9,7 @@ import { settingsHref } from "@/lib/settingsHref";
 
 import { apiAuth, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
+import { usePublicSettings } from "@/lib/hooks/usePlatformAnalytics";
 
 type Step = { key: string; label: string; done: boolean; href?: string };
 
@@ -26,6 +27,7 @@ export default function VerifyReminder() {
   const [dismissed, setDismissed] = useState(false);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(false);
+  const settings = usePublicSettings();
 
   const { data: shops } = useSWR(
     session.isAuthenticated && isMerchant ? "verify-reminder:my-shops" : null,
@@ -61,7 +63,9 @@ export default function VerifyReminder() {
 
   const steps: Step[] = [{ key: "email", label: "Verify your email", done: !!user.email_verified }];
   if (isMerchant) {
-    steps.push({ key: "phone", label: "Verify your phone", done: !!user.phone_verified, href: settingsLink });
+    if (settings.flags.phone_verification_required) {
+      steps.push({ key: "phone", label: "Verify your phone", done: !!user.phone_verified, href: settingsLink });
+    }
     const firstShop = shops?.[0];
     const identityDone = !!shops?.some((s) => s.trust_badges?.includes("identity_verified"));
     steps.push({

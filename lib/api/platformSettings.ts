@@ -60,12 +60,22 @@ const KNOWN: Record<string, { label: string; description: string }> = {
     label: "Maintenance",
     description: "Pauses new shops, new listings, and edits. Marking a listing sold or closed still works.",
   },
+  phone_verification_required: {
+    label: "Phone verification to post",
+    description: "Sellers must confirm their phone (SMS or WhatsApp code) before posting or creating a shop. Off: no phone step, WhatsApp buttons still show.",
+  },
+  email_verification_required: {
+    label: "Email verification to post",
+    description: "Sellers must confirm their email before posting or creating a shop.",
+  },
 };
 
 const SWITCH_ORDER = [
   "analytics",
   "analytics_all_plans",
   "signups_allowed",
+  "phone_verification_required",
+  "email_verification_required",
   "listings_require_review",
   "ai_moderation",
   "maintenance_mode",

@@ -231,9 +231,15 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
 function CreatedSuccess({ shop, onCreateAnother }: { shop: apiShops.Shop; onCreateAnother: () => void }) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm text-muted">Your business is live</p>
+      <p className="text-sm text-muted">
+        {shop.is_active === false ? "Your business is being reviewed" : "Your business is live"}
+      </p>
       <h1 className="mt-1 text-xl font-semibold text-foreground">{shop.name}</h1>
-      <p className="mt-1 text-sm text-muted">Post your first ad or finish your business details whenever you&apos;re ready.</p>
+      <p className="mt-1 text-sm text-muted">
+        {shop.is_active === false
+          ? "Something in the name, description or images needs a quick check. We'll notify you once it's live; you can still set it up meanwhile."
+          : "Post your first ad or finish your business details whenever you're ready."}
+      </p>
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <Link href={`/merchant/shops/${shop.id}`} className={BTN_PRIMARY}>
           Manage shop
