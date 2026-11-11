@@ -13,10 +13,13 @@ export default function BrandedCover({
   kind,
   title,
   category,
+  hideSuffix = false,
 }: {
   kind: ListingTypeTagKind;
   title: string;
   category?: string | null;
+  /** The corner badge already says the state (e.g. Closing soon), so "Open"/"Available" would repeat it. */
+  hideSuffix?: boolean;
 }) {
   return (
     <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center ${listingToneClass(kind)}`}>
@@ -30,9 +33,11 @@ export default function BrandedCover({
       <span className="line-clamp-4 max-w-full break-words text-base font-black leading-tight tracking-tight sm:text-xl">
         {title}
       </span>
-      <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-accent sm:text-sm">
-        {SUFFIX[kind]}
-      </span>
+      {hideSuffix ? null : (
+        <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-accent sm:text-sm">
+          {SUFFIX[kind]}
+        </span>
+      )}
     </div>
   );
 }

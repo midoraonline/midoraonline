@@ -465,6 +465,8 @@ export default function HomeLanding({
     filters.pricingModel !== null ||
     filters.badge !== null;
 
+  const scopedGroup =
+    filters.listingKind === "service" ? "Services" : filters.listingKind === "opportunity" ? "Opportunities" : null;
   const displayProducts = isSearching ? search.items : products;
   const locationAndShops = (
     <>
@@ -479,13 +481,6 @@ export default function HomeLanding({
           void reloadFeed(false);
         }}
       />
-      <Link
-        href="/shops"
-        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[13px] font-semibold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95"
-      >
-        <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
-        Shops
-      </Link>
     </>
   );
   const feedEmpty = isSearching
@@ -512,8 +507,11 @@ export default function HomeLanding({
         />
         <CategoryBrowseSection
           selection={categoryFilter}
+          onlyGroup={scopedGroup}
           onSelectionChange={(selection) => {
             setCategoryFilter(selection);
+            // Inside Services/Opportunities the type tab stays; elsewhere a category replaces it.
+            if (scopedGroup) return;
             setFilters((current) => ({
               ...current,
               listingKind: null,
@@ -745,6 +743,13 @@ function ListingTypeTabs({
           </button>
         );
       })}
+      <Link
+        href="/shops"
+        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-[13px] font-bold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95 sm:text-sm"
+      >
+        <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
+        Shops
+      </Link>
     </div>
   );
 }

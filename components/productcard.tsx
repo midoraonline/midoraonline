@@ -416,7 +416,12 @@ export default function ProductCard({
   const titleHeading = <h3 className={textFirst ? "sr-only" : titleClass}>{headline}</h3>;
   const coverFrame = (sizes: string) =>
     textFirst ? (
-      <BrandedCover kind={typeKind} title={headline} category={coverCategory} />
+      <BrandedCover
+        kind={typeKind}
+        title={headline}
+        category={coverCategory}
+        hideSuffix={product.status === "closing_soon"}
+      />
     ) : coverFailed || coverUrls.length === 0 ? (
       <CoverPlaceholder />
     ) : (

@@ -35,6 +35,8 @@ type Props = {
   showListingShortcuts?: boolean;
   /** Hide the leading "All" chip when another control already resets the filters. */
   showAllChip?: boolean;
+  /** Show only this group's subcategories (Services / Opportunities) instead of the product categories. */
+  onlyGroup?: string | null;
 };
 
 export default function CategoryBrowseSection({
@@ -44,6 +46,7 @@ export default function CategoryBrowseSection({
   showCreateShop = false,
   showListingShortcuts = true,
   showAllChip = true,
+  onlyGroup = null,
 }: Props) {
   const { tree, counts } = useCategoryItems();
   const session = useAppSession();
@@ -82,6 +85,28 @@ export default function CategoryBrowseSection({
     return label === null
       ? !selection.parentLabel
       : selection.parentLabel === label;
+  }
+
+  if (onlyGroup) {
+    const group = tree.find((g) => g.parent.label === onlyGroup);
+    if (!group || group.children.length === 0) return null;
+    const pick = (subcategoryLabel: string | null) =>
+      onSelectionChange({ parentLabel: subcategoryLabel ? onlyGroup : null, subcategoryLabel });
+    return (
+      <section aria-label={`${onlyGroup} categories`}>
+        <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none snap-x snap-mandatory">
+          <SubcategoryChip label="All" active={!selection.subcategoryLabel} onClick={() => pick(null)} />
+          {group.children.map((child) => (
+            <SubcategoryChip
+              key={child.slug}
+              label={child.label}
+              active={selection.subcategoryLabel === child.label}
+              onClick={() => pick(child.label)}
+            />
+          ))}
+        </div>
+      </section>
+    );
   }
 
   return (
