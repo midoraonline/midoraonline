@@ -15,8 +15,12 @@ import { useAppSession } from "@/lib/state";
 import { leaveFlow, useUrlStep } from "@/lib/hooks/useUrlStep";
 import { fetchMyShopSummaries, type UserShopSummary } from "@/lib/shop/personalShop";
 import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
+import { shopAcceptsKind } from "@/lib/shop/shopFit";
 import { normalizeListingKind, type ListingKind } from "@/lib/listingMeta";
 import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verification";
+
+/** shopId value for the explicit "Other" choice (no shop). */
+const OTHER = "other";
 
 type Step = "verify" | "shop" | "type" | "form";
 const ORDER: Step[] = ["verify", "type", "shop", "form"];
@@ -54,7 +58,7 @@ function PostItemFlow() {
   // isn't reachable yet, e.g. the form before a type is chosen).
   let step: Step | null = isStep(urlStep) && initialStep ? urlStep : initialStep;
   if (step === "form" && !kind) step = "type";
-  if (step === "shop" && shops.length <= 1) step = kind ? "form" : "type";
+  if (step === "shop" && shops.length === 0) step = kind ? "form" : "type";
   if (step === "verify" && !status) step = initialStep;
 
   const setStep = useCallback(
@@ -70,7 +74,7 @@ function PostItemFlow() {
     const idx = ORDER.indexOf(from);
     const prev = ORDER.slice(0, idx)
       .reverse()
-      .find((s) => visited.includes(s) && (s !== "shop" || shops.length > 1));
+      .find((s) => visited.includes(s) && (s !== "shop" || shops.length > 0));
     if (prev) back(prev);
     else leaveFlow(router);
   }
@@ -93,14 +97,13 @@ function PostItemFlow() {
         setShops(list);
         setStatus(verification);
         setLoadError(null);
-        // Exactly one business: pick it automatically. None: post personally.
-        if (list.length === 1 && !paramShopId) setShopId(list[0].id);
-        // Order: verify → listing type → business (only when >1) → form.
+        // Order: verify → listing type → shop or Other (when the user has shops) → form.
+        // No shops at all: post on the personal profile.
         const first: Step = !verification.can_post
           ? "verify"
           : !paramType
             ? "type"
-            : list.length > 1 && !paramShopId
+            : list.length > 0 && !paramShopId
               ? "shop"
               : "form";
         setInitialStep(first);
@@ -131,13 +134,14 @@ function PostItemFlow() {
     // Both channels are required; stay here until the second one is done.
     if (!next.can_post) return;
     if (!kind) setStep("type");
-    else if (shops.length > 1 && !shopId) setStep("shop");
+    else if (shops.length > 0 && !shopId) setStep("shop");
     else setStep("form");
   }
 
 
-  const shop = shops.find((s) => s.id === shopId) ?? (shops.length === 1 ? shops[0] : null);
-  const showShopChange = shops.length > 1;
+  const noShop = shopId === OTHER;
+  const shop = noShop ? null : (shops.find((s) => s.id === shopId) ?? null);
+  const showShopChange = shops.length > 0;
 
   if (!session.hydrated || !session.isAuthenticated || (loading && !status)) {
     return (
@@ -177,8 +181,9 @@ function PostItemFlow() {
       {step === "shop" ? (
         <ShopPickStep
           shops={shops}
+          kind={kind}
           onSelect={(id) => {
-            setShopId(id);
+            setShopId(id ?? OTHER);
             setStep("form");
           }}
           onBack={() => goBack("shop")}
@@ -189,7 +194,10 @@ function PostItemFlow() {
           selected={kind}
           onSelect={(next) => {
             setKind(next);
-            setStep(shops.length > 1 && !shopId ? "shop" : "form");
+            // A chosen shop that doesn't sell the new type has to be picked again.
+            const keep = !shopId || noShop || shopAcceptsKind(shop?.shop_type, next);
+            if (!keep) setShopId(null);
+            setStep(shops.length > 0 && (!shopId || !keep) ? "shop" : "form");
           }}
           onBack={() => goBack("type")}
         />
@@ -198,10 +206,11 @@ function PostItemFlow() {
         <div className={step === "form" ? "w-full px-4 py-6 sm:py-10" : "hidden"}>
           <ProductFormPage
             mode="add"
-            shopId={shopId ?? undefined}
+            shopId={noShop ? undefined : (shopId ?? undefined)}
+            noShop={noShop}
             itemType={kind}
             listingKind={kind}
-            shopLabel={shop?.name ?? (shops.length === 0 ? PERSONAL_SELLER_LABEL : null)}
+            shopLabel={shop?.name ?? (noShop ? "Other (no shop)" : shops.length === 0 ? PERSONAL_SELLER_LABEL : null)}
             onChangeType={() => setStep("type")}
             onChangeShop={showShopChange ? () => setStep("shop") : undefined}
             contactVerified={status?.can_post}

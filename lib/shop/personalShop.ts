@@ -60,6 +60,7 @@ export type UserShopSummary = {
   name: string;
   slug: string;
   logo_url?: string | null;
+  shop_type?: string | null;
 };
 
 export async function fetchMyShopSummaries(): Promise<UserShopSummary[]> {
@@ -69,5 +70,6 @@ export async function fetchMyShopSummaries(): Promise<UserShopSummary[]> {
     name: s.name,
     slug: s.slug,
     logo_url: s.logo_url ?? null,
+    shop_type: s.shop_type ?? null,
   }));
 }

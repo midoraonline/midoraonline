@@ -62,6 +62,7 @@ export default async function MerchantListingsPage() {
     name: s.name,
     slug: s.slug ?? null,
     logo_url: s.logo_url ?? null,
+    shop_type: s.shop_type ?? null,
   }));
 
   return (

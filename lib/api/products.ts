@@ -270,8 +270,21 @@ export function productMediaItems(p: Product): ProductMedia[] {
 }
 
 /** Signed-in create with no shop id. The API attaches a personal profile or the only real shop. */
-export function createListing(body: CreateProductRequest, token?: string | null) {
-  return apiFetch<Product>("/api/v1/products", {
+/** Move a listing to one of your shops, or to "Other" (shopId null). */
+export function moveProduct(productId: string, shopId: string | null, token?: string | null) {
+  return apiFetch<Product>(`/api/v1/products/${encodeURIComponent(productId)}/move`, {
+    method: "POST",
+    token,
+    body: { shop_id: shopId },
+  });
+}
+
+export function createListing(
+  body: CreateProductRequest,
+  token?: string | null,
+  opts?: { personal?: boolean },
+) {
+  return apiFetch<Product>(opts?.personal ? "/api/v1/products?personal=true" : "/api/v1/products", {
     method: "POST",
     token,
     body: buildCreatePayload(body),

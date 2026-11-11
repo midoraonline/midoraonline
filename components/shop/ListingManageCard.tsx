@@ -50,6 +50,7 @@ export default function ListingManageCard({
   shopName,
   onDelete,
   onUpdated,
+  onMove,
   boost,
   attention,
 }: {
@@ -57,6 +58,8 @@ export default function ListingManageCard({
   shopName?: string | null;
   onDelete: () => void;
   onUpdated: (product: Product) => void;
+  /** Opens the move-to-shop dialog. Omit to hide the menu item. */
+  onMove?: () => void;
   /** Active boost on this listing, if any. */
   boost?: BoostInfo | null;
   attention?: ListingAttention | null;
@@ -190,6 +193,16 @@ export default function ListingManageCard({
       },
     },
   ];
+  if (onMove) {
+    items.push({
+      key: "move",
+      label: "Move to shop…",
+      onSelect: () => {
+        setOpen(false);
+        onMove();
+      },
+    });
+  }
   if (status === "rejected") {
     items.push({
       key: "resubmit",

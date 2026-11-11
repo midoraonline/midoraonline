@@ -3,4 +3,5 @@ export type ListingShopSummary = {
   name: string;
   slug: string | null;
   logo_url?: string | null;
+  shop_type?: string | null;
 };

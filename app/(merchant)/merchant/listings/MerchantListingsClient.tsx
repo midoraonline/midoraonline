@@ -13,6 +13,8 @@ import ListingPromoteActions from "@/components/shop/ListingPromoteActions";
 import useSWR from "swr";
 import { getListingAttention, getMyBoosts, myBoostsKey } from "@/lib/api/listingActions";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import MoveListingDialog from "@/components/shop/MoveListingDialog";
+import { OTHER_LISTINGS_LABEL } from "@/lib/shop/shopFit";
 import type { ListingShopSummary } from "./types";
 import {
   BTN_PRIMARY,
@@ -98,6 +100,7 @@ export default function MerchantListingsClient({
   const [search, setSearch] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [moving, setMoving] = useState<Product | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const liveIds = useMemo(
     () => items.filter((p) => p.status === "active" && p.is_published !== false).map((p) => p.id),
@@ -187,6 +190,16 @@ export default function MerchantListingsClient({
   }
 
   const showMultipleShops = shops.length > 1;
+  // With shops, group the list: one section per shop, then "Other listings" for the rest.
+  const groups = useMemo(() => {
+    if (shops.length === 0) return [{ key: "all", title: null as string | null, items: filtered }];
+    const out = shops
+      .map((s) => ({ key: s.id, title: s.name as string | null, items: filtered.filter((p) => p.shop_id === s.id) }))
+      .filter((g) => g.items.length > 0);
+    const other = filtered.filter((p) => !shopById.has(p.shop_id));
+    if (other.length > 0) out.push({ key: "other", title: OTHER_LISTINGS_LABEL, items: other });
+    return out;
+  }, [shops, filtered, shopById]);
 
   const emptyMessage: Record<Tab, string> = {
     all: "Post your first product, service or opportunity. It goes live after a quick automated check.",
@@ -291,21 +304,42 @@ export default function MerchantListingsClient({
           }
         />
       ) : (
-        <ul className={LIST}>
-          {filtered.map((p) => (
-            <li key={p.id} className="px-3 py-3 sm:px-4">
-              <ListingManageCard
-                product={p}
-                shopName={showMultipleShops ? shopById.get(p.shop_id)?.name : null}
-                onDelete={() => setPendingDelete(p)}
-                onUpdated={applyProduct}
-                boost={boosts?.[p.id] ?? null}
-                attention={attention?.[p.id] ?? null}
-              />
-            </li>
+        <div className="space-y-6">
+          {groups.map((g) => (
+            <section key={g.key} aria-label={g.title ?? "Listings"}>
+              {g.title ? (
+                <h2 className="mb-2 flex items-baseline gap-2 px-1 text-sm font-semibold text-foreground">
+                  {g.title}
+                  <span className="text-xs font-normal tabular-nums text-muted">{g.items.length}</span>
+                </h2>
+              ) : null}
+              <ul className={LIST}>
+                {g.items.map((p) => (
+                  <li key={p.id} className="px-3 py-3 sm:px-4">
+                    <ListingManageCard
+                      product={p}
+                      onDelete={() => setPendingDelete(p)}
+                      onUpdated={applyProduct}
+                      onMove={() => setMoving(p)}
+                      boost={boosts?.[p.id] ?? null}
+                      attention={attention?.[p.id] ?? null}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
+
+      {moving ? (
+        <MoveListingDialog
+          product={moving}
+          shops={shops}
+          onMoved={(next) => applyProduct({ ...moving, shop_id: next.shop_id })}
+          onClose={() => setMoving(null)}
+        />
+      ) : null}
 
       {pendingDelete ? (
         <ConfirmDialog

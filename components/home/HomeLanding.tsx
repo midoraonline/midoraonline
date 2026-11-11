@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FEED_STALE_EVENT, consumeFeedStale, consumedFeedStaleAt, feedStaleAt } from "@/lib/feedFreshness";
 
+import FirstToPost from "@/components/home/FirstToPost";
 import CategoryBrowseSection from "@/components/browse/CategoryBrowseSection";
 import LocationPill from "@/components/browse/LocationPill";
 import ProductFilters, {
@@ -548,7 +549,7 @@ export default function HomeLanding({
             className="dm-focus pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg"
           >
             <ArrowUp className="size-4" aria-hidden />
-            {newCount === 1 ? "1 new listing" : `${newCount} new listings`}
+            {newCount === 1 ? "1 new item" : `${newCount} new items`}
           </button>
         </div>
       ) : null}
@@ -644,10 +645,31 @@ export default function HomeLanding({
                     Search all of Uganda instead
                   </button>
                 ) : null}
+                <FirstToPost topic={search.searchedText ?? query.trim()} kind={filters.listingKind} />
                 <NeedForm initialNeed={query.trim()} area={browse.area} />
               </div>
             ) : anyFiltersActive ? (
-              <EmptyState message="No listings match your filters. Try a different category or clear filters." />
+              categoryFilterLabel || filters.listingKind ? (
+                <div className="space-y-3">
+                  <FirstToPost topic={categoryFilterLabel} kind={filters.listingKind} />
+                  <p className="text-center text-xs text-muted">
+                    Or try a different category, or{" "}
+                    <button
+                      type="button"
+                      className="font-semibold text-foreground underline-offset-2 hover:underline"
+                      onClick={() => {
+                        setCategoryFilter(EMPTY_CATEGORY_FILTER);
+                        setFilters(DEFAULT_FILTERS);
+                      }}
+                    >
+                      clear filters
+                    </button>
+                    .
+                  </p>
+                </div>
+              ) : (
+                <EmptyState message="No listings match your filters. Try a different category or clear filters." />
+              )
             ) : (
               <DemandCapture area={browse.area} />
             )

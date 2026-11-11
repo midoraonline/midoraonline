@@ -195,6 +195,7 @@ export default function ProductFormPage({
   mode,
   product,
   shopId,
+  noShop = false,
   itemType = "product",
   listingKind,
   shopLabel,
@@ -211,6 +212,8 @@ export default function ProductFormPage({
   product?: Product;
   /** Omit on create so the API attaches a personal profile or the only real shop. */
   shopId?: string;
+  /** The "Other" choice: post on the personal profile even if the user owns shops. */
+  noShop?: boolean;
   itemType?: ItemType;
   /** Set by the post-item type step. Changing it keeps the rest of the draft. */
   listingKind?: ListingKind;
@@ -626,7 +629,7 @@ export default function ProductFormPage({
     const toastId = toast.loading(`${label}…`);
     const request =
       mode === "add"
-        ? publishNewListing(body, shopId)
+        ? publishNewListing(body, shopId, { personal: noShop })
         : product
           ? apiProducts.updateProduct(product.id, body)
           : Promise.reject(new Error("Missing product"));

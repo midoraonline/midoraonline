@@ -2,6 +2,7 @@ import { apiProducts } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import type { CreateProductRequest, Product } from "@/lib/api/products";
 import { rehydrateSession } from "@/lib/auth/rehydrateSession";
+import { markFeedStale } from "@/lib/feedFreshness";
 import { ensureShopForListing } from "@/lib/shop/personalShop";
 
 export class ShopRequiredError extends Error {
@@ -12,6 +13,8 @@ export class ShopRequiredError extends Error {
 }
 
 async function afterPublish(product: Product): Promise<Product> {
+  // The poster's own Home session is rebuilt on their next visit so the new listing shows.
+  markFeedStale();
   try {
     await rehydrateSession();
   } catch {
@@ -31,12 +34,13 @@ function missingDirectRoute(err: unknown): boolean {
 export async function publishNewListing(
   body: CreateProductRequest,
   shopId?: string | null,
+  opts?: { personal?: boolean },
 ): Promise<Product> {
-  if (shopId) {
+  if (shopId && !opts?.personal) {
     return afterPublish(await apiProducts.createProduct(shopId, body));
   }
   try {
-    return afterPublish(await apiProducts.createListing(body));
+    return afterPublish(await apiProducts.createListing(body, undefined, { personal: opts?.personal }));
   } catch (err) {
     if (err instanceof ApiError && err.code === "shop_required") {
       throw new ShopRequiredError();
