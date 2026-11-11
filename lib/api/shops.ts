@@ -49,6 +49,8 @@ export type Shop = {
   shop_email?: string | null;
   whatsapp_number?: string | null;
   whatsapp_verified?: boolean | null;
+  /** null = not checked yet / checker unavailable. */
+  whatsapp_registered?: boolean | null;
   contacts?: Contact[] | null;
   social_links?: SocialLink[] | null;
   availability?: Availability | null;
@@ -391,17 +393,19 @@ export function generateLogo(shopId: string, token?: string | null) {
   );
 }
 
-export function sendShopWhatsAppCode(shopId: string, whatsappNumber: string) {
-  return apiFetch<{ message: string }>(
-    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/send-code`,
-    { method: "POST", body: { whatsapp_number: whatsappNumber } },
-  );
-}
+export type WhatsAppCheckStatus = "on_whatsapp" | "not_on_whatsapp" | "unavailable";
 
-export function confirmShopWhatsAppCode(shopId: string, code: string) {
-  return apiFetch<Shop>(
-    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/verify`,
-    { method: "POST", body: { code } },
+export type WhatsAppCheckResult = {
+  status: WhatsAppCheckStatus;
+  /** Whether buyers can see the number right now. */
+  visible: boolean;
+  fallback?: "in_app_messages";
+};
+
+export function checkShopWhatsApp(shopId: string) {
+  return apiFetch<WhatsAppCheckResult>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/check`,
+    { method: "POST", timeoutMs: 45_000 },
   );
 }
 

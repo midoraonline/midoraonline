@@ -13,7 +13,7 @@ import ShopCatalogEditor from "@/components/shop/ShopCatalogEditor";
 import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
-import VerifyContactButton from "@/components/VerifyContactButton";
+import WhatsAppStatus from "@/components/shop/WhatsAppStatus";
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -149,7 +149,6 @@ function DetailsTab({
   onLogoRemove,
   onSaved,
   whatsappVerified,
-  onWhatsappVerifiedChange,
 }: {
   shop: Shop;
   form: FormState;
@@ -160,7 +159,6 @@ function DetailsTab({
   onLogoRemove: () => void;
   onSaved: (savedForm: FormState, updated?: Shop) => void;
   whatsappVerified: boolean;
-  onWhatsappVerifiedChange: (verified: boolean) => void;
 }) {
   const router = useRouter();
   const session = useAppSession();
@@ -406,17 +404,11 @@ function DetailsTab({
               onChange={(val) => change("whatsappNumber", val)}
               placeholder="700 000 000"
             />
-            <VerifyContactButton
-              value={form.whatsappNumber}
+            <WhatsAppStatus
+              shopId={shop.id}
+              savedNumber={(shop.whatsapp_number ?? "").trim()}
               verified={whatsappVerified}
-              label="Business phone number"
-              sendCode={() => apiShops.sendShopWhatsAppCode(shop.id, form.whatsappNumber.trim())}
-              confirmCode={async (code) => {
-                const updated = await apiShops.confirmShopWhatsAppCode(shop.id, code);
-                const nextNumber = updated.whatsapp_number ?? form.whatsappNumber;
-                onSaved({ ...form, whatsappNumber: nextNumber }, updated);
-                onWhatsappVerifiedChange(Boolean(updated.whatsapp_verified));
-              }}
+              registered={shop.whatsapp_registered}
             />
           </div>
         </div>
@@ -656,7 +648,6 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           onLogoRemove={() => setStagedLogo("")}
           onSaved={onSaved}
           whatsappVerified={whatsappVerified}
-          onWhatsappVerifiedChange={setWhatsappVerified}
         />
       )}
 

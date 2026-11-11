@@ -1,5 +1,7 @@
 export function whatsappDigits(input: string): string {
   let digits = input.replace(/\D/g, "");
+  // The API stores E.164 (+<country><number>); only legacy rows still need the Uganda guess below.
+  if (input.trim().startsWith("+")) return digits;
   if (digits.startsWith("0")) {
     digits = "256" + digits.slice(1);
   } else if (!digits.startsWith("256") && digits.length === 9) {

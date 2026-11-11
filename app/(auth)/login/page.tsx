@@ -12,6 +12,7 @@ import {
   establishSessionFromGoogleCode,
   startClientSession,
 } from "@/lib/auth/establish-session";
+import { prefetchGoogleAuthUrl, startGoogleSignIn } from "@/lib/auth/google-start";
 
 function LoginPageInner() {
   const router = useRouter();
@@ -21,6 +22,12 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void prefetchGoogleAuthUrl().catch(() => {
+      /* the click retries and reports */
+    });
+  }, []);
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -78,33 +85,7 @@ function LoginPageInner() {
     setGoogleLoading(true);
     setError(null);
     try {
-      // On localhost the production backend blocks cross-origin requests via CORS.
-      // Fall back to a Next.js server-side proxy route that forwards the call
-      // server-to-server (no CORS restriction).
-      const isLocal =
-        typeof window !== "undefined" &&
-        (window.location.hostname === "localhost" ||
-          window.location.hostname === "127.0.0.1");
-
-      let googleUrl: string;
-
-      if (isLocal) {
-        const currentOrigin = window.location.origin;
-        const query = new URLSearchParams({
-          origin: currentOrigin,
-          redirect_to: `${currentOrigin}/login`,
-          redirect_uri: `${currentOrigin}/login`,
-        }).toString();
-        const res = await fetch(`/api/auth/google-url?${query}`);
-        if (!res.ok) throw new Error(await res.text());
-        const data = (await res.json()) as { url: string };
-        googleUrl = data.url;
-      } else {
-        const data = await apiAuth.getGoogleAuthUrl();
-        googleUrl = data.url;
-      }
-
-      window.location.href = googleUrl;
+      await startGoogleSignIn();
     } catch {
       setError("Unable to start Google sign-in.");
       setGoogleLoading(false);
