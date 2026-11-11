@@ -6,7 +6,7 @@ import { SingleImageField } from "@/components/upload/SingleImageField";
 import { SettingsActions, SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
-import VerifyContactButton from "@/components/VerifyContactButton";
+import WhatsAppStatus from "@/components/shop/WhatsAppStatus";
 import CategoryPicker from "@/components/CategoryPicker";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
@@ -329,7 +329,7 @@ export default function MerchantShopSettingsPage() {
             ) : null}
             {tab === "contact" ? (
               <>
-                <SettingsRow title="Business contacts" description="How buyers reach you. Verify the phone so WhatsApp buttons show.">
+                <SettingsRow title="Business contacts" description="How buyers reach you. The WhatsApp button shows only for numbers that are on WhatsApp.">
                   <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Business email</label>
@@ -347,17 +347,11 @@ export default function MerchantShopSettingsPage() {
                 onChange={setWhatsappNumber}
                 placeholder="700 000 000"
               />
-              <VerifyContactButton
-                value={whatsappNumber}
+              <WhatsAppStatus
+                shopId={shopId}
+                savedNumber={(shop?.whatsapp_number ?? "").trim()}
                 verified={whatsappVerified}
-                label="Business phone number"
-                sendCode={() => apiShops.sendShopWhatsAppCode(shopId, whatsappNumber.trim())}
-                confirmCode={async (code) => {
-                  const updated = await apiShops.confirmShopWhatsAppCode(shopId, code);
-                  setShop(updated);
-                  setWhatsappNumber(updated.whatsapp_number ?? whatsappNumber);
-                  setWhatsappVerified(Boolean(updated.whatsapp_verified));
-                }}
+                registered={shop?.whatsapp_registered}
               />
             </div>
                   </div>

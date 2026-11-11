@@ -109,7 +109,7 @@ export function establishSessionFromGoogleCode(code: string, state: string): Pro
 
   const pending = (async () => {
     const tokens = await apiAuth.exchangeGoogleCode({ code, state });
-    await establishClientSession(tokens);
+    await startClientSession(tokens);
   })().catch((err: unknown) => {
     googleCodeSessions.delete(key);
     throw err;
@@ -180,31 +180,21 @@ async function redeemApiHostSession(): Promise<void> {
     return;
   }
 
-  try {
-    const existing = await readMe();
-    if (existing?.id) {
-      await rememberUser(existing);
-      return;
-    }
-  } catch {
-    /* no frontend session yet */
-  }
-
-  // Drop a leftover frontend refresh before redeeming. Presenting a revoked
-  // one makes the API revoke every token for this user, including Google's.
-  try {
-    await apiHttp.post("/api/auth/clear-cookies", {}, { withCredentials: true });
-  } catch {
-    /* still try the API-host cookie */
-  }
-
+  // Frontend-host cookie clear and API-host refresh touch different cookie jars, so run them together.
+  // Dropping a stale frontend refresh matters: presenting a revoked one revokes the user's other tokens.
+  const clearing = apiHttp
+    .post("/api/auth/clear-cookies", {}, { withCredentials: true })
+    .catch(() => {
+      /* still try the API-host cookie */
+    });
   let tokens = await refreshFromApiHost();
+  await clearing;
   if (!tokens) {
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 250));
     tokens = await refreshFromApiHost();
   }
   if (tokens) {
-    await establishClientSession(tokens);
+    await startClientSession(tokens);
     return;
   }
 

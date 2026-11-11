@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { apiAuth } from "@/lib/api";
 import { establishGoogleCallbackSession } from "@/lib/auth/establish-session";
 import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
+import { startGoogleSignIn } from "@/lib/auth/google-start";
 import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
 
 type CallbackStatus = "processing" | "success" | "error";
@@ -68,23 +68,7 @@ export default function GoogleAuthCallbackPage() {
     setStatus("processing");
     setMessage("Starting Google sign-in...");
     try {
-      const isLocal =
-        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-      if (isLocal) {
-        const origin = window.location.origin;
-        const query = new URLSearchParams({
-          origin,
-          redirect_to: `${origin}/login`,
-          redirect_uri: `${origin}/login`,
-        });
-        const res = await fetch(`/api/auth/google-url?${query}`);
-        if (!res.ok) throw new Error("unavailable");
-        const data = (await res.json()) as { url: string };
-        window.location.href = data.url;
-        return;
-      }
-      const data = await apiAuth.getGoogleAuthUrl();
-      window.location.href = data.url;
+      await startGoogleSignIn();
     } catch {
       setRestarting(false);
       setStatus("error");

@@ -12,6 +12,7 @@ import {
   establishClientSession,
   establishSessionFromGoogleCode,
 } from "@/lib/auth/establish-session";
+import { prefetchGoogleAuthUrl, startGoogleSignIn } from "@/lib/auth/google-start";
 import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
 
 function RegisterPageInner() {
@@ -25,6 +26,12 @@ function RegisterPageInner() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void prefetchGoogleAuthUrl().catch(() => {
+      /* the click retries and reports */
+    });
+  }, []);
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -86,8 +93,7 @@ function RegisterPageInner() {
     setGoogleLoading(true);
     setError(null);
     try {
-      const { url } = await apiAuth.getGoogleAuthUrl();
-      window.location.href = url;
+      await startGoogleSignIn();
     } catch {
       setError("Unable to start Google sign-up.");
       setGoogleLoading(false);

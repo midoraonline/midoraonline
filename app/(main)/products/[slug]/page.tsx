@@ -383,7 +383,7 @@ export default async function ProductDetails({
               </SellerContactConsent>
             ) : shop ? (
               <p className="rounded-xl border border-border bg-surface-subtle px-4 py-3 text-center text-xs text-muted">
-                WhatsApp unavailable until this seller verifies their phone
+                This seller replies in Midora messages — use Message below
               </p>
             ) : null}
 
