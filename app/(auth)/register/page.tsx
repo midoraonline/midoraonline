@@ -14,6 +14,10 @@ import {
 } from "@/lib/auth/establish-session";
 import { prefetchGoogleAuthUrl, startGoogleSignIn } from "@/lib/auth/google-start";
 import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
+import GoogleSignInProgress, {
+  GOOGLE_SUCCESS_HOLD_MS,
+  type GoogleProgressStatus,
+} from "@/components/auth/GoogleSignInProgress";
 
 function RegisterPageInner() {
   const router = useRouter();
@@ -25,6 +29,8 @@ function RegisterPageInner() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState<GoogleProgressStatus | null>(null);
+  const [googleStep, setGoogleStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,14 +51,21 @@ function RegisterPageInner() {
     if (!code || !state) return;
 
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setGoogleLoading(true);
+    setGoogleStatus("processing");
     setError(null);
-    void establishSessionFromGoogleCode(code, state)
+    void establishSessionFromGoogleCode(code, state, (s) => {
+      if (active) setGoogleStep(s);
+    })
       .then(() => {
-        router.replace("/");
+        if (!active) return;
+        setGoogleStatus("success");
+        timer = setTimeout(() => router.replace("/"), GOOGLE_SUCCESS_HOLD_MS);
       })
       .catch((err: unknown) => {
         if (!active) return;
+        setGoogleStatus("error");
         setError(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : err instanceof Error ? err.message : "Unable to complete Google sign-up.");
       })
       .finally(() => {
@@ -60,6 +73,7 @@ function RegisterPageInner() {
       });
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [router, searchParams]);
 
@@ -98,6 +112,32 @@ function RegisterPageInner() {
       setError("Unable to start Google sign-up.");
       setGoogleLoading(false);
     }
+  }
+
+  if (googleStatus) {
+    return (
+      <GoogleSignInProgress
+        status={googleStatus}
+        step={googleStep}
+        title={googleStatus === "success" ? "Your account is ready" : googleStatus === "processing" ? "Setting up your account" : undefined}
+        message={googleStatus === "error" ? error ?? undefined : undefined}
+        onRetry={() => void handleGoogleSignUp()}
+        retrying={googleLoading}
+        secondary={
+          <button
+            type="button"
+            onClick={() => {
+              setGoogleStatus(null);
+              setError(null);
+              router.replace("/register");
+            }}
+            className="w-full text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Sign up with email instead
+          </button>
+        }
+      />
+    );
   }
 
   return (

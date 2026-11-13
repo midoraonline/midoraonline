@@ -13,6 +13,10 @@ import {
   startClientSession,
 } from "@/lib/auth/establish-session";
 import { prefetchGoogleAuthUrl, startGoogleSignIn } from "@/lib/auth/google-start";
+import GoogleSignInProgress, {
+  GOOGLE_SUCCESS_HOLD_MS,
+  type GoogleProgressStatus,
+} from "@/components/auth/GoogleSignInProgress";
 
 function LoginPageInner() {
   const router = useRouter();
@@ -21,6 +25,8 @@ function LoginPageInner() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState<GoogleProgressStatus | null>(null);
+  const [googleStep, setGoogleStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,14 +47,24 @@ function LoginPageInner() {
     if (!code || !state) return;
 
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setGoogleLoading(true);
+    setGoogleStatus("processing");
     setError(null);
-    void establishSessionFromGoogleCode(code, state)
+    void establishSessionFromGoogleCode(code, state, (s) => {
+      if (active) setGoogleStep(s);
+    })
       .then(() => {
-        router.replace(safeNextPath(searchParams.get("next")) ?? "/");
+        if (!active) return;
+        setGoogleStatus("success");
+        timer = setTimeout(
+          () => router.replace(safeNextPath(searchParams.get("next")) ?? "/"),
+          GOOGLE_SUCCESS_HOLD_MS,
+        );
       })
       .catch((err: unknown) => {
         if (!active) return;
+        setGoogleStatus("error");
         setError(
           err instanceof Error
             ? err.message
@@ -60,6 +76,7 @@ function LoginPageInner() {
       });
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [router, searchParams]);
 
@@ -90,6 +107,31 @@ function LoginPageInner() {
       setError("Unable to start Google sign-in.");
       setGoogleLoading(false);
     }
+  }
+
+  if (googleStatus) {
+    return (
+      <GoogleSignInProgress
+        status={googleStatus}
+        step={googleStep}
+        message={googleStatus === "error" ? error ?? undefined : undefined}
+        onRetry={() => void handleGoogleSignIn()}
+        retrying={googleLoading}
+        secondary={
+          <button
+            type="button"
+            onClick={() => {
+              setGoogleStatus(null);
+              setError(null);
+              router.replace("/login");
+            }}
+            className="w-full text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Use email instead
+          </button>
+        }
+      />
+    );
   }
 
   return (

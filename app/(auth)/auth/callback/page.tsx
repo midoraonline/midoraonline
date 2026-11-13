@@ -2,20 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import GoogleSignInProgress, {
+  GOOGLE_SUCCESS_HOLD_MS,
+  type GoogleProgressStatus,
+} from "@/components/auth/GoogleSignInProgress";
 import { establishGoogleCallbackSession } from "@/lib/auth/establish-session";
 import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
 import { startGoogleSignIn } from "@/lib/auth/google-start";
 import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
 
-type CallbackStatus = "processing" | "success" | "error";
-
 const SIGN_IN_ERROR = "We couldn't finish signing you in. Please try again.";
 
 export default function GoogleAuthCallbackPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<CallbackStatus>("processing");
-  const [message, setMessage] = useState("Completing Google sign-in...");
+  const [status, setStatus] = useState<GoogleProgressStatus>("processing");
+  const [step, setStep] = useState(0);
+  const [errorMessage, setErrorMessage] = useState(SIGN_IN_ERROR);
   const [restarting, setRestarting] = useState(false);
 
   useLayoutEffect(() => {
@@ -32,74 +34,57 @@ export default function GoogleAuthCallbackPage() {
     const verified = hash.get("verified");
 
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (error || provider !== "google" || verified !== "true") {
       setGoogleCallbackPending(false);
       queueMicrotask(() => {
         if (!active) return;
+        setErrorMessage(SIGN_IN_ERROR);
         setStatus("error");
-        setMessage(SIGN_IN_ERROR);
       });
       return () => {
         active = false;
       };
     }
 
-    void establishGoogleCallbackSession()
+    void establishGoogleCallbackSession((s) => {
+      if (active) setStep(s);
+    })
       .then(() => {
-        if (active) {
-          setStatus("success");
-          setMessage("Sign-in successful. Redirecting to your dashboard...");
-        }
-        router.replace("/");
+        if (!active) return;
+        setStatus("success");
+        timer = setTimeout(() => router.replace("/"), GOOGLE_SUCCESS_HOLD_MS);
       })
       .catch((err: unknown) => {
         if (!active) return;
+        setErrorMessage(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : SIGN_IN_ERROR);
         setStatus("error");
-        setMessage(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : SIGN_IN_ERROR);
       });
 
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [router]);
 
   async function tryAgain() {
     setRestarting(true);
-    setStatus("processing");
-    setMessage("Starting Google sign-in...");
     try {
       await startGoogleSignIn();
     } catch {
       setRestarting(false);
+      setErrorMessage(SIGN_IN_ERROR);
       setStatus("error");
-      setMessage(SIGN_IN_ERROR);
     }
   }
 
   return (
-    <div className="dm-card p-6 sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Google sign-in</h1>
-      <p className="mt-2 text-sm text-muted">{message}</p>
-
-      {status === "processing" ? (
-        <p className="mt-4 inline-flex items-center gap-2 text-sm text-muted">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-          Please wait a moment...
-        </p>
-      ) : null}
-
-      {status === "error" ? (
-        <div className="mt-4 space-y-3">
-          <button
-            type="button"
-            onClick={() => void tryAgain()}
-            disabled={restarting}
-            className="dm-btn dm-btn-primary min-h-11 w-full"
-          >
-            {restarting ? "Starting…" : "Try again"}
-          </button>
-        </div>
-      ) : null}
-    </div>
+    <GoogleSignInProgress
+      status={status}
+      step={step}
+      message={status === "error" ? errorMessage : undefined}
+      onRetry={() => void tryAgain()}
+      retrying={restarting}
+    />
   );
 }

@@ -101,14 +101,23 @@ export async function startClientSession(tokens: TokenPair): Promise<void> {
 
 const googleCodeSessions = new Map<string, Promise<void>>();
 
+/** 0 = confirming with Google, 1 = setting up the session on this site. */
+export type GoogleSessionStep = 0 | 1;
+
 /** Exchange a frontend OAuth code once, even if the callback effect re-runs. */
-export function establishSessionFromGoogleCode(code: string, state: string): Promise<void> {
+export function establishSessionFromGoogleCode(
+  code: string,
+  state: string,
+  onStep?: (step: GoogleSessionStep) => void,
+): Promise<void> {
   const key = `${code}:${state}`;
   const existing = googleCodeSessions.get(key);
   if (existing) return existing;
 
   const pending = (async () => {
+    onStep?.(0);
     const tokens = await apiAuth.exchangeGoogleCode({ code, state });
+    onStep?.(1);
     await startClientSession(tokens);
   })().catch((err: unknown) => {
     googleCodeSessions.delete(key);
@@ -119,10 +128,14 @@ export function establishSessionFromGoogleCode(code: string, state: string): Pro
 }
 
 let googleCallbackSession: Promise<void> | null = null;
+let callbackOnStep: ((step: GoogleSessionStep) => void) | undefined;
 
 // API callback cookies are host-only on the API domain; redeem them, then mirror onto this origin.
-export function establishGoogleCallbackSession(): Promise<void> {
+export function establishGoogleCallbackSession(
+  onStep?: (step: GoogleSessionStep) => void,
+): Promise<void> {
   setGoogleCallbackPending(true);
+  callbackOnStep = onStep;
   if (!googleCallbackSession) {
     googleCallbackSession = redeemApiHostSession()
       .catch((err: unknown) => {
@@ -174,8 +187,10 @@ async function refreshFromApiHost(): Promise<TokenPair | null> {
 }
 
 async function redeemApiHostSession(): Promise<void> {
+  callbackOnStep?.(0);
   const hashed = tokensFromHash();
   if (hashed) {
+    callbackOnStep?.(1);
     await establishClientSession(hashed);
     return;
   }
@@ -194,6 +209,7 @@ async function redeemApiHostSession(): Promise<void> {
     tokens = await refreshFromApiHost();
   }
   if (tokens) {
+    callbackOnStep?.(1);
     await startClientSession(tokens);
     return;
   }

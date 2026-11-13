@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/components/Logo";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useAppSession } from "@/lib/state";
 import { usePresenceStore } from "@/lib/state/presence-store";
 import { apiAuth } from "@/lib/api";
@@ -13,7 +13,7 @@ import { useSessionStore } from "@/lib/state/session-store";
 import { settingsHref } from "@/lib/settingsHref";
 import { useChatUnreadCount } from "@/lib/hooks/useChatUnreadCount";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
-import { Menu, X } from "lucide-react";
+import { Loader2, Menu, X } from "lucide-react";
 import ProductSearchBar from "@/components/browse/ProductSearchBar";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -226,6 +226,7 @@ export default function Navbar({
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [signingIn, startSignIn] = useTransition();
   const unread = useChatUnreadCount("navbar-unread");
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -462,19 +463,23 @@ export default function Navbar({
             ) : (
               <a
                 href="/login"
-                className="dm-btn-accent dm-focus inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm"
+                aria-busy={signingIn}
+                className="dm-btn-accent dm-focus inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold aria-busy:pointer-events-none aria-busy:opacity-80 sm:px-4 sm:py-2 sm:text-sm"
                 onClick={(e) => {
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                   e.preventDefault();
+                  if (signingIn) return;
                   allowHomeAfterLogout.current = false;
                   const href = signInHref();
                   if (logoutSettled.current) {
-                    router.push(href);
+                    // isPending stays true until /login has rendered, so the click never looks ignored.
+                    startSignIn(() => router.push(href));
                     return;
                   }
                   void apiAuth.logout().finally(() => window.location.assign(href));
                 }}
               >
+                {signingIn ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
                 Sign in
               </a>
             )}
