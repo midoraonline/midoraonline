@@ -15,10 +15,18 @@ type Props = {
   shopId?: string;
   productId?: string;
   className?: string;
+  buttonClassName?: string;
   compact?: boolean;
 };
 
-export default function MessageSellerButton({ sellerId, shopId, productId, className = "", compact = false }: Props) {
+export default function MessageSellerButton({
+  sellerId,
+  shopId,
+  productId,
+  className = "",
+  buttonClassName = "dm-btn dm-btn-primary dm-btn-sm w-full",
+  compact = false,
+}: Props) {
   const router = useRouter();
   const session = useAppSession();
   const [loading, setLoading] = useState(false);
@@ -67,7 +75,7 @@ export default function MessageSellerButton({ sellerId, shopId, productId, class
         type="button"
         onClick={doCreateConversation}
         disabled={loading}
-        className="dm-btn dm-btn-primary dm-btn-sm w-full"
+        className={buttonClassName}
       >
         <MaterialSymbol name="chat" className="!text-sm shrink-0" aria-hidden="true" />
         <span className={compact ? "sr-only" : ""}>

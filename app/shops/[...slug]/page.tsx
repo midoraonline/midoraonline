@@ -167,17 +167,35 @@ export default async function ShopDetails({
             />
           </li>
         ) : null}
-        {extraContacts.map((c, i) => (
-          <li
-            key={i}
-            className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3"
-          >
-            <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
-              {c.label ?? c.type ?? "Contact"}
-            </span>
-            <span className="min-w-0 break-words text-foreground">{c.value}</span>
-          </li>
-        ))}
+        {extraContacts.map((c, i) => {
+          const isWa = c.type === "whatsapp";
+          const digits = c.value.replace(/\D/g, "");
+          return (
+            <li
+              key={i}
+              className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3"
+            >
+              <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
+                {c.label || (isWa ? "WhatsApp" : "Phone")}
+              </span>
+              <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <a
+                  href={isWa ? `https://wa.me/${digits}` : `tel:+${digits}`}
+                  target={isWa ? "_blank" : undefined}
+                  rel={isWa ? "noopener noreferrer" : undefined}
+                  className="break-words text-accent hover:underline"
+                >
+                  {c.value}
+                </a>
+                {isWa ? (
+                  <span className="rounded-full bg-[color:var(--warning-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--warning)]">
+                    WhatsApp · not verified
+                  </span>
+                ) : null}
+              </span>
+            </li>
+          );
+        })}
         {socials.map((s, i) => (
           <li
             key={`social-${i}`}

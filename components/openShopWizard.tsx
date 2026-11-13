@@ -20,7 +20,6 @@ import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
 import { blankHoursDraft, hoursAreBlank, hoursDraftError, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
-import { checkShopWhatsAppQuietly } from "@/lib/shopWhatsapp";
 
 const STEPS = [
   { title: "Name your business", subtitle: "Buyers see this name first. You can change it later." },
@@ -178,7 +177,6 @@ export default function OpenShopWizard({
         contacts: [],
         social_links: [],
       });
-      checkShopWhatsAppQuietly(shop.id, Boolean(shop.whatsapp_number));
       notifyAuthChanged();
       router.push(`/merchant/shops/${shop.id}`);
     } catch (err) {

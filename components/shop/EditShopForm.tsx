@@ -14,6 +14,11 @@ import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import WhatsAppStatus from "@/components/shop/WhatsAppStatus";
+import ExtraPhoneNumbers, {
+  extraPhonesFromContacts,
+  extraPhonesToContacts,
+  type ExtraPhone,
+} from "@/components/shop/ExtraPhoneNumbers";
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
@@ -42,6 +47,7 @@ type FormState = {
   bannerUrl: string;
   shopEmail: string;
   whatsappNumber: string;
+  extraPhones: ExtraPhone[];
   hours: HoursDraft;
   location: string;
   locationCoords: LatLng | null;
@@ -60,6 +66,7 @@ function shopToFormState(shop: Shop): FormState {
     bannerUrl: shopBannerUrl(shop.theme_config) ?? "",
     shopEmail: shop.shop_email ?? "",
     whatsappNumber: shop.whatsapp_number ?? "",
+    extraPhones: extraPhonesFromContacts(shop.contacts),
     hours: hoursDraftFromShop(shop),
     location:
       typeof loc === "string"
@@ -83,6 +90,7 @@ function formsEqual(a: FormState, b: FormState): boolean {
     a.bannerUrl === b.bannerUrl &&
     a.shopEmail === b.shopEmail &&
     a.whatsappNumber === b.whatsappNumber &&
+    JSON.stringify(a.extraPhones) === JSON.stringify(b.extraPhones) &&
     JSON.stringify(a.hours) === JSON.stringify(b.hours) &&
     a.location === b.location &&
     a.locationCoords?.lat === b.locationCoords?.lat &&
@@ -149,6 +157,7 @@ function DetailsTab({
   onLogoRemove,
   onSaved,
   whatsappVerified,
+  onWhatsAppVerified,
 }: {
   shop: Shop;
   form: FormState;
@@ -159,6 +168,7 @@ function DetailsTab({
   onLogoRemove: () => void;
   onSaved: (savedForm: FormState, updated?: Shop) => void;
   whatsappVerified: boolean;
+  onWhatsAppVerified: (updated: Shop) => void;
 }) {
   const router = useRouter();
   const session = useAppSession();
@@ -218,6 +228,7 @@ function DetailsTab({
       theme_config: withBannerUrl(shop.theme_config ?? null, form.bannerUrl || null),
       shop_email: form.shopEmail.trim() || null,
       whatsapp_number: form.whatsappNumber.trim() || null,
+      contacts: extraPhonesToContacts(form.extraPhones),
       ...(hoursPayload
         ? { availability: hoursPayload.availability }
         : { availability: shop.availability ?? null }),
@@ -409,6 +420,14 @@ function DetailsTab({
               savedNumber={(shop.whatsapp_number ?? "").trim()}
               verified={whatsappVerified}
               registered={shop.whatsapp_registered}
+              onVerified={onWhatsAppVerified}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <ExtraPhoneNumbers
+              value={form.extraPhones}
+              onChange={(next) => change("extraPhones", next)}
+              idPrefix="edit-shop-extra-phone"
             />
           </div>
         </div>
@@ -648,6 +667,11 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           onLogoRemove={() => setStagedLogo("")}
           onSaved={onSaved}
           whatsappVerified={whatsappVerified}
+          onWhatsAppVerified={(updated) => {
+            setShopState(updated);
+            setWhatsappVerified(Boolean(updated.whatsapp_verified));
+            startTransition(() => router.refresh());
+          }}
         />
       )}
 

@@ -17,7 +17,6 @@ import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import { hoursAreBlank, hoursDraftError, hoursDraftFromShop, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
 import type { LatLng } from "@/lib/geo";
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
-import { checkShopWhatsAppQuietly } from "@/lib/shopWhatsapp";
 
 const STARTER_PROMPTS = [
   "I bake cakes in Kampala and deliver by boda",
@@ -357,7 +356,6 @@ export default function CreateShopConcierge({
         contacts: [],
         social_links: [],
       });
-      checkShopWhatsAppQuietly(shop.id, Boolean(shop.whatsapp_number));
       notifyAuthChanged();
       onShopCreated(shop);
     } catch (err) {

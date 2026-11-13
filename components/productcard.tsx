@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, CalendarDays, Clock, Flame, Gem, ImageIcon, MapPin, Play, Repeat2, Rocket, Star, TrendingUp } from "lucide-react";
+import { CalendarDays, Clock, Flame, Gem, ImageIcon, MapPin, MessageCircle, Play, Repeat2, Rocket, Star, TrendingUp } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
+import MessageSellerButton from "@/components/chat/MessageSellerButton";
 import { isVideoUrl, type CardStatus, type FeedPlacement } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
@@ -290,6 +291,7 @@ function WhatsAppCta({
   productId,
   productHref,
   shopId,
+  sellerId,
   category,
   hasDiscount,
   compact = false,
@@ -299,6 +301,7 @@ function WhatsAppCta({
   productId: string;
   productHref: string;
   shopId?: string;
+  sellerId?: string | null;
   category?: string;
   hasDiscount?: boolean;
   compact?: boolean;
@@ -345,10 +348,12 @@ function WhatsAppCta({
     );
   }
 
-  return (
+  return sellerId ? (
+    <MessageSellerButton sellerId={sellerId} shopId={shopId} productId={productId} buttonClassName={className} />
+  ) : (
     <Link href={productHref} className={className}>
-      View details
-      <ArrowRight className="size-3.5" aria-hidden />
+      <MessageCircle className="size-3.5 shrink-0 sm:size-4" aria-hidden />
+      Message seller
     </Link>
   );
 }
@@ -584,6 +589,7 @@ export default function ProductCard({
             productId={product.id}
             productHref={productHref}
             shopId={product.shop.id}
+            sellerId={product.sellerId}
             category={product.category ?? undefined}
             hasDiscount={isDiscounted}
             label={ctaLabel}
@@ -640,6 +646,7 @@ export default function ProductCard({
             productId={product.id}
             productHref={productHref}
             shopId={product.shop.id}
+            sellerId={product.sellerId}
             category={product.category ?? undefined}
             hasDiscount={isDiscounted}
             label={ctaLabel}

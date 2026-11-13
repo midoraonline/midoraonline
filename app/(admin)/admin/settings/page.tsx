@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AccountSettings from "@/components/settings/AccountSettings";
+import WhatsAppConnectionCard from "@/components/admin/WhatsAppConnectionCard";
 import { CARD } from "@/components/dashboard/ui";
 
 export default function AdminSettingsPage() {
@@ -15,6 +16,7 @@ export default function AdminSettingsPage() {
         </span>
         <span className="shrink-0 font-medium text-accent">Open Plans →</span>
       </Link>
+      <WhatsAppConnectionCard />
       <AccountSettings />
     </div>
   );

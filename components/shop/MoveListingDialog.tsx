@@ -6,8 +6,9 @@ import FormModal from "@/components/FormModal";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import { OTHER_LISTINGS_LABEL, shopAcceptsKind, shopTypeLabel } from "@/lib/shop/shopFit";
+import { ShopAvatar } from "@/components/shop/ShopAvatar";
 
-export type MoveTarget = { id: string; name: string; shop_type?: string | null };
+export type MoveTarget = { id: string; name: string; shop_type?: string | null; logo_url?: string | null };
 
 /** Choose one of the owner's shops, or Other (no shop), for an existing listing. */
 export default function MoveListingDialog({
@@ -42,19 +43,31 @@ export default function MoveListingDialog({
     }
   }
 
-  const row = (id: string, label: string, hint: string) => (
+  const row = (id: string, shop: MoveTarget | null, label: string, hint: string) => (
     <label
       key={id}
-      className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm ${
+      className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm transition-colors has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25 ${
         choice === id ? "border-accent bg-accent/5" : "border-border hover:bg-surface-muted"
       }`}
     >
-      <input type="radio" name="move-target" checked={choice === id} onChange={() => setChoice(id)} className="accent-[var(--accent)]" />
+      <input type="radio" name="move-target" checked={choice === id} onChange={() => setChoice(id)} className="sr-only" />
+      <ShopAvatar shop={shop} size="md" />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium text-foreground">{label}</span>
         <span className="block truncate text-xs text-muted">{hint}</span>
       </span>
-      {id === current ? <span className="text-xs text-muted">Current</span> : null}
+      {id === current ? (
+        <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted">Current</span>
+      ) : (
+        <span
+          className={`grid size-5 shrink-0 place-items-center rounded-full border-2 ${
+            choice === id ? "border-accent bg-accent" : "border-border-input"
+          }`}
+          aria-hidden
+        >
+          {choice === id ? <span className="size-1.5 rounded-full bg-white" /> : null}
+        </span>
+      )}
     </label>
   );
 
@@ -76,8 +89,8 @@ export default function MoveListingDialog({
     >
       <p className="mb-3 truncate text-sm text-muted">“{product.title || "This listing"}”</p>
       <div className="space-y-2">
-        {fitting.map((s) => row(s.id, s.name, shopTypeLabel(s.shop_type)))}
-        {row(OTHER, OTHER_LISTINGS_LABEL, "Not under any shop")}
+        {fitting.map((s) => row(s.id, s, s.name, shopTypeLabel(s.shop_type)))}
+        {row(OTHER, null, OTHER_LISTINGS_LABEL, "Not under any shop")}
       </div>
       {fitting.length < shops.length ? (
         <p className="mt-3 text-xs text-muted">Shops that don&apos;t sell this type of listing aren&apos;t shown.</p>

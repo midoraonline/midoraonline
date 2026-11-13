@@ -7,6 +7,11 @@ import { SettingsActions, SettingsPanel, SettingsRow } from "@/components/settin
 import LocationInput from "@/components/LocationInput";
 import PhoneNumberInput from "@/components/PhoneNumberInput";
 import WhatsAppStatus from "@/components/shop/WhatsAppStatus";
+import ExtraPhoneNumbers, {
+  extraPhonesFromContacts,
+  extraPhonesToContacts,
+  type ExtraPhone,
+} from "@/components/shop/ExtraPhoneNumbers";
 import CategoryPicker from "@/components/CategoryPicker";
 import { apiAiContext, apiShops } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
@@ -59,6 +64,7 @@ export default function MerchantShopSettingsPage() {
   const [shopEmail, setShopEmail] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [whatsappVerified, setWhatsappVerified] = useState(false);
+  const [extraPhones, setExtraPhones] = useState<ExtraPhone[]>([]);
   const [locationDisplay, setLocationDisplay] = useState("");
   const [locationCoordsState, setLocationCoordsState] = useState<LatLng | null>(null);
   const [shopType, setShopType] = useState<apiShops.ShopType>("product");
@@ -95,6 +101,7 @@ export default function MerchantShopSettingsPage() {
         setShopEmail(shopData.shop_email ?? "");
         setWhatsappNumber(shopData.whatsapp_number ?? "");
         setWhatsappVerified(Boolean(shopData.whatsapp_verified));
+        setExtraPhones(extraPhonesFromContacts(shopData.contacts));
         const loc = shopData.location;
         setLocationDisplay(
           typeof loc === "string"
@@ -134,6 +141,7 @@ export default function MerchantShopSettingsPage() {
         theme_config: withBannerUrl(shop?.theme_config ?? null, bannerUrl || null),
         shop_email: shopEmail.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
+        contacts: extraPhonesToContacts(extraPhones),
         location: buildShopLocationPayload(locationDisplay, locationCoordsState) ?? undefined,
         shop_type: shopType,
         category: category.trim() || undefined,
@@ -329,7 +337,7 @@ export default function MerchantShopSettingsPage() {
             ) : null}
             {tab === "contact" ? (
               <>
-                <SettingsRow title="Business contacts" description="How buyers reach you. The WhatsApp button shows only for numbers that are on WhatsApp.">
+                <SettingsRow title="Business contacts" description="How buyers reach you. The WhatsApp button shows once your number is verified with a WhatsApp code.">
                   <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Business email</label>
@@ -352,7 +360,14 @@ export default function MerchantShopSettingsPage() {
                 savedNumber={(shop?.whatsapp_number ?? "").trim()}
                 verified={whatsappVerified}
                 registered={shop?.whatsapp_registered}
+                onVerified={(updated) => {
+                  setShop(updated);
+                  setWhatsappVerified(Boolean(updated.whatsapp_verified));
+                }}
               />
+            </div>
+            <div className="md:col-span-2">
+              <ExtraPhoneNumbers value={extraPhones} onChange={setExtraPhones} idPrefix="settings-extra-phone" />
             </div>
                   </div>
                 </SettingsRow>

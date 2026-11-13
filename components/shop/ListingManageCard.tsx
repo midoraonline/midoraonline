@@ -23,6 +23,8 @@ import {
 } from "@/lib/api/products";
 import { isTextOnlyListing, parseListingMeta } from "@/lib/listingMeta";
 import ListingTypeTag from "@/components/ListingTypeTag";
+import { ShopChip } from "@/components/shop/ShopAvatar";
+import { OTHER_LISTINGS_LABEL } from "@/lib/shop/shopFit";
 import { listingTypeTagKind } from "@/lib/listingType";
 import { isVerificationRequired, verificationMessage } from "@/lib/verification";
 import { ApiError } from "@/lib/api/base";
@@ -47,7 +49,7 @@ function formatUGX(n: number) {
 
 export default function ListingManageCard({
   product,
-  shopName,
+  shop,
   onDelete,
   onUpdated,
   onMove,
@@ -55,7 +57,8 @@ export default function ListingManageCard({
   attention,
 }: {
   product: Product;
-  shopName?: string | null;
+  /** The listing's shop; null = Other listings; undefined = don't show. */
+  shop?: { name: string; logo_url?: string | null } | null;
   onDelete: () => void;
   onUpdated: (product: Product) => void;
   /** Opens the move-to-shop dialog. Omit to hide the menu item. */
@@ -327,9 +330,11 @@ export default function ListingManageCard({
             {formatUGX(productPriceUgx(product))}
           </p>
         </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-          {shopName ? <span className="truncate text-xs text-muted">{shopName}</span> : null}
-        </div>
+        {shop !== undefined ? (
+          <div className="mt-1.5 flex min-w-0">
+            <ShopChip shop={shop} otherLabel={OTHER_LISTINGS_LABEL} onMove={onMove} />
+          </div>
+        ) : null}
         {boost ? (
           <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-foreground">
             <BoostedTag />

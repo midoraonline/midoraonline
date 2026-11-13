@@ -197,6 +197,19 @@ export function listShops(adminKey?: string) {
   return apiFetch<Paginated<AdminShop>>("/api/v1/admin/shops/", { adminKey });
 }
 
+export type WhatsAppCheck = { key: "config" | "phone" | "template"; label: string; ok: boolean; detail: string };
+
+export type WhatsAppStatus = {
+  ready: boolean;
+  checks: WhatsAppCheck[];
+  phone: { display_phone_number?: string; verified_name?: string; quality_rating?: string } | null;
+  template: { name?: string; status?: string; category?: string; language?: string } | null;
+};
+
+export function getWhatsAppStatus() {
+  return apiFetch<WhatsAppStatus>("/api/v1/admin/whatsapp/status", { timeoutMs: 30_000 });
+}
+
 export function setShopActive(shopId: string, is_active = true, adminKey?: string) {
   const params = new URLSearchParams({ is_active: String(is_active) });
   return apiFetch<AdminShop>(

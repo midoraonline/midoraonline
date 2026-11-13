@@ -14,7 +14,9 @@ import useSWR from "swr";
 import { getListingAttention, getMyBoosts, myBoostsKey } from "@/lib/api/listingActions";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import MoveListingDialog from "@/components/shop/MoveListingDialog";
-import { OTHER_LISTINGS_LABEL } from "@/lib/shop/shopFit";
+import { ShopAvatar } from "@/components/shop/ShopAvatar";
+import { OTHER_LISTINGS_LABEL, shopTypeLabel } from "@/lib/shop/shopFit";
+import Link from "next/link";
 import type { ListingShopSummary } from "./types";
 import {
   BTN_PRIMARY,
@@ -98,6 +100,7 @@ export default function MerchantListingsClient({
   const [items, setItems] = useState<Product[]>(initialListings);
   const [tab, setTab] = useTabParam(TAB_KEYS, "all");
   const [search, setSearch] = useState("");
+  const [shopFilter, setShopFilter] = useState<string>("all");
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState<Product | null>(null);
@@ -190,16 +193,26 @@ export default function MerchantListingsClient({
   }
 
   const showMultipleShops = shops.length > 1;
+  const shopCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of filtered) {
+      const key = shopById.has(p.shop_id) ? p.shop_id : "other";
+      m.set(key, (m.get(key) ?? 0) + 1);
+    }
+    return m;
+  }, [filtered, shopById]);
   // With shops, group the list: one section per shop, then "Other listings" for the rest.
   const groups = useMemo(() => {
-    if (shops.length === 0) return [{ key: "all", title: null as string | null, items: filtered }];
-    const out = shops
-      .map((s) => ({ key: s.id, title: s.name as string | null, items: filtered.filter((p) => p.shop_id === s.id) }))
+    type Group = { key: string; shop: ListingShopSummary | null; items: Product[] };
+    if (shops.length === 0) return [{ key: "all", shop: null, items: filtered }] as Group[];
+    const out: Group[] = shops
+      .map((s) => ({ key: s.id, shop: s, items: filtered.filter((p) => p.shop_id === s.id) }))
       .filter((g) => g.items.length > 0);
     const other = filtered.filter((p) => !shopById.has(p.shop_id));
-    if (other.length > 0) out.push({ key: "other", title: OTHER_LISTINGS_LABEL, items: other });
-    return out;
-  }, [shops, filtered, shopById]);
+    if (other.length > 0) out.push({ key: "other", shop: null, items: other });
+    return shopFilter === "all" ? out : out.filter((g) => g.key === shopFilter);
+  }, [shops, filtered, shopById, shopFilter]);
+  const visibleCount = groups.reduce((n, g) => n + g.items.length, 0);
 
   const emptyMessage: Record<Tab, string> = {
     all: "Post your first product, service or opportunity. It goes live after a quick automated check.",
@@ -289,7 +302,40 @@ export default function MerchantListingsClient({
         </button>
       </div>
 
-      {filtered.length === 0 ? (
+      {shops.length > 0 ? (
+        <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter by shop">
+          {[
+            { key: "all", label: "All shops", shop: undefined, count: filtered.length },
+            ...shops.map((s) => ({ key: s.id, label: s.name, shop: s as ListingShopSummary | null, count: shopCounts.get(s.id) ?? 0 })),
+            ...((shopCounts.get("other") ?? 0) > 0 || shopFilter === "other"
+              ? [{ key: "other", label: OTHER_LISTINGS_LABEL, shop: null, count: shopCounts.get("other") ?? 0 }]
+              : []),
+          ].map((f) => {
+            const on = shopFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setShopFilter(f.key)}
+                className={`dm-focus inline-flex shrink-0 items-center gap-1.5 rounded-full border py-1 text-xs font-medium transition-colors ${
+                  f.shop === undefined ? "px-3" : "pl-1 pr-3"
+                } ${
+                  on
+                    ? "border-accent bg-accent/10 text-foreground"
+                    : "border-border bg-surface text-muted hover:border-accent/40 hover:text-foreground"
+                }`}
+              >
+                {f.shop !== undefined ? <ShopAvatar shop={f.shop} size="xs" /> : null}
+                <span className="max-w-[10rem] truncate">{f.label}</span>
+                <span className={`tabular-nums ${on ? "text-accent" : "text-muted"}`}>{f.count}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {visibleCount === 0 ? (
         <EmptyState
           icon={Package}
           title={tab === "all" ? "No listings yet" : undefined}
@@ -306,18 +352,33 @@ export default function MerchantListingsClient({
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (
-            <section key={g.key} aria-label={g.title ?? "Listings"}>
-              {g.title ? (
-                <h2 className="mb-2 flex items-baseline gap-2 px-1 text-sm font-semibold text-foreground">
-                  {g.title}
-                  <span className="text-xs font-normal tabular-nums text-muted">{g.items.length}</span>
-                </h2>
+            <section key={g.key} aria-label={g.shop?.name ?? (g.key === "other" ? OTHER_LISTINGS_LABEL : "Listings")}>
+              {g.key !== "all" ? (
+                <div className="mb-2 flex items-center gap-3 px-1">
+                  <ShopAvatar shop={g.shop} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-sm font-semibold text-foreground">
+                      {g.shop?.name ?? OTHER_LISTINGS_LABEL}
+                    </h2>
+                    <p className="text-xs text-muted">
+                      {g.shop ? shopTypeLabel(g.shop.shop_type) : "Not under any shop"} ·{" "}
+                      <span className="tabular-nums">{g.items.length}</span>{" "}
+                      {g.items.length === 1 ? "listing" : "listings"}
+                    </p>
+                  </div>
+                  {g.shop?.slug ? (
+                    <Link href={`/shops/${g.shop.slug}`} className={BTN_TEXT}>
+                      View shop
+                    </Link>
+                  ) : null}
+                </div>
               ) : null}
               <ul className={LIST}>
                 {g.items.map((p) => (
                   <li key={p.id} className="px-3 py-3 sm:px-4">
                     <ListingManageCard
                       product={p}
+                      shop={shops.length > 0 ? shopById.get(p.shop_id) ?? null : undefined}
                       onDelete={() => setPendingDelete(p)}
                       onUpdated={applyProduct}
                       onMove={() => setMoving(p)}

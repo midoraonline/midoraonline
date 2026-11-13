@@ -49,7 +49,7 @@ export type Shop = {
   shop_email?: string | null;
   whatsapp_number?: string | null;
   whatsapp_verified?: boolean | null;
-  /** null = not checked yet / checker unavailable. */
+  /** true = number confirmed (older shops were confirmed by a lookup, new ones by a WhatsApp code). */
   whatsapp_registered?: boolean | null;
   contacts?: Contact[] | null;
   social_links?: SocialLink[] | null;
@@ -393,20 +393,18 @@ export function generateLogo(shopId: string, token?: string | null) {
   );
 }
 
-export type WhatsAppCheckStatus = "on_whatsapp" | "not_on_whatsapp" | "unavailable";
-
-export type WhatsAppCheckResult = {
-  status: WhatsAppCheckStatus;
-  /** Whether buyers can see the number right now. */
-  visible: boolean;
-  fallback?: "in_app_messages";
-};
-
-export function checkShopWhatsApp(shopId: string) {
-  return apiFetch<WhatsAppCheckResult>(
-    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/check`,
-    { method: "POST", timeoutMs: 45_000 },
+export function sendShopWhatsAppCode(shopId: string) {
+  return apiFetch<{ message: string; verified: boolean }>(
+    `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/send-code`,
+    { method: "POST" },
   );
+}
+
+export function verifyShopWhatsAppCode(shopId: string, code: string) {
+  return apiFetch<Shop>(`/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/verify`, {
+    method: "POST",
+    body: { code },
+  });
 }
 
 export type VerificationStatus =
