@@ -393,10 +393,10 @@ export function generateLogo(shopId: string, token?: string | null) {
   );
 }
 
-export function sendShopWhatsAppCode(shopId: string) {
-  return apiFetch<{ message: string; verified: boolean }>(
+export function sendShopWhatsAppCode(shopId: string, whatsappNumber?: string) {
+  return apiFetch<{ message: string; verified: boolean; whatsapp_number: string }>(
     `/api/v1/shops/${encodeURIComponent(shopId)}/whatsapp/send-code`,
-    { method: "POST" },
+    { method: "POST", body: whatsappNumber ? { whatsapp_number: whatsappNumber } : undefined },
   );
 }
 

@@ -140,13 +140,16 @@ export default function MerchantShopSettingsPage() {
         logo_url: logoUrl.trim() || null,
         theme_config: withBannerUrl(shop?.theme_config ?? null, bannerUrl || null),
         shop_email: shopEmail.trim() || undefined,
-        whatsapp_number: whatsappNumber.trim() || undefined,
+        whatsapp_number: whatsappNumber.trim() || null,
         contacts: extraPhonesToContacts(extraPhones),
         location: buildShopLocationPayload(locationDisplay, locationCoordsState) ?? undefined,
         shop_type: shopType,
         category: category.trim() || undefined,
       });
       setShop(updated);
+      setWhatsappNumber(updated.whatsapp_number ?? "");
+      setWhatsappVerified(Boolean(updated.whatsapp_verified));
+      setExtraPhones(extraPhonesFromContacts(updated.contacts));
     } catch (err) {
       setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not save.");
     } finally {
@@ -358,8 +361,14 @@ export default function MerchantShopSettingsPage() {
               <WhatsAppStatus
                 shopId={shopId}
                 savedNumber={(shop?.whatsapp_number ?? "").trim()}
+                draftNumber={whatsappNumber}
                 verified={whatsappVerified}
                 registered={shop?.whatsapp_registered}
+                onNumberSaved={(n) => {
+                  setWhatsappNumber(n);
+                  setWhatsappVerified(false);
+                  setShop((s) => (s ? { ...s, whatsapp_number: n, whatsapp_verified: false, whatsapp_registered: null } : s));
+                }}
                 onVerified={(updated) => {
                   setShop(updated);
                   setWhatsappVerified(Boolean(updated.whatsapp_verified));

@@ -158,6 +158,7 @@ function DetailsTab({
   onSaved,
   whatsappVerified,
   onWhatsAppVerified,
+  onWhatsAppNumberSaved,
 }: {
   shop: Shop;
   form: FormState;
@@ -169,6 +170,7 @@ function DetailsTab({
   onSaved: (savedForm: FormState, updated?: Shop) => void;
   whatsappVerified: boolean;
   onWhatsAppVerified: (updated: Shop) => void;
+  onWhatsAppNumberSaved: (whatsappNumber: string) => void;
 }) {
   const router = useRouter();
   const session = useAppSession();
@@ -418,8 +420,10 @@ function DetailsTab({
             <WhatsAppStatus
               shopId={shop.id}
               savedNumber={(shop.whatsapp_number ?? "").trim()}
+              draftNumber={form.whatsappNumber}
               verified={whatsappVerified}
               registered={shop.whatsapp_registered}
+              onNumberSaved={onWhatsAppNumberSaved}
               onVerified={onWhatsAppVerified}
             />
           </div>
@@ -667,6 +671,12 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
           onLogoRemove={() => setStagedLogo("")}
           onSaved={onSaved}
           whatsappVerified={whatsappVerified}
+          onWhatsAppNumberSaved={(n) => {
+            setShopState((s) => ({ ...s, whatsapp_number: n, whatsapp_verified: false, whatsapp_registered: null }));
+            setWhatsappVerified(false);
+            setInitialForm((p) => ({ ...p, whatsappNumber: n }));
+            setForm((p) => ({ ...p, whatsappNumber: n }));
+          }}
           onWhatsAppVerified={(updated) => {
             setShopState(updated);
             setWhatsappVerified(Boolean(updated.whatsapp_verified));
