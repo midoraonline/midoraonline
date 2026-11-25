@@ -25,6 +25,7 @@ const KINDS: { value: CategoryMetaFieldKind; label: string }[] = [
   { value: "select", label: "Select" },
   { value: "date", label: "Date" },
   { value: "boolean", label: "Boolean" },
+  { value: "file", label: "File (PDF, Word, image)" },
 ];
 
 type EditorField = CategoryMetaField & { inherited?: boolean; builtIn?: boolean };
@@ -193,7 +194,13 @@ export default function CategoryFieldsEditor({
       }
       const prev = beforeOwn.get(field.key)!;
       if (JSON.stringify(serialize(prev)) !== JSON.stringify(stored)) {
-        await updateCategoryField(slug, field.key, stored);
+        // Unchanged type is left out so the API keeps the stored one (and a file field's options).
+        const body: Partial<CategoryMetaField> = { ...stored };
+        if (fieldKind(prev) === fieldKind(field)) {
+          delete body.type;
+          delete body.kind;
+        }
+        await updateCategoryField(slug, field.key, body);
       }
     }
     for (const field of fields) {

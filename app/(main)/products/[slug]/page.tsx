@@ -39,6 +39,7 @@ import {
   normalizeListingKind,
   parseListingMeta,
 } from "@/lib/listingMeta";
+import ListingAttachments from "@/components/shop/ListingAttachments";
 import ListingTypeTag from "@/components/ListingTypeTag";
 import BoostedTag from "@/components/BoostedTag";
 import { boostEndsLabel } from "@/lib/boostInfo";
@@ -578,6 +579,8 @@ export default async function ProductDetails({
               </dl>
             </section>
           ) : null}
+
+          <ListingAttachments meta={product.listing_meta as Record<string, unknown> | null | undefined} />
 
           {/* Listing facts */}
           <section className="space-y-2 border-t border-border pt-4">

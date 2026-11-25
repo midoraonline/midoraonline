@@ -6,6 +6,7 @@ import {
   type CategoryLabel,
   type CategoryTreeGroup,
 } from "@/lib/categories";
+import type { IntentMode, OpportunityCategory } from "@/lib/listingIntent";
 import { normalizeCategoryFields, type CategoryMetaField } from "@/lib/listingMeta";
 
 export type CategoryItem = {
@@ -87,4 +88,19 @@ export async function fetchCategoryFilterData(): Promise<{
 }> {
   const items = await listCategoryItems();
   return { items, tree: getCategoriesForFilter(items) };
+}
+
+export type IntentModeRow = {
+  opportunity_category: OpportunityCategory;
+  slug: string;
+  label: string;
+  intent_mode: IntentMode;
+  default_mode: IntentMode;
+  seeking_supported: boolean;
+};
+
+/** Effective Offer/Seek mode per opportunity category (admin value, else the code default). */
+export async function fetchIntentModes(): Promise<IntentModeRow[]> {
+  const res = await apiFetch<{ items: IntentModeRow[] }>("/api/v1/categories/intent-modes");
+  return Array.isArray(res.items) ? res.items : [];
 }

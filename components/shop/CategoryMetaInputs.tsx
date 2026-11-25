@@ -2,6 +2,8 @@
 
 import type { CategoryMetaField, ListingMeta } from "@/lib/listingMeta";
 import { fieldHelp, fieldKind } from "@/lib/listingMeta";
+import { isFileField, type FileFieldValue } from "@/lib/listingAttachment";
+import CategoryFileInput from "@/components/shop/CategoryFileInput";
 
 export default function CategoryMetaInputs({
   fields,
@@ -11,25 +13,35 @@ export default function CategoryMetaInputs({
 }: {
   fields: CategoryMetaField[];
   meta: ListingMeta;
-  onChange: (key: string, value: string | undefined) => void;
+  onChange: (key: string, value: string | FileFieldValue | undefined) => void;
   fieldErrors?: Record<string, string>;
 }) {
   if (fields.length === 0) return null;
   return (
     <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
       {fields.map((field) => {
-        const value = String(meta[field.key] ?? "");
+        const isFile = isFileField(field);
+        const value = isFile ? "" : String(meta[field.key] ?? "");
         const kind = fieldKind(field);
+        const labelId = `meta-${field.key}-label`;
         const help = fieldHelp(field);
         const message = fieldErrors?.[field.key];
         return (
           <div key={field.key} className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
+            <label id={labelId} className="text-xs font-semibold text-foreground">
               {field.label}
               {field.required ? <span className="text-[color:var(--error)]"> *</span> : null}
             </label>
             {help ? <p className="text-[11px] text-muted">{help}</p> : null}
-            {kind === "select" ? (
+            {isFile ? (
+              <CategoryFileInput
+                field={field}
+                value={meta[field.key]}
+                labelId={labelId}
+                error={message}
+                onChange={(next) => onChange(field.key, next)}
+              />
+            ) : kind === "select" ? (
               <select
                 className="dm-input"
                 value={value}
@@ -63,7 +75,7 @@ export default function CategoryMetaInputs({
                 placeholder={field.placeholder}
               />
             )}
-            {message ? <p className="text-xs text-[color:var(--error)]">{message}</p> : null}
+            {message && !isFile ? <p className="text-xs text-[color:var(--error)]">{message}</p> : null}
           </div>
         );
       })}

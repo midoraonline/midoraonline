@@ -19,6 +19,9 @@ export type OpportunityCategory =
 
 export type IntentMode = "bidirectional" | "offering_only";
 
+/** Admin-set modes from GET /categories/intent-modes; a missing key means the code default. */
+export type IntentModeOverrides = Partial<Record<OpportunityCategory, IntentMode>>;
+
 export type CardCta = "whatsapp" | "apply" | "respond" | "view_details" | "contact";
 
 export type OpportunityCategoryConfig = {
@@ -174,7 +177,7 @@ export const CTA_LABEL: Record<CardCta, string> = {
   contact: "Contact",
 };
 
-const isOpportunityCategory = (v: unknown): v is OpportunityCategory =>
+export const isOpportunityCategory = (v: unknown): v is OpportunityCategory =>
   typeof v === "string" && v in OPPORTUNITY_CATEGORIES;
 
 export function parseIntent(v: unknown): ListingIntent | null {
@@ -198,8 +201,20 @@ export function opportunityCategoryForLabel(label: string | null | undefined): O
   return resolveOpportunityCategory(null, label);
 }
 
-export function allowsSeeking(category: OpportunityCategory | null): boolean {
-  return !!category && OPPORTUNITY_CATEGORIES[category].mode === "bidirectional";
+export const isIntentMode = (v: unknown): v is IntentMode => v === "bidirectional" || v === "offering_only";
+
+/** The dictionary has seeking wording for this category, so it can be two-way. */
+export const supportsSeeking = (category: OpportunityCategory): boolean => Boolean(OPPORTUNITY_CATEGORIES[category].seeking);
+
+/** Admin override when set (and supported), else the code default. */
+export function effectiveIntentMode(category: OpportunityCategory, overrides?: IntentModeOverrides | null): IntentMode {
+  const set = overrides?.[category];
+  if (set === "offering_only" || (set === "bidirectional" && supportsSeeking(category))) return set;
+  return OPPORTUNITY_CATEGORIES[category].mode;
+}
+
+export function allowsSeeking(category: OpportunityCategory | null, overrides?: IntentModeOverrides | null): boolean {
+  return !!category && effectiveIntentMode(category, overrides) === "bidirectional";
 }
 
 export type ResolvedIntent = {
@@ -213,11 +228,13 @@ export type ResolvedIntent = {
 /**
  * Intent text + CTA for a card. Products: no intent text, WhatsApp.
  * Missing intent on a service/opportunity: no intent text (never guessed), default CTA.
+ * Offering-only shows offering text, except a stored seeking the dictionary can word (published before an admin change).
  */
 export function resolveListingIntent(input: {
   itemType: string | null | undefined;
   meta: Record<string, unknown> | null | undefined;
   category?: string | null;
+  modes?: IntentModeOverrides | null;
 }): ResolvedIntent {
   const t = (input.itemType ?? "product").toLowerCase();
   const intent = parseIntent(input.meta?.intent);
@@ -233,7 +250,9 @@ export function resolveListingIntent(input: {
     const cat = resolveOpportunityCategory(input.meta, input.category);
     if (!cat) return { intent, label: null, cta: "apply", opportunityCategory: null };
     const cfg = OPPORTUNITY_CATEGORIES[cat];
-    const effective: ListingIntent | null = cfg.mode === "offering_only" ? "offering" : intent;
+    const keepsSeeking = intent === "seeking" && Boolean(cfg.seeking);
+    const effective: ListingIntent | null =
+      effectiveIntentMode(cat, input.modes) === "offering_only" && !keepsSeeking ? "offering" : intent;
     if (effective === "seeking" && cfg.seeking) {
       return { intent: effective, label: cfg.seeking, cta: cfg.ctaSeek ?? "contact", opportunityCategory: cat };
     }

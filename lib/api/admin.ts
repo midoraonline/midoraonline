@@ -1,4 +1,6 @@
 import { apiFetch } from "./base";
+import type { IntentModeRow } from "./categories";
+import type { IntentMode } from "@/lib/listingIntent";
 import type { CategoryMetaField } from "@/lib/listingMeta";
 
 export type Paginated<T> = {
@@ -545,6 +547,26 @@ export function adminDeleteCategory(slug: string) {
   return apiFetch<{ status: string; slug: string }>(
     `/api/v1/admin/settings/categories/${encodeURIComponent(slug)}`,
     { method: "DELETE" },
+  );
+}
+
+export type AdminIntentModeChange = IntentModeRow & {
+  previous_mode: IntentMode;
+  /** Seeking listings in this category; they keep their stored intent. */
+  affected_seeking_listings: number;
+};
+
+export function adminListIntentModes() {
+  return apiFetch<{ items: IntentModeRow[] }>("/api/v1/admin/settings/categories/intent-modes").then(
+    (raw) => raw.items ?? [],
+  );
+}
+
+/** 422 `unsupported_intent_mode` for categories without seeking wording. */
+export function adminSetCategoryIntentMode(slug: string, intent_mode: IntentMode) {
+  return apiFetch<AdminIntentModeChange>(
+    `/api/v1/admin/settings/categories/${encodeURIComponent(slug)}/intent-mode`,
+    { method: "PATCH", body: { intent_mode } },
   );
 }
 

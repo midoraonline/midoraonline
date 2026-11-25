@@ -3,6 +3,7 @@
 import { PiCheckCircleFill } from "react-icons/pi";
 import IntentChoice, { type IntentOption } from "@/components/post/IntentChoice";
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
+import { useIntentModes } from "@/lib/hooks/useIntentModes";
 import { OPPORTUNITY_CATEGORIES, SERVICE_INTENT, allowsSeeking, parseIntent } from "@/lib/listingIntent";
 import {
   OPPORTUNITY_CATEGORY_CHOICES,
@@ -21,7 +22,7 @@ const SERVICE_OPTIONS: IntentOption[] = (["offering", "seeking"] as const).map((
 
 /**
  * Service: offer or need. Opportunity: one of nine categories, then offer/seek
- * only for bidirectional ones (offering-only categories store offering).
+ * only for two-way ones (admin mode from the API, else the code default; offering-only stores offering).
  */
 export default function ListingIntentFields({
   kind,
@@ -40,6 +41,7 @@ export default function ListingIntentFields({
   error?: string | null;
 }) {
   const { items } = useCategoryItems();
+  const modes = useIntentModes();
   const intent = parseIntent(meta.intent);
   const message = showErrors && error ? (
     <p className="text-xs text-[color:var(--error)]" role="alert">{error}</p>
@@ -78,7 +80,7 @@ export default function ListingIntentFields({
                 role="radio"
                 aria-checked={on}
                 onClick={() =>
-                  onChange({ meta: metaWithOpportunityCategory(meta, c.id), category: categoryLabelFor(c.id, items) })
+                  onChange({ meta: metaWithOpportunityCategory(meta, c.id, modes), category: categoryLabelFor(c.id, items) })
                 }
                 className={`dm-focus relative rounded-xl border-2 px-4 py-3 pr-10 text-left transition-colors ${
                   on ? "border-accent bg-accent/[0.04]" : "border-border bg-surface hover:border-accent/50"
@@ -95,7 +97,7 @@ export default function ListingIntentFields({
           })}
         </div>
       </fieldset>
-      {cfg && allowsSeeking(selected) ? (
+      {cfg && allowsSeeking(selected, modes) ? (
         <IntentChoice
           name="opportunity-intent"
           legend="Are you offering or looking?"
@@ -107,6 +109,15 @@ export default function ListingIntentFields({
           invalid={Boolean(showErrors && error)}
           onChange={(next) => onChange({ meta: metaWithIntent(meta, next) })}
         />
+      ) : null}
+      {cfg && intent === "seeking" && !allowsSeeking(selected, modes) ? (
+        <p
+          role="status"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          {cfg.label} now only takes listings that offer an opportunity. When you save, this listing will show as
+          {" "}<strong>{cfg.offering}</strong> instead of a &quot;looking for&quot; listing. Pick another category if you are still looking.
+        </p>
       ) : null}
       {message}
     </div>

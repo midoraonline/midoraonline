@@ -4,8 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { apiAdmin } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api/base";
 import type { AdminCategory } from "@/lib/api/admin";
+import type { IntentModeRow } from "@/lib/api/categories";
 import CategoryFieldsEditor from "@/components/admin/CategoryFieldsEditor";
+import CategoryIntentModeControl from "@/components/admin/CategoryIntentModeControl";
 import {
   CATEGORY_META_FIELD_KEY_OPTIONS,
   categoryMetaFields,
@@ -35,12 +38,17 @@ export default function AdminCategoriesClient() {
   const [expandedChildFields, setExpandedChildFields] = useState<Record<string, boolean>>({});
   const [newParentLabel, setNewParentLabel] = useState("");
   const [newChildLabel, setNewChildLabel] = useState<Record<string, string>>({});
+  const [intentModes, setIntentModes] = useState<Record<string, IntentModeRow>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const rows = await apiAdmin.adminListCategories();
+      const [rows, modes] = await Promise.all([
+        apiAdmin.adminListCategories(),
+        apiAdmin.adminListIntentModes().catch(() => [] as IntentModeRow[]),
+      ]);
+      setIntentModes(Object.fromEntries(modes.map((m) => [m.slug, m])));
       setCategories(
         (Array.isArray(rows) ? rows : []).map((row) => {
           const metadata = normalizeCategoryFields(row.metadata ?? row.fields);
@@ -122,7 +130,7 @@ export default function AdminCategoriesClient() {
       toast.success("Deleted");
       void load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(apiErrorMessage(err, "Failed to delete"));
     }
   }
 
@@ -246,6 +254,12 @@ export default function AdminCategoriesClient() {
                                 Delete
                               </button>
                             </div>
+                            {intentModes[child.slug] ? (
+                              <CategoryIntentModeControl
+                                row={intentModes[child.slug]}
+                                onSaved={(next) => setIntentModes((s) => ({ ...s, [next.slug]: next }))}
+                              />
+                            ) : null}
                             {childFieldsOpen ? (
                               <div className="pl-6">
                                 <CategoryFieldsEditor

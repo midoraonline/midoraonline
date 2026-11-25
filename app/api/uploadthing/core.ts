@@ -39,6 +39,19 @@ export const ourFileRouter = {
       await registerUpload({ key: file.key, url: file.ufsUrl, userId: metadata.userId, kind: "productVideo" });
       return { url: file.ufsUrl, key: file.key };
     }),
+
+  /** One document per category file field; the field's own cap (default 10 MB) is checked on save. */
+  listingAttachment: f({
+    pdf: { maxFileSize: "16MB", maxFileCount: 1 },
+    "application/msword": { maxFileSize: "16MB", maxFileCount: 1 },
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { maxFileSize: "16MB", maxFileCount: 1 },
+    image: { maxFileSize: "16MB", maxFileCount: 1 },
+  })
+    .middleware(async ({ req }) => requireUser(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      await registerUpload({ key: file.key, url: file.ufsUrl, userId: metadata.userId, kind: "listingAttachment" });
+      return { url: file.ufsUrl, key: file.key };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

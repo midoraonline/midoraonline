@@ -5,7 +5,8 @@ export type UploadKind =
   | "shopBanner"
   | "verificationDoc"
   | "avatar"
-  | "productVideo";
+  | "productVideo"
+  | "listingAttachment";
 
 /**
  * Record who uploaded a file so the API can later delete it safely

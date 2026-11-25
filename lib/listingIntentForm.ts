@@ -1,7 +1,9 @@
 /**
  * Posting-form helpers for Cards & Tags v1.2 (intent, opportunity category,
- * application link, title limits). Shared by ProductFormPage and ProductFormModal.
+ * application link, title limits). Used by ProductFormPage (components/shop/product-form).
+ * `modes` defaults to the admin Offer/Seek modes last loaded (lib/intentModes), else code defaults.
  */
+import { currentIntentModes } from "@/lib/intentModes";
 import {
   APPLICATION_LINK_MAX,
   CTA_LABEL,
@@ -10,9 +12,11 @@ import {
   OPPORTUNITY_CATEGORY_ORDER,
   TITLE_HARD_LIMIT,
   allowsSeeking,
+  effectiveIntentMode,
   parseIntent,
   resolveListingIntent,
   resolveOpportunityCategory,
+  type IntentModeOverrides,
   type ListingIntent,
   type OpportunityCategory,
 } from "@/lib/listingIntent";
@@ -54,9 +58,13 @@ export function categoryLabelFor(cat: OpportunityCategory, items: { label: strin
 }
 
 /** New category: offering-only categories reset intent to offering; others keep the choice. */
-export function metaWithOpportunityCategory(meta: ListingMeta, cat: OpportunityCategory): ListingMeta {
+export function metaWithOpportunityCategory(
+  meta: ListingMeta,
+  cat: OpportunityCategory,
+  modes: IntentModeOverrides = currentIntentModes(),
+): ListingMeta {
   const cfg = OPPORTUNITY_CATEGORIES[cat];
-  const intent = cfg.mode === "offering_only" ? "offering" : parseIntent(meta.intent) ?? undefined;
+  const intent = effectiveIntentMode(cat, modes) === "offering_only" ? "offering" : parseIntent(meta.intent) ?? undefined;
   return { ...meta, opportunity_category: cat, opportunity_kind: cfg.legacyKind, intent };
 }
 
@@ -65,13 +73,18 @@ export function metaWithIntent(meta: ListingMeta, intent: ListingIntent): Listin
 }
 
 /** Blocking message when the offer/need (or category) choice is missing. */
-export function intentError(kind: ListingKind, meta: ListingMeta, category: string): string | null {
+export function intentError(
+  kind: ListingKind,
+  meta: ListingMeta,
+  category: string,
+  modes: IntentModeOverrides = currentIntentModes(),
+): string | null {
   const intent = parseIntent(meta.intent);
   if (kind === "service") return intent ? null : "Choose whether you offer or need this service.";
   if (kind !== "opportunity") return null;
   const cat = draftOpportunityCategory(meta, category);
   if (!cat) return "Pick the type of opportunity.";
-  return allowsSeeking(cat) && !intent ? "Choose whether you are offering or looking." : null;
+  return allowsSeeking(cat, modes) && !intent ? "Choose whether you are offering or looking." : null;
 }
 
 export type IntentPreview = {
@@ -81,8 +94,13 @@ export type IntentPreview = {
 };
 
 /** Category → intent text → CTA, exactly as the card will resolve it. */
-export function intentPreview(kind: ListingKind, meta: ListingMeta, category: string): IntentPreview {
-  const resolved = resolveListingIntent({ itemType: kind, meta: meta as Record<string, unknown>, category });
+export function intentPreview(
+  kind: ListingKind,
+  meta: ListingMeta,
+  category: string,
+  modes: IntentModeOverrides = currentIntentModes(),
+): IntentPreview {
+  const resolved = resolveListingIntent({ itemType: kind, meta: meta as Record<string, unknown>, category, modes });
   const cat = resolved.opportunityCategory;
   return {
     categoryLabel: cat ? OPPORTUNITY_CATEGORIES[cat].label : category.trim() || null,
@@ -95,8 +113,16 @@ export function showsApplicationLink(kind: ListingKind): boolean {
   return kind === "opportunity";
 }
 
-export function applicationLinkRecommended(kind: ListingKind, meta: ListingMeta, category: string): boolean {
-  return kind === "opportunity" && resolveListingIntent({ itemType: kind, meta: meta as Record<string, unknown>, category }).cta === "apply";
+export function applicationLinkRecommended(
+  kind: ListingKind,
+  meta: ListingMeta,
+  category: string,
+  modes: IntentModeOverrides = currentIntentModes(),
+): boolean {
+  return (
+    kind === "opportunity" &&
+    resolveListingIntent({ itemType: kind, meta: meta as Record<string, unknown>, category, modes }).cta === "apply"
+  );
 }
 
 const SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
@@ -132,7 +158,13 @@ export function titleLengthError(title: string): string | null {
  * `cleanListingMeta` keeps only legacy keys; add the v1.2 fields back. Offering-only
  * categories always store intent=offering. Intent is never inferred from the title.
  */
-export function withIntentMeta(kind: ListingKind, raw: ListingMeta, category: string, cleaned: ListingMeta): ListingMeta {
+export function withIntentMeta(
+  kind: ListingKind,
+  raw: ListingMeta,
+  category: string,
+  cleaned: ListingMeta,
+  modes: IntentModeOverrides = currentIntentModes(),
+): ListingMeta {
   if (kind === "product") return cleaned;
   const out: ListingMeta = { ...cleaned };
   const intent = parseIntent(raw.intent);
@@ -145,7 +177,7 @@ export function withIntentMeta(kind: ListingKind, raw: ListingMeta, category: st
     out.opportunity_category = cat;
     out.opportunity_kind = OPPORTUNITY_CATEGORIES[cat].legacyKind;
   }
-  const effective = cat && !allowsSeeking(cat) ? "offering" : intent;
+  const effective = cat && !allowsSeeking(cat, modes) ? "offering" : intent;
   if (effective) out.intent = effective;
   const link = normalizeApplicationLink(raw.application_link).value;
   if (link) out.application_link = link;

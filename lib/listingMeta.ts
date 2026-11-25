@@ -63,7 +63,7 @@ export type ListingMeta = {
   [key: string]: string | string[] | undefined;
 };
 
-export type CategoryMetaFieldKind = "text" | "number" | "select" | "date" | "boolean";
+export type CategoryMetaFieldKind = "text" | "number" | "select" | "date" | "boolean" | "file";
 
 export type CategoryMetaField = {
   key: string;
