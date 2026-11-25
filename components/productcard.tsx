@@ -2,20 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CalendarDays, Clock, Flame, Gem, ImageIcon, MapPin, MessageCircle, Play, Repeat2, Rocket, Star, TrendingUp } from "lucide-react";
+import { CalendarDays, ImageIcon, MapPin, Play, Repeat2, Star } from "lucide-react";
 import ProductLikeButton from "@/components/product/ProductLikeButton";
-import MessageSellerButton from "@/components/chat/MessageSellerButton";
-import { isVideoUrl, type CardStatus, type FeedPlacement } from "@/lib/api/products";
+import { isVideoUrl, type CardIntentFields, type CardStatus, type FeedPlacement } from "@/lib/api/products";
 import FallbackImage from "@/components/media/FallbackImage";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
-import { track } from "@/lib/analytics";
 import { useImpressionTracker } from "@/lib/hooks/useImpressionTracker";
 import { formatLastActive, formatMemberSince } from "@/lib/trustSignals";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
-import TradeDisclaimer from "@/components/TradeDisclaimer";
-import BrandedCover from "@/components/BrandedCover";
-import { listingTypeTagKind } from "@/lib/listingType";
+import BrandedCover, { type CoverTone } from "@/components/BrandedCover";
+import CardCta from "@/components/card/CardCta";
+import CardStatusBadge, { hasVisibleStatus } from "@/components/card/CardStatusBadge";
+import { cardCategoryLabel, cardVisual, readCardIntent, safeApplicationLink } from "@/lib/cardIntent";
 import {
   resolveShopTrustLevel,
   SHOP_TRUST_LABEL,
@@ -24,7 +22,6 @@ import {
   COMPENSATION_OPTIONS,
   CONDITION_OPTIONS,
   isTextOnlyListing,
-  needHeadline,
   normalizeListingKind,
   parseListingMeta,
   deadlineChip,
@@ -34,9 +31,13 @@ import { isOnlineLocation } from "@/lib/listingLocation";
 import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
 
 
-const CARD_TAG = "px-2.5 py-1 text-[11px] sm:text-xs";
+const INTENT_ACCENT: Record<CoverTone, string> = {
+  service: "text-listing-service-accent",
+  opportunity: "text-listing-opportunity-accent",
+};
 
-export type ProductCardData = {
+/** Server intent fields (intent, opportunity_category, intent_label, cta) ride along; see lib/cardIntent.ts. */
+export type ProductCardData = CardIntentFields & {
   id: string;
   slug: string;
   title: string;
@@ -91,13 +92,13 @@ export type ProductCardData = {
   listing_meta?: Record<string, unknown> | null;
 };
 
-function PersonalSellerLine({ shop }: { shop: ProductCardData["shop"] }) {
+function PersonalSellerLine({ shop, size }: { shop: ProductCardData["shop"]; size: string }) {
   if (!shop.is_personal) return null;
   const name = shop.seller_name?.trim() || shop.name;
   const joined = formatMemberSince(shop.joined_at);
   const active = formatLastActive(shop.last_active_at);
   return (
-    <p className="truncate text-[11px] leading-snug text-muted">
+    <p className={`truncate leading-snug text-muted ${size}`}>
       <span className="font-medium text-foreground/80">{name}</span>
       <span> · {PERSONAL_SELLER_LABEL}</span>
       {joined ? <span> · Joined {joined}</span> : null}
@@ -249,26 +250,6 @@ function timeLabel(iso: string | null | undefined): string | null {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-const STATUS_STYLE: Record<CardStatus, { label: string; icon: typeof Clock; tone: string }> = {
-  sponsored: { label: "Sponsored", icon: Gem, tone: "bg-rose-600" },
-  boosted: { label: "Boosted", icon: Rocket, tone: "bg-indigo-600" },
-  closing_soon: { label: "Closing soon", icon: Clock, tone: "bg-violet-600" },
-  trending: { label: "Trending", icon: TrendingUp, tone: "bg-emerald-600" },
-  new: { label: "New", icon: Flame, tone: "bg-orange-500" },
-};
-
-function StatusBadge({ status }: { status: CardStatus }) {
-  const { label, icon: Icon, tone } = STATUS_STYLE[status];
-  return (
-    <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full font-semibold leading-none text-white shadow-sm ${tone} ${CARD_TAG}`}
-    >
-      <Icon className="size-[1.1em]" strokeWidth={2.5} aria-hidden />
-      {label}
-    </span>
-  );
-}
-
 function ShopLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
   const [failed, setFailed] = useState(false);
   if (!logoUrl || failed) return null;
@@ -283,78 +264,6 @@ function ShopLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
         onExhausted={() => setFailed(true)}
       />
     </span>
-  );
-}
-
-function WhatsAppCta({
-  waHref,
-  productId,
-  productHref,
-  shopId,
-  sellerId,
-  category,
-  hasDiscount,
-  compact = false,
-  label = "WhatsApp",
-}: {
-  waHref: string | null;
-  productId: string;
-  productHref: string;
-  shopId?: string;
-  sellerId?: string | null;
-  category?: string;
-  hasDiscount?: boolean;
-  compact?: boolean;
-  label?: string;
-}) {
-  const className = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white transition-colors ${
-    waHref
-      ? "bg-[#25D366] hover:bg-[#22c35e] active:bg-[#1fae53]"
-      : "bg-accent hover:bg-accent-hover active:scale-[0.98]"
-  } ${
-    compact ? "py-2" : "py-2.5"
-  }`;
-
-  const whatsappLabel = (
-    <>
-      <WhatsAppIcon className="size-3.5 shrink-0 text-white sm:size-4" />
-      {label}
-    </>
-  );
-
-  if (waHref) {
-    return (
-      <TradeDisclaimer
-        type="whatsapp"
-        onConfirm={() => {
-          if (shopId) {
-            track("conversion:whatsapp_click", {
-              productId,
-              shopId,
-              category,
-              hasDiscount,
-              clickSource: "search_result",
-            });
-          }
-          window.open(waHref, "_blank", "noopener,noreferrer");
-        }}
-      >
-        {(open) => (
-          <button type="button" onClick={open} className={`${className} cursor-pointer`}>
-            {whatsappLabel}
-          </button>
-        )}
-      </TradeDisclaimer>
-    );
-  }
-
-  return sellerId ? (
-    <MessageSellerButton sellerId={sellerId} shopId={shopId} productId={productId} buttonClassName={className} />
-  ) : (
-    <Link href={productHref} className={className}>
-      <MessageCircle className="size-3.5 shrink-0 sm:size-4" aria-hidden />
-      Message seller
-    </Link>
   );
 }
 
@@ -397,17 +306,19 @@ export default function ProductCard({
   const trustLevel = resolveShopTrustLevel(product.shop.trust_badges);
   const listingMeta = parseListingMeta(product.listing_meta);
   const listingKind = normalizeListingKind(product.item_type);
+  const isListing = listingKind !== "product";
+  const intent = readCardIntent(product);
+  const tone: CoverTone = listingKind === "service" ? "service" : "opportunity";
   const displayPrice =
     listingKind === "product"
       ? formatUGX(price)
       : formatListingRate(price, listingKind, listingMeta);
-  const typeKind = listingTypeTagKind(product.item_type, listingMeta);
-  const headline =
-    listingKind === "product" ? product.title : needHeadline(product.title, listingMeta);
+  const isBudget =
+    isListing && intent.intent === "seeking" && price > 0 && listingMeta.pricing_model !== "quote";
   const titleClass =
     listingKind === "product"
       ? "line-clamp-2 text-[13px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm"
-      : "line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-sm";
+      : "line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-foreground transition-colors hover:text-accent sm:text-base";
   const coverUrls = coverMediaUrls(product);
   const [trackedId, setTrackedId] = useState(product.id);
   const [coverFailed, setCoverFailed] = useState(false);
@@ -416,16 +327,35 @@ export default function ProductCard({
     setCoverFailed(false);
   }
   const hasMedia = coverUrls.length > 0;
-  const textFirst = listingKind !== "product" && (!hasMedia || coverFailed);
-  const coverCategory = product.category?.trim() || product.shop.category?.trim() || null;
-  const titleHeading = <h3 className={textFirst ? "sr-only" : titleClass}>{headline}</h3>;
+  const textFirst = isListing && (!hasMedia || coverFailed);
+
+  const repostedMark = product.reposted ? (
+    <span
+      role="img"
+      aria-label="Reposted in the last 24 hours"
+      title="Reposted today"
+      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm"
+    >
+      <Repeat2 className="size-3.5" aria-hidden />
+    </span>
+  ) : null;
+  const badgeRow =
+    hasVisibleStatus(product.status) || repostedMark ? (
+      <>
+        <CardStatusBadge status={product.status} />
+        {repostedMark}
+      </>
+    ) : null;
+
   const coverFrame = (sizes: string) =>
     textFirst ? (
       <BrandedCover
-        kind={typeKind}
-        title={headline}
-        category={coverCategory}
-        hideSuffix={product.status === "closing_soon"}
+        tone={tone}
+        title={product.title}
+        intentLabel={intent.label}
+        badge={badgeRow}
+        visual={cardVisual(product.item_type, intent.opportunityCategory)}
+        layout={layout}
       />
     ) : coverFailed || coverUrls.length === 0 ? (
       <CoverPlaceholder />
@@ -440,19 +370,9 @@ export default function ProductCard({
     );
 
   const imageBadges =
-    product.status || product.reposted ? (
+    badgeRow && !textFirst ? (
       <div className="pointer-events-none absolute left-2 top-2 z-[6] flex max-w-[75%] items-center gap-1">
-        {product.status ? <StatusBadge status={product.status} /> : null}
-        {product.reposted ? (
-          <span
-            role="img"
-            aria-label="Reposted in the last 24 hours"
-            title="Reposted today"
-            className="inline-flex size-6 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm"
-          >
-            <Repeat2 className="size-3.5" aria-hidden />
-          </span>
-        ) : null}
+        {badgeRow}
       </div>
     ) : null;
 
@@ -497,6 +417,8 @@ export default function ProductCard({
     );
 
   const whenLabel = deadlineChip(listingMeta.deadline) ?? tInfo;
+  // Under 24 h left: warn in the body even when Sponsored holds the badge slot.
+  const deadlineUrgent = whenLabel === "Closes today" || product.status === "closes_today";
   const conditionLabel =
     listingKind === "product" ? optionLabel(CONDITION_OPTIONS, listingMeta.condition) : null;
   const serviceArea =
@@ -509,10 +431,11 @@ export default function ProductCard({
         ? `${conditionLabel} · ${locationLabel}`
         : locationLabel;
 
+  const sellerSize = isListing ? "text-[13px] sm:text-sm" : "text-[11px] sm:text-xs";
   const shopRow = product.shop.is_personal ? (
-    <PersonalSellerLine shop={product.shop} />
+    <PersonalSellerLine shop={product.shop} size={sellerSize} />
   ) : (
-    <div className="flex min-w-0 items-center gap-1 text-[11px] text-muted sm:text-xs">
+    <div className={`flex min-w-0 items-center gap-1 text-muted ${sellerSize}`}>
       <span className="truncate font-medium">{product.shop.name}</span>
       {trustMark}
     </div>
@@ -525,12 +448,56 @@ export default function ProductCard({
       </div>
     ) : null;
 
+  const categoryLabel = isListing ? cardCategoryLabel(product.category, intent.opportunityCategory) : null;
+  const showShop = !product.inShopContext;
+
+  const titleBlock = textFirst ? null : (
+    <>
+      {isListing && intent.label ? (
+        <p className={`truncate text-[11px] font-bold uppercase tracking-wide ${INTENT_ACCENT[tone]}`}>
+          {intent.label}
+        </p>
+      ) : null}
+      <Link href={productHref} className="dm-focus block outline-none" title={product.title}>
+        <h3 className={titleClass}>{product.title}</h3>
+      </Link>
+    </>
+  );
+
+  const priceRow = (
+    <div className="flex flex-wrap items-baseline gap-1.5">
+      <span
+        className={`tabular-nums text-accent ${
+          isListing
+            ? "text-[17px] font-bold sm:text-lg"
+            : layout === "horizontal"
+              ? "text-base font-extrabold sm:text-lg"
+              : "text-[15px] font-extrabold sm:text-base"
+        }`}
+      >
+        {isBudget ? `Budget: ${displayPrice}` : displayPrice}
+      </span>
+      {isDiscounted && (
+        <span className="text-[11px] font-medium text-muted line-through tabular-nums sm:text-xs">
+          {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
+        </span>
+      )}
+      {listingKind === "product" && price > 0 && product.negotiable !== false && (
+        <span className="text-[10px] font-medium text-muted">· Negotiable</span>
+      )}
+    </div>
+  );
+
   const metaRow = (
     <div className="space-y-0.5 text-[10px] text-muted sm:text-[11px]">
       {listingKind === "opportunity" && whenLabel ? (
-        <p className="flex items-center gap-1">
+        <p
+          className={`flex items-center gap-1 ${
+            deadlineUrgent ? "font-semibold text-red-600 dark:text-red-400" : ""
+          }`}
+        >
           <CalendarDays className="size-3 shrink-0" strokeWidth={2} aria-hidden />
-          <span className="truncate font-medium text-foreground/80">{whenLabel}</span>
+          <span className={`truncate font-medium ${deadlineUrgent ? "" : "text-foreground/80"}`}>{whenLabel}</span>
         </p>
       ) : null}
       <p className="flex items-center gap-1">
@@ -541,8 +508,34 @@ export default function ProductCard({
       </p>
     </div>
   );
-  const ctaLabel = listingKind === "opportunity" ? "Apply now" : "WhatsApp";
-  const showShop = !product.inShopContext;
+
+  const details = (
+    <>
+      {titleBlock}
+      {categoryLabel ? (
+        <p className="truncate text-[13px] font-medium text-muted">{categoryLabel}</p>
+      ) : null}
+      {showShop ? shopRow : null}
+      {rating}
+      {priceRow}
+      {metaRow}
+    </>
+  );
+
+  const cta = (compact: boolean) => (
+    <CardCta
+      cta={intent.cta}
+      waHref={waHref}
+      applicationLink={safeApplicationLink(listingMeta.application_link)}
+      productId={product.id}
+      productHref={productHref}
+      shopId={product.shop.id}
+      sellerId={product.sellerId}
+      category={product.category ?? undefined}
+      hasDiscount={isDiscounted}
+      compact={compact}
+    />
+  );
 
   if (layout === "horizontal") {
     return (
@@ -561,40 +554,8 @@ export default function ProductCard({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3 sm:p-3.5">
-          <div className="space-y-1">
-            {textFirst ? (
-              titleHeading
-            ) : (
-              <Link href={productHref} className="dm-focus block outline-none">
-                {titleHeading}
-              </Link>
-            )}
-            {showShop ? shopRow : null}
-            {rating}
-            <div className="flex flex-wrap items-baseline gap-1.5">
-              <span className="text-base font-extrabold tabular-nums text-accent sm:text-lg">{displayPrice}</span>
-              {isDiscounted && (
-                <span className="text-xs font-medium text-muted line-through tabular-nums">
-                  {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
-                </span>
-              )}
-              {listingKind === "product" && price > 0 && product.negotiable !== false && (
-                <span className="text-[10px] font-medium text-muted">· Negotiable</span>
-              )}
-            </div>
-            {metaRow}
-          </div>
-          <WhatsAppCta
-            waHref={waHref}
-            productId={product.id}
-            productHref={productHref}
-            shopId={product.shop.id}
-            sellerId={product.sellerId}
-            category={product.category ?? undefined}
-            hasDiscount={isDiscounted}
-            label={ctaLabel}
-            compact
-          />
+          <div className="space-y-1">{details}</div>
+          {cta(true)}
         </div>
       </article>
     );
@@ -616,42 +577,8 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
-        {textFirst ? (
-          titleHeading
-        ) : (
-          <Link href={productHref} className="dm-focus block outline-none">
-            {titleHeading}
-          </Link>
-        )}
-        {showShop ? shopRow : null}
-        {rating}
-
-        <div className="flex flex-wrap items-baseline gap-1.5">
-          <span className="text-[15px] font-extrabold tabular-nums text-accent sm:text-base">{displayPrice}</span>
-          {isDiscounted && (
-            <span className="text-[11px] font-medium text-muted line-through tabular-nums">
-              {formatUGX(product.originalPriceUGX ?? product.priceUGX)}
-            </span>
-          )}
-          {listingKind === "product" && price > 0 && product.negotiable !== false && (
-            <span className="text-[10px] font-medium text-muted">· Negotiable</span>
-          )}
-        </div>
-
-        {metaRow}
-
-        <div className="mt-auto pt-1.5">
-          <WhatsAppCta
-            waHref={waHref}
-            productId={product.id}
-            productHref={productHref}
-            shopId={product.shop.id}
-            sellerId={product.sellerId}
-            category={product.category ?? undefined}
-            hasDiscount={isDiscounted}
-            label={ctaLabel}
-          />
-        </div>
+        {details}
+        <div className="mt-auto pt-1.5">{cta(false)}</div>
       </div>
     </article>
   );

@@ -38,7 +38,6 @@ import {
   cleanListingMeta,
   COMPENSATION_OPTIONS,
   CONDITION_OPTIONS,
-  deriveOpportunityKindFromSubcategory,
   indefiniteArticle,
   LISTING_KIND_LABEL,
   normalizeCategoryFields,
@@ -59,6 +58,19 @@ import ListingReachFields from "@/components/post/ListingReachFields";
 import { listingPlaceFields } from "@/lib/listingLocation";
 import { useSessionStore } from "@/lib/state/session-store";
 import { useSettingsHref } from "@/lib/settingsHref";
+import ApplicationLinkField from "@/components/post/ApplicationLinkField";
+import IntentPreviewBlock from "@/components/post/IntentPreviewBlock";
+import ListingIntentFields from "@/components/post/ListingIntentFields";
+import ListingPreviewCard from "@/components/post/ListingPreviewCard";
+import TitleField from "@/components/post/TitleField";
+import {
+  applicationLinkRecommended,
+  intentError,
+  normalizeApplicationLink,
+  showsApplicationLink,
+  titleLengthError,
+  withIntentMeta,
+} from "@/lib/listingIntentForm";
 
 const UGX = new Intl.NumberFormat("en-UG", {
   style: "currency",
@@ -161,7 +173,7 @@ function draftsEqual(a: FormDraft, b: FormDraft): boolean {
 
 const PLAN_NAMES: Record<string, string> = { basic: "Basic", standard: "Standard", premium: "Premium" };
 
-type SectionKey = "media" | "details" | "location" | "price" | "category" | "meta";
+type SectionKey = "intent" | "media" | "details" | "location" | "price" | "category" | "meta";
 
 const ERROR_SECTIONS: Record<string, SectionKey> = {
   too_many_media: "media",
@@ -176,6 +188,9 @@ const ERROR_SECTIONS: Record<string, SectionKey> = {
   title_required: "details",
   location_required: "location",
   listing_fields_required: "meta",
+  invalid_intent: "intent",
+  title_too_long: "details",
+  invalid_application_link: "meta",
 };
 
 /** Which form section an API rejection belongs to, so it can be highlighted. */
@@ -246,6 +261,7 @@ export default function ProductFormPage({
   const [showErrors, setShowErrors] = useState(false);
   const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [linkServerError, setLinkServerError] = useState<string | null>(null);
   /** Section the API rejected (price, images, category…), highlighted until edited. */
   const [serverSection, setServerSection] = useState<{ key: SectionKey; message: string } | null>(null);
   const { mediaLimitsFor } = usePublicSettings();
@@ -379,20 +395,35 @@ export default function ProductFormPage({
     });
   }, [draft, categoryParts, categoryTree, catFields, contactVerified, sessionUser?.phone_verified, sessionUser?.email_verified, shopLocationLabel, mediaLimits.maxPhotos, mediaLimits.maxVideos]);
 
+  // v1.2 checks: offer/need + opportunity category, title hard limit, application link.
+  const intentErrors = useMemo(() => {
+    const out: { intent?: string; title?: string; application_link?: string } = {};
+    // Edits of older listings are not blocked on a missing choice; the backfill sets it.
+    const intent = mode === "add" ? intentError(draft.kind, draft.meta, draft.category) : null;
+    if (intent) out.intent = intent;
+    const title = titleLengthError(draft.title);
+    if (title) out.title = title;
+    const link = showsApplicationLink(draft.kind) ? normalizeApplicationLink(draft.meta.application_link).error : null;
+    if (link) out.application_link = link;
+    return out;
+  }, [mode, draft.kind, draft.meta, draft.category, draft.title]);
+
   const invalidSections = useMemo(() => {
     const out = new Set<SectionKey>();
     if (showErrors) {
       if (errors.images) out.add("media");
-      if (errors.title || errors.description) out.add("details");
+      if (errors.title || errors.description || intentErrors.title) out.add("details");
       if (errors.location_name || errors.phone) out.add("location");
       if (errors.price_ugx || errors.sale_price || errors.stock_quantity || sale.kind === "invalid") out.add("price");
-      if (errors.category) out.add("category");
-      if (errors.meta || Object.keys(serverFieldErrors).length) out.add("meta");
+      if (errors.category) out.add(draft.kind === "opportunity" ? "intent" : "category");
+      if (intentErrors.intent) out.add("intent");
+      if (errors.meta || intentErrors.application_link || Object.keys(serverFieldErrors).length) out.add("meta");
     }
     if (mediaError) out.add("media");
+    if (linkServerError) out.add("meta");
     if (serverSection) out.add(serverSection.key);
     return out;
-  }, [showErrors, errors, sale.kind, serverFieldErrors, mediaError, serverSection]);
+  }, [showErrors, errors, intentErrors, draft.kind, sale.kind, serverFieldErrors, mediaError, linkServerError, serverSection]);
 
   const sectionClass = (key: SectionKey) =>
     `scroll-mt-24 space-y-4 rounded-xl border bg-surface p-4 shadow-xs transition-colors sm:p-6 ${
@@ -417,7 +448,7 @@ export default function ProductFormPage({
     });
   }
 
-  const canSubmit = Object.keys(errors).length === 0;
+  const canSubmit = Object.keys(errors).length === 0 && Object.keys(intentErrors).length === 0;
 
   // Reset the cached AI verdict when the user manually edits a relevant
   // field — stale feedback about text they've since rewritten shouldn't
@@ -551,6 +582,7 @@ export default function ProductFormPage({
     submitLock.current = true;
     setShowErrors(true);
     setMediaError(null);
+    setLinkServerError(null);
     setServerSection(null);
     try {
     if (!canSubmit) {
@@ -595,11 +627,11 @@ export default function ProductFormPage({
 
     const price = parseAmount(draft.price_ugx);
     const salePrice = sale.kind === "ok" ? parseAmount(draft.sale_price) : null;
-    const meta = cleanListingMeta(
+    const meta = withIntentMeta(
       draft.kind,
       draft.meta,
-      categoryParts.parentLabel,
-      catFields,
+      draft.category,
+      cleanListingMeta(draft.kind, draft.meta, categoryParts.parentLabel, catFields),
     );
 
     const body: CreateProductRequest = {
@@ -699,6 +731,13 @@ export default function ProductFormPage({
         }
       }
       const message = err instanceof Error ? err.message : "Could not save. Try again.";
+      if (err instanceof ApiError && err.code === "invalid_application_link") {
+        setLinkServerError(message);
+        setShowErrors(true);
+        scrollToFirstInvalid();
+        toast.error(message, { id: toastId });
+        return;
+      }
       const section = sectionForError(err);
       if (section) {
         setServerSection({ key: section, message });
@@ -735,6 +774,64 @@ export default function ProductFormPage({
         ? "Describe the role or offer, who can apply, responsibilities, requirements, location, and how to respond. Add compensation and deadline below when relevant."
         : "Describe the item, its condition, what is included, location, and any requirements.";
   const descriptionTip = `${descriptionPrompt} Write at least two clear sentences.`;
+
+  const categorySection = (
+    <section data-invalid={invalidSections.has("category")} className={sectionClass("category")}>
+      {sectionMessage("category")}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground">Category</h2>
+        <p className="mt-0.5 text-sm text-muted">
+          {draft.kind === "product"
+            ? "Assign a category so buyers can filter and discover your item."
+            : "Category is set to Services based on your listing type. Pick a subcategory."}
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <CategoryPicker
+          value={draft.category}
+          onChange={(category) => setDraft((d) => ({ ...d, category }))}
+          required
+          idPrefix="product-category-page"
+          lockedParentSlug={draft.kind === "service" ? "services" : undefined}
+          excludeParentSlugs={
+            draft.kind === "product" ? ["services", "opportunities"] : undefined
+          }
+        />
+        {showErrors && errors.category ? (
+          <p className="text-xs text-[color:var(--error)]">{errors.category}</p>
+        ) : null}
+      </div>
+    </section>
+  );
+
+  const intentSection =
+    draft.kind === "product" ? null : (
+      <section data-invalid={invalidSections.has("intent")} className={sectionClass("intent")}>
+        {sectionMessage("intent")}
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">
+            {draft.kind === "service" ? "Offer or need" : "Type of opportunity"}
+          </h2>
+          <p className="mt-0.5 text-sm text-muted">
+            {draft.kind === "service"
+              ? "Midora shows this on your card, so buyers know straight away."
+              : "Pick the closest match. It sets the card label and the button buyers tap."}
+          </p>
+        </div>
+        <ListingIntentFields
+          kind={draft.kind}
+          meta={draft.meta}
+          category={draft.category}
+          showErrors={showErrors}
+          error={intentErrors.intent ?? (draft.kind === "opportunity" ? errors.category : null)}
+          onChange={({ meta, category }) => {
+            setServerSection((cur) => (cur?.key === "intent" ? null : cur));
+            setDraft((d) => ({ ...d, meta, category: category ?? d.category }));
+          }}
+        />
+      </section>
+    );
 
   return (
     <div
@@ -861,6 +958,9 @@ export default function ProductFormPage({
           />
         </div>
 
+        {intentSection}
+        {draft.kind === "service" ? categorySection : null}
+
         <section data-invalid={invalidSections.has("media")} className={sectionClass("media")}>
           <div>
             <h2 className="text-sm font-semibold text-foreground">
@@ -942,30 +1042,23 @@ export default function ProductFormPage({
             <p className="mt-0.5 text-sm text-muted">A clear title and a few honest sentences help buyers decide.</p>
           </div>
 
-          {/* Title */}
-          <div className="space-y-1.5">
-            <label htmlFor="product-title" className="block text-sm font-medium text-foreground">
-              Title
-            </label>
-            <input
-              id="product-title"
-              className={INPUT}
-              value={draft.title}
-              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              placeholder={
-                draft.kind === "opportunity"
-                  ? "e.g. Looking for a shop assistant in Kampala"
-                  : draft.kind === "service"
-                    ? "e.g. Home cleaning — same-day Kampala"
-                    : "What are you selling?"
-              }
-              aria-invalid={showErrors && Boolean(errors.title)}
-              required
-            />
-            {showErrors && errors.title ? (
-              <p className="text-xs text-[color:var(--error)]">{errors.title}</p>
-            ) : null}
-          </div>
+          <TitleField
+            value={draft.title}
+            onChange={(title) => {
+              setServerSection((cur) => (cur?.key === "details" ? null : cur));
+              setDraft((d) => ({ ...d, title }));
+            }}
+            placeholder={
+              draft.kind === "opportunity"
+                ? "e.g. Shop assistant needed in Kampala"
+                : draft.kind === "service"
+                  ? "e.g. Home cleaning, same day in Kampala"
+                  : "What are you selling?"
+            }
+            error={showErrors ? (errors.title ?? intentErrors.title) : null}
+            inputClassName={INPUT}
+            required
+          />
 
           {/* Description */}
           <div className="space-y-1.5">
@@ -1097,54 +1190,7 @@ export default function ProductFormPage({
           ) : null}
         </section>
 
-        {/* Card 5: Category */}
-        <section data-invalid={invalidSections.has("category")} className={sectionClass("category")}>
-          {sectionMessage("category")}
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Category</h2>
-            <p className="mt-0.5 text-sm text-muted">
-              {draft.kind === "product"
-                ? "Assign a category so buyers can filter and discover your item."
-                : draft.kind === "service"
-                  ? `Category is set to Services based on your listing type. Pick a subcategory.`
-                  : `Category is set to Opportunities based on your listing type. Pick a subcategory.`}
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <CategoryPicker
-              value={draft.category}
-              onChange={(category) =>
-                setDraft((d) => ({
-                  ...d,
-                  category,
-                  meta:
-                    d.kind === "opportunity"
-                      ? {
-                          ...d.meta,
-                          opportunity_kind: deriveOpportunityKindFromSubcategory(category),
-                        }
-                      : d.meta,
-                }))
-              }
-              required
-              idPrefix="product-category-page"
-              lockedParentSlug={
-                draft.kind === "service"
-                  ? "services"
-                  : draft.kind === "opportunity"
-                    ? "opportunities"
-                    : undefined
-              }
-              excludeParentSlugs={
-                draft.kind === "product" ? ["services", "opportunities"] : undefined
-              }
-            />
-            {showErrors && errors.category ? (
-              <p className="text-xs text-[color:var(--error)]">{errors.category}</p>
-            ) : null}
-          </div>
-        </section>
+        {draft.kind === "product" ? categorySection : null}
 
         {/* Card 6: Additional Attributes */}
         <section data-invalid={invalidSections.has("meta")} className={sectionClass("meta")}>
@@ -1350,12 +1396,28 @@ export default function ProductFormPage({
             </div>
           ) : null}
 
+          {showsApplicationLink(draft.kind) && !catFields.some((f) => f.key === "application_link") ? (
+            <ApplicationLinkField
+              value={draft.meta.application_link ?? ""}
+              onChange={(application_link) => {
+                setLinkServerError(null);
+                setDraft((d) => ({ ...d, meta: { ...d.meta, application_link } }));
+              }}
+              error={linkServerError ?? (showErrors ? intentErrors.application_link : null)}
+              inputClassName={INPUT}
+              recommended={applicationLinkRecommended(draft.kind, draft.meta, draft.category)}
+            />
+          ) : null}
+
           {catFields.length > 0 ? (
             <CategoryMetaInputs
               fields={catFields}
               meta={draft.meta}
-              fieldErrors={showErrors ? serverFieldErrors : undefined}
+              fieldErrors={
+                linkServerError ? { ...serverFieldErrors, application_link: linkServerError } : showErrors ? serverFieldErrors : undefined
+              }
               onChange={(key, value) => {
+                if (key === "application_link") setLinkServerError(null);
                 setServerFieldErrors((current) => {
                   if (!current[key]) return current;
                   const next = { ...current };
@@ -1374,6 +1436,8 @@ export default function ProductFormPage({
             <p className="text-xs text-[color:var(--error)]">{errors.meta}</p>
           ) : null}
         </section>
+        <IntentPreviewBlock kind={draft.kind} meta={draft.meta} category={draft.category} title={draft.title} />
+
         {/* AI review: runs on the whole listing, so it sits after every field. */}
         <section aria-labelledby="ai-review-heading" className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1505,40 +1569,6 @@ export default function ProductFormPage({
             Cancel
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-const PREVIEW_COVER: Record<string, string> = {
-  product: "bg-listing-product text-listing-product-foreground",
-  service: "bg-listing-service text-listing-service-foreground",
-  opportunity: "bg-listing-opportunity text-listing-opportunity-foreground",
-};
-
-function ListingPreviewCard({ draft }: { draft: FormDraft }) {
-  const cover = draft.image_urls.find((u) => !/\.(mp4|webm|mov)(\?|$)/i.test(u));
-  const price = Number(String(draft.price_ugx).replace(/[^0-9.]/g, ""));
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
-      <div className={`relative aspect-[4/3] ${cover ? "bg-surface-muted" : PREVIEW_COVER[draft.kind] ?? "bg-accent/10 text-accent"}`}>
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt="" className="size-full object-cover" />
-        ) : (
-          <div className="grid size-full place-items-center p-4 text-center">
-            <span className="line-clamp-2 text-lg font-bold uppercase tracking-tight">
-              {draft.category || draft.kind}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="space-y-1 p-3">
-        <p className="line-clamp-2 text-sm font-medium text-foreground">{draft.title.trim() || "Your listing title"}</p>
-        <p className="text-sm font-semibold tabular-nums text-foreground">
-          {price > 0 ? `UGX ${new Intl.NumberFormat("en-UG").format(price)}` : "Price"}
-        </p>
-        <p className="truncate text-xs text-muted">{draft.location_name || "Location"}</p>
       </div>
     </div>
   );

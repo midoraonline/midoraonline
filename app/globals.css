@@ -65,9 +65,10 @@
   --listing-opportunity-bg: #f3e8ff;
   --listing-opportunity-fg: #581c87;
   --listing-opportunity-accent: #7e22ce;
-  --listing-job-bg: #ffedd5;
-  --listing-job-fg: #7c2d12;
-  --listing-job-accent: #c2410c;
+  /* Jobs share the opportunity purple family (Cards & Tags v1.2: no orange job tone). */
+  --listing-job-bg: #ede9fe;
+  --listing-job-fg: #4c1d95;
+  --listing-job-accent: #6d28d9;
   /* Shop chip uses the theme navy so it does not sit on the product green. */
   --listing-shop-bg: #0f172a;
   --listing-shop-fg: #f8fafc;
@@ -193,9 +194,9 @@
   --listing-opportunity-bg: #581c87;
   --listing-opportunity-fg: #f3e8ff;
   --listing-opportunity-accent: #c084fc;
-  --listing-job-bg: #7c2d12;
-  --listing-job-fg: #ffedd5;
-  --listing-job-accent: #fb923c;
+  --listing-job-bg: #4c1d95;
+  --listing-job-fg: #ede9fe;
+  --listing-job-accent: #a78bfa;
   --listing-shop-bg: #e2e8f0;
   --listing-shop-fg: #0f172a;
   --listing-shop-accent: #64748b;

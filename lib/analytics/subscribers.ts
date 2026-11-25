@@ -10,6 +10,7 @@ const MAX_BATCH_SIZE = 25;
 // Contact and trust actions often open WhatsApp or another app right away.
 const SEND_NOW: ReadonlySet<EventKey> = new Set<EventKey>([
   'conversion:whatsapp_click',
+  'conversion:apply_link_click',
   'listing:messaged',
   'listing:favorited',
   'listing:unfavorited',

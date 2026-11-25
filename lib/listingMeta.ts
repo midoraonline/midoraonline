@@ -1,3 +1,5 @@
+import { LEGACY_OPPORTUNITY_LABELS, OPPORTUNITY_CATEGORIES } from "@/lib/listingIntent";
+
 export type ListingKind = "product" | "service" | "opportunity";
 
 export type ItemType =
@@ -52,6 +54,12 @@ export type ListingMeta = {
   urgency?: string;
   employment_type?: string;
   employment?: string;
+  /** Cards & Tags v1.2: offering | seeking (services and opportunities). See lib/listingIntent.ts. */
+  intent?: "offering" | "seeking";
+  /** One of the nine OpportunityCategory ids. */
+  opportunity_category?: string;
+  /** Optional https link where people apply (poster's own page or form). */
+  application_link?: string;
   [key: string]: string | string[] | undefined;
 };
 
@@ -167,14 +175,12 @@ export const OPPORTUNITY_KIND_OPTIONS = [
 /** Opportunities subcategory label (from CATEGORY_TREE) → opportunity_kind.
  *  Keeps the post-item form from asking the same classification twice. */
 const SUBCATEGORY_TO_OPPORTUNITY_KIND: Record<string, ListingMeta["opportunity_kind"]> = {
-  "Full-time Jobs": "job",
-  "Part-time Jobs": "job",
-  "Gigs & Freelance": "gig",
-  "Internships": "internship",
-  "Partnerships & Collaborations": "collaboration",
-  "Maids & Domestic Work": "maids",
-  "Tenders & Contracts": "other",
-  "Volunteer & Unpaid": "other",
+  ...Object.fromEntries(
+    Object.entries(LEGACY_OPPORTUNITY_LABELS).map(([label, cat]) => [label, OPPORTUNITY_CATEGORIES[cat].legacyKind]),
+  ),
+  ...Object.fromEntries(
+    Object.values(OPPORTUNITY_CATEGORIES).map((c) => [c.label, c.legacyKind]),
+  ),
 };
 
 export function deriveOpportunityKindFromSubcategory(

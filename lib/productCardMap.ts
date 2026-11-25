@@ -1,5 +1,11 @@
 import type { ProductCardData } from "@/components/productcard";
-import type { HomeFeedProduct, Product, SimilarProduct, LikedProduct } from "@/lib/api/products";
+import type {
+  CardIntentFields,
+  HomeFeedProduct,
+  LikedProduct,
+  Product,
+  SimilarProduct,
+} from "@/lib/api/products";
 import {
   isVideoUrl,
   productDiscountPercent,
@@ -107,6 +113,16 @@ function orderedMediaUrls(
   return out;
 }
 
+/** Pass server intent fields through untouched; the card falls back when they're absent. */
+function intentFields(p: CardIntentFields): CardIntentFields {
+  return {
+    intent: p.intent,
+    opportunity_category: p.opportunity_category,
+    intent_label: p.intent_label,
+    cta: p.cta,
+  };
+}
+
 function anyVideoInUrls(urls: readonly (string | null | undefined)[] | null | undefined): boolean {
   if (!urls) return false;
   for (const u of urls) {
@@ -165,6 +181,7 @@ export function homeFeedProductToCard(p: HomeFeedProduct, site: string): Product
     ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
+    ...intentFields(p),
   };
 }
 
@@ -215,6 +232,7 @@ export function searchItemToCard(item: SearchProductItem, site?: string): Produc
     ...readCardRating(item),
     negotiable: item.is_negotiable !== false,
     listing_meta: item.listing_meta ?? null,
+    ...intentFields(item),
     status: item.card_status ?? null,
     reposted: item.reposted === true,
   };
@@ -269,6 +287,7 @@ export function productToCard(
     ...readCardRating(product),
     negotiable: product.is_negotiable !== false,
     listing_meta: product.listing_meta ?? null,
+    ...intentFields(product),
     status: product.card_status ?? null,
     reposted: product.reposted === true,
   };
@@ -319,6 +338,7 @@ export function similarProductToCard(p: SimilarProduct): ProductCardData {
     ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
+    ...intentFields(p),
     status: p.card_status ?? null,
     reposted: p.reposted === true,
   };
@@ -365,5 +385,6 @@ export function likedProductToCard(p: LikedProduct): ProductCardData {
     ...readCardRating(p),
     negotiable: p.is_negotiable !== false,
     listing_meta: p.listing_meta ?? null,
+    ...intentFields(p),
   };
 }

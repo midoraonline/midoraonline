@@ -17,6 +17,9 @@ type Props = {
   className?: string;
   buttonClassName?: string;
   compact?: boolean;
+  /** Button text; defaults to "Message seller". */
+  label?: string;
+  icon?: React.ReactNode;
 };
 
 export default function MessageSellerButton({
@@ -26,6 +29,8 @@ export default function MessageSellerButton({
   className = "",
   buttonClassName = "dm-btn dm-btn-primary dm-btn-sm w-full",
   compact = false,
+  label = "Message seller",
+  icon,
 }: Props) {
   const router = useRouter();
   const session = useAppSession();
@@ -77,9 +82,9 @@ export default function MessageSellerButton({
         disabled={loading}
         className={buttonClassName}
       >
-        <MaterialSymbol name="chat" className="!text-sm shrink-0" aria-hidden="true" />
+        {icon ?? <MaterialSymbol name="chat" className="!text-sm shrink-0" aria-hidden="true" />}
         <span className={compact ? "sr-only" : ""}>
-          {loading ? "Starting…" : "Message seller"}
+          {loading ? "Starting…" : label}
         </span>
       </button>
       {askSignIn ? (

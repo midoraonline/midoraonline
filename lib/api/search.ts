@@ -1,6 +1,6 @@
 import { apiFetch } from "./base";
 import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
-import type { CardStatus } from "./products";
+import type { CardIntentFields, CardStatus } from "./products";
 
 export type SearchMode = "vector" | "keyword" | "hybrid";
 
@@ -25,7 +25,7 @@ export type SearchProductShop = {
   last_active_at?: string | null;
 };
 
-export type SearchProductItem = {
+export type SearchProductItem = CardIntentFields & {
   id: string;
   card_status?: CardStatus | null;
   reposted?: boolean;

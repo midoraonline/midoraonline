@@ -162,6 +162,11 @@ More UI density rules: `AGENTS.UI.md`.
 
 ## 5. FastAPI backend (`midoraapi`)
 
+> **Superseded:** the backend is now the NestJS API in `../nestapi` (see `nestapi/AGENTS.md`); `midoraapi` is gone.
+> **Schema migrations are owned by nestapi** (TypeORM, `nestapi/src/infrastructure/database/migrations`, run explicitly with
+> `npm run migration:run` in `nestapi`, never on boot). The old `midoraapi/db/migrations` 001–067 are frozen and recorded by the
+> nestapi `Baseline` migration. The notes below are kept for history.
+
 ### 5.1 Module layout
 
 - Feature packages: `auth/`, `shop/`, `marketplace/`, `payments/`, `admin/`, `feed/`, `listingModeration/`, `notifications/`, …

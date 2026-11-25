@@ -22,7 +22,6 @@ import ProductShareButton from "@/components/product/ProductShareButton";
 import ProductPageEffects from "@/components/product/ProductPageEffects";
 import ProductShopLogoOverlay from "@/components/product/ProductShopLogoOverlay";
 import PdpStickyActionBar from "@/components/product/PdpStickyActionBar";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import { productInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { productPageSlug, resolveProductIdFromPageSlug } from "@/lib/productUrl";
@@ -56,6 +55,10 @@ import {
 } from "@/lib/productCardMap";
 import { isOnlineLocation } from "@/lib/listingLocation";
 import { PERSONAL_SELLER_LABEL } from "@/lib/shop/realShops";
+import { cardCategoryLabel, readCardIntent, safeApplicationLink } from "@/lib/cardIntent";
+import { CTA_LABEL } from "@/lib/listingIntent";
+import ListingIntentLine, { WhatsAppCtaContent } from "@/components/product/ListingIntentLine";
+import ApplyLinkButton from "@/components/product/ApplyLinkButton";
 
 const SITE = "https://www.midoraonline.com";
 
@@ -159,7 +162,8 @@ export default async function ProductDetails({
   const productPath = `/products/${canonicalSlug}`;
   const listingUrl = `${SITE}${productPath}`;
   const waHref =
-    shop?.owner_phone_verified !== false &&
+    // whatsapp_number is only sent once the shop's WhatsApp is verified (Meta Cloud API).
+    // Account phone verification is a separate, paused check and must not gate it.
     shop?.whatsapp_number?.trim() &&
     productInquiryWhatsAppUrl(shop.whatsapp_number, {
       itemTitle: product.title,
@@ -184,6 +188,17 @@ export default async function ProductDetails({
   const listingKind = normalizeListingKind(product.item_type);
   const textOnly = isTextOnlyListing(product.item_type, images.length);
   const listingMeta = parseListingMeta(product.listing_meta);
+  const intent = readCardIntent(product);
+  const isListing = listingKind !== "product";
+  const applyLink = isListing ? safeApplicationLink(listingMeta.application_link) : null;
+  // With an application link, Apply goes there and the WhatsApp button is plain contact.
+  const contactCta = applyLink && intent.cta === "apply" ? "whatsapp" : intent.cta;
+  const priceLabel =
+    isListing && intent.intent === "seeking" && price > 0 ? `Budget: ${formatUGX(price)}` : formatUGX(price);
+  const messageLabel =
+    !waHref && (contactCta === "respond" || contactCta === "contact" || contactCta === "apply")
+      ? CTA_LABEL[contactCta]
+      : undefined;
   const categoryParts = resolveCategoryParts(
     product.category,
     buildCanonicalCategoryItems(),
@@ -285,13 +300,20 @@ export default async function ProductDetails({
               <ListingTypeTag kind={listingTypeTagKind(product.item_type, listingMeta)} />
             </div>
 
+            {isListing ? (
+              <ListingIntentLine
+                label={intent.label}
+                category={cardCategoryLabel(product.category, intent.opportunityCategory)}
+                tone={listingKind === "service" ? "service" : "opportunity"}
+              />
+            ) : null}
             <h1 className="font-display text-xl font-semibold tracking-tight text-balance text-foreground sm:text-2xl">
               {product.title}
             </h1>
 
             <div className="flex flex-wrap items-baseline gap-2">
               <p className="text-2xl font-extrabold tabular-nums tracking-tight text-accent sm:text-3xl">
-                {formatUGX(price)}
+                {priceLabel}
               </p>
               {isDiscounted ? (
                 <>
@@ -368,6 +390,14 @@ export default async function ProductDetails({
 
           {/* Primary CTA — WhatsApp first (marketplace pattern) */}
           <div id="pdp-buybox-end" className="space-y-2">
+            {applyLink ? (
+              <ApplyLinkButton
+                href={applyLink.href}
+                host={applyLink.host}
+                productId={product.id}
+                shopId={shop?.id}
+              />
+            ) : null}
             {waHref && shop ? (
               <SellerContactConsent
                 shopId={shop.id}
@@ -377,8 +407,7 @@ export default async function ProductDetails({
                 title={product.title}
               >
                 <span className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]">
-                  <WhatsAppIcon className="size-4 shrink-0 text-white" />
-                  WhatsApp
+                  <WhatsAppCtaContent cta={contactCta} iconClassName="size-4 shrink-0" />
                 </span>
               </SellerContactConsent>
             ) : shop ? (
@@ -403,6 +432,7 @@ export default async function ProductDetails({
                     shopId={shop.id}
                     productId={product.id}
                     className="!w-full"
+                    label={messageLabel}
                   />
                 </div>
               ) : null}
@@ -636,14 +666,23 @@ export default async function ProductDetails({
 
       <SimilarProducts productId={product.id} initialItems={similar} />
 
-      {(waHref || (shop && shop.owner_id)) && (
+      {(waHref || applyLink || (shop && shop.owner_id)) && (
         <PdpStickyActionBar sentinelId="pdp-buybox-end">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold tabular-nums text-accent">
-              {formatUGX(price)}
+              {priceLabel}
             </p>
             <p className="truncate text-[11px] text-muted">{product.title}</p>
           </div>
+          {applyLink ? (
+            <ApplyLinkButton
+              href={applyLink.href}
+              host={applyLink.host}
+              productId={product.id}
+              shopId={shop?.id}
+              compact
+            />
+          ) : null}
           {waHref && shop ? (
             <SellerContactConsent
               shopId={shop.id}
@@ -653,8 +692,7 @@ export default async function ProductDetails({
               title={product.title}
             >
               <div className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#25D366] px-3.5 py-2.5 text-xs font-bold text-white shadow-sm active:scale-[0.98]">
-                <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
-                WhatsApp
+                <WhatsAppCtaContent cta={contactCta} iconClassName="size-3.5 shrink-0" />
               </div>
             </SellerContactConsent>
           ) : shop?.owner_id ? (
@@ -662,6 +700,7 @@ export default async function ProductDetails({
               sellerId={shop.owner_id}
               shopId={shop.id}
               productId={product.id}
+              label={messageLabel}
               compact
             />
           ) : null}

@@ -1,43 +1,61 @@
 import { listingToneClass } from "@/components/ListingTypeTag";
-import type { ListingTypeTagKind } from "@/lib/listingType";
 
-const SUFFIX: Record<ListingTypeTagKind, string> = {
-  product: "For sale",
-  service: "Available",
-  opportunity: "Open",
-  job: "Wanted",
+export type CoverTone = "service" | "opportunity";
+
+const INTENT_ACCENT: Record<CoverTone, string> = {
+  service: "text-listing-service-accent",
+  opportunity: "text-listing-opportunity-accent",
 };
 
-/** Image-slot cover for listings without a photo: the listing title, big and bold. */
+/**
+ * Coloured header for service/opportunity listings without a photo:
+ * badge, intent text and title top-left, category illustration bottom-right.
+ */
 export default function BrandedCover({
-  kind,
+  tone,
   title,
-  category,
-  hideSuffix = false,
+  intentLabel,
+  badge,
+  visual,
+  layout = "vertical",
 }: {
-  kind: ListingTypeTagKind;
+  tone: CoverTone;
   title: string;
-  category?: string | null;
-  /** The corner badge already says the state (e.g. Closing soon), so "Open"/"Available" would repeat it. */
-  hideSuffix?: boolean;
+  intentLabel?: string | null;
+  /** Single temporary badge; the heart sits over the top-right corner. */
+  badge?: React.ReactNode;
+  visual?: string | null;
+  layout?: "vertical" | "horizontal";
 }) {
+  // Vertical cards can be short enough for the illustration to reach the title, so narrow it.
+  const titleInset = visual && layout === "vertical" ? "pr-[38px] min-[400px]:pr-[44px] sm:pr-[58px] lg:pr-[66px]" : "pr-1";
   return (
-    <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center ${listingToneClass(kind)}`}>
-      <span className="pointer-events-none absolute -left-4 -top-4 size-16 rounded-full bg-current opacity-5" aria-hidden />
-      <span className="pointer-events-none absolute -bottom-6 -right-6 size-20 rounded-full bg-current opacity-5" aria-hidden />
-      {category ? (
-        <span className="line-clamp-1 max-w-full text-[10px] font-bold uppercase tracking-wider opacity-70 sm:text-xs">
-          {category}
-        </span>
+    <div className={`absolute inset-0 flex flex-col items-start gap-1.5 p-2.5 text-left sm:p-3 ${listingToneClass(tone)}`}>
+      <div className="flex min-h-6 max-w-full items-center gap-1 pr-10 sm:min-h-7">{badge}</div>
+      {intentLabel ? (
+        <p className={`line-clamp-2 max-w-full text-[13px] font-bold uppercase leading-tight tracking-wide ${INTENT_ACCENT[tone]}`}>
+          {intentLabel}
+        </p>
       ) : null}
-      <span className="line-clamp-4 max-w-full break-words text-base font-black leading-tight tracking-tight sm:text-xl">
+      <h3
+        title={title}
+        className={`line-clamp-2 h-[38px] w-full overflow-hidden break-words text-base font-bold leading-[1.2] tracking-tight sm:h-[43px] sm:text-[18px] sm:leading-[1.18] ${titleInset}`}
+      >
         {title}
-      </span>
-      {hideSuffix ? null : (
-        <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-accent sm:text-sm">
-          {SUFFIX[kind]}
-        </span>
-      )}
+      </h3>
+      {visual ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={visual}
+          alt=""
+          aria-hidden
+          width={56}
+          height={56}
+          loading="lazy"
+          decoding="async"
+          className="pointer-events-none absolute bottom-2.5 right-2.5 size-[30px] select-none min-[400px]:size-9 sm:bottom-3 sm:right-3 sm:size-12 lg:size-14"
+        />
+      ) : null}
     </div>
   );
 }

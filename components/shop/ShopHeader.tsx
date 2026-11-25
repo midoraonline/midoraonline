@@ -41,7 +41,7 @@ export default async function ShopHeader({
 
   const shopPageUrl = `${publicSiteOrigin()}/shops/${shop.slug}`;
   const waHref =
-    shop.whatsapp_number && shop.owner_phone_verified !== false
+    shop.whatsapp_number
       ? shopInquiryWhatsAppUrl(shop.whatsapp_number, {
         shopName: shop.name,
         shopUrl: shopPageUrl,

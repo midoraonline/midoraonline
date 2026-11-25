@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import StandaloneShell from "@/components/StandaloneShell";
 import { BTN_SECONDARY } from "@/components/dashboard/ui";
 import LeaveLinks from "@/components/LeaveLinks";
+import ContactsStep from "@/components/post/ContactsStep";
 import ListingTypeStep from "@/components/post/ListingTypeStep";
 import ShopPickStep from "@/components/post/ShopPickStep";
 import VerifyChannelStep from "@/components/post/VerifyChannelStep";
@@ -22,8 +23,8 @@ import { fetchVerificationStatus, type VerificationStatus } from "@/lib/verifica
 /** shopId value for the explicit "Other" choice (no shop). */
 const OTHER = "other";
 
-type Step = "verify" | "shop" | "type" | "form";
-const ORDER: Step[] = ["verify", "type", "shop", "form"];
+type Step = "verify" | "shop" | "type" | "contacts" | "form";
+const ORDER: Step[] = ["verify", "type", "shop", "contacts", "form"];
 const isStep = (v: string | null): v is Step => !!v && (ORDER as string[]).includes(v);
 
 function PostItemFlow() {
@@ -46,6 +47,8 @@ function PostItemFlow() {
     paramType ? normalizeListingKind(paramType) : null,
   );
   const [formReady, setFormReady] = useState(false);
+  /** Shop (or personal profile) whose contacts were confirmed; a different choice asks again. */
+  const [contactsFor, setContactsFor] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   const backUrl =
@@ -56,9 +59,13 @@ function PostItemFlow() {
   // Step lives in ?step= so the browser back button moves between steps.
   // Fall back to the computed first step when the URL has none (or one that
   // isn't reachable yet, e.g. the form before a type is chosen).
+  const contactsKey = !shopId || shopId === OTHER ? "personal" : shopId;
+  const needsShop = shops.length > 0 && !shopId;
   let step: Step | null = isStep(urlStep) && initialStep ? urlStep : initialStep;
-  if (step === "form" && !kind) step = "type";
-  if (step === "shop" && shops.length === 0) step = kind ? "form" : "type";
+  if ((step === "form" || step === "contacts") && !kind) step = "type";
+  if ((step === "form" || step === "contacts") && needsShop) step = "shop";
+  if (step === "form" && contactsFor !== contactsKey) step = "contacts";
+  if (step === "shop" && shops.length === 0) step = kind ? "contacts" : "type";
   if (step === "verify" && !status) step = initialStep;
 
   const setStep = useCallback(
@@ -97,7 +104,7 @@ function PostItemFlow() {
         setShops(list);
         setStatus(verification);
         setLoadError(null);
-        // Order: verify → listing type → shop or Other (when the user has shops) → form.
+        // Order: verify → listing type → shop or Other (when the user has shops) → contacts → form.
         // No shops at all: post on the personal profile.
         const first: Step = !verification.can_post
           ? "verify"
@@ -105,7 +112,7 @@ function PostItemFlow() {
             ? "type"
             : list.length > 0 && !paramShopId
               ? "shop"
-              : "form";
+              : "contacts";
         setInitialStep(first);
         setVisited([first]);
         if (!isStep(new URLSearchParams(window.location.search).get("step"))) {
@@ -135,7 +142,7 @@ function PostItemFlow() {
     if (!next.can_post) return;
     if (!kind) setStep("type");
     else if (shops.length > 0 && !shopId) setStep("shop");
-    else setStep("form");
+    else setStep(contactsFor === contactsKey ? "form" : "contacts");
   }
 
 
@@ -184,7 +191,7 @@ function PostItemFlow() {
           kind={kind}
           onSelect={(id) => {
             setShopId(id ?? OTHER);
-            setStep("form");
+            setStep("contacts");
           }}
           onBack={() => goBack("shop")}
         />
@@ -197,9 +204,21 @@ function PostItemFlow() {
             // A chosen shop that doesn't sell the new type has to be picked again.
             const keep = !shopId || noShop || shopAcceptsKind(shop?.shop_type, next);
             if (!keep) setShopId(null);
-            setStep(shops.length > 0 && (!shopId || !keep) ? "shop" : "form");
+            if (shops.length > 0 && (!shopId || !keep)) setStep("shop");
+            else setStep(contactsFor === contactsKey ? "form" : "contacts");
           }}
           onBack={() => goBack("type")}
+        />
+      ) : null}
+      {step === "contacts" ? (
+        <ContactsStep
+          key={contactsKey}
+          shopId={contactsKey === "personal" ? null : contactsKey}
+          onContinue={() => {
+            setContactsFor(contactsKey);
+            setStep("form");
+          }}
+          onBack={() => goBack("contacts")}
         />
       ) : null}
       {formReady && kind ? (

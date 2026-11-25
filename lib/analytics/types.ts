@@ -53,6 +53,13 @@ export type AnalyticsEvents = {
     clickSource: 'product_detail' | 'shop_page' | 'search_result';
   };
 
+  'conversion:apply_link_click': SystemMetadata & {
+    productId: string;
+    shopId?: string;
+    host: string;
+    clickSource: 'product_detail' | 'search_result';
+  };
+
   'listing:favorited': SystemMetadata & {
     productId: string;
     shopId?: string;
@@ -127,6 +134,14 @@ export type AnalyticsEvents = {
     category?: string;
     reason: 'scam' | 'inaccurate_info' | 'prohibited_item' | 'unresponsive' | 'other';
   };
+
+  /** Post flow "How will customers reach you?" step. */
+  'post_flow:contacts_step': SystemMetadata & {
+    shopId?: string;
+    outcome: 'verified' | 'skipped' | 'changed';
+    isPersonal: boolean;
+    hasWhatsApp: boolean;
+  };
 };
 
 export type EventKey = keyof AnalyticsEvents;
@@ -156,6 +171,7 @@ export const EVENT_TARGET_MAP: {
     targetType: 'product',
     getTargetId: (p) => p.productId ?? p.shopId,
   },
+  'conversion:apply_link_click': { targetType: 'product', getTargetId: (p) => p.productId },
   'listing:favorited': { targetType: 'product', getTargetId: (p) => p.productId },
   'listing:shared': { targetType: 'product', getTargetId: (p) => p.productId },
   'listing:unfavorited': { targetType: 'product', getTargetId: (p) => p.productId },
@@ -179,6 +195,7 @@ export const EVENT_TARGET_MAP: {
     getTargetId: (p) => p.shopId,
   },
   'trust:rating_prompted': { targetType: 'product', getTargetId: (p) => p.productId ?? p.shopId ?? null },
+  'post_flow:contacts_step': { targetType: 'shop', getTargetId: (p) => p.shopId ?? null },
   'trust:rating_submitted': { targetType: 'shop', getTargetId: (p) => p.shopId },
   'trust:report_submitted': { targetType: 'target', getTargetId: (p) => p.targetId },
 };

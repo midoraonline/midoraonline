@@ -43,12 +43,24 @@ import {
   LISTING_KIND_OPTIONS,
   listingKindToItemType,
   normalizeListingKind,
-  OPPORTUNITY_KIND_OPTIONS,
   parseListingMeta,
   PRICING_MODEL_OPTIONS,
   type ListingKind,
   type ListingMeta,
 } from "@/lib/listingMeta";
+import { ApiError } from "@/lib/api/base";
+import ApplicationLinkField from "@/components/post/ApplicationLinkField";
+import IntentPreviewBlock from "@/components/post/IntentPreviewBlock";
+import ListingIntentFields from "@/components/post/ListingIntentFields";
+import TitleField from "@/components/post/TitleField";
+import {
+  applicationLinkRecommended,
+  intentError,
+  normalizeApplicationLink,
+  showsApplicationLink,
+  titleLengthError,
+  withIntentMeta,
+} from "@/lib/listingIntentForm";
 
 const UGX = new Intl.NumberFormat("en-UG", {
   style: "currency",
@@ -198,7 +210,7 @@ function evaluateSalePrice(priceStr: string, saleStr: string): SalePriceState {
 }
 
 type FieldErrors = Partial<
-  Record<"title" | "description" | "category" | "sale_price" | "images" | "meta", string>
+  Record<"title" | "description" | "category" | "sale_price" | "images" | "meta" | "intent" | "application_link", string>
 >;
 
 export default function ProductFormModal({
@@ -233,6 +245,7 @@ export default function ProductFormModal({
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [serverNotice, setServerNotice] = useState<string | null>(null);
+  const [linkServerError, setLinkServerError] = useState<string | null>(null);
   const submitLock = useRef(false);
   const clientSaveIdRef = useRef(
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -281,7 +294,13 @@ export default function ProductFormModal({
 
   const errors = useMemo((): FieldErrors => {
     const e: FieldErrors = {};
+    const titleTooLong = titleLengthError(draft.title);
     if (!draft.title.trim()) e.title = "Title is required.";
+    else if (titleTooLong) e.title = titleTooLong;
+    const intent = mode === "add" ? intentError(draft.kind, draft.meta, draft.category) : null;
+    if (intent) e.intent = intent;
+    const link = showsApplicationLink(draft.kind) ? normalizeApplicationLink(draft.meta.application_link).error : null;
+    if (link) e.application_link = link;
     const descCheck = descriptionMeetsStandard(draft.description);
     if (!descCheck.ok) e.description = descCheck.message;
     const photoCount = draft.image_urls.filter((u) => u.trim() && !isVideoUrl(u)).length;
@@ -310,9 +329,6 @@ export default function ProductFormModal({
     if (draft.kind === "service" && !draft.meta.pricing_model) {
       e.meta = "Select how you price this service.";
     }
-    if (draft.kind === "opportunity" && !draft.meta.opportunity_kind) {
-      e.meta = "Select what kind of opportunity this is.";
-    }
     for (const field of catFields) {
       if (!field.required) continue;
       const v = draft.meta[field.key];
@@ -322,7 +338,7 @@ export default function ProductFormModal({
       }
     }
     return e;
-  }, [draft, sale, categoryParts, categoryTree, catFields]);
+  }, [draft, mode, sale, categoryParts, categoryTree, catFields]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -344,6 +360,7 @@ export default function ProductFormModal({
     submitLock.current = true;
     setShowErrors(true);
     setServerNotice(null);
+    setLinkServerError(null);
     try {
     if (!canSubmit) {
       toast.error("Fix the required fields before saving.");
@@ -352,10 +369,11 @@ export default function ProductFormModal({
 
     const price = parseAmount(draft.price_ugx);
     const salePrice = sale.kind === "ok" ? parseAmount(draft.sale_price) : null;
-    const meta = cleanListingMeta(
+    const meta = withIntentMeta(
       draft.kind,
       draft.meta,
-      categoryParts.parentLabel,
+      draft.category,
+      cleanListingMeta(draft.kind, draft.meta, categoryParts.parentLabel),
     );
 
     const body: CreateProductRequest = {
@@ -415,6 +433,11 @@ export default function ProductFormModal({
       if (unreachable) {
         setServerNotice(unreachable);
         toast.error(unreachable, { id: toastId });
+        return;
+      }
+      if (err instanceof ApiError && err.code === "invalid_application_link") {
+        setLinkServerError(err.message);
+        toast.error(err.message, { id: toastId });
         return;
       }
       if (isAmbiguousSaveError(err)) {
@@ -555,7 +578,8 @@ export default function ProductFormModal({
                       setDraft((d) => ({
                         ...d,
                         kind: opt.value,
-                        meta: {},
+                        category: d.kind === opt.value ? d.category : "",
+                        meta: d.kind === opt.value ? d.meta : {},
                       }))
                     }
                     className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
@@ -578,6 +602,15 @@ export default function ProductFormModal({
         ) : (
           <ListingTypeTag kind={listingTypeTagKind(draft.kind, draft.meta)} />
         )}
+
+        <ListingIntentFields
+          kind={draft.kind}
+          meta={draft.meta}
+          category={draft.category}
+          showErrors={showErrors}
+          error={errors.intent ?? (draft.kind === "opportunity" ? errors.category : null)}
+          onChange={({ meta, category }) => setDraft((d) => ({ ...d, meta, category: category ?? d.category }))}
+        />
 
         {/* Media */}
         <div className="space-y-2">
@@ -649,30 +682,20 @@ export default function ProductFormModal({
           </div>
         </div>
 
-        {/* Title */}
-        <div className="space-y-1.5">
-          <label htmlFor="product-title" className="text-sm font-medium text-foreground">
-            Title <span className="text-[color:var(--error)]">*</span>
-          </label>
-          <input
-            id="product-title"
-            className="dm-input"
-            value={draft.title}
-            onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-            placeholder={
-              draft.kind === "opportunity"
-                ? "e.g. Looking for a shop assistant in Kampala"
-                : draft.kind === "service"
-                  ? "e.g. Home cleaning — same-day Kampala"
-                  : "What are you selling?"
-            }
-            aria-invalid={showErrors && Boolean(errors.title)}
-            required
-          />
-          {showErrors && errors.title ? (
-            <p className="text-xs text-[color:var(--error)]">{errors.title}</p>
-          ) : null}
-        </div>
+        <TitleField
+          value={draft.title}
+          onChange={(title) => setDraft((d) => ({ ...d, title }))}
+          placeholder={
+            draft.kind === "opportunity"
+              ? "e.g. Shop assistant needed in Kampala"
+              : draft.kind === "service"
+                ? "e.g. Home cleaning, same day in Kampala"
+                : "What are you selling?"
+          }
+          error={showErrors ? errors.title : null}
+          inputClassName="dm-input"
+          required
+        />
 
         {/* Description */}
         <div className="space-y-1.5">
@@ -759,7 +782,7 @@ export default function ProductFormModal({
         ) : null}
 
         {/* Category — before meta so category-specific fields can appear */}
-        <div className="space-y-1.5">
+        <div className={draft.kind === "opportunity" ? "hidden" : "space-y-1.5"}>
           <p className="text-sm font-medium text-foreground">
             Category &amp; subcategory <span className="text-[color:var(--error)]">*</span>
           </p>
@@ -769,6 +792,8 @@ export default function ProductFormModal({
               onChange={(category) => setDraft((d) => ({ ...d, category }))}
               required
               compact
+              lockedParentSlug={draft.kind === "service" ? "services" : undefined}
+              excludeParentSlugs={draft.kind === "product" ? ["services", "opportunities"] : undefined}
               idPrefix="product-category"
             />
           </div>
@@ -898,32 +923,6 @@ export default function ProductFormModal({
           {draft.kind === "opportunity" ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-foreground">
-                  Opportunity type <span className="text-[color:var(--error)]">*</span>
-                </label>
-                <select
-                  className="dm-input"
-                  value={draft.meta.opportunity_kind ?? ""}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      meta: {
-                        ...d.meta,
-                        opportunity_kind: (e.target.value ||
-                          undefined) as ListingMeta["opportunity_kind"],
-                      },
-                    }))
-                  }
-                >
-                  <option value="">Select…</option>
-                  {OPPORTUNITY_KIND_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">Compensation</label>
                 <select
                   className="dm-input"
@@ -974,6 +973,18 @@ export default function ProductFormModal({
                     }))
                   }
                   placeholder="Skills, experience, documents needed…"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <ApplicationLinkField
+                  value={draft.meta.application_link ?? ""}
+                  onChange={(application_link) => {
+                    setLinkServerError(null);
+                    setDraft((d) => ({ ...d, meta: { ...d.meta, application_link } }));
+                  }}
+                  error={linkServerError ?? (showErrors ? errors.application_link : null)}
+                  inputClassName="dm-input"
+                  recommended={applicationLinkRecommended(draft.kind, draft.meta, draft.category)}
                 />
               </div>
             </div>
@@ -1043,6 +1054,8 @@ export default function ProductFormModal({
             <p className="text-xs text-[color:var(--error)]">{errors.meta}</p>
           ) : null}
         </div>
+
+        <IntentPreviewBlock kind={draft.kind} meta={draft.meta} category={draft.category} title={draft.title} />
 
         {/* Toggles */}
         <div className="grid gap-2 sm:grid-cols-2">

@@ -1,6 +1,7 @@
 import type { BoostInfo } from "@/lib/boostInfo";
 import { currentBrowseArea } from "@/lib/browseArea";
 import { feedBustParam } from "@/lib/feedFreshness";
+import type { CardCta, ListingIntent } from "@/lib/listingIntent";
 import { apiFetch } from "./base";
 import { appendCatalogParams, type CatalogQuery } from "./catalogFilters";
 
@@ -25,7 +26,7 @@ export type ProductStatus =
   | "filled"
   | "closed";
 
-export type Product = {
+export type Product = CardIntentFields & {
   id: string;
   shop_id: string;
   card_status?: CardStatus | null;
@@ -423,7 +424,7 @@ export function toggleAvailability(productId: string, token?: string | null) {
   });
 }
 
-export type HomeFeedProduct = {
+export type HomeFeedProduct = CardIntentFields & {
   id: string;
   shop_id: string;
   title: string;
@@ -476,7 +477,16 @@ export type HomeFeedProduct = {
 };
 
 export type FeedPlacement = "organic" | "exploration" | "boosted" | "sponsored";
-export type CardStatus = "sponsored" | "boosted" | "closing_soon" | "trending" | "new";
+/** Public cards get sponsored | closes_today | closing_soon | new; boosted/trending stay tolerated for old payloads. */
+export type CardStatus = "sponsored" | "boosted" | "closes_today" | "closing_soon" | "trending" | "new";
+
+/** Server-resolved intent fields on card payloads (Cards & Tags v1.2). Absent on older payloads. */
+export type CardIntentFields = {
+  intent?: ListingIntent | null;
+  opportunity_category?: string | null;
+  intent_label?: string | null;
+  cta?: CardCta | null;
+};
 
 export type HomeFeedResponse = {
   algorithm: HomeFeedProduct[];
@@ -488,7 +498,7 @@ export type HomeFeedResponse = {
   session?: string | null;
 };
 
-export type SimilarProduct = {
+export type SimilarProduct = CardIntentFields & {
   card_status?: CardStatus | null;
   reposted?: boolean;
   id: string;
@@ -587,7 +597,7 @@ export function generateFromImage(
   });
 }
 
-export type LikedProduct = {
+export type LikedProduct = CardIntentFields & {
   id: string;
   shop_id: string;
   title: string;
