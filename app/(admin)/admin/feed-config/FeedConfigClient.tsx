@@ -73,9 +73,6 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
       "PAID_SLOT_POSITION",
       "SPONSORED_SLOT_POSITION",
       "TYPE_DEPTH_BLOCKS",
-      "PRODUCT_SHARE",
-      "SERVICE_SHARE",
-      "OPPORTUNITY_SHARE",
     ],
   },
   {
@@ -108,6 +105,33 @@ const TOGGLE_LABELS: Record<string, string> = {
   FOLLOWED_SHOP_LIFT: "Lift followed shops for signed-in viewers",
 };
 
+const MIX_LANES = [
+  { key: "PRODUCT_SHARE", label: "Products" },
+  { key: "SERVICE_SHARE", label: "Services" },
+  { key: "OPPORTUNITY_SHARE", label: "Opportunities" },
+] as const;
+
+type MixKey = (typeof MIX_LANES)[number]["key"];
+type MixCounts = Record<MixKey, string>;
+
+/** Mirrors the API's `laneTargets`: normalized shares, largest remainder, summing to the block size. */
+function sharesToCounts(shares: Record<MixKey, number>, blockSize: number): Record<MixKey, number> {
+  const block = Math.max(Math.trunc(blockSize) || 0, 0);
+  const raw = MIX_LANES.map(({ key }) => ({ key, share: Math.max(Number(shares[key]) || 0, 0) }));
+  const sum = raw.reduce((a, r) => a + r.share, 0);
+  const out = { PRODUCT_SHARE: 0, SERVICE_SHARE: 0, OPPORTUNITY_SHARE: 0 } as Record<MixKey, number>;
+  if (sum <= 0) return { ...out, PRODUCT_SHARE: block };
+  const exact = raw.map((r, i) => ({ key: r.key, i, value: (r.share / sum) * block }));
+  for (const e of exact) out[e.key] = Math.floor(e.value);
+  let left = block - exact.reduce((a, e) => a + out[e.key], 0);
+  for (const e of [...exact].sort((a, b) => b.value - Math.floor(b.value) - (a.value - Math.floor(a.value)) || a.i - b.i)) {
+    if (left <= 0) break;
+    out[e.key] += 1;
+    left -= 1;
+  }
+  return out;
+}
+
 function fmt(n: number) {
   if (Number.isNaN(n)) return "—";
   if (Math.abs(n) >= 100) return n.toFixed(0);
@@ -123,6 +147,7 @@ export default function FeedConfigClient() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [test, setTest] = useState<FeedConfigTestResponse | null>(null);
+  const [mix, setMix] = useState<MixCounts>({ PRODUCT_SHARE: "", SERVICE_SHARE: "", OPPORTUNITY_SHARE: "" });
 
   const load = useCallback(async () => {
     setError(null);
@@ -135,6 +160,9 @@ export default function FeedConfigClient() {
         initial[key] = String(eff ?? "");
       }
       setValues(initial);
+      const shares = Object.fromEntries(MIX_LANES.map(({ key }) => [key, Number(initial[key])])) as Record<MixKey, number>;
+      const counts = sharesToCounts(shares, Number(initial.BLOCK_SIZE));
+      setMix(Object.fromEntries(MIX_LANES.map(({ key }) => [key, String(counts[key])])) as MixCounts);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load feed config");
     }
@@ -144,21 +172,44 @@ export default function FeedConfigClient() {
     void load();
   }, [load]);
 
+  const blockSize = Math.trunc(Number(values.BLOCK_SIZE)) || 0;
+  const mixNumbers = MIX_LANES.map(({ key }) => (mix[key].trim() === "" ? NaN : Number(mix[key])));
+  const mixTotal = mixNumbers.reduce((a, n) => a + (Number.isFinite(n) ? n : 0), 0);
+  const mixError = mixNumbers.some((n) => !Number.isInteger(n) || n < 0)
+    ? "Use whole numbers of 0 or more for each type."
+    : blockSize <= 0
+      ? "Set a block size above 0."
+      : mixTotal !== blockSize
+        ? `Counts add up to ${mixTotal}; they must add up to the block size (${blockSize}).`
+        : null;
+
+  // Type shares are edited as cards-per-block and saved as count / BLOCK_SIZE.
+  const effective = useMemo(() => {
+    if (mixError) return values;
+    const out = { ...values };
+    for (const { key } of MIX_LANES) {
+      const share = Number(mix[key]) / blockSize;
+      const def = Number(config?.defaults[key]);
+      out[key] = Math.abs(share - def) < 1e-9 ? String(config?.defaults[key] ?? share) : String(share);
+    }
+    return out;
+  }, [values, mix, mixError, blockSize, config]);
+
   const changedKeys = useMemo(() => {
     if (!config) return [] as string[];
     const changed: string[] = [];
     for (const key of config.overridable_keys) {
       const def = String(config.defaults[key] ?? "");
-      if ((values[key] ?? "") !== def) changed.push(key);
+      if ((effective[key] ?? "") !== def) changed.push(key);
     }
     return changed;
-  }, [config, values]);
+  }, [config, effective]);
 
   const buildOverrides = useCallback((): Record<string, number> => {
     if (!config) return {};
     const out: Record<string, number> = {};
     for (const key of config.overridable_keys) {
-      const raw = values[key];
+      const raw = effective[key];
       if (raw === undefined || raw === "") continue;
       const asNumber = Number(raw);
       if (Number.isNaN(asNumber)) continue;
@@ -167,7 +218,7 @@ export default function FeedConfigClient() {
       out[key] = asNumber;
     }
     return out;
-  }, [config, values]);
+  }, [config, effective]);
 
   const save = useCallback(async () => {
     setSaving(true);
@@ -231,10 +282,10 @@ export default function FeedConfigClient() {
             <button onClick={reset} disabled={saving} className={BTN_TEXT}>
               Reset to defaults
             </button>
-            <button onClick={runTest} disabled={testing} className={BTN_SECONDARY}>
+            <button onClick={runTest} disabled={testing || Boolean(mixError)} className={BTN_SECONDARY}>
               {testing ? "Testing…" : "Dry run"}
             </button>
-            <button onClick={save} disabled={saving || changedKeys.length === 0} className={BTN_PRIMARY}>
+            <button onClick={save} disabled={saving || changedKeys.length === 0 || Boolean(mixError)} className={BTN_PRIMARY}>
               {saving ? "Saving…" : changedKeys.length ? `Save ${changedKeys.length} changes` : "Save changes"}
             </button>
           </div>
@@ -271,6 +322,46 @@ export default function FeedConfigClient() {
             ))}
           </div>
         ) : null}
+      </section>
+
+      {/* Home type mix */}
+      <section className="rounded-xl border border-border bg-surface shadow-xs p-5">
+        <h2 className="text-sm font-semibold">Home type mix</h2>
+        <p className="mt-0.5 text-xs text-muted">
+          How many cards of each type to aim for in every block of {blockSize || "—"} on Home. When a type runs out,
+          the others fill its slots. Saving rebuilds the feed; buyers get the new mix the next time Home loads.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {MIX_LANES.map(({ key, label }) => {
+            const defCount = config ? sharesToCounts(config.defaults as Record<MixKey, number>, blockSize)[key] : 0;
+            const isChanged = mix[key] !== String(defCount);
+            return (
+              <label key={key} className="block">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-foreground/80">{label} per block</span>
+                  {isChanged ? <span className="text-xs text-[color:var(--warning)]">changed</span> : null}
+                </div>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  max={blockSize || undefined}
+                  value={mix[key]}
+                  onChange={(e) => setMix((prev) => ({ ...prev, [key]: e.target.value }))}
+                  className={`mt-1.5 w-full rounded-lg border px-3 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-accent/50 ${
+                    isChanged ? "border-amber-500/40 bg-amber-500/[0.04]" : "border-border bg-white"
+                  }`}
+                />
+                <p className="mt-1 text-[10px] text-muted">
+                  default {defCount} · {blockSize > 0 && !mixError ? `${Math.round((Number(mix[key]) / blockSize) * 100)}%` : "—"}
+                </p>
+              </label>
+            );
+          })}
+        </div>
+        <p className={`mt-3 text-xs ${mixError ? "text-rose-600" : "text-muted"}`}>
+          {mixError ?? `Total ${mixTotal} of ${blockSize} cards per block.`}
+        </p>
       </section>
 
       {/* Editable groups */}

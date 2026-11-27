@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ArrowUp, Package } from "lucide-react";
-import { PiBriefcaseFill, PiPackageFill, PiSquaresFourFill, PiStorefrontFill, PiWrenchFill } from "react-icons/pi";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -738,15 +737,15 @@ function ListingTypeTabs({
   onSelect: (kind: ListingKind | null) => void;
 }) {
   const tabs = [
-    { label: "All", kind: null, icon: PiSquaresFourFill },
-    { label: "Products", kind: "product" as const, icon: PiPackageFill },
-    { label: "Services", kind: "service" as const, icon: PiWrenchFill },
-    { label: "Opportunities", kind: "opportunity" as const, icon: PiBriefcaseFill },
+    { label: "All", kind: null },
+    { label: "Products", kind: "product" as const },
+    { label: "Services", kind: "service" as const },
+    { label: "Opportunities", kind: "opportunity" as const },
   ];
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none" role="group" aria-label="Browse listing types">
-      {tabs.map(({ label, kind, icon: Icon }) => {
+      {tabs.map(({ label, kind }) => {
         const active = kind === null ? allActive : selected === kind;
         return (
           <button
@@ -754,22 +753,20 @@ function ListingTypeTabs({
             type="button"
             aria-pressed={active}
             onClick={() => onSelect(kind)}
-            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-bold transition-all active:scale-95 sm:text-sm ${
+            className={`inline-flex h-8 shrink-0 items-center rounded-full px-3 text-xs font-semibold transition-all active:scale-95 ${
               active
                 ? "bg-accent text-white shadow-md shadow-accent/30"
                 : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
             }`}
           >
-            <Icon className={`size-[18px] ${active ? "" : "text-accent"}`} aria-hidden />
             {label}
           </button>
         );
       })}
       <Link
         href="/shops"
-        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-surface px-3.5 text-[13px] font-bold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95 sm:text-sm"
+        className="inline-flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-xs font-semibold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95"
       >
-        <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
         Shops
       </Link>
     </div>
