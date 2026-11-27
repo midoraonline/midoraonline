@@ -490,7 +490,8 @@ export default function HomeLanding({
   return (
     <div className="relative w-full">
       <GuestGetNoticedBanner />
-      <div className="mb-1.5 space-y-2 sm:mb-2">
+      <div className="mb-1.5 flex flex-col gap-2 sm:mb-2 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between lg:gap-x-4">
+        <div className="order-1 min-w-0 lg:flex-1">
         <ListingTypeTabs
           selected={filters.listingKind}
           allActive={filters.listingKind === null && !categoryFilterActive}
@@ -505,6 +506,8 @@ export default function HomeLanding({
             }));
           }}
         />
+        </div>
+        <div className="order-2 min-w-0 lg:order-3 lg:basis-full">
         <CategoryBrowseSection
           selection={categoryFilter}
           onlyGroup={scopedGroup}
@@ -524,7 +527,8 @@ export default function HomeLanding({
           showListingShortcuts={false}
           showAllChip={false}
         />
-        <div className={isSearching ? "lg:hidden" : undefined}>
+        </div>
+        <div className={`order-3 min-w-0 lg:order-2 lg:shrink-0 ${isSearching ? "lg:hidden" : ""}`}>
           <ProductFilters
             products={isSearching ? search.items : products}
             filters={filters}
@@ -534,7 +538,7 @@ export default function HomeLanding({
             extras={locationAndShops}
           />
         </div>
-        {isSearching ? <div className="hidden flex-wrap items-center gap-2 lg:flex">{locationAndShops}</div> : null}
+        {isSearching ? <div className="order-3 hidden flex-wrap items-center gap-2 lg:order-2 lg:flex">{locationAndShops}</div> : null}
       </div>
 
       {newCount > 0 && isBrowsingHome ? (
@@ -737,36 +741,38 @@ function ListingTypeTabs({
   onSelect: (kind: ListingKind | null) => void;
 }) {
   const tabs = [
-    { label: "All", kind: null },
-    { label: "Products", kind: "product" as const },
-    { label: "Services", kind: "service" as const },
-    { label: "Opportunities", kind: "opportunity" as const },
+    { label: "All", kind: null, dot: "bg-accent", on: "bg-accent text-white shadow-sm shadow-accent/30" },
+    { label: "Products", kind: "product" as const, dot: "bg-listing-product-accent", on: "bg-listing-product text-listing-product-foreground ring-1 ring-listing-product-accent/50" },
+    { label: "Services", kind: "service" as const, dot: "bg-listing-service-accent", on: "bg-listing-service text-listing-service-foreground ring-1 ring-listing-service-accent/50" },
+    { label: "Opportunities", kind: "opportunity" as const, dot: "bg-listing-opportunity-accent", on: "bg-listing-opportunity text-listing-opportunity-foreground ring-1 ring-listing-opportunity-accent/50" },
   ];
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none" role="group" aria-label="Browse listing types">
-      {tabs.map(({ label, kind }) => {
-        const active = kind === null ? allActive : selected === kind;
-        return (
-          <button
-            key={label}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onSelect(kind)}
-            className={`inline-flex h-8 shrink-0 items-center rounded-full px-3 text-xs font-semibold transition-all active:scale-95 ${
-              active
-                ? "bg-accent text-white shadow-md shadow-accent/30"
-                : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
-            }`}
-          >
-            {label}
-          </button>
-        );
-      })}
+    <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+      <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface p-0.5 ring-1 ring-foreground/10" role="group" aria-label="Browse listing types">
+        {tabs.map(({ label, kind, dot, on }) => {
+          const active = kind === null ? allActive : selected === kind;
+          return (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onSelect(kind)}
+              className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold transition-all active:scale-95 ${
+                active ? on : "text-foreground/70 hover:bg-foreground/[0.05] hover:text-foreground"
+              }`}
+            >
+              {active ? null : <span className={`size-1.5 rounded-full ${dot}`} aria-hidden />}
+              {label}
+            </button>
+          );
+        })}
+      </div>
       <Link
         href="/shops"
-        className="inline-flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-xs font-semibold text-foreground shadow-sm ring-1 ring-foreground/15 transition-all hover:ring-accent/40 active:scale-95"
+        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-xs font-semibold text-foreground/70 ring-1 ring-foreground/10 transition-all hover:text-foreground hover:ring-accent/40 active:scale-95"
       >
+        <span className="size-1.5 rounded-full bg-listing-shop-accent ring-1 ring-foreground/20" aria-hidden />
         Shops
       </Link>
     </div>

@@ -207,19 +207,19 @@ export function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={Boolean(active)}
-      className={`inline-flex h-10 shrink-0 snap-start items-center gap-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 ${
-        Icon ? "pl-1.5 pr-3.5" : "px-3.5"
+      className={`inline-flex h-8 shrink-0 snap-start items-center gap-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 ${
+        Icon ? "pl-1 pr-3" : "px-3"
       } ${
         active
-          ? "bg-accent text-white shadow-md shadow-accent/30"
-          : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
+          ? "bg-accent text-white shadow-sm shadow-accent/30"
+          : "bg-accent/[0.06] text-foreground ring-1 ring-accent/20 hover:bg-accent/10 hover:ring-accent/40"
       } ${className}`}
     >
       {Icon ? (
         <span
-          className={`grid size-7 shrink-0 place-items-center rounded-full ${active ? "bg-white/20 text-white" : tone}`}
+          className={`grid size-6 shrink-0 place-items-center rounded-full ${active ? "bg-white/20 text-white" : tone}`}
         >
-          <Icon className="size-4" aria-hidden />
+          <Icon className="size-3.5" aria-hidden />
         </span>
       ) : null}
       {children}
@@ -703,7 +703,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 py-0.5">
           <PriceDropdown
             minPrice={filters.minPrice}
             maxPrice={filters.maxPrice}
@@ -726,14 +726,16 @@ export default function ProductFilters({ products, filters, onChange, contextPar
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label={hasActiveFilters ? `Sort and filter, ${count} active` : "Sort and filter"}
-          className={`relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold shadow-sm transition-all active:scale-95 ${
-            hasActiveFilters ? "bg-accent text-white shadow-accent/30" : "bg-foreground text-background"
+          className={`relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition-all active:scale-95 ${
+            hasActiveFilters
+              ? "bg-accent text-white shadow-sm shadow-accent/30"
+              : "bg-accent/15 text-accent ring-1 ring-accent/30 hover:bg-accent/20"
           }`}
         >
-          <PiSlidersHorizontalBold className="size-[18px]" aria-hidden />
+          <PiSlidersHorizontalBold className="size-3.5" aria-hidden />
           <span>Filters</span>
           {hasActiveFilters ? (
-            <span className="grid min-w-5 place-items-center rounded-full bg-white px-1 text-[10px] font-bold leading-5 tabular-nums text-accent">
+            <span className="grid min-w-4 place-items-center rounded-full bg-white px-1 text-[10px] font-bold leading-4 tabular-nums text-accent">
               {count}
             </span>
           ) : null}

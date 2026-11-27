@@ -298,10 +298,10 @@ function CategoryChip({
   const emphasized = active || selected;
   const tone = prominent ? prominentChipTone(label) : null;
   const bubble = label === "All" ? ALL_CATEGORIES_TONE : resolveCategoryTone(label);
-  const className = `inline-flex items-center gap-1.5 rounded-full font-semibold transition-all active:scale-95 sm:h-10 sm:gap-2 sm:text-xs ${
+  const className = `inline-flex items-center gap-1.5 rounded-full font-semibold transition-all active:scale-95 ${
     prominent
       ? "min-h-11 min-w-0 flex-1 justify-center px-1.5 text-center text-[10px] leading-tight sm:w-auto sm:flex-none sm:px-3 sm:text-xs"
-      : "h-10 shrink-0 snap-start pl-1.5 pr-3 text-xs"
+      : "h-8 shrink-0 snap-start pl-1 pr-2.5 text-[11px] sm:text-xs"
   } ${
     tone
       ? `${listingToneClass(tone)} ring-1 ${listingToneRing(tone)} ${
@@ -311,7 +311,7 @@ function CategoryChip({
         ? "bg-accent text-white shadow-md shadow-accent/30"
         : selected
           ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-          : "bg-surface text-foreground shadow-sm ring-1 ring-foreground/15 hover:ring-accent/40"
+          : "bg-surface text-foreground/85 ring-1 ring-foreground/10 hover:text-foreground hover:ring-accent/40"
   }`;
   const inner = (
     <>
@@ -319,11 +319,11 @@ function CategoryChip({
         <Icon className="size-4 shrink-0 text-current" aria-hidden />
       ) : (
         <span
-          className={`grid size-7 shrink-0 place-items-center rounded-full ${
+          className={`grid size-6 shrink-0 place-items-center rounded-full ${
             active ? "bg-white/20 text-white" : bubble
           }`}
         >
-          <Icon className="size-4" aria-hidden />
+          <Icon className="size-3.5" aria-hidden />
         </span>
       )}
       <span

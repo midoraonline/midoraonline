@@ -79,19 +79,19 @@ export default function LocationPill({ filters, onChange, area, onAreaChange, si
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className={`inline-flex h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold shadow-sm transition-all active:scale-95 sm:text-sm ${
+        className={`inline-flex h-8 max-w-[11rem] shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold transition-all active:scale-95 ${
           active
-            ? "bg-accent/10 text-accent ring-1 ring-accent/40"
-            : "bg-surface text-foreground ring-1 ring-foreground/15 hover:ring-accent/40"
+            ? "bg-accent/15 text-accent ring-1 ring-accent/40"
+            : "bg-accent/[0.06] text-foreground ring-1 ring-accent/20 hover:bg-accent/10 hover:ring-accent/40"
         }`}
       >
         {filters.nearMe ? (
-          <PiNavigationArrowFill className="size-[18px] shrink-0 text-accent" aria-hidden />
+          <PiNavigationArrowFill className="size-3.5 shrink-0 text-accent" aria-hidden />
         ) : (
-          <PiMapPinFill className="size-[18px] shrink-0 text-accent" aria-hidden />
+          <PiMapPinFill className="size-3.5 shrink-0 text-accent" aria-hidden />
         )}
         <span className="truncate">{label}</span>
-        <PiCaretDownBold className="size-3.5 shrink-0" aria-hidden />
+        <PiCaretDownBold className="size-3 shrink-0 opacity-70" aria-hidden />
       </button>
 
       {open && (
