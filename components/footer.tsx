@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { BRAND_TAGLINE } from "@/lib/brand";
 import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
@@ -72,7 +73,8 @@ export default function Footer() {
                   priority
                 />
               </Link>
-              <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
+              <p className="mt-3 font-display text-base font-bold tracking-tight text-accent">{BRAND_TAGLINE}</p>
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
                 The marketplace where African brands and shoppers connect —
                 discover local shops, products, services and opportunities in one place.
               </p>

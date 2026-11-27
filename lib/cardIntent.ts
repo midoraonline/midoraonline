@@ -2,6 +2,7 @@ import type { CardIntentFields } from "@/lib/api/products";
 import {
   CATEGORY_VISUALS,
   OPPORTUNITY_CATEGORIES,
+  SERVICE_VISUALS,
   parseIntent,
   resolveListingIntent,
   type CardCta,
@@ -50,11 +51,18 @@ export function readCardIntent(
 export function cardVisual(
   itemType: string | null | undefined,
   category: OpportunityCategory | null,
+  serviceCategory?: string | null,
 ): string | null {
   const t = (itemType ?? "product").toLowerCase();
-  if (t === "service") return CATEGORY_VISUALS.service;
+  if (t === "service") return serviceVisual(serviceCategory);
   if ((t === "opportunity" || t === "job") && category) return CATEGORY_VISUALS[category];
   return null;
+}
+
+/** Matches the service subcategory (label path or slug) to its illustration. */
+function serviceVisual(category: string | null | undefined): string {
+  const leaf = (category ?? "").split(/[>/]/).pop()?.toLowerCase().replace(/-/g, " ") ?? "";
+  return SERVICE_VISUALS.find(([pattern]) => pattern.test(leaf))?.[1] ?? CATEGORY_VISUALS.service;
 }
 
 /** Subcategory line for the card body, e.g. "Professional & Consulting" or "Domestic Jobs". */

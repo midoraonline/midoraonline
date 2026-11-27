@@ -13,6 +13,7 @@ import PushSubscriptionSync from "@/components/chat/PushSubscriptionSync";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { AnalyticsProvider } from "@/providers/analyticsProvider";
 import MaintenanceNotice from "@/components/MaintenanceNotice";
+import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
 import "./globals.css";
 
 // Runs in <head> before hydration so the correct theme class is on <html>
@@ -38,8 +39,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Midora Online",
-  description: "Midora Online is a platform for online shopping, Create your shop and market wit Midora Online",
+  title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+  description: `${BRAND_TAGLINE}. Midora Online is a platform for online shopping. Create your shop and market with Midora Online.`,
   keywords: ["midora", "online", "shopping", "ecommerce", "shops", "stores", "products", 
     "services", "business", "brand", "company", "branding", "marketing", 
     "advertising",],
@@ -47,8 +48,8 @@ export const metadata: Metadata = {
   creator: "Midora Online",
   publisher: "Midora Online",
   openGraph: {
-    title: "Midora Online",
-    description: "Midora Online is a platform for online shopping",
+    title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    description: `${BRAND_TAGLINE}. Midora Online is a platform for online shopping.`,
     url: "https://www.midoraonline.com",
   },
 };

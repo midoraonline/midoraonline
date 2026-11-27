@@ -9,7 +9,7 @@ const INTENT_ACCENT: Record<CoverTone, string> = {
 
 /**
  * Coloured header for service/opportunity listings without a photo:
- * badge, intent text and title top-left, category illustration bottom-right.
+ * badge, intent text and title top-left, a large category illustration bleeding off the bottom-right.
  */
 export default function BrandedCover({
   tone,
@@ -27,35 +27,37 @@ export default function BrandedCover({
   visual?: string | null;
   layout?: "vertical" | "horizontal";
 }) {
-  // Vertical cards can be short enough for the illustration to reach the title, so narrow it.
-  const titleInset = visual && layout === "vertical" ? "pr-[38px] min-[400px]:pr-[44px] sm:pr-[58px] lg:pr-[66px]" : "pr-1";
   return (
-    <div className={`absolute inset-0 flex flex-col items-start gap-1.5 p-2.5 text-left sm:p-3 ${listingToneClass(tone)}`}>
-      <div className="flex min-h-6 max-w-full items-center gap-1 pr-10 sm:min-h-7">{badge}</div>
-      {intentLabel ? (
-        <p className={`line-clamp-2 max-w-full text-[13px] font-bold uppercase leading-tight tracking-wide ${INTENT_ACCENT[tone]}`}>
-          {intentLabel}
-        </p>
-      ) : null}
-      <h3
-        title={title}
-        className={`line-clamp-2 h-[38px] w-full overflow-hidden break-words text-base font-bold leading-[1.2] tracking-tight sm:h-[43px] sm:text-[18px] sm:leading-[1.18] ${titleInset}`}
-      >
-        {title}
-      </h3>
+    <div className={`absolute inset-0 flex flex-col items-start gap-1 overflow-hidden p-2.5 text-left sm:gap-1.5 sm:p-3 ${listingToneClass(tone)}`}>
       {visual ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={visual}
           alt=""
           aria-hidden
-          width={56}
-          height={56}
+          width={120}
+          height={120}
           loading="lazy"
           decoding="async"
-          className="pointer-events-none absolute bottom-2.5 right-2.5 size-[30px] select-none min-[400px]:size-9 sm:bottom-3 sm:right-3 sm:size-12 lg:size-14"
+          className={`pointer-events-none absolute select-none transition-transform duration-500 ease-out group-hover:scale-105 ${
+            layout === "horizontal"
+              ? "-bottom-[12%] -right-[18%] w-[88%]"
+              : "-bottom-[10%] -right-[6%] w-[60%] sm:w-[54%]"
+          }`}
         />
       ) : null}
+      <div className="relative flex min-h-6 max-w-full items-center gap-1 pr-10 sm:min-h-7">{badge}</div>
+      {intentLabel ? (
+        <p className={`relative line-clamp-2 max-w-full text-[11px] font-extrabold uppercase leading-tight tracking-wider sm:text-xs ${INTENT_ACCENT[tone]}`}>
+          {intentLabel}
+        </p>
+      ) : null}
+      <h3
+        title={title}
+        className="relative line-clamp-3 w-full break-words pr-2 text-[15px] font-bold leading-[1.2] tracking-tight sm:text-[17px]"
+      >
+        {title}
+      </h3>
     </div>
   );
 }

@@ -41,6 +41,12 @@ Load paths: `next/font/google` in `app/layout.tsx` (`--font-plus-jakarta`, `--fo
 
 ---
 
+## Tagline
+
+**More for What Matters** — always in this casing. Use `BRAND_TAGLINE` from `lib/brand.ts` instead of retyping it. It appears in the site title and link previews (`app/layout.tsx`) and under the logo in the footer.
+
+---
+
 ## Logo (Midora Online mark)
 
 ### Asset

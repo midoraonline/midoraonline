@@ -42,6 +42,14 @@ describe("cardVisual", () => {
     expect(cardVisual("opportunity", "volunteer")).toBe("/visuals/opportunity-volunteer.svg");
     expect(cardVisual("product", null)).toBeNull();
   });
+
+  it("picks a service illustration from the subcategory label or slug", () => {
+    expect(cardVisual("service", null, "Services > Photography & Videography")).toBe("/visuals/service-photography.svg");
+    expect(cardVisual("service", null, "services/cleaning-services")).toBe("/visuals/service-cleaning.svg");
+    expect(cardVisual("service", null, "Services > Tech & IT Services")).toBe("/visuals/service-tech.svg");
+    expect(cardVisual("service", null, "Services > Professional & Consulting")).toBe("/visuals/service-consulting.svg");
+    expect(cardVisual("service", null, "Services > Something New")).toBe("/visuals/service-universal.svg");
+  });
 });
 
 describe("safeApplicationLink", () => {

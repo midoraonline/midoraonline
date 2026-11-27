@@ -278,6 +278,22 @@ export const CATEGORY_VISUALS: Record<"service" | OpportunityCategory, string> =
   volunteer: "/visuals/opportunity-volunteer.svg",
 };
 
+/** Service subcategory → illustration, first match wins; unmatched services use CATEGORY_VISUALS.service. */
+export const SERVICE_VISUALS: readonly (readonly [RegExp, string])[] = [
+  [/repair|mainten/, "/visuals/service-repair.svg"],
+  [/clean/, "/visuals/service-cleaning.svg"],
+  [/deliver|logistic|courier|transport/, "/visuals/service-delivery.svg"],
+  [/beauty|personal care|salon|barber/, "/visuals/service-beauty.svg"],
+  [/educat|tutor|lesson|training/, "/visuals/service-education.svg"],
+  [/tech|\bit\b|software|computer/, "/visuals/service-tech.svg"],
+  [/event|entertain|music|\bdj\b/, "/visuals/service-events.svg"],
+  [/photo|video/, "/visuals/service-photography.svg"],
+  [/legal|financ|account|law/, "/visuals/service-legal.svg"],
+  [/improvement|construct|renovat|paint|plumb|electric/, "/visuals/service-home-improvement.svg"],
+  [/health|wellness|medical|fitness/, "/visuals/service-health.svg"],
+  [/consult|professional/, "/visuals/service-consulting.svg"],
+];
+
 export const TITLE_SOFT_LIMIT = 50;
 export const TITLE_HARD_LIMIT = 80;
 export const APPLICATION_LINK_MAX = 500;

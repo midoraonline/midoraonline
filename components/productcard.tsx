@@ -354,7 +354,7 @@ export default function ProductCard({
         title={product.title}
         intentLabel={intent.label}
         badge={badgeRow}
-        visual={cardVisual(product.item_type, intent.opportunityCategory)}
+        visual={cardVisual(product.item_type, intent.opportunityCategory, product.category)}
         layout={layout}
       />
     ) : coverFailed || coverUrls.length === 0 ? (
@@ -553,8 +553,8 @@ export default function ProductCard({
           {videoBadge}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3 sm:p-3.5">
-          <div className="space-y-1">{details}</div>
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-1.5 p-2.5 sm:p-3">
+          <div className="space-y-0.5">{details}</div>
           {cta(true)}
         </div>
       </article>
@@ -576,9 +576,9 @@ export default function ProductCard({
         {videoBadge}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
+      <div className="flex flex-1 flex-col gap-0.5 px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 sm:pt-2.5">
         {details}
-        <div className="mt-auto pt-1.5">{cta(false)}</div>
+        <div className="mt-auto pt-1">{cta(false)}</div>
       </div>
     </article>
   );

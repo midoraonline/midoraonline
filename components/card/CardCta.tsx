@@ -49,7 +49,7 @@ export default function CardCta({
   compact = false,
 }: CardCtaProps) {
   const base = `dm-focus flex w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white transition-colors active:scale-[0.98] ${
-    compact ? "py-2" : "py-2.5"
+    compact ? "py-1.5" : "py-2"
   }`;
   const accent = `${base} bg-accent hover:bg-accent-hover`;
   const green = `${base} bg-[#25D366] hover:bg-[#22c35e] active:bg-[#1fae53]`;
