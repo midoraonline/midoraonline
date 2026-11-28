@@ -3,7 +3,9 @@
 import AdminBoostButton from "@/components/admin/AdminBoostButton";
 import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiAdmin } from "@/lib/api";
+import { platformActionMessage } from "@/lib/platformMessages";
 import type { AdminListingProduct } from "@/lib/api/admin";
 import {
   BTN_SECONDARY,
@@ -64,8 +66,16 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
       await apiAdmin.reviewListing(id, action, notesMap[id] || undefined);
       setNotesMap((prev) => { const n = { ...prev }; delete n[id]; return n; });
       setRejectConfirm(null);
+      toast.success(action === "approve" ? "Listing approved. It's live now." : "Listing rejected.");
       load();
-    } catch {}
+    } catch (err) {
+      toast.error(
+        platformActionMessage(
+          err,
+          action === "approve" ? "We couldn't approve this listing. Try again." : "We couldn't reject this listing. Try again.",
+        ),
+      );
+    }
     setReviewing(null);
   };
 
@@ -74,7 +84,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
 
   return (
     <div>
-      <PageHeader title="Listings" description="Approve or reject listings across the platform." />
+      <PageHeader title="Listings" description="Approve or reject listings from every shop." />
       <UnderlineTabs
         tabs={FILTERS.map((f) => ({ value: f, label: FILTER_LABELS[f] }))}
         value={filter}
@@ -85,7 +95,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
       />
 
       {listings.length === 0 ? (
-        <EmptyState message="No listings here." />
+        <EmptyState message={filter === "pending_review" ? "No listings waiting for review." : "No listings here yet."} />
       ) : (
         <>
           <ul className={LIST}>
@@ -108,13 +118,13 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                       </div>
                       <p className="mt-0.5 truncate text-xs tabular-nums text-muted">
                         UGX {fmt(listing.price_ugx)} · {listing.shop_name ?? listing.shop_id}
-                        {listing.category ? ` · ${listing.category}` : ""} · {fmt(listing.view_count)} views
-                        {listing.reports_count ? ` · ${fmt(listing.reports_count)} reports` : ""} ·{" "}
+                        {listing.category ? ` · ${listing.category}` : ""} · {fmt(listing.view_count)} view{listing.view_count === 1 ? "" : "s"}
+                        {listing.reports_count ? ` · ${fmt(listing.reports_count)} report${listing.reports_count === 1 ? "" : "s"}` : ""} ·{" "}
                         <span title={new Date(listing.created_at).toLocaleString()}>{relativeTime(listing.created_at)}</span>
                       </p>
                       <AdminBoostStatus listingId={listing.id} className="mt-1" />
                       {listing.review_notes ? (
-                        <p className="mt-1 text-xs text-muted">Note: {listing.review_notes}</p>
+                        <p className="mt-1 text-xs text-muted">Review note: {listing.review_notes}</p>
                       ) : null}
                     </div>
                   </div>
@@ -130,7 +140,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                           disabled={reviewing === listing.id}
                           className={BTN_SECONDARY}
                         >
-                          {listing.status === "rejected" ? "Re-approve" : "Approve"}
+                          {listing.status === "rejected" ? "Approve again" : "Approve listing"}
                         </button>
                       ) : null}
                       {canReject ? (
@@ -142,7 +152,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                               disabled={reviewing === listing.id}
                               className="inline-flex h-9 items-center rounded-md bg-rose-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
                             >
-                              Confirm reject
+                              Yes, reject listing
                             </button>
                             <button type="button" onClick={() => setRejectConfirm(null)} className={BTN_TEXT}>
                               Cancel
@@ -154,7 +164,7 @@ export default function AdminListingsClient({ initialItems, initialTotalPages }:
                             onClick={() => setRejectConfirm(listing.id)}
                             className="text-sm font-medium text-rose-600 hover:underline"
                           >
-                            Reject
+                            Reject listing
                           </button>
                         )
                       ) : null}

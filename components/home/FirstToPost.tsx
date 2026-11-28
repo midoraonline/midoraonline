@@ -20,21 +20,22 @@ export default function FirstToPost({
   className?: string;
 }) {
   const noun = kind ? KIND_NOUN[kind] : "listing";
+  const aNoun = `${/^[aeiou]/.test(noun) ? "an" : "a"} ${noun}`;
   const href = kind ? `/post-item?item_type=${kind}` : "/post-item";
   return (
     <div className={`flex flex-col gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:flex-row sm:items-center ${className}`}>
       <Sparkles className="size-6 shrink-0 text-accent" aria-hidden />
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className="text-sm font-semibold text-foreground">
-          {topic ? `Be the first to post in “${topic}”` : `Be the first to post a ${noun}`}
+          {topic ? `Be the first to post in “${topic}”` : `Be the first to post ${aNoun}`}
         </p>
         <p className="text-sm text-muted">
-          Nobody has listed {topic ? "here" : "yet"}, so yours will be the first thing buyers see. It takes a minute.
+          Nobody has posted {topic ? "here" : "one"} yet, so yours will be the first that buyers see. It only takes a few minutes.
         </p>
       </div>
       <Link href={href} className="dm-btn dm-btn-primary dm-btn-sm shrink-0 self-start sm:self-auto">
         <Plus className="size-4" aria-hidden />
-        Post a {noun}
+        Post {aNoun}
       </Link>
     </div>
   );

@@ -19,7 +19,13 @@ const KIND_EXTENSIONS: Record<FileKind, string[]> = {
   doc: ["doc", "docx"],
   image: ["jpg", "jpeg", "png", "webp", "gif", "heic", "heif"],
 };
-const KIND_LABEL: Record<FileKind, string> = { pdf: "PDF", doc: "Word", image: "image" };
+const KIND_LABEL: Record<FileKind, string> = { pdf: "PDF", doc: "Word", image: "photo" };
+
+/** "PDF", "PDF or Word", "PDF, Word or photo". */
+function kindList(kinds: FileKind[]): string {
+  const labels = kinds.map((k) => KIND_LABEL[k]);
+  return labels.length > 1 ? `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}` : labels.join("");
+}
 
 const extensionOf = (name: string) => {
   const dot = name.lastIndexOf(".");
@@ -68,15 +74,15 @@ export function acceptAttribute(spec: FileFieldSpec): string {
 }
 
 export function describeAccept(spec: FileFieldSpec): string {
-  return `${spec.accept.map((k) => KIND_LABEL[k]).join(", ")} up to ${spec.maxSizeMb} MB`;
+  return `${kindList(spec.accept)}, up to ${spec.maxSizeMb} MB`;
 }
 
 /** Client-side check before uploading; the API repeats it on save. */
 export function fileProblem(file: { name: string; size: number; type: string }, spec: FileFieldSpec): string | null {
   const kind = fileKindOf(file.type, file.name);
-  if (!kind || !spec.accept.includes(kind)) return `Choose a ${spec.accept.map((k) => KIND_LABEL[k]).join(", ")} file.`;
+  if (!kind || !spec.accept.includes(kind)) return `Choose a ${kindList(spec.accept)} file.`;
   if (file.size > spec.maxSizeMb * 1024 * 1024) return `That file is over ${spec.maxSizeMb} MB. Pick a smaller one.`;
-  if (file.size <= 0) return "That file is empty.";
+  if (file.size <= 0) return "That file is empty. Choose another one.";
   return null;
 }
 

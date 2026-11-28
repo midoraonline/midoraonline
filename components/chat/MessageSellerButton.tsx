@@ -43,7 +43,7 @@ export default function MessageSellerButton({
       return;
     }
     if (!sellerId) {
-      toast.error("Seller information not available");
+      toast.error("We couldn't find this seller. Refresh the page and try again.");
       return;
     }
     setLoading(true);
@@ -54,7 +54,7 @@ export default function MessageSellerButton({
         product_id: productId,
       });
       if (!conv || "error" in conv) {
-        toast.error((conv as { error?: string })?.error ?? "Failed to start conversation");
+        toast.error((conv as { error?: string })?.error ?? "We couldn't start the chat. Try again.");
         return;
       }
 
@@ -68,7 +68,7 @@ export default function MessageSellerButton({
         setAskSignIn(true);
         return;
       }
-      toast.error("Couldn't start the conversation. Try again.");
+      toast.error("We couldn't start the chat. Check your connection and try again.");
     } finally {
       setLoading(false);
     }

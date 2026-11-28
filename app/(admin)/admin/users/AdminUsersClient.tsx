@@ -25,6 +25,7 @@ import {
   BTN_TEXT,
 } from "@/components/dashboard/ui";
 import { apiAdmin } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api/base";
 import type { AdminUserRole, AdminUserStatus } from "@/lib/api/admin";
 import { useAppSession } from "@/lib/state";
 
@@ -53,6 +54,15 @@ const STATUS_OPTIONS = [
   { value: "deleted", label: "Deleted" },
 ] as const;
 
+const STATUS_LABEL: Record<AdminUserStatus, string> = {
+  active: "Active",
+  suspended: "Suspended",
+  blocked: "Blocked",
+  deleted: "Deleted",
+};
+
+const ROLE_LABEL: Record<string, string> = Object.fromEntries(ROLE_OPTIONS.filter((o) => o.value).map((o) => [o.value, o.label]));
+
 const STATUS_TONE: Record<AdminUserStatus, StatusTone> = {
   active: "ok",
   suspended: "warn",
@@ -70,7 +80,7 @@ function useDebounced<T>(value: T, ms = 300) {
 }
 
 function errText(err: unknown, fallback: string) {
-  return err instanceof Error && err.message ? err.message : fallback;
+  return apiErrorMessage(err, fallback);
 }
 
 export default function AdminUsersClient() {
@@ -96,11 +106,11 @@ export default function AdminUsersClient() {
 
   return (
     <div>
-      <PageHeader title="Users" description="Find accounts, check verification, change roles, suspend or delete." />
+      <PageHeader title="Users" description="Find accounts, check verification, change roles, and suspend or delete users." />
       <FilterBar>
         <div className="flex min-w-0 flex-col gap-1.5 sm:w-72">
           <label htmlFor="user-search" className="text-xs font-semibold text-foreground">
-            Search
+            Search users
           </label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -122,7 +132,7 @@ export default function AdminUsersClient() {
         <Select label="Status" value={status} onChange={filter(setStatus)} options={STATUS_OPTIONS} />
       </FilterBar>
 
-      {error ? <ErrorState message="Couldn't load users." onRetry={() => void mutate()} /> : null}
+      {error ? <ErrorState message="We couldn't load users. Try again." onRetry={() => void mutate()} /> : null}
       {isLoading && !data ? (
         <PageSkeleton rows={8} label="Loading users" />
       ) : data && data.items.length === 0 ? (
@@ -140,16 +150,16 @@ export default function AdminUsersClient() {
                     <span className="block truncate text-sm font-medium text-foreground">{u.full_name || "No name"}</span>
                     <span className="block truncate text-xs text-muted">{u.email}</span>
                   </span>
-                  <span className="hidden text-xs capitalize text-muted sm:inline">{u.user_role}</span>
+                  <span className="hidden text-xs text-muted sm:inline">{ROLE_LABEL[u.user_role] ?? u.user_role}</span>
                   <span className="hidden text-xs text-muted md:inline">
-                    {u.email_verified ? "Email ✓" : "Email ✗"} · {u.phone_verified ? "Phone ✓" : "Phone ✗"}
+                    {u.email_verified ? "Email verified" : "Email not verified"} · {u.phone_verified ? "Phone verified" : "Phone not verified"}
                   </span>
-                  <Badge tone={STATUS_TONE[u.status] ?? "neutral"}>{u.status}</Badge>
+                  <Badge tone={STATUS_TONE[u.status] ?? "neutral"}>{STATUS_LABEL[u.status] ?? u.status}</Badge>
                 </button>
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-muted">{data.total} users</p>
+          <p className="mt-3 text-xs text-muted">{data.total} user{data.total === 1 ? "" : "s"}</p>
           <Pagination page={page} totalPages={data.total_pages} onChange={setPage} />
         </>
       ) : null}
@@ -186,7 +196,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
       await mutate();
       onChanged();
     } catch (err) {
-      toast.error(errText(err, "That didn't work. Try again."));
+      toast.error(errText(err, "We couldn't make that change. Try again."));
     } finally {
       setBusy(null);
       setConfirm(null);
@@ -208,7 +218,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
         </header>
         {error ? (
           <div className="p-5">
-            <ErrorState message="Couldn't load this user." onRetry={() => void mutate()} />
+            <ErrorState message="We couldn't load this user. Try again." onRetry={() => void mutate()} />
           </div>
         ) : !data || !user ? (
           <div className="flex flex-1 items-center justify-center text-muted">
@@ -221,8 +231,8 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
               <p className="text-muted">{user.email}</p>
               {user.phone_number ? <p className="text-muted">{user.phone_number}</p> : null}
               <div className="flex flex-wrap gap-2 pt-2">
-                <Badge tone={STATUS_TONE[user.status] ?? "neutral"}>{user.status}</Badge>
-                <Badge tone="neutral">{user.user_role}</Badge>
+                <Badge tone={STATUS_TONE[user.status] ?? "neutral"}>{STATUS_LABEL[user.status] ?? user.status}</Badge>
+                <Badge tone="neutral">{ROLE_LABEL[user.user_role] ?? user.user_role}</Badge>
               </div>
               <p className="pt-1 text-xs text-muted">
                 Joined {relativeTime(user.created_at)}
@@ -243,7 +253,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
                 ).map(([label, ok]) => (
                   <li key={label} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                     <span>{label}</span>
-                    <Badge tone={ok ? "ok" : "neutral"}>{ok ? "Verified" : "No"}</Badge>
+                    <Badge tone={ok ? "ok" : "neutral"}>{ok ? "Verified" : "Not verified"}</Badge>
                   </li>
                 ))}
               </ul>
@@ -251,10 +261,10 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
 
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Businesses · {data.listings_count} ads
+                Shops · {data.listings_count} listing{data.listings_count === 1 ? "" : "s"}
               </h3>
               {data.shops.length === 0 ? (
-                <p className="text-muted">No businesses.</p>
+                <p className="text-muted">No shops.</p>
               ) : (
                 <ul className="space-y-1.5">
                   {data.shops.map((s) => (
@@ -280,7 +290,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
                 <Select
                   label="Role"
                   value={user.user_role}
-                  onChange={(r) => void run("role", () => apiAdmin.setUserRole(userId, r), `Role changed to ${r}.`)}
+                  onChange={(r) => void run("role", () => apiAdmin.setUserRole(userId, r), `Role changed to ${ROLE_LABEL[r] ?? r}.`)}
                   options={ROLE_OPTIONS.filter((o) => o.value !== "") as { value: AdminUserRole; label: string }[]}
                 />
                 <div className="flex flex-wrap gap-2">
@@ -291,7 +301,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
                       onClick={() => void run("status", () => apiAdmin.setUserStatus(userId, "active"), "User unsuspended.")}
                       className={BTN_SECONDARY}
                     >
-                      Unsuspend
+                      Unsuspend user
                     </button>
                   ) : (
                     <button
@@ -300,7 +310,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
                       onClick={() => setConfirm("suspend")}
                       className={BTN_SECONDARY}
                     >
-                      Suspend
+                      Suspend user
                     </button>
                   )}
                   <button
@@ -321,7 +331,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
         <ConfirmDialog
           title="Suspend this user?"
           message="They'll be signed out and can't sign in until you unsuspend them."
-          confirmLabel="Suspend"
+          confirmLabel="Suspend user"
           destructive
           busy={busy === "status"}
           onClose={() => setConfirm(null)}
@@ -331,7 +341,7 @@ function UserDrawer({ userId, onClose, onChanged }: { userId: string; onClose: (
       {confirm === "delete" ? (
         <ConfirmDialog
           title="Delete this user?"
-          message="Their profile, businesses, ads and photos will be deleted. This can't be undone."
+          message="This deletes their profile, shops, listings and photos. You can't undo this."
           confirmLabel="Delete user"
           destructive
           busy={busy === "delete"}

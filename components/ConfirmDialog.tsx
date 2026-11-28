@@ -50,7 +50,7 @@ export default function ConfirmDialog({
             className="dm-btn dm-btn-primary"
             style={destructive ? { background: "var(--error)" } : undefined}
           >
-            {busy ? "Working…" : confirmLabel}
+            {busy ? "Please wait…" : confirmLabel}
           </button>
         </div>
       }

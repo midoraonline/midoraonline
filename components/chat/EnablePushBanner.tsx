@@ -47,7 +47,7 @@ export default function EnablePushBanner() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">Get notified about new messages</p>
         <p className="mt-0.5 text-xs text-muted">
-          We&apos;ll ping your browser when someone replies — even in the background.
+          We&apos;ll alert you when someone replies, even when Midora isn&apos;t open.
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -64,7 +64,7 @@ export default function EnablePushBanner() {
           disabled={busy}
           className="dm-focus rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          {busy ? "Enabling…" : "Enable"}
+          {busy ? "Turning on…" : "Turn on alerts"}
         </button>
       </div>
     </div>

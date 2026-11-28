@@ -5,7 +5,7 @@ import InsightsClient from "./InsightsClient";
 export const metadata: Metadata = {
   title: "Insights · Midora Admin",
   description:
-    "Behavioral insights derived from analytics_events: discovery liquidity, conversion funnels, trust health, verification drop-off.",
+    "How buyers find listings and contact sellers, where verification stalls, and trust signals.",
 };
 
 export const dynamic = "force-dynamic";

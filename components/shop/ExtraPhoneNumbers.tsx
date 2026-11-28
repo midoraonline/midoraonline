@@ -28,7 +28,7 @@ type Props = {
   idPrefix?: string;
 };
 
-/** Up to three more numbers buyers can call; one may be marked as WhatsApp (shown as not verified). */
+/** Up to three more numbers buyers can call; one may be marked as WhatsApp (hidden from buyers, since it can't be verified). */
 export default function ExtraPhoneNumbers({ value, onChange, idPrefix = "extra-phone" }: Props) {
   const update = (i: number, patch: Partial<ExtraPhone>) =>
     onChange(
@@ -73,11 +73,11 @@ export default function ExtraPhoneNumbers({ value, onChange, idPrefix = "extra-p
             <div className="flex flex-wrap items-center gap-2">
               <input
                 className="dm-input !h-9 min-w-0 flex-1 text-sm"
-                placeholder="Label, e.g. Branch or Manager"
+                placeholder="Name, e.g. Ntinda branch"
                 maxLength={40}
                 value={phone.label}
                 onChange={(e) => update(i, { label: e.target.value })}
-                aria-label="Label for this number"
+                aria-label="Name for this number"
               />
               <button
                 type="button"
@@ -108,7 +108,7 @@ export default function ExtraPhoneNumbers({ value, onChange, idPrefix = "extra-p
       ) : null}
       {value.some((p) => p.whatsapp) ? (
         <p className="text-[11px] text-muted">
-          Extra WhatsApp numbers aren&apos;t verified, so buyers see them marked as not verified.
+          Buyers won&apos;t see this number, because we can only verify your main WhatsApp number. Set it to Calls only to show it to buyers.
         </p>
       ) : null}
     </div>

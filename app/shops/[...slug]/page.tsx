@@ -8,8 +8,13 @@ import ShopReviews from "@/components/shop/ShopReviews";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { VerifiedIcon } from "@/components/icons/VerifiedIcon";
 import ShopHoursStatus from "@/components/shop/ShopHoursStatus";
-import { locationDisplay } from "@/components/shop/shopUtils";
+import {
+  filterDuplicateContacts,
+  locationDisplay,
+  verifiedWhatsapp,
+} from "@/components/shop/shopUtils";
 import { describeShopHours } from "@/lib/shopHours";
+import { resolveShopTrustLevel } from "@/lib/productCardMap";
 import { getShopBySlug, listShopProducts } from "@/lib/api/server";
 
 export default async function ShopDetails({
@@ -43,21 +48,14 @@ export default async function ShopDetails({
   const about = (shop.about ?? "").trim();
   const showAboutSection = Boolean(about && about !== desc);
 
-  const emailNorm = shop.shop_email?.trim().toLowerCase() ?? "";
-  const waNorm = shop.whatsapp_number?.replace(/\D/g, "") ?? "";
-  const extraContacts =
-    shop.contacts?.filter((c) => {
-      const v = c.value.trim();
-      if (emailNorm && v.toLowerCase() === emailNorm) return false;
-      if (waNorm && v.replace(/\D/g, "") === waNorm) return false;
-      return true;
-    }) ?? [];
+  const whatsapp = verifiedWhatsapp(shop);
+  const extraContacts = filterDuplicateContacts(shop);
 
   const location = locationDisplay(shop.location);
   const socials = shop.social_links?.filter((s) => s.url?.trim()) ?? [];
   const hasContactBody =
     Boolean(shop.shop_email?.trim()) ||
-    Boolean(shop.whatsapp_number?.trim()) ||
+    Boolean(whatsapp) ||
     extraContacts.length > 0 ||
     socials.length > 0 ||
     Boolean(location) ||
@@ -82,7 +80,7 @@ export default async function ShopDetails({
 
       {items.length === 0 ? (
         <p className="text-sm text-muted">
-          {shop.name} hasn&apos;t listed any items yet.
+          {shop.name} hasn&apos;t posted any listings yet. Follow this shop to see new ones.
         </p>
       ) : null}
 
@@ -91,9 +89,9 @@ export default async function ShopDetails({
           id: shop.id,
           name: shop.name,
           slug: shop.slug,
-          verified: shop.is_active ?? true,
+          verified: resolveShopTrustLevel(shop.trust_badges) !== "registered",
           logoUrl: shop.logo_url ?? null,
-          whatsappNumber: shop.whatsapp_number ?? null,
+          whatsappNumber: whatsapp,
           category: shop.category ?? null,
           ownerId: shop.owner_id ?? null,
           trust_badges: shop.trust_badges ?? null,
@@ -120,16 +118,14 @@ export default async function ShopDetails({
         Contact
       </h2>
       <ul className="max-w-lg space-y-3 text-sm">
-        {shop.whatsapp_number?.trim() ? (
+        {whatsapp ? (
           <li className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
             <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
               WhatsApp
             </span>
             <span className="min-w-0 break-words text-foreground">
-              {shop.whatsapp_number}
-              {shop.whatsapp_verified ? (
-                <VerifiedIcon className="ml-1.5 inline align-text-bottom !text-sm text-accent" label="Verified" />
-              ) : null}
+              {whatsapp}
+              <VerifiedIcon className="ml-1.5 inline align-text-bottom !text-sm text-accent" label="Verified" />
             </span>
           </li>
         ) : null}
@@ -168,7 +164,6 @@ export default async function ShopDetails({
           </li>
         ) : null}
         {extraContacts.map((c, i) => {
-          const isWa = c.type === "whatsapp";
           const digits = c.value.replace(/\D/g, "");
           return (
             <li
@@ -176,23 +171,11 @@ export default async function ShopDetails({
               className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3"
             >
               <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
-                {c.label || (isWa ? "WhatsApp" : "Phone")}
+                {c.label || "Phone"}
               </span>
-              <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                <a
-                  href={isWa ? `https://wa.me/${digits}` : `tel:+${digits}`}
-                  target={isWa ? "_blank" : undefined}
-                  rel={isWa ? "noopener noreferrer" : undefined}
-                  className="break-words text-accent hover:underline"
-                >
-                  {c.value}
-                </a>
-                {isWa ? (
-                  <span className="rounded-full bg-[color:var(--warning-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--warning)]">
-                    WhatsApp · not verified
-                  </span>
-                ) : null}
-              </span>
+              <a href={`tel:+${digits}`} className="min-w-0 break-words text-accent hover:underline">
+                {c.value}
+              </a>
             </li>
           );
         })}
@@ -215,6 +198,9 @@ export default async function ShopDetails({
           </li>
         ))}
       </ul>
+      <p className="max-w-lg text-xs text-muted">
+        Stay safe: meet in a public place and see the item before you pay. Don&apos;t send money in advance.
+      </p>
     </div>
   ) : null;
 
@@ -233,13 +219,13 @@ export default async function ShopDetails({
             Need help?
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Ask the {shop.name} AI concierge about products, pricing, availability
-            or delivery. Use the chat button in the bottom-right to start.
+            Ask the {shop.name} AI assistant about listings, prices, stock
+            or delivery. Tap the chat button at the bottom right to start.
           </p>
         </div>
       </div>
       <Link href="/policies" className="dm-btn dm-btn-primary">
-        View platform policies
+        Read Midora policies
       </Link>
     </div>
   );

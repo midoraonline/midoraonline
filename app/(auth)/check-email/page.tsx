@@ -25,7 +25,7 @@ function CheckEmailInner() {
       const msg = err instanceof Error ? err.message : "";
       toast.error(
         /429|too many/i.test(msg)
-          ? "Please wait a minute before requesting another email."
+          ? "Please wait a minute, then ask for another email."
           : "We couldn't send the email right now. Try again in a moment.",
       );
     } finally {
@@ -39,7 +39,7 @@ function CheckEmailInner() {
         <MailCheck className="size-7" aria-hidden />
       </span>
       <div className="space-y-2">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Check your email to verify</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Check your email</h1>
         <p className="text-sm text-muted">
           We sent a verification link to{" "}
           {email ? <span className="font-medium text-foreground">{email}</span> : "your email address"}. Open it to
@@ -63,7 +63,7 @@ function CheckEmailInner() {
           Continue to Midora
         </Link>
       </div>
-      <p className="text-xs text-muted">Can&apos;t find it? Check spam or promotions. The link works once.</p>
+      <p className="text-xs text-muted">Can&apos;t find it? Check your spam or promotions folder. The link works only once.</p>
     </div>
   );
 }

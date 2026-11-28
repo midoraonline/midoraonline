@@ -21,9 +21,9 @@ export default function SubmitBar({
   const label = saving
     ? "Saving…"
     : aiChecking
-      ? "Running AI review…"
+      ? "Checking listing…"
       : mode === "add"
-        ? "Publish listing"
+        ? "Post listing"
         : "Save changes";
   return (
     <div
@@ -39,7 +39,7 @@ export default function SubmitBar({
           form="product-form-page"
           disabled={saving || aiChecking || !isDirty || critical}
           title={
-            !isDirty ? "No changes to save." : critical ? "The AI review found problems. Edit the listing first." : undefined
+            !isDirty ? "No changes to save yet." : critical ? "The AI check found problems. Fix them first." : undefined
           }
           className={`${BTN_PRIMARY} min-w-36`}
         >

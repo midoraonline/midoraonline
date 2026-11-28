@@ -115,7 +115,7 @@ export default function EmailContactRow({
               className={INPUT}
               value={shopEmail}
               onChange={(e) => onShopEmailChange(e.target.value)}
-              placeholder="hello@yourbusiness.com"
+              placeholder="e.g. hello@yourshop.com"
             />
             <p className="text-xs text-muted">Buyers see this instead of your account email.</p>
           </div>

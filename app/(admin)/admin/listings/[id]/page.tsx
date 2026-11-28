@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { adminApi } from "@/lib/api/server";
 import ListingTypeTag from "@/components/ListingTypeTag";
 import { listingTypeTagKind } from "@/lib/listingType";
@@ -8,13 +7,18 @@ import { productPageSlug } from "@/lib/productUrl";
 import { BTN_SECONDARY, CARD, StatusDot } from "@/components/dashboard/ui";
 import AdminBoostButton from "@/components/admin/AdminBoostButton";
 import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
+import AdminBackButton from "@/components/admin/AdminBackButton";
 
 export const dynamic = "force-dynamic";
 
 type Rec = Record<string, unknown>;
 
 const str = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
-const ugx = (v: unknown) => (typeof v === "number" ? `UGX ${v.toLocaleString()}` : null);
+const ugx = (v: unknown) => (typeof v === "number" ? `UGX ${v.toLocaleString("en-UG", { maximumFractionDigits: 0 })}` : null);
+const humanize = (v: string) => {
+  const text = v.replace(/_/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 const date = (v: unknown) => {
   if (typeof v !== "string") return null;
   const d = new Date(v);
@@ -65,14 +69,12 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
   return (
     <div className="mx-auto max-w-5xl space-y-4 px-0 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link href="/admin/reports" className={BTN_SECONDARY}>
-          <ArrowLeft className="size-4" aria-hidden /> Back to reports
-        </Link>
+        <AdminBackButton fallback="/admin/listings" />
         <div className="flex flex-wrap gap-2">
         <AdminBoostButton target="listing" id={l.id} name={title} />
         {status === "active" ? (
           <a href={`/products/${productPageSlug({ id: l.id, title })}`} target="_blank" rel="noreferrer" className={BTN_SECONDARY}>
-            <ExternalLink className="size-4" aria-hidden /> Public page
+            <ExternalLink className="size-4" aria-hidden /> View public page
           </a>
         ) : null}
         </div>
@@ -81,8 +83,8 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <ListingTypeTag kind={listingTypeTagKind(str(l.item_type), (l.meta ?? null) as never)} />
-          <StatusDot tone={TONE[status] ?? "neutral"}>{status.replace(/_/g, " ")}</StatusDot>
-          {status !== "active" ? <span className="text-xs text-muted">Not visible to the public</span> : null}
+          <StatusDot tone={TONE[status] ?? "neutral"}>{humanize(status)}</StatusDot>
+          {status !== "active" ? <span className="text-xs text-muted">Buyers can&apos;t see this listing</span> : null}
           <AdminBoostStatus listingId={l.id} />
         </div>
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{title}</h1>
@@ -115,14 +117,14 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
         <Card title={`Visibility (last ${data.stats.window_days} days)`}>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: "Times shown", value: data.stats.impressions, hint: `${data.stats.boosted_impressions.toLocaleString()} from boosted spots` },
+              { label: "Times shown", value: data.stats.impressions, hint: `${data.stats.boosted_impressions.toLocaleString("en-UG")} from boosted spots` },
               { label: "People reached", value: data.stats.reach, hint: "Different people or devices" },
               { label: "Opened", value: data.stats.views, hint: `${Math.round(data.stats.view_rate * 100)}% of times shown` },
-              { label: "Contacts", value: data.stats.contacts, hint: `${data.stats.likes.toLocaleString()} likes` },
+              { label: "Contacts", value: data.stats.contacts, hint: `${data.stats.likes.toLocaleString("en-UG")} like${data.stats.likes === 1 ? "" : "s"}` },
             ].map((s) => (
               <div key={s.label} className="rounded-lg border border-border px-3 py-2">
                 <p className="text-xs text-muted">{s.label}</p>
-                <p className="text-lg font-semibold tabular-nums text-foreground">{s.value.toLocaleString()}</p>
+                <p className="text-lg font-semibold tabular-nums text-foreground">{s.value.toLocaleString("en-UG")}</p>
                 <p className="text-[11px] text-muted">{s.hint}</p>
               </div>
             ))}
@@ -139,7 +141,7 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
             <Row label="Location" value={str(l.location)} />
             <Row label="Stock" value={str(l.stock_quantity)} />
             {attrs.map(([k, v]) => (
-              <Row key={k} label={k.replace(/_/g, " ")} value={str(typeof v === "object" ? JSON.stringify(v) : v)} />
+              <Row key={k} label={humanize(k)} value={str(typeof v === "object" ? JSON.stringify(v) : v)} />
             ))}
             <Row label="Created" value={date(l.created_at)} />
             <Row label="Updated" value={date(l.updated_at)} />
@@ -154,17 +156,17 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
                 <Row label="Name" value={str(owner.full_name)} />
                 <Row label="Email" value={str(owner.email) ? `${owner.email}${owner.email_verified ? " (verified)" : ""}` : null} />
                 <Row label="Phone" value={str(owner.phone_number) ? `${owner.phone_number}${owner.phone_verified ? " (verified)" : ""}` : null} />
-                <Row label="Account" value={[str(owner.user_role), str(owner.status)].filter(Boolean).join(" · ")} />
+                <Row label="Account" value={[str(owner.user_role), str(owner.status)].filter((v): v is string => Boolean(v)).map(humanize).join(" · ")} />
                 <Row label="Joined" value={date(owner.created_at)} />
-                <Row label="Businesses" value={str(owner.business_count)} />
-                <Row label="Total ads" value={str(owner.listing_count)} />
+                <Row label="Shops" value={str(owner.business_count)} />
+                <Row label="Total listings" value={str(owner.listing_count)} />
                 <Row label="Seller ID" value={<span className="font-mono text-xs">{String(owner.id)}</span>} />
               </dl>
             ) : (
-              <p className="text-sm text-muted">Seller account not found (may be deleted).</p>
+              <p className="text-sm text-muted">We couldn&apos;t find the seller&apos;s account. It may have been deleted.</p>
             )}
           </Card>
-          <Card title="Business">
+          <Card title="Shop">
             {shop ? (
               <dl>
                 <Row label="Name" value={str(shop.name)} />
@@ -172,7 +174,7 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
                 <Row label="Location" value={str(shop.location)} />
                 <Row label="WhatsApp" value={str(shop.whatsapp_number)} />
                 <Row label="Email" value={str(shop.shop_email) ?? str(shop.email)} />
-                <Row label="Badges" value={Array.isArray(shop.trust_badges) ? (shop.trust_badges as string[]).join(", ").replace(/_/g, " ") : null} />
+                <Row label="Badges" value={Array.isArray(shop.trust_badges) ? (shop.trust_badges as string[]).map(humanize).join(", ") : null} />
                 <Row label="Created" value={date(shop.created_at)} />
                 <Row label="About" value={str(shop.description)} />
                 {str(shop.slug) ? (
@@ -180,7 +182,7 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
                 ) : null}
               </dl>
             ) : (
-              <p className="text-sm text-muted">Business not found.</p>
+              <p className="text-sm text-muted">We couldn&apos;t find this listing&apos;s shop. It may have been deleted.</p>
             )}
           </Card>
         </div>
@@ -201,7 +203,7 @@ export default async function AdminListingDetailPage({ params }: { params: Promi
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted">No reports.</p>
+          <p className="text-sm text-muted">No reports for this listing.</p>
         )}
       </Card>
     </div>

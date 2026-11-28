@@ -25,7 +25,7 @@ export async function generateMetadata({
   if (slugParts[1] === "analytics") {
     return {
       title: `Analytics — ${shop.name} | Midora Online`,
-      description: `Engagement and product stats for ${shop.name} on Midora Online.`,
+      description: `Shop and listing stats for ${shop.name} on Midora Online.`,
     };
   }
 
@@ -33,7 +33,7 @@ export async function generateMetadata({
   const description =
     shop.description ??
     shop.about ??
-    `Discover ${shop.name} on Midora Online — brand-first shopping across Africa.`;
+    `See listings from ${shop.name} on Midora Online, the local marketplace for Uganda and Africa.`;
   const url = `https://www.midoraonline.com/shops/${shop.slug}`;
   const images = shop.logo_url
     ? [{ url: shop.logo_url, alt: shop.name }]
@@ -111,8 +111,8 @@ export default async function ShopLayout({
             </span>
           </div>
           <div className="text-xs text-primary-foreground/80">
-            Rent a shop for{" "}
-            <span className="font-semibold text-accent">5,000 UGX/month</span>
+            Open a shop for{" "}
+            <span className="font-semibold text-accent">UGX 5,000 a month</span>
           </div>
         </div>
       </div>

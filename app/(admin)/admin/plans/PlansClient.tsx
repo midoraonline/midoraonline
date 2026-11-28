@@ -4,7 +4,7 @@ import { useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import SettingsSwitch from "@/components/settings/SettingsSwitch";
-import { ApiError } from "@/lib/api/base";
+import { ApiError, apiErrorMessage } from "@/lib/api/base";
 import type { BoostKind, BoostPlan } from "@/lib/api/boostPlans";
 import {
   ADMIN_BOOST_PACKAGES_KEY,
@@ -19,12 +19,11 @@ import {
 } from "@/lib/api/adminPlans";
 import { BTN_PRIMARY, CARD, ErrorState, INPUT, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
-function failure(what: string, err: unknown) {
-  if (err instanceof ApiError) {
-    if (err.status === 503) return `${what}: run migration 058 first.`;
-    return `${what}: ${err.message}`;
+function failure(what: string, err: unknown, action: "save" | "load" = "save") {
+  if (err instanceof ApiError && err.status === 503) {
+    return "Plan settings aren't set up on the server yet. Run the plans database migration, then try again.";
   }
-  return `Couldn't save ${what.toLowerCase()}.`;
+  return apiErrorMessage(err, `We couldn't ${action} ${what}. Try again.`);
 }
 
 type NumField = {
@@ -46,24 +45,24 @@ const SECTIONS: { title: string; fields: NumField[] }[] = [
   {
     title: "Listings",
     fields: [
-      { key: "max_shops", label: "Max shops", min: 0, max: 1000 },
-      { key: "max_products_per_shop", label: "Max listings per shop", min: 0, max: 100_000 },
-      { key: "frequency_per_day", label: "Feed appearances / day", min: 0, max: 1000 },
-      { key: "frequency_per_day_boosted", label: "Appearances / day (boosted)", min: 0, max: 1000 },
+      { key: "max_shops", label: "Most shops", min: 0, max: 1000 },
+      { key: "max_products_per_shop", label: "Most listings per shop", min: 0, max: 100_000 },
+      { key: "frequency_per_day", label: "Feed appearances per day", min: 0, max: 1000 },
+      { key: "frequency_per_day_boosted", label: "Feed appearances per day (boosted)", min: 0, max: 1000 },
     ],
   },
   {
-    title: "Media",
+    title: "Photos and videos",
     fields: [
-      { key: "max_photos", label: "Max photos", hint: "1–20", min: 1, max: 20 },
-      { key: "max_videos", label: "Max videos", hint: "0–5", min: 0, max: 5 },
+      { key: "max_photos", label: "Most photos per listing", hint: "1–20", min: 1, max: 20 },
+      { key: "max_videos", label: "Most videos per listing", hint: "0–5", min: 0, max: 5 },
     ],
   },
   {
-    title: "Boosts & reposts",
+    title: "Boosts and reposts",
     fields: [
-      { key: "free_boosts_per_month", label: "Free boosts / month", min: 0, max: 1000 },
-      { key: "reposts_per_day", label: "Reposts / day", min: 0, max: 100 },
+      { key: "free_boosts_per_month", label: "Free boosts per month", min: 0, max: 1000 },
+      { key: "reposts_per_day", label: "Reposts per day", min: 0, max: 100 },
       { key: "repost_cooldown_hours", label: "Repost cooldown (hours)", hint: "Per listing", min: 0, max: 720 },
     ],
   },
@@ -117,9 +116,9 @@ function PlanCard({ plan }: { plan: AdminPlan }) {
       );
       setDraft(toDraft(saved));
       void globalMutate("settings-public");
-      toast.success(`${saved.name} plan saved`);
+      toast.success(`${saved.name} plan saved.`);
     } catch (err) {
-      toast.error(failure(`${plan.name} plan`, err));
+      toast.error(failure(`the ${plan.name} plan`, err));
     } finally {
       setSaving(false);
     }
@@ -132,7 +131,7 @@ function PlanCard({ plan }: { plan: AdminPlan }) {
           {plan.name} <span className="text-xs font-normal text-muted">({plan.key})</span>
         </h2>
         {plan.updated_at ? (
-          <span className="text-xs text-muted">Edited {new Date(plan.updated_at).toLocaleString()}</span>
+          <span className="text-xs text-muted">Last changed {new Date(plan.updated_at).toLocaleString()}</span>
         ) : (
           <span className="text-xs text-muted">Using built-in defaults</span>
         )}
@@ -173,19 +172,19 @@ function PlanCard({ plan }: { plan: AdminPlan }) {
       <div className="mt-4 space-y-1">
         <SettingsSwitch
           label="Analytics"
-          hint="Merchants on this plan see listing analytics"
+          hint="Shop owners on this plan can see listing analytics"
           checked={Boolean(draft.analytics_enabled)}
           onChange={(v) => setDraft((d) => ({ ...d, analytics_enabled: v }))}
         />
         <SettingsSwitch
           label="Available for purchase"
-          hint="Turn off to hide this plan from billing"
+          hint="Turn off to hide this plan from the billing page"
           checked={Boolean(draft.is_active)}
           onChange={(v) => setDraft((d) => ({ ...d, is_active: v }))}
         />
       </div>
       <label className="mt-4 block text-xs font-semibold text-foreground-muted">
-        Features (one per line, shown on pricing)
+        Features (one per line, shown on the pricing page)
         <textarea
           rows={4}
           value={String(draft.features)}
@@ -195,7 +194,7 @@ function PlanCard({ plan }: { plan: AdminPlan }) {
       </label>
       {bad.length ? (
         <p className="mt-2 text-xs text-[color:var(--error)]">
-          Check: {bad.map((f) => `${f.label} (${f.min}–${f.max})`).join(", ")}
+          Enter a whole number for: {bad.map((f) => `${f.label} (${f.min.toLocaleString("en-UG")}–${f.max.toLocaleString("en-UG")})`).join(", ")}
         </p>
       ) : null}
       <div className="mt-4 flex justify-end gap-2">
@@ -205,7 +204,7 @@ function PlanCard({ plan }: { plan: AdminPlan }) {
             onClick={() => setDraft(initial)}
             className="dm-focus rounded-lg px-3 py-2 text-sm font-medium text-muted hover:bg-surface-muted"
           >
-            Reset
+            Undo changes
           </button>
         ) : null}
         <button
@@ -271,9 +270,9 @@ function PackageRow({ pkg, onSaved }: { pkg?: BoostPlan; onSaved: (p: BoostPlan)
       const saved = pkg ? await updateBoostPackage(pkg.id, body) : await createBoostPackage(body);
       onSaved(saved);
       setD(pkg ? pkgDraft(saved) : pkgDraft());
-      toast.success(pkg ? "Boost package saved" : "Boost package added");
+      toast.success(pkg ? "Boost package saved." : "Boost package added.");
     } catch (err) {
-      toast.error(failure("Boost package", err));
+      toast.error(failure("the boost package", err));
     } finally {
       setSaving(false);
     }
@@ -289,18 +288,18 @@ function PackageRow({ pkg, onSaved }: { pkg?: BoostPlan; onSaved: (p: BoostPlan)
         <option value="boost">Boosted</option>
         <option value="sponsored">Sponsored</option>
       </select>
-      <input aria-label="Duration hours" type="number" inputMode="numeric" min={1} max={2160} value={d.duration_hours}
+      <input aria-label="Duration in hours" type="number" inputMode="numeric" min={1} max={2160} value={d.duration_hours}
         onChange={(e) => setD({ ...d, duration_hours: e.target.value })} className={cell} />
-      <input aria-label="Price UGX" type="number" inputMode="numeric" min={0} value={d.price_amount}
+      <input aria-label="Price in UGX" type="number" inputMode="numeric" min={0} value={d.price_amount}
         onChange={(e) => setD({ ...d, price_amount: e.target.value })} className={cell} />
-      <input aria-label="Score weight" type="number" inputMode="numeric" min={0} max={500} value={d.score_bonus}
+      <input aria-label="Ranking points" type="number" inputMode="numeric" min={0} max={500} value={d.score_bonus}
         onChange={(e) => setD({ ...d, score_bonus: e.target.value })} className={cell} />
       <label className="flex items-center gap-2 text-xs text-foreground-muted">
         <input type="checkbox" checked={d.is_active} onChange={(e) => setD({ ...d, is_active: e.target.checked })} />
         Active
       </label>
       <button type="button" className={BTN_PRIMARY} disabled={!dirty || !ok || saving} onClick={() => void save()}>
-        {saving ? "…" : pkg ? "Save" : "Add"}
+        {saving ? "Saving…" : pkg ? "Save package" : "Add package"}
       </button>
     </div>
   );
@@ -318,13 +317,13 @@ function BoostPackagesCard() {
     <section id="boosts" className={`${CARD} scroll-mt-24 p-4 sm:p-5`}>
       <h2 className="text-base font-semibold text-foreground">Boost packages</h2>
       <p className="mt-0.5 text-sm text-muted">
-        A boost adds its score weight to the listing&apos;s ranking for the duration and shows a Boosted badge. 50 ≈ the
-        old standard boost. Sponsored packages fill a separate paid slot per 20 cards and show a Sponsored badge.
+        A boost adds its ranking points to the listing for the time set and shows a Boosted badge. 50 points is about the
+        old standard boost. Sponsored packages fill a separate paid spot in every 20 cards and show a Sponsored badge.
       </p>
       <div className="mt-3 hidden grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto_auto] gap-2 text-xs font-semibold text-foreground-muted sm:grid">
-        <span>Name</span><span>Type</span><span>Hours</span><span>Price (UGX)</span><span>Score weight</span><span>Status</span><span />
+        <span>Name</span><span>Type</span><span>Hours</span><span>Price (UGX)</span><span>Ranking points</span><span>Status</span><span className="sr-only">Actions</span>
       </div>
-      {error ? <ErrorState message={failure("Boost packages", error)} onRetry={() => void mutate()} /> : null}
+      {error ? <ErrorState message={failure("boost packages", error, "load")} onRetry={() => void mutate()} /> : null}
       {isLoading && !data ? <PageSkeleton rows={2} label="Loading boost packages" /> : null}
       <div className="divide-y divide-border">
         {(data ?? []).map((p) => (
@@ -342,9 +341,9 @@ export default function PlansClient() {
     <div>
       <PageHeader
         title="Plans"
-        description="Everything a plan includes: price, duration, listing caps, media limits, boosts, reposts and analytics. Changes apply within a minute."
+        description="Everything a plan includes: price, duration, listing limits, photo and video limits, boosts, reposts and analytics. Changes apply within 1 minute."
       />
-      <nav className="mb-4 flex flex-wrap gap-2 text-sm" aria-label="Jump to">
+      <nav className="mb-4 flex flex-wrap gap-2 text-sm" aria-label="Jump to a plan">
         {(data ?? []).map((p) => (
           <a key={p.key} href={`#plan-${p.key}`} className="dm-focus rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">
             {p.name}
@@ -354,7 +353,7 @@ export default function PlansClient() {
           Boost packages
         </a>
       </nav>
-      {error ? <ErrorState message={failure("Plans", error)} onRetry={() => void mutate()} /> : null}
+      {error ? <ErrorState message={failure("plans", error, "load")} onRetry={() => void mutate()} /> : null}
       {isLoading && !data ? <PageSkeleton rows={6} label="Loading plans" /> : null}
       <div id="media-limits" className="grid scroll-mt-24 grid-cols-1 gap-5 xl:grid-cols-3">
         {(data ?? []).map((p) => (

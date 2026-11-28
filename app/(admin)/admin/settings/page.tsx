@@ -11,10 +11,10 @@ export default function AdminSettingsPage() {
         className={`${CARD} flex items-center justify-between gap-3 p-4 text-sm transition-colors hover:border-accent/50`}
       >
         <span>
-          <span className="block font-semibold text-foreground">Plans & limits</span>
-          <span className="block text-muted">Plan prices, listing caps, media limits (photos and videos), boosts and reposts</span>
+          <span className="block font-semibold text-foreground">Plans and limits</span>
+          <span className="block text-muted">Plan prices, listing limits, photo and video limits, boosts and reposts</span>
         </span>
-        <span className="shrink-0 font-medium text-accent">Open Plans →</span>
+        <span className="shrink-0 font-medium text-accent">Open plans →</span>
       </Link>
       <WhatsAppConnectionCard />
       <AccountSettings />

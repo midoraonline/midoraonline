@@ -94,7 +94,7 @@ export async function generateMetadata({
   const id = resolveProductIdFromPageSlug(slug);
   const product = await getProductById(id);
   if (!product) {
-    return { title: "Product | Midora Online" };
+    return { title: "Listing | Midora Online" };
   }
 
   const canonicalSlug = productPageSlug(product);
@@ -105,7 +105,7 @@ export async function generateMetadata({
   const textOnly = isTextOnlyListing(product.item_type, images.length);
   const desc =
     (product.description && product.description.trim().slice(0, 160)) ||
-    `${product.title} — ${formatUGX(price)} on Midora Online.`;
+    (price > 0 ? `${product.title}, ${formatUGX(price)} on Midora Online.` : `${product.title} on Midora Online.`);
   const ogImages = images[0]
     ? [{ url: images[0], alt: product.title }]
     : textOnly
@@ -195,7 +195,7 @@ export default async function ProductDetails({
   // With an application link, Apply goes there and the WhatsApp button is plain contact.
   const contactCta = applyLink && intent.cta === "apply" ? "whatsapp" : intent.cta;
   const priceLabel =
-    isListing && intent.intent === "seeking" && price > 0 ? `Budget: ${formatUGX(price)}` : formatUGX(price);
+    isListing && intent.intent === "seeking" && price > 0 ? `Budget: ${formatUGX(price)}` : price > 0 ? formatUGX(price) : "Ask for price";
   const messageLabel =
     !waHref && (contactCta === "respond" || contactCta === "contact" || contactCta === "apply")
       ? CTA_LABEL[contactCta]
@@ -413,7 +413,7 @@ export default async function ProductDetails({
               </SellerContactConsent>
             ) : shop ? (
               <p className="rounded-xl border border-border bg-surface-subtle px-4 py-3 text-center text-xs text-muted">
-                This seller replies in Midora messages — use Message below
+                This seller isn’t on WhatsApp here. Send them a message below.
               </p>
             ) : null}
 
@@ -552,7 +552,7 @@ export default async function ProductDetails({
                 {product.description}
               </p>
               {product.ai_generated_desc ? (
-                <p className="text-[11px] text-muted">Description assisted by Midora AI</p>
+                <p className="text-[11px] text-muted">Midora AI helped write this description.</p>
               ) : null}
             </section>
           ) : null}

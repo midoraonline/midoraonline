@@ -48,7 +48,7 @@ export default function WhatsAppStatus({
         {changed
           ? `Verify ${draft} to show a WhatsApp button. We'll save this number and send a code to it on WhatsApp.`
           : `Verify this number to show a WhatsApp button. We'll send a code to ${draft} on WhatsApp.`}{" "}
-        Until then buyers message you in Midora.
+        Until then, buyers can message you on Midora.
       </p>
       <VerifyContactButton
         value={draft}

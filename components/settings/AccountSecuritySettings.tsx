@@ -8,6 +8,7 @@ import { apiAuth } from "@/lib/api";
 import PasswordInput from "@/components/PasswordInput";
 import DeleteAccountRow from "@/components/settings/DeleteAccountRow";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export default function AccountSecuritySettings() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function AccountSecuritySettings() {
       return;
     }
     if (next.length < 8) {
-      setError("New password must be at least 8 characters.");
+      setError("Use at least 8 characters for your new password.");
       return;
     }
     setSaving("password");
@@ -40,10 +41,10 @@ export default function AccountSecuritySettings() {
       setConfirm("");
       setMessage("Password updated.");
     } catch (err) {
-      const text = err instanceof Error ? err.message : "Could not change password.";
+      const text = platformActionMessage(err, "We couldn't change your password. Try again.");
       setError(
         /incorrect/i.test(text)
-          ? "Current password is incorrect. Google sign-in accounts do not use a password here."
+          ? "That current password doesn't match. If you sign in with Google, you don't have a password to change here."
           : text,
       );
     } finally {
@@ -107,11 +108,11 @@ export default function AccountSecuritySettings() {
           {message ? <p className="text-sm text-[color:var(--success)]">{message}</p> : null}
           {error ? <p className="text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving === "password"} className={BTN_PRIMARY}>
-            {saving === "password" ? "Saving…" : "Save"}
+            {saving === "password" ? "Saving…" : "Change password"}
           </button>
         </form>
       </SettingsRow>
-      <SettingsRow title="Sign out" description="Ends your session on this device.">
+      <SettingsRow title="Sign out" description="Signs you out on this device only.">
         <button
           type="button"
           onClick={() => void handleSignOut()}

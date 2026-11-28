@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { BTN_SECONDARY, CARD } from "@/components/dashboard/ui";
 import { getWhatsAppStatus, type WhatsAppStatus } from "@/lib/api/admin";
+import { apiErrorMessage } from "@/lib/api/base";
 
 /** Admin: ask Meta whether WhatsApp verification codes can be sent, and why not. */
 export default function WhatsAppConnectionCard() {
@@ -19,7 +20,7 @@ export default function WhatsAppConnectionCard() {
     try {
       setStatus(await getWhatsAppStatus());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not run the check.");
+      setError(apiErrorMessage(e, "We couldn't run the check. Try again."));
     } finally {
       setChecking(false);
     }
@@ -40,7 +41,7 @@ export default function WhatsAppConnectionCard() {
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-foreground">WhatsApp connection</h2>
           <p className="text-sm text-muted">
-            Checks the token, phone number and code template with Meta. Shops can verify their WhatsApp only when all three
+            Checks the access token, phone number and code template with Meta. Shops can verify their WhatsApp only when all 3
             pass.
           </p>
         </div>

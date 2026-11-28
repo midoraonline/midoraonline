@@ -15,7 +15,7 @@ export default function LegacyShopSettingsRedirect() {
 
   return (
     <div className="dm-card p-8 text-sm text-muted">
-      Taking you to the new shop settings…
+      Opening your shop settings…
     </div>
   );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Megaphone, Plus, Share2 } from "lucide-react";
-import { apiFetch } from "@/lib/api/base";
+import { apiErrorMessage, apiFetch } from "@/lib/api/base";
 import { areaLabel } from "@/lib/browseArea";
 import { useAppSession } from "@/lib/state";
 
@@ -36,7 +36,7 @@ export function NeedForm({
       setDone(true);
       toast.success(res.alerts ? "Saved. We'll tell you when a match is posted." : "Thanks. Sellers will see what buyers need.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't send that. Try again.");
+      toast.error(apiErrorMessage(err, "We couldn't send your request. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -67,12 +67,11 @@ export function NeedForm({
       {session.isAuthenticated ? (
         <label className="flex items-center gap-2 text-xs text-muted">
           <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="size-4" />
-          Notify me when a matching listing is posted
+          Tell me when a matching listing is posted
         </label>
       ) : (
         <p className="text-xs text-muted">
-          <Link href="/login?next=/" className="font-medium text-accent underline underline-offset-2">Sign in</Link> to get
-          notified when it&apos;s listed.
+          <Link href="/login?next=/" className="font-medium text-accent underline underline-offset-2">Sign in</Link> and we&apos;ll tell you when it&apos;s posted.
         </p>
       )}
     </form>
@@ -81,7 +80,7 @@ export function NeedForm({
 
 async function inviteSeller() {
   const url = `${window.location.origin}/open-shop`;
-  const text = "Sell on Midora: list your products, services and opportunities for free.";
+  const text = "Sell on Midora: post your products, services and opportunities for free.";
   try {
     if (navigator.share) {
       await navigator.share({ title: "Midora", text, url });
@@ -112,7 +111,7 @@ export default function DemandCapture({ area }: { area?: string | null }) {
       <div className="flex flex-wrap gap-2">
         <Link href="/post-item" className="dm-btn dm-btn-primary dm-btn-sm">
           <Plus className="size-4" aria-hidden />
-          Be the first to list
+          Be the first to post
         </Link>
         <button type="button" onClick={() => void inviteSeller()} className="dm-btn dm-btn-ghost dm-btn-sm">
           <Share2 className="size-4" aria-hidden />

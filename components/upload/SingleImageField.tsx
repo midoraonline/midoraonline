@@ -28,7 +28,7 @@ export function SingleImageField({
   value,
   onChange,
   shape = "square",
-  emptyLabel = "Upload image",
+  emptyLabel = "Add photo",
   hint,
   disabled = false,
 }: Props) {
@@ -100,7 +100,7 @@ export function SingleImageField({
         )}
         {value && !pending ? (
           <button type="button" onClick={pick} disabled={disabled} className="dm-btn dm-btn-secondary dm-btn-sm">
-            Replace
+            Change {policy.noun}
           </button>
         ) : null}
       </div>

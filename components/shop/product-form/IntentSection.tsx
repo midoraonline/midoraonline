@@ -18,8 +18,8 @@ export default function IntentSection({
     <FormSection invalid={invalid} serverMessage={serverMessage}>
       <SectionHeading title={draft.kind === "service" ? "Offer or need" : "Type of opportunity"}>
         {draft.kind === "service"
-          ? "Midora shows this on your card, so buyers know straight away."
-          : "Pick the closest match. It sets the card label and the button buyers tap."}
+          ? "We show this on your listing so buyers know straight away."
+          : "Pick the closest match. It sets the label on your listing and the button buyers tap."}
       </SectionHeading>
       <ListingIntentFields
         kind={draft.kind}

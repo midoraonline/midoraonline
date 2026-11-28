@@ -8,7 +8,7 @@ export default function ProfilePhotoNudge({ href }: { href: string }) {
   return (
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border px-3 py-2.5 text-sm">
       <p className="min-w-0 flex-1 text-xs leading-relaxed text-foreground/85">
-        Add a profile photo so buyers know who they&apos;re messaging. It builds trust — you can skip for now.
+        Add a profile photo so buyers know who they&apos;re talking to. It builds trust. You can skip this for now.
       </p>
       <div className="flex shrink-0 items-center gap-2">
         <a href={href} className={BTN_SECONDARY}>

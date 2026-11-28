@@ -6,15 +6,15 @@ import type { FormDraft, SectionProps } from "./types";
 const TITLE_PLACEHOLDER: Record<FormDraft["kind"], string> = {
   opportunity: "e.g. Shop assistant needed in Kampala",
   service: "e.g. Home cleaning, same day in Kampala",
-  product: "What are you selling?",
+  product: "e.g. Samsung Galaxy A14, 64 GB",
 };
 
 const DESCRIPTION_PROMPT: Record<FormDraft["kind"], string> = {
   service:
-    "Explain what the service includes, who it is for, and what customers can expect. Pricing model, availability, and service area are collected separately.",
+    "Explain what the service includes, who it's for and what buyers can expect. You can add pricing, hours and service area below.",
   opportunity:
-    "Describe the role or offer, who can apply, responsibilities, requirements, location, and how to respond. Add compensation and deadline below when relevant.",
-  product: "Describe the item, its condition, what is included, location, and any requirements.",
+    "Describe the role or offer, what the work involves, who can apply and how to apply. You can add pay and a deadline below.",
+  product: "Describe the item, its condition and what's included.",
 };
 
 /** Title and description. */
@@ -56,7 +56,7 @@ export default function DetailsSection({
           placeholder={prompt}
           aria-invalid={showErrors && Boolean(errors.description)}
         />
-        <p className="text-xs text-muted">{`${prompt} Write at least two clear sentences.`}</p>
+        <p className="text-xs text-muted">{`${prompt} Write at least 2 clear sentences.`}</p>
         <FieldError message={showErrors ? errors.description : null} />
       </div>
     </FormSection>

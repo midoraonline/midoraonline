@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useAppSession } from "@/lib/state";
+import { formatUGX } from "@/lib/formatUgx";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { apiChat, apiProducts } from "@/lib/api";
 import { sameUserId } from "@/lib/chat/participants";
 import { persistConversationRead } from "@/lib/chat/readState";
@@ -47,7 +50,7 @@ const BUYER_QUICK_REPLIES = [
 ];
 
 const SELLER_QUICK_REPLIES = [
-  "Thanks for reaching out!",
+  "Thanks for your message.",
   "Yes, it's still available.",
   "How can I help?",
 ];
@@ -137,7 +140,7 @@ function ProductContextCard({ product }: { product: Product }) {
         <p className="mt-0.5 truncate text-sm font-semibold">{product.title}</p>
         {price ? (
           <p className="text-xs font-medium text-accent">
-            UGX {price.toLocaleString()}
+            {formatUGX(price)}
           </p>
         ) : null}
       </div>
@@ -378,7 +381,14 @@ export default function ChatThread({ conversation, onBack }: Props) {
         nearBottomRef.current = true;
         setPendingNew(0);
       } catch (err) {
-        throw err;
+        toast.error(
+          platformActionMessage(err, "Your message didn't send. Check your connection and try again."),
+        );
+        // Keep the text so the user can retry without retyping.
+        setInput((prev) => (prev.trim() ? prev : value));
+        window.requestAnimationFrame(() => {
+          if (textareaRef.current) autosize(textareaRef.current);
+        });
       } finally {
         setSending(false);
       }
@@ -386,18 +396,13 @@ export default function ChatThread({ conversation, onBack }: Props) {
     [conversation.id, sending],
   );
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     const text = input.trim();
     if (!text || sending) return;
     setInput("");
     if (textareaRef.current) autosize(textareaRef.current);
-    try {
-      await doSend(text);
-    } catch {
-      setInput(text);
-      if (textareaRef.current) autosize(textareaRef.current);
-    }
+    void doSend(text);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -432,7 +437,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
             type="button"
             onClick={onBack}
             className="dm-focus -ml-0.5 rounded-lg p-1.5 hover:bg-foreground/[0.06] md:hidden"
-            aria-label="Back to conversations"
+            aria-label="Back to chats"
           >
             <MaterialSymbol name="arrow_back" className="!text-lg" />
           </button>
@@ -454,7 +459,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">
-            {otherUser?.full_name || "Unknown"}
+            {otherUser?.full_name || "Midora user"}
           </p>
           <p className="text-[11px] text-muted">
             {otherTyping
@@ -462,7 +467,7 @@ export default function ChatThread({ conversation, onBack }: Props) {
               : otherOnline
                 ? "Online"
                 : conversation.product_id
-                  ? "Product inquiry"
+                  ? "About a listing"
                   : "General chat"}
           </p>
         </div>
@@ -492,8 +497,8 @@ export default function ChatThread({ conversation, onBack }: Props) {
             <div className="max-w-sm">
               <p className="text-sm font-semibold">Say hi to {otherUser?.full_name?.split(" ")[0] || "them"}</p>
               <p className="mt-1 text-xs text-muted">
-                Messages are delivered in real time. Keep conversations
-                on-platform for safety.
+                For your safety, keep chats on Midora. Don&apos;t send money
+                before you see the item.
               </p>
             </div>
             <div className="mt-1 flex flex-wrap justify-center gap-2">

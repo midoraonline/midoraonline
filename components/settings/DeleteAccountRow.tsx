@@ -53,7 +53,7 @@ export default function DeleteAccountRow() {
       const msg = err instanceof Error ? err.message : "";
       setError(
         /last admin/i.test(msg)
-          ? "You're the only admin. Make someone else an admin first."
+          ? "You're the only admin. Make someone else an admin first, then try again."
           : "We couldn't delete your account. Try again in a moment.",
       );
       setBusy(false);
@@ -63,7 +63,7 @@ export default function DeleteAccountRow() {
   return (
     <SettingsRow
       title="Delete account"
-      description="Permanently removes your profile, businesses, ads and photos. This can't be undone."
+      description="Permanently deletes your profile, shops, listings and photos. You can't undo this."
     >
       <button
         type="button"
@@ -89,7 +89,7 @@ export default function DeleteAccountRow() {
                 className="dm-btn dm-btn-primary disabled:opacity-50"
                 style={{ background: "var(--error)" }}
               >
-                {busy ? "Deleting…" : "Delete forever"}
+                {busy ? "Deleting…" : "Delete my account"}
               </button>
             </div>
           }
@@ -101,8 +101,8 @@ export default function DeleteAccountRow() {
             >
               <p className="font-semibold">This is permanent and can&apos;t be undone.</p>
               <p className="mt-1">
-                Your profile, businesses, ads, photos, followers and saved settings will be deleted. Active plans
-                aren&apos;t refunded. Chats with other people may keep your messages, shown as from a deleted user.
+                We&apos;ll delete your profile, shops, listings, photos, followers and settings. Active plans
+                aren&apos;t refunded. People you chatted with may still see your messages, shown as from a deleted user.
               </p>
             </div>
             <fieldset className="space-y-2">

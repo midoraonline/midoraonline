@@ -24,7 +24,7 @@ export default function ShopTabs({
   shopId?: string;
 }) {
   const tabs: { id: TabId; label: string; content: ReactNode }[] = [
-    { id: "products", label: "Shop", content: products },
+    { id: "products", label: "Listings", content: products },
   ];
   if (about) tabs.push({ id: "about", label: "About", content: about });
   if (contacts) tabs.push({ id: "contacts", label: "Contact", content: contacts });

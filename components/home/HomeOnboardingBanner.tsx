@@ -17,9 +17,9 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
             <PiSignInFill className="size-5 text-white" aria-hidden />
           </span>
           <div>
-            <h4 className="text-sm font-bold text-white">Unlock the full Midora experience</h4>
+            <h4 className="text-sm font-bold text-white">Sign in to get more from Midora</h4>
             <p className="mt-0.5 text-xs text-white/90">
-              Save items, chat with sellers, and get personalised recommendations.
+              Save listings, chat with sellers and get picks made for you.
             </p>
           </div>
         </div>
@@ -28,13 +28,14 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
             href="/login"
             className="dm-btn-accent dm-focus whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold"
           >
-            Sign In
+            Sign in
           </Link>
           <button
             type="button"
             onClick={onDismiss}
             className="rounded-full p-1 text-white/90 transition-colors hover:bg-white/10"
             title="Dismiss"
+            aria-label="Dismiss"
           >
             <PiXBold className="size-4" aria-hidden />
           </button>
@@ -52,7 +53,7 @@ export default function HomeOnboardingBanner({ variant, onDismiss }: Props) {
         <div>
           <h4 className="text-sm font-bold text-foreground">Welcome to Midora</h4>
           <p className="mt-0.5 text-xs text-muted">
-            Pick a category, browse listings, then chat with verified shops instantly.
+            Pick a category, browse listings, then chat with sellers on WhatsApp or in Midora.
           </p>
         </div>
       </div>

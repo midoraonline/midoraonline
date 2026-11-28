@@ -13,7 +13,7 @@ import PushSubscriptionSync from "@/components/chat/PushSubscriptionSync";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { AnalyticsProvider } from "@/providers/analyticsProvider";
 import MaintenanceNotice from "@/components/MaintenanceNotice";
-import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
+import { BRAND_NAME } from "@/lib/brand";
 import "./globals.css";
 
 // Runs in <head> before hydration so the correct theme class is on <html>
@@ -38,18 +38,21 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const SITE_TITLE = `${BRAND_NAME}: buy, sell and find work in Uganda`;
+const SITE_DESCRIPTION =
+  "Buy and sell in Uganda. Find products, services, jobs and opportunities near you, and chat with sellers on WhatsApp. Open your shop on Midora Online.";
+
 export const metadata: Metadata = {
-  title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
-  description: `${BRAND_TAGLINE}. Midora Online is a platform for online shopping. Create your shop and market with Midora Online.`,
-  keywords: ["midora", "online", "shopping", "ecommerce", "shops", "stores", "products", 
-    "services", "business", "brand", "company", "branding", "marketing", 
-    "advertising",],
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  keywords: ["midora", "uganda", "kampala", "marketplace", "buy and sell", "online shopping",
+    "shops", "products", "services", "jobs", "opportunities", "whatsapp",],
   authors: [{ name: "Midora Online", url: "https://www.midoraonline.com" }],
   creator: "Midora Online",
   publisher: "Midora Online",
   openGraph: {
-    title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
-    description: `${BRAND_TAGLINE}. Midora Online is a platform for online shopping.`,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     url: "https://www.midoraonline.com",
   },
 };

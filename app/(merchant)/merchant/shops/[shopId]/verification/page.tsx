@@ -11,7 +11,7 @@ export default function MerchantVerificationPage() {
   return (
     <div>
       <p className="mb-6 max-w-2xl text-sm text-muted">
-        Request a review when you want an identity, business or professional badge, or higher limits.
+        Ask for a review when you want an identity, business or professional badge, or higher limits.
       </p>
 
       <ShopVerificationCard shopId={shopId} />

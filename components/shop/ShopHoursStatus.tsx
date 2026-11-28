@@ -29,7 +29,7 @@ export default function ShopHoursStatus({
       {view.note ? <p className="text-xs text-muted">{view.note}</p> : null}
       {view.week.length > 0 ? (
         <details className="text-sm">
-          <summary className="cursor-pointer text-xs font-semibold text-accent">Full week</summary>
+          <summary className="cursor-pointer text-xs font-semibold text-accent">See all opening hours</summary>
           <ul className="mt-2 space-y-1">
             {view.week.map((row) => (
               <li key={row.label} className="flex gap-3 text-xs">

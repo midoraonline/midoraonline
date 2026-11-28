@@ -13,7 +13,7 @@ import {
   establishSessionFromGoogleCode,
 } from "@/lib/auth/establish-session";
 import { prefetchGoogleAuthUrl, startGoogleSignIn } from "@/lib/auth/google-start";
-import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
+import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE, platformActionMessage } from "@/lib/platformMessages";
 import GoogleSignInProgress, {
   GOOGLE_SUCCESS_HOLD_MS,
   type GoogleProgressStatus,
@@ -45,7 +45,7 @@ function RegisterPageInner() {
     const oauthError = searchParams.get("error");
 
     if (oauthError) {
-      setError("Google sign-up was cancelled or failed.");
+      setError("Google sign-up didn't finish. Try again, or create an account with email.");
       return;
     }
     if (!code || !state) return;
@@ -66,7 +66,7 @@ function RegisterPageInner() {
       .catch((err: unknown) => {
         if (!active) return;
         setGoogleStatus("error");
-        setError(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : err instanceof Error ? err.message : "Unable to complete Google sign-up.");
+        setError(isSignupsClosed(err) ? SIGNUPS_CLOSED_MESSAGE : platformActionMessage(err, "We couldn't finish creating your account with Google. Try again."));
       })
       .finally(() => {
         if (active) setGoogleLoading(false);
@@ -94,9 +94,7 @@ function RegisterPageInner() {
       setError(
         isSignupsClosed(err)
           ? SIGNUPS_CLOSED_MESSAGE
-          : err instanceof Error
-            ? err.message
-            : "Unable to create account. Please check your details."
+          : platformActionMessage(err, "We couldn't create your account. Check your details and try again.")
       );
     } finally {
       setLoading(false);
@@ -109,7 +107,7 @@ function RegisterPageInner() {
     try {
       await startGoogleSignIn();
     } catch {
-      setError("Unable to start Google sign-up.");
+      setError("We couldn't open Google sign-in. Check your connection and try again.");
       setGoogleLoading(false);
     }
   }
@@ -133,7 +131,7 @@ function RegisterPageInner() {
             }}
             className="w-full text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
           >
-            Sign up with email instead
+            Use email instead
           </button>
         }
       />
@@ -145,7 +143,7 @@ function RegisterPageInner() {
       <div className="space-y-1.5 text-center">
         <h1 className="font-display text-2xl font-bold tracking-tight">Create your account</h1>
         <p className="text-sm leading-relaxed text-muted">
-          Join Midora Online as a merchant or customer
+          Join Midora Online to sell, buy or find work
         </p>
       </div>
 
@@ -167,7 +165,7 @@ function RegisterPageInner() {
 
         <div className="flex items-center gap-3 text-xs text-muted">
           <div className="h-px flex-1 bg-border" />
-          <span>or register with email</span>
+          <span>or create an account with email</span>
           <div className="h-px flex-1 bg-border" />
         </div>
       </div>
@@ -227,7 +225,7 @@ function RegisterPageInner() {
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground/80">
-            I&apos;m signing up as
+            I&apos;m joining as
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -244,7 +242,7 @@ function RegisterPageInner() {
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
-              Merchant
+              Seller
             </button>
             <button
               type="button"
@@ -259,7 +257,7 @@ function RegisterPageInner() {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              Customer
+              Buyer
             </button>
           </div>
         </div>
@@ -280,11 +278,11 @@ function RegisterPageInner() {
           <span className="text-xs leading-relaxed text-muted">
             I agree to the{" "}
             <Link href="/termsandconditions" className="font-semibold text-foreground underline-offset-2 hover:underline">
-              Terms &amp; Conditions
+              Terms and conditions
             </Link>{" "}
             and{" "}
             <Link href="/policies" className="font-semibold text-foreground underline-offset-2 hover:underline">
-              Privacy Policy
+              Privacy policy
             </Link>
           </span>
         </label>

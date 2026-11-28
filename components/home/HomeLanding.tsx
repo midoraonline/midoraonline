@@ -79,6 +79,7 @@ export default function HomeLanding({
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
+  const [feedRetry, setFeedRetry] = useState(0);
   const searchParams = useSearchParams();
   const session = useAppSession();
   const [query, setQuery] = useState(() => searchParams.get("q")?.trim() ?? "");
@@ -139,8 +140,9 @@ export default function HomeLanding({
   const seenCatalogKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const firstSight = seenCatalogKeyRef.current === null;
-    if (seenCatalogKeyRef.current === catalogKey) return;
-    seenCatalogKeyRef.current = catalogKey;
+    const requestKey = `${catalogKey}#${feedRetry}`;
+    if (seenCatalogKeyRef.current === requestKey) return;
+    seenCatalogKeyRef.current = requestKey;
     if (firstSight && !catalogQueryActive(catalogRef.current)) return;
     const requestId = ++feedRequestRef.current;
     let cancelled = false;
@@ -183,7 +185,7 @@ export default function HomeLanding({
           setHasMore(false);
           nextCursorRef.current = null;
           hasMoreRef.current = false;
-          setFeedError("Couldn't load listings. Try again.");
+          setFeedError("We couldn't load listings. Check your connection and try again.");
         }
       } finally {
         if (!cancelled && requestId === feedRequestRef.current) {
@@ -197,7 +199,7 @@ export default function HomeLanding({
     return () => {
       cancelled = true;
     };
-  }, [catalogKey]);
+  }, [catalogKey, feedRetry]);
 
   const fillEmptyFeed = useCallback(async () => {
     if (catalogQueryActive(catalogRef.current)) return;
@@ -404,8 +406,8 @@ export default function HomeLanding({
       return;
     }
     focusDoneRef.current = focusId;
-    toast.message("Couldn't find your ad in this feed", {
-      description: "It may be filtered out here or further down.",
+    toast.message("We couldn't find your listing in this feed", {
+      description: "Your filters may hide it, or it may be further down.",
     });
   }, [focusId, isSearching, products, hasMore, loadingMore, reloadFeed]);
 
@@ -552,7 +554,7 @@ export default function HomeLanding({
             className="dm-focus pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg"
           >
             <ArrowUp className="size-4" aria-hidden />
-            {newCount === 1 ? "1 new item" : `${newCount} new items`}
+            {newCount === 1 ? "1 new listing" : `${newCount} new listings`}
           </button>
         </div>
       ) : null}
@@ -574,7 +576,7 @@ export default function HomeLanding({
                   ? search.loading
                     ? `Searching “${query.trim()}”…`
                     : search.queryLocation
-                      ? `Results for “${query.trim()}” · ${search.queryLocation} only`
+                      ? `Results for “${query.trim()}” in ${search.queryLocation}`
                       : `Results for “${query.trim()}”`
                   : feedLoading
                     ? "Loading listings…"
@@ -617,11 +619,25 @@ export default function HomeLanding({
           {search.error ? (
             <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">
               {search.error}
+              <button
+                type="button"
+                onClick={search.retry}
+                className="dm-focus ml-2 font-semibold underline underline-offset-2 hover:no-underline"
+              >
+                Try again
+              </button>
             </p>
           ) : null}
           {feedError && !isSearching ? (
             <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-700">
               {feedError}
+              <button
+                type="button"
+                onClick={() => setFeedRetry((n) => n + 1)}
+                className="dm-focus ml-2 font-semibold underline underline-offset-2 hover:no-underline"
+              >
+                Try again
+              </button>
             </p>
           ) : null}
 
@@ -637,7 +653,7 @@ export default function HomeLanding({
                 <p className="text-sm text-foreground">
                   {search.queryLocation
                     ? `No “${search.searchedText ?? query.trim()}” listings in ${search.queryLocation} yet.`
-                    : `No listings match “${query.trim()}” yet.`}
+                    : `No listings match “${query.trim()}” yet. Try a shorter or different word.`}
                 </p>
                 {search.queryLocation && search.searchedText ? (
                   <button
@@ -671,7 +687,7 @@ export default function HomeLanding({
                   </p>
                 </div>
               ) : (
-                <EmptyState message="No listings match your filters. Try a different category or clear filters." />
+                <EmptyState message="No listings match your filters. Change or clear your filters to see more." />
               )
             ) : (
               <DemandCapture area={browse.area} />

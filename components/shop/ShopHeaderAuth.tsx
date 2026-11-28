@@ -99,7 +99,7 @@ export default function ShopHeaderAuth() {
         className="dm-btn-accent dm-focus hidden rounded-full px-4 py-2 text-sm font-medium md:inline-flex"
         aria-label="Sign in"
       >
-        Login
+        Sign in
       </Link>
       <Link
         href={nextHref}

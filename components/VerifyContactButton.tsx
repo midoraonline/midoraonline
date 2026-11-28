@@ -45,7 +45,7 @@ export default function VerifyContactButton({
       const msg =
         err && typeof err === "object" && "message" in err && typeof (err as Error).message === "string"
           ? (err as Error).message
-          : "Could not send code.";
+          : "We couldn't send the code. Check your connection and try again.";
       setError(
         /already linked|phone_taken|already.*(phone|number)/i.test(msg)
           ? "That phone number is already linked to another Midora account. Sign in with that account, or use a different number."
@@ -69,7 +69,7 @@ export default function VerifyContactButton({
       const msg =
         err && typeof err === "object" && "message" in err && typeof (err as Error).message === "string"
           ? (err as Error).message
-          : "Incorrect code.";
+          : "That code doesn't match. Check it and try again.";
       setError(
         /already linked|phone_taken|already.*(phone|number)/i.test(msg)
           ? "That phone number is already linked to another Midora account. Sign in with that account, or use a different number."
@@ -105,7 +105,7 @@ export default function VerifyContactButton({
           disabled={stage === "confirming" || code.trim().length < 6}
           className="dm-pill dm-focus bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
         >
-          {stage === "confirming" ? "Checking…" : "Confirm"}
+          {stage === "confirming" ? "Checking…" : "Confirm code"}
         </button>
         <button
           type="button"

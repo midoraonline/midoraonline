@@ -7,6 +7,7 @@ import { apiShops, apiProducts } from "@/lib/api";
 import type { Shop, Verification } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import { platformActionMessage } from "@/lib/platformMessages";
 import {
   BTN_PRIMARY,
   BTN_SECONDARY,
@@ -50,7 +51,7 @@ export default function ShopOverviewClient({
       setProducts(p.items ?? []);
       setVerification(v);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load shop");
+      setError(platformActionMessage(err, "We couldn't load this shop. Try again."));
     }
   }, [shopId]);
 
@@ -73,7 +74,7 @@ export default function ShopOverviewClient({
     <div>
       {unverified ? (
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface shadow-xs px-4 py-3">
-          <p className="text-sm text-muted">Verification isn&apos;t finished. Verified shops show a trust badge.</p>
+          <p className="text-sm text-muted">Verification isn&apos;t finished. Verified shops get a badge that helps buyers trust them.</p>
           <Link href={`/merchant/shops/${shopId}/verification`} className={BTN_SECONDARY}>
             Continue verification
           </Link>
@@ -94,16 +95,16 @@ export default function ShopOverviewClient({
         action={
           <div className="flex items-center gap-3">
             <Link href={`/merchant/shops/${shopId}/catalog`} className="text-sm text-muted hover:text-foreground">
-              Catalog
+              Catalogue
             </Link>
             <Link href={`/merchant/shops/${shopId}/catalog?openAdd=true`} className={BTN_PRIMARY}>
-              Post an ad
+              Post a listing
             </Link>
           </div>
         }
       >
         {products.length === 0 ? (
-          <EmptyState message="No listings in this shop yet." />
+          <EmptyState message="No listings in this shop yet. Post one to show it on your shop page." />
         ) : (
           <ul className={LIST}>
             {products.slice(0, 6).map((p) => (
@@ -111,7 +112,7 @@ export default function ShopOverviewClient({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{p.title}</span>
                   <span className="block text-xs tabular-nums text-muted">
-                    {p.price_ugx != null ? `UGX ${fmt(p.price_ugx)}` : "No price"}
+                    {p.price_ugx != null ? `UGX ${fmt(p.price_ugx)}` : "No price set"}
                   </span>
                 </span>
                 <StatusDot tone={p.is_published ? "ok" : "neutral"}>{p.is_published ? "Live" : "Draft"}</StatusDot>

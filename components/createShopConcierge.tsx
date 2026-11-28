@@ -16,7 +16,7 @@ import ShopHoursEditor from "@/components/shop/ShopHoursEditor";
 import { buildShopLocationPayload } from "@/components/shop/shopUtils";
 import { hoursAreBlank, hoursDraftError, hoursDraftFromShop, shopHoursWritePayload, type HoursDraft } from "@/lib/shopHours";
 import type { LatLng } from "@/lib/geo";
-import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE, platformActionMessage } from "@/lib/platformMessages";
 
 const STARTER_PROMPTS = [
   "I bake cakes in Kampala and deliver by boda",
@@ -37,7 +37,7 @@ function visibleReply(text: string, hasDraft: boolean): string {
     .replace(/```(?:json)?\s*\{[\s\S]*$/, "")
     .trim();
   if (cleaned) return cleaned;
-  return hasDraft ? "I've drafted your business. Check the details and change anything that isn't right." : text.trim();
+  return hasDraft ? "I've drafted your shop. Check the details and change anything that isn't right." : text.trim();
 }
 
 function slugFromName(name: string): string {
@@ -122,7 +122,7 @@ function ShopPreview({ form }: { form: ConfirmForm }) {
   return (
     <div className={CARD}>
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">Preview</p>
-      <p className="mt-1 text-lg font-semibold text-foreground">{form.name || "Your business name"}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{form.name || "Your shop name"}</p>
       {form.description ? <p className="mt-0.5 text-sm text-muted">{form.description}</p> : null}
       {meta ? <p className="mt-1 text-xs text-muted">{meta}</p> : null}
     </div>
@@ -217,6 +217,7 @@ export default function CreateShopConcierge({
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [startAttempt, setStartAttempt] = useState(0);
 
   const [suggestedShop, setSuggestedShop] = useState<SuggestedShop | null>(null);
   const [confirmForm, setConfirmForm] = useState<ConfirmForm | null>(null);
@@ -234,7 +235,7 @@ export default function CreateShopConcierge({
   useEffect(() => {
     if (!enabled || !appSession.hydrated) return;
     if (!appSession.isAuthenticated) {
-      setError("Please log in to use the quick start.");
+      setError("Sign in to set up your shop with AI.");
       return;
     }
     let cancelled = false;
@@ -245,13 +246,13 @@ export default function CreateShopConcierge({
         setSessionId(session.id);
       } catch (err) {
         if (!cancelled)
-          setError(err instanceof Error ? err.message : "Could not start.");
+          setError(platformActionMessage(err, "We couldn't start the assistant. Check your connection and try again."));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [enabled, appSession.hydrated, appSession.isAuthenticated]);
+  }, [enabled, appSession.hydrated, appSession.isAuthenticated, startAttempt]);
 
   async function sendMessage(raw: string) {
     if (!sessionId || !raw.trim() || loading) return;
@@ -305,8 +306,8 @@ export default function CreateShopConcierge({
         /timed out|timeout/i.test(msg)
           ? "The assistant took too long to reply. Send your message again."
           : /503|busy|rate/i.test(msg)
-            ? "The assistant is busy right now. Try again in a moment."
-            : msg || "Something went wrong.",
+            ? "The assistant is busy right now. Wait a moment and try again."
+            : msg || "We couldn't reach the assistant. Check your connection and try again.",
       );
       setMessages((prev) => prev.filter((m) => m.id !== pendingId));
       setInput(text);
@@ -323,11 +324,11 @@ export default function CreateShopConcierge({
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!appSession.isAuthenticated || !confirmForm) {
-      setError("Please log in again.");
+      setError("Sign in again to open your shop.");
       return;
     }
     if (!confirmForm.name.trim()) {
-      setError("Shop name is required.");
+      setError("Enter a shop name.");
       return;
     }
     const hoursError = hoursDraftError(confirmForm.hours);
@@ -359,7 +360,7 @@ export default function CreateShopConcierge({
       notifyAuthChanged();
       onShopCreated(shop);
     } catch (err) {
-      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not create your business.");
+      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : platformActionMessage(err, "We couldn't open your shop. Check your connection and try again."));
     } finally {
       setCreating(false);
     }
@@ -401,7 +402,21 @@ export default function CreateShopConcierge({
   }
   if (error && !sessionId) {
     return (
-<FormError>{error}</FormError>
+      <div className="space-y-3">
+        <FormError>{error}</FormError>
+        {appSession.isAuthenticated ? (
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setStartAttempt((n) => n + 1);
+            }}
+            className={BTN_SECONDARY}
+          >
+            Try again
+          </button>
+        ) : null}
+      </div>
     );
   }
 
@@ -411,7 +426,7 @@ export default function CreateShopConcierge({
       <div className="space-y-5">
         <div>
           <StepProgress step={2} total={2} />
-          <p className="text-base font-semibold text-foreground">Check your business details</p>
+          <p className="text-base font-semibold text-foreground">Check your shop details</p>
           <p className="mt-1 text-sm text-muted">We filled in what we could. Change anything that isn&apos;t right.</p>
         </div>
 
@@ -468,7 +483,7 @@ export default function CreateShopConcierge({
               </label>
               {pendingSuggestions.has("description") ? (
                 <AISuggestion
-                  label="tagline"
+                  label="short description"
                   value={f.description}
                   onAccept={() => acceptSuggestion("description")}
                   onEdit={() => dismissSuggestion("description")}
@@ -478,7 +493,7 @@ export default function CreateShopConcierge({
                   className={INPUT}
                   value={f.description}
                   onChange={(e) => field("description", e.target.value)}
-                  placeholder="One line that describes your shop"
+                  placeholder="e.g. Fresh cakes for every occasion"
                   maxLength={160}
                 />
               )}
@@ -490,7 +505,7 @@ export default function CreateShopConcierge({
               </label>
               {pendingSuggestions.has("about") ? (
                 <AISuggestion
-                  label="about"
+                  label="about text"
                   value={f.about}
                   onAccept={() => acceptSuggestion("about")}
                   onEdit={() => dismissSuggestion("about")}
@@ -500,7 +515,7 @@ export default function CreateShopConcierge({
                   className={TEXTAREA}
                   value={f.about}
                   onChange={(e) => field("about", e.target.value)}
-                  placeholder="What you sell, and how you deliver"
+                  placeholder="What you sell, and how buyers get it"
                 />
               )}
             </div>
@@ -545,7 +560,7 @@ export default function CreateShopConcierge({
 
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">
-                Logo
+                Logo <span className="font-normal text-muted">(optional)</span>
               </label>
               <SingleImageField
                 endpoint="shopLogo"
@@ -557,17 +572,17 @@ export default function CreateShopConcierge({
 
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">
-                Business email <span className="font-normal text-muted">(optional)</span>
+                Shop email <span className="font-normal text-muted">(optional)</span>
               </label>
               {verifiedContacts.email && f.shopEmail === verifiedContacts.email ? (
-                <p className="text-xs text-muted">From your verified account. Change it if customers should use another.</p>
+                <p className="text-xs text-muted">From your verified account. Buyers can see it, so change it if you want them to use another email.</p>
               ) : null}
               <input
                 type="email"
                 className={INPUT}
                 value={f.shopEmail}
                 onChange={(e) => field("shopEmail", e.target.value)}
-                placeholder="hello@yourshop.com"
+                placeholder="e.g. hello@yourshop.com"
               />
             </div>
             <div className="space-y-1.5">
@@ -575,18 +590,18 @@ export default function CreateShopConcierge({
                 WhatsApp number <span className="font-normal text-muted">(optional)</span>
               </label>
               {verifiedContacts.phone && f.whatsappNumber === verifiedContacts.phone ? (
-                <p className="text-xs text-muted">From your verified phone. Buyers contact you here.</p>
+                <p className="text-xs text-muted">From your verified phone. Buyers can call or WhatsApp you on it.</p>
               ) : null}
               <PhoneNumberInput
                 value={f.whatsappNumber}
                 onChange={(val) => field("whatsappNumber", val)}
-                placeholder="700 000 000"
+                placeholder="772 123 456"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">
-                Location
+                Area or town <span className="font-normal text-muted">(optional)</span>
               </label>
               <LocationInput
                 value={f.locationDisplay}
@@ -594,17 +609,17 @@ export default function CreateShopConcierge({
                 onResolved={(place) =>
                   setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)
                 }
-                placeholder="e.g. Kisasi, Kampala"
+                placeholder="e.g. Kisasi, near Total, Kampala"
                 className="pt-1"
               />
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-foreground">
-                Opening hours
+                Opening hours <span className="font-normal text-muted">(optional)</span>
               </label>
               {pendingSuggestions.has("availability") && f.availability.trim() ? (
                 <AISuggestion
-                  label="availability"
+                  label="opening hours"
                   value={f.availability}
                   onAccept={() => acceptSuggestion("availability")}
                   onEdit={() => dismissSuggestion("availability")}
@@ -625,7 +640,7 @@ export default function CreateShopConcierge({
               disabled={creating}
               className={BTN_PRIMARY_LG}
             >
-              {creating ? "Creating your business…" : "Create business"}
+              {creating ? "Opening your shop…" : "Open my shop"}
             </button>
             <button
               type="button"
@@ -653,15 +668,15 @@ export default function CreateShopConcierge({
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">Midora shop assistant</p>
           <p className="truncate text-xs text-muted">
-            {loading ? "Typing…" : sessionId ? "Online · drafts your business in a few messages" : "Connecting…"}
+            {loading ? "Typing…" : sessionId ? "Online · drafts your shop in a few messages" : "Connecting…"}
           </p>
         </div>
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto bg-surface-subtle/50 px-3 py-4 sm:px-4" aria-live="polite">
         <AssistantBubble>
-          Hi! Tell me about your business: what you offer, who buys, where you work and your price range in UGX.
-          English, Swahili or Luganda is fine. Your verified email and phone are reused.
+          Hello. Tell me about your business: what you offer, who buys from you, where you work and your prices in UGX.
+          You can write in English, Swahili or Luganda. We&apos;ll use your verified email and phone as shop contacts, and you can change them.
         </AssistantBubble>
 
         {messages.length === 0 ? (
@@ -715,7 +730,7 @@ export default function CreateShopConcierge({
         className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]"
       >
         <label htmlFor="concierge-input" className="sr-only">
-          Describe your business
+          Tell us about your business
         </label>
         <input
           id="concierge-input"
@@ -730,7 +745,7 @@ export default function CreateShopConcierge({
         <button
           type="submit"
           disabled={loading || !sessionId || !input.trim()}
-          aria-label="Send"
+          aria-label="Send message"
           className="dm-focus grid size-11 shrink-0 place-items-center rounded-full border-2 border-accent bg-accent text-white transition-colors hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}

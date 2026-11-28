@@ -45,7 +45,7 @@ export default function UserAvatar({
 }: Props) {
   const px = typeof size === "number" ? size : SIZE_PX[size];
   const initials = initialsFromName(name);
-  const label = alt ?? (name?.trim() ? `${name.trim()} avatar` : "User avatar");
+  const label = alt ?? (name?.trim() ? `Photo of ${name.trim()}` : "Profile photo");
 
   return (
     <span

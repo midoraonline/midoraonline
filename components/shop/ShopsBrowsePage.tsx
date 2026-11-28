@@ -85,13 +85,13 @@ export default function ShopsBrowsePage({
     <div className="w-full">
       <div className="mb-3 sm:mb-4">
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Browse Shops</h1>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Browse shops</h1>
           {totalShops > 0 && (
-            <span className="text-xs text-muted sm:text-sm">{totalShops} verified {totalShops === 1 ? "shop" : "shops"}</span>
+            <span className="text-xs text-muted sm:text-sm">{totalShops} {totalShops === 1 ? "shop" : "shops"}</span>
           )}
         </div>
         <p className="mt-0.5 text-[11px] text-muted sm:text-xs">
-          Verified sellers across Uganda. Browse by category or search by name.
+          Shops across Uganda. Browse by category or search by name.
         </p>
       </div>
 

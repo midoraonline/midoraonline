@@ -137,7 +137,7 @@ function formatListingRate(
   }
   const base = formatUGX(price);
   if (kind === "service") {
-    if (meta.pricing_model === "hourly") return `${base}/hr`;
+    if (meta.pricing_model === "hourly") return `${base}/hour`;
     if (meta.pricing_model === "starting_at") return `From ${base}`;
   }
   return base;
@@ -174,7 +174,7 @@ function CardRating({
   return (
     <span
       className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap font-medium tabular-nums text-foreground/80"
-      aria-label={`Rated ${score} out of 5${count && count > 0 ? `, ${count} reviews` : ""}`}
+      aria-label={`Rated ${score} out of 5${count && count > 0 ? `, ${count} ${count === 1 ? "review" : "reviews"}` : ""}`}
     >
       <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden />
       <span>
@@ -311,7 +311,7 @@ export default function ProductCard({
   const tone: CoverTone = listingKind === "service" ? "service" : "opportunity";
   const displayPrice =
     listingKind === "product"
-      ? formatUGX(price)
+      ? price > 0 ? formatUGX(price) : "Ask for price"
       : formatListingRate(price, listingKind, listingMeta);
   const isBudget =
     isListing && intent.intent === "seeking" && price > 0 && listingMeta.pricing_model !== "quote";
@@ -333,7 +333,7 @@ export default function ProductCard({
     <span
       role="img"
       aria-label="Reposted in the last 24 hours"
-      title="Reposted today"
+      title="Reposted in the last 24 hours"
       className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm"
     >
       <Repeat2 className="size-3.5" aria-hidden />
@@ -400,7 +400,7 @@ export default function ProductCard({
   ) : null;
 
   const trustLabel =
-    trustLevel === "identity" ? "Identity verified" : SHOP_TRUST_LABEL[trustLevel];
+    trustLevel === "identity" ? "ID verified" : SHOP_TRUST_LABEL[trustLevel];
   const trustMark =
     trustLevel === "registered" ? null : (
       <span title={trustLabel} className="inline-flex shrink-0">

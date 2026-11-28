@@ -82,7 +82,7 @@ function ProductInfoSkeleton() {
 
 export default function ProductDetailLoading() {
   return (
-    <SkeletonRegion label="Loading product details">
+    <SkeletonRegion label="Loading listing">
       <div className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur-xl">
         <div className="dm-container flex h-14 items-center gap-3">
           <Skeleton className="h-8 w-20" rounded="xl" />

@@ -32,8 +32,8 @@ export default function SellerTrustActions({ sellerId, shopId, shopName }: Props
     const req = apiListingEvents.reportSeller(sellerId, reason, { shopId });
     toast.promise(req, {
       loading: "Sending report…",
-      success: "Seller report submitted — our team will review it.",
-      error: (err: unknown) => apiErrorMessage(err, "Couldn't submit report. Try again."),
+      success: "Thanks. Our team will review this seller.",
+      error: (err: unknown) => apiErrorMessage(err, "We couldn't send your report. Check your connection and try again."),
     });
     try {
       await req;
@@ -51,18 +51,18 @@ export default function SellerTrustActions({ sellerId, shopId, shopName }: Props
       if (blocked) {
         await apiListingEvents.unblockSeller(sellerId);
         setBlocked(false);
-        toast.success("Seller unblocked");
+        toast.success("Seller unblocked.");
       } else {
         await apiListingEvents.blockSeller(sellerId);
         setBlocked(true);
         toast.success(
           shopName
-            ? `${shopName} is blocked for you.`
-            : "Seller blocked",
+            ? `You blocked ${shopName}.`
+            : "Seller blocked.",
         );
       }
     } catch {
-      toast.error("Couldn't update block. Try again.");
+      toast.error("We couldn't update this. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -116,7 +116,7 @@ export default function SellerTrustActions({ sellerId, shopId, shopName }: Props
                 className="dm-btn dm-btn-primary"
                 style={{ background: "var(--error)" }}
               >
-                {busy ? "Sending…" : "Submit report"}
+                {busy ? "Sending…" : "Send report"}
               </button>
             </div>
           }

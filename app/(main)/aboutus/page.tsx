@@ -13,7 +13,7 @@ export default function AboutUs() {
             About Midora Online
           </h1>
           <p className="mt-2 max-w-md text-sm text-white/75">
-            Empowering African entrepreneurs with a modern digital marketplace.
+            A marketplace built in Uganda to help African businesses sell online.
           </p>
         </div>
       </div>
@@ -22,29 +22,28 @@ export default function AboutUs() {
         <section className="dm-card p-6 sm:p-8 lg:p-10">
           <p className="text-sm font-semibold text-muted">About</p>
           <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            Midora Online is brand-first commerce.
+            Shops come first on Midora Online.
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-            Midora Online modernizes African commerce by helping merchants rent a
-            professional digital space for an affordable monthly fee. Shops are
-            the primary entity—products always point back to the brand behind
-            them.
+            Midora Online helps sellers open a professional online shop for a
+            low monthly fee. Every listing links back to the shop behind it, so
+            buyers always know who they&apos;re dealing with.
           </p>
         </section>
 
         <section className="grid gap-4 sm:gap-5 lg:grid-cols-2">
           <div className="dm-card p-6 sm:p-7">
-            <h2 className="text-base font-semibold tracking-tight">For merchants</h2>
+            <h2 className="text-base font-semibold tracking-tight">For sellers</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted">
-              Spin up a storefront quickly, upload products, and use AI to generate
-              titles, descriptions, and tags from a single photo.
+              Open a shop in minutes and add your listings. Our AI can suggest a
+              title, description and tags from a single photo.
             </p>
           </div>
           <div className="dm-card p-6 sm:p-7">
-            <h2 className="text-base font-semibold tracking-tight">For shoppers</h2>
+            <h2 className="text-base font-semibold tracking-tight">For buyers</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted">
-              Follow shops you love, discover new brands through products, and
-              return to the storefront whenever you want.
+              Follow shops you like, find new shops through their listings, and
+              go back to any shop whenever you want.
             </p>
           </div>
         </section>
@@ -52,10 +51,9 @@ export default function AboutUs() {
         <section className="dm-card p-6 sm:p-8 lg:p-10">
           <h2 className="text-base font-semibold tracking-tight">Our principle</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
-            A marketplace should not hide brands. Every listing in Midora Online is
-            designed to improve brand visibility through shop badges, dynamic shop
-            pages, and a discovery flow that introduces merchants as entities—not
-            just commodities.
+            A marketplace shouldn&apos;t hide the people behind it. Shop badges,
+            shop pages and how we show listings all help buyers get to know the
+            seller, not just the item.
           </p>
         </section>
       </div>

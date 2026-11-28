@@ -121,7 +121,7 @@ function PostItemFlow() {
       })
       .catch(() => {
         if (!active) return;
-        setLoadError("We couldn't check verification. Try again.");
+        setLoadError("We couldn't check your account. Check your connection and try again.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -154,7 +154,7 @@ function PostItemFlow() {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
         <Loader2 className="size-5 animate-spin" aria-hidden />
-        <p className="text-sm font-medium">Loading page…</p>
+        <p className="text-sm font-medium">Loading…</p>
       </div>
     );
   }
@@ -229,7 +229,7 @@ function PostItemFlow() {
             noShop={noShop}
             itemType={kind}
             listingKind={kind}
-            shopLabel={shop?.name ?? (noShop ? "Other (no shop)" : shops.length === 0 ? PERSONAL_SELLER_LABEL : null)}
+            shopLabel={shop?.name ?? (noShop ? "No shop" : shops.length === 0 ? PERSONAL_SELLER_LABEL : null)}
             onChangeType={() => setStep("type")}
             onChangeShop={showShopChange ? () => setStep("shop") : undefined}
             contactVerified={status?.can_post}
@@ -255,12 +255,12 @@ function PostItemFlow() {
 
 export default function PostItemPage() {
   return (
-    <StandaloneShell eyebrow="Post an item" closeHref="/">
+    <StandaloneShell eyebrow="Post a listing" closeHref="/">
       <Suspense
         fallback={
           <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-muted">
             <Loader2 className="size-5 animate-spin" aria-hidden />
-            <p className="text-sm font-medium">Loading page…</p>
+            <p className="text-sm font-medium">Loading…</p>
           </div>
         }
       >

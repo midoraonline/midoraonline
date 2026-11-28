@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { Shop } from "@/lib/api/shops";
 import { track } from "@/lib/analytics";
 import { whatsappDigits } from "@/lib/whatsappProduct";
-import { locationDisplay, platformLabel } from "./shopUtils";
+import { locationDisplay, platformLabel, verifiedWhatsapp } from "./shopUtils";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -18,6 +18,7 @@ const footerLink =
 
 export default function ShopFooter({ shop }: { shop: Shop }) {
   const location = locationDisplay(shop.location);
+  const whatsapp = verifiedWhatsapp(shop);
 
   return (
     <footer className="mt-auto border-t border-foreground/[0.06] bg-surface/40 backdrop-blur-xl">
@@ -47,27 +48,27 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-foreground">Reach out</p>
+            <p className="text-sm font-semibold text-foreground">Contact</p>
             <div className="mt-3 flex flex-wrap gap-1">
               {shop.shop_email && (
                 <a
                   href={`mailto:${shop.shop_email}`}
                   className={footerIcon}
                   title={shop.shop_email}
-                  aria-label={`Business email ${shop.shop_email}`}
+                  aria-label={`Email ${shop.shop_email}`}
                   onClick={() => { track("listing:messaged", { shopId: shop.id }); }}
                 >
                   <MaterialSymbol name="mail" className="!text-[22px] leading-none" />
                 </a>
               )}
-              {shop.whatsapp_number && (
+              {whatsapp && (
                 <a
-                  href={`https://wa.me/${whatsappDigits(shop.whatsapp_number)}`}
+                  href={`https://wa.me/${whatsappDigits(whatsapp)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={footerIcon}
-                  title={`Business phone number ${shop.whatsapp_number}`}
-                  aria-label={`WhatsApp ${shop.whatsapp_number}`}
+                  title={`Chat on WhatsApp: ${whatsapp}`}
+                  aria-label={`Chat on WhatsApp: ${whatsapp}`}
                   onClick={() => {
                     track("conversion:whatsapp_click", {
                       shopId: shop.id,
@@ -98,7 +99,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-foreground">Platform</p>
+            <p className="text-sm font-semibold text-foreground">Midora</p>
             <ul className="mt-3 space-y-1">
               <li>
                 <Link href="/policies" className={footerLink}>
@@ -107,7 +108,7 @@ export default function ShopFooter({ shop }: { shop: Shop }) {
               </li>
               <li>
                 <Link href="/termsandconditions" className={footerLink}>
-                  Terms &amp; Conditions
+                  Terms and conditions
                 </Link>
               </li>
               <li>

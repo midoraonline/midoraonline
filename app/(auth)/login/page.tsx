@@ -41,7 +41,7 @@ function LoginPageInner() {
     const oauthError = searchParams.get("error");
 
     if (oauthError) {
-      setError("Google sign-in was cancelled or failed.");
+      setError("Google sign-in didn't finish. Try again, or sign in with email.");
       return;
     }
     if (!code || !state) return;
@@ -68,7 +68,7 @@ function LoginPageInner() {
         setError(
           err instanceof Error
             ? err.message
-            : "Unable to complete Google sign-in."
+            : "We couldn't finish signing you in with Google. Try again."
         );
       })
       .finally(() => {
@@ -92,7 +92,7 @@ function LoginPageInner() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to sign in. Please check your details."
+          : "We couldn't sign you in. Check your email and password and try again."
       );
       setLoading(false);
     }
@@ -104,7 +104,7 @@ function LoginPageInner() {
     try {
       await startGoogleSignIn();
     } catch {
-      setError("Unable to start Google sign-in.");
+      setError("We couldn't open Google sign-in. Check your connection and try again.");
       setGoogleLoading(false);
     }
   }
@@ -239,7 +239,7 @@ function LoginPageInner() {
 
       <p className="text-center text-xs text-muted">
         <Link href="/termsandconditions" className="underline-offset-2 hover:underline hover:text-foreground">
-          Terms &amp; Conditions
+          Terms and conditions
         </Link>
       </p>
     </div>

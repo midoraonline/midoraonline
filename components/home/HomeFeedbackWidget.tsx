@@ -31,19 +31,19 @@ export default function HomeFeedbackWidget() {
 
       <AnimatePresence>
         {open ? (
-          <FormModal title="Submit feedback" onClose={close} maxWidthClass="sm:max-w-md">
+          <FormModal title="Send feedback" onClose={close} maxWidthClass="sm:max-w-md">
             {submitted ? (
               <div className="space-y-3 py-6 text-center">
                 <div className="mx-auto grid size-11 place-items-center rounded-full bg-success-subtle text-success">
                   <MaterialSymbol name="check_circle" className="!text-xl" filled />
                 </div>
-                <h4 className="text-sm font-bold text-primary">Thank you!</h4>
+                <h4 className="text-sm font-bold text-primary">Thank you</h4>
                 <p className="text-xs text-muted">Your feedback helps us improve Midora.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-xs text-muted">
-                  Tell us what you think or report an issue — we read every message.
+                  Tell us what you think or report a problem. We read every message.
                 </p>
                 <textarea
                   value={text}
@@ -59,8 +59,8 @@ export default function HomeFeedbackWidget() {
                     const request = submitFeedback(text);
                     toast.promise(request, {
                       loading: "Sending feedback…",
-                      success: "Thanks — feedback received",
-                      error: "Couldn't send. Try again.",
+                      success: "Thanks. We got your feedback.",
+                      error: "We couldn't send your feedback. Check your connection and try again.",
                     });
                     try {
                       await request;
@@ -71,7 +71,7 @@ export default function HomeFeedbackWidget() {
                   }}
                   className="dm-btn dm-btn-primary w-full"
                 >
-                  Submit
+                  Send feedback
                 </button>
               </div>
             )}

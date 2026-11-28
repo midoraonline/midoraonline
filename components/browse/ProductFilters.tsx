@@ -100,12 +100,12 @@ export const DEFAULT_FILTERS: FilterState = {
 
 export const SORT_LABELS: Record<SortOption, string> = {
   relevance: "Relevance",
-  price_asc: "Price ↑",
-  price_desc: "Price ↓",
+  price_asc: "Lowest price",
+  price_desc: "Highest price",
   newest: "Newest",
   most_viewed: "Popular",
   best_rated: "Top rated",
-  trust_score: "Trust",
+  trust_score: "Most trusted",
 };
 
 export async function withNearMe(filters: FilterState): Promise<FilterState> {
@@ -407,7 +407,7 @@ function LocationDropdown({
     [locations],
   );
 
-  const nearMeLabel = userGeo?.label ? `Near · ${userGeo.label}` : "Near me";
+  const nearMeLabel = userGeo?.label ? `Near ${userGeo.label}` : "Near me";
 
   const options: LocationOption[] = useMemo(() => {
     const base: LocationOption[] = [
@@ -449,7 +449,7 @@ function LocationDropdown({
             ? err.message
             : err instanceof Error
               ? err.message
-              : "Couldn’t use your location.",
+              : "We couldn’t find your location. Choose a place from the list instead.",
         );
       } finally {
         setLocating(false);
@@ -476,7 +476,7 @@ function LocationDropdown({
           Option: LocationOptionRow,
           SingleValue: LocationSingleValue,
         }}
-        noOptionsMessage={() => "No locations found"}
+        noOptionsMessage={() => "No places found"}
       />
       {nearMeError ? (
         <p className="absolute left-0 top-full z-10 mt-1 max-w-[14rem] truncate text-[10px] font-medium text-rose-600">
@@ -585,7 +585,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
           ? err.message
           : err instanceof Error
             ? err.message
-            : "Couldn’t use your location.",
+            : "We couldn’t find your location. Choose a place from the list instead.",
       );
     } finally {
       setDrawerLocating(false);
@@ -639,7 +639,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
   if (filters.minRating !== null) {
     appliedChips.push({
       key: "rating",
-      label: `${filters.minRating}+ ★`,
+      label: `${filters.minRating}+ stars`,
       clear: () => update({ minRating: null }),
     });
   }
@@ -814,7 +814,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                 </div>
               </FilterSection>
 
-              <FilterSection title={showOpportunityFilters && !showServiceFilters ? "Budget / pay (UGX)" : "Price (UGX)"}>
+              <FilterSection title={showOpportunityFilters && !showServiceFilters ? "Pay (UGX)" : "Price (UGX)"}>
                 <div className="grid grid-cols-2 gap-1.5">
                   {PRICE_PRESETS.map((preset) => {
                     const on = preset.min === filters.minPrice && preset.max === filters.maxPrice;
@@ -880,7 +880,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                     )}
                     <span className="truncate">
                       {filters.nearMe && filters.userGeo?.label
-                        ? `Near · ${filters.userGeo.label}`
+                        ? `Near ${filters.userGeo.label}`
                         : drawerLocating
                           ? "Locating…"
                           : "Near me"}
@@ -1086,7 +1086,7 @@ export default function ProductFilters({ products, filters, onChange, contextPar
               ) : null}
 
               {showOpportunityFilters ? (
-                <FilterSection title="Compensation">
+                <FilterSection title="Pay">
                   <div className="flex flex-wrap gap-1.5">
                     {COMPENSATION_OPTIONS.map((opt) => {
                       const on = filters.compensation === opt.value;
@@ -1155,14 +1155,14 @@ export default function ProductFilters({ products, filters, onChange, contextPar
                 className="flex-1 rounded-md border border-border px-3 py-2.5 text-sm font-medium text-foreground disabled:opacity-50"
                 disabled={!hasActiveFilters}
               >
-                Reset
+                Clear all
               </button>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
                 className="flex-[1.4] rounded-md bg-accent px-3 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover"
               >
-                Show {count > 0 ? `results (${count})` : "results"}
+                Show results
               </button>
             </div>
           </div>

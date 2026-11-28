@@ -38,11 +38,11 @@ const amountString = z
   .string()
   .trim()
   .refine((v) => v === "" || Number.isFinite(Number(v.replace(/,/g, ""))), {
-    message: "Enter a valid amount.",
+    message: "Enter the amount in numbers, e.g. 50000.",
   })
   .refine(
     (v) => v === "" || Number(v.replace(/,/g, "")) >= 0,
-    { message: "Amount cannot be negative." },
+    { message: "The amount can't be less than 0." },
   );
 
 const listingMetaSchema: z.ZodType<ListingMeta> = z.object({
@@ -83,8 +83,8 @@ export const listingDraftSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, "Title is required.")
-    .max(140, "Title is too long (max 140 characters)."),
+    .min(1, "Add a title.")
+    .max(140, "Keep the title to 140 characters or fewer."),
   description: z.string(),
   price_ugx: amountString,
   sale_price: amountString,
@@ -92,9 +92,9 @@ export const listingDraftSchema = z.object({
     .string()
     .trim()
     .refine((v) => v === "" || /^\d+$/.test(v), {
-      message: "Stock must be a whole number.",
+      message: "Enter stock as a whole number, e.g. 5.",
     }),
-  category: z.string().trim().min(1, "Pick a category."),
+  category: z.string().trim().min(1, "Choose a category."),
   image_urls: z.array(z.string().url().or(z.string().min(1))),
   is_published: z.boolean(),
   is_negotiable: z.boolean(),
@@ -169,11 +169,11 @@ export function evaluateSalePrice(
   if (!trimmed) return { kind: "empty" };
   const price = parseAmount(priceStr);
   const sale = parseAmount(trimmed);
-  if (sale === null) return { kind: "invalid", message: "Enter a valid amount." };
+  if (sale === null) return { kind: "invalid", message: "Enter the amount in numbers, e.g. 50000." };
   if (price === null || price <= 0)
-    return { kind: "invalid", message: "Set the price first." };
+    return { kind: "invalid", message: "Add the normal price first." };
   if (sale >= price)
-    return { kind: "invalid", message: "After discount price must be less than the price." };
+    return { kind: "invalid", message: "The discount price must be lower than the normal price." };
   const savings = price - sale;
   const percent = Math.round((savings / price) * 100);
   return { kind: "ok", savings, percent };
@@ -222,42 +222,42 @@ export function validateListingDraft(
       ? `At most ${maxVideos} ${maxVideos === 1 ? "video" : "videos"} per listing.`
       : "Videos aren't allowed on listings right now.";
   } else if (needsPhotos && draft.is_published && photoCount < MIN_LISTING_PHOTOS) {
-    errors.images = `Add at least ${MIN_LISTING_PHOTOS} photos before publishing (videos alone are not enough).`;
+    errors.images = `Add at least ${MIN_LISTING_PHOTOS} photos before you post. A video alone isn't enough.`;
   } else if (needsPhotos && !hasRequiredListingImage(draft.image_urls, isVideoUrl)) {
-    errors.images = "Upload at least one photo (video alone is not enough).";
+    errors.images = "Add at least 1 photo. A video alone isn't enough.";
   } else if (!needsPhotos && mediaCount > 0 && photoCount === 0) {
-    errors.images = "Add a photo if you include media (video alone is not enough), or remove the video.";
+    errors.images = "Add a photo to go with your video, or remove the video.";
   }
 
   if (draft.is_published) {
     if (ctx.phoneVerified === false) {
-      errors.phone = "Verify your phone or email before publishing.";
+      errors.phone = "Verify your phone number and email before you post.";
     }
     const loc = (draft.location_name || "").trim() || (ctx.shopLocationLabel || "").trim();
     const normalized = loc.toLowerCase().replace(/^[,.\s]+|[,.\s]+$/g, "");
     if (!isOnlineLocation(loc) && (!loc || normalized === "uganda" || normalized === "ug")) {
-      errors.location_name = "Add a real city/area before publishing (country-only is not enough).";
+      errors.location_name = "Add your area or town, e.g. Ntinda, Kampala. \"Uganda\" on its own isn't enough.";
     }
     if (draft.kind === "product") {
       const price = Number(String(draft.price_ugx).replace(/,/g, ""));
       if (!Number.isFinite(price) || price <= 0) {
-        errors.price_ugx = "Set a price greater than 0 to publish a product.";
+        errors.price_ugx = "Add a price above 0 to post this product.";
       }
     }
   }
 
   if (draft.category.trim() && ctx.parentHasChildren && !ctx.subcategoryLabel) {
-    errors.category = "Pick a subcategory.";
+    errors.category = "Choose a subcategory.";
   }
 
   const sale = evaluateSalePrice(draft.price_ugx, draft.sale_price);
   if (sale.kind === "invalid") errors.sale_price = sale.message;
 
   if (draft.kind === "product" && !draft.meta.condition) {
-    errors.meta = "Select product condition.";
+    errors.meta = "Choose the condition.";
   }
   if (draft.kind === "service" && !draft.meta.pricing_model) {
-    errors.meta = "Select how you price this service.";
+    errors.meta = "Choose how you charge for this service.";
   }
 
   if (draft.is_published) {
@@ -266,13 +266,13 @@ export function validateListingDraft(
       const v = draft.meta[field.key];
       if (fieldKind(field) === "boolean") {
         if (v !== "true") {
-          errors.meta = `${field.label} is required for this category.`;
+          errors.meta = `Tick "${field.label}" to post in this category.`;
           break;
         }
         continue;
       }
       if (v == null || String(v).trim() === "") {
-        errors.meta = `${field.label} is required for this category.`;
+        errors.meta = `Fill in "${field.label}" to post in this category.`;
         break;
       }
     }

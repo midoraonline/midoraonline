@@ -42,7 +42,7 @@ type SkeletonRegionProps = {
 
 /** Wraps skeleton content with aria-busy + screen-reader status. */
 export function SkeletonRegion({
-  label = "Loading content",
+  label = "Loading…",
   children,
   className = "",
 }: SkeletonRegionProps) {

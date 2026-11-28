@@ -83,14 +83,15 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
       setUploadPct(0);
       if (urls.length) {
         toast.success(
-          urls.length === 1 ? "Video uploaded" : `${urls.length} videos uploaded`,
+          urls.length === 1 ? "Video uploaded." : `${urls.length} videos uploaded.`,
         );
       }
     },
     onUploadError: (e) => {
       setStage(null);
       setUploadPct(0);
-      toast.error("Video upload failed", { description: e.message });
+      console.error(e);
+      toast.error("We couldn't upload your video", { description: "Check your connection and try again." });
     },
   });
 
@@ -101,7 +102,7 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
         const file = files[i];
         setStage("compressing");
         setStageMsg(
-          files.length > 1 ? `Compressing ${i + 1}/${files.length}` : "Compressing",
+          files.length > 1 ? `Shrinking video ${i + 1} of ${files.length}` : "Shrinking video",
         );
         setStagePct(0);
         try {
@@ -113,11 +114,10 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
             new File([result.blob], `${stem}.mp4`, { type: "video/mp4" }),
           );
         } catch (err) {
-          const description =
-            err instanceof Error
-              ? err.message
-              : "Compression failed — uploading original file.";
-          toast.warning("Uploading original", { description });
+          console.warn(err);
+          toast.warning("Uploading the original video", {
+            description: "We couldn't shrink this video, so it may take longer to upload.",
+          });
           outFiles.push(file);
         }
       }
@@ -132,8 +132,8 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
       for (const file of files) {
         const duration = await probeVideoDuration(file);
         if (duration !== null && duration > maxDurationSeconds) {
-          toast.error("Video too long", {
-            description: `Trim to under ${Math.round(maxDurationSeconds / 60)} min (${Math.round(duration)}s currently).`,
+          toast.error("That video is too long", {
+            description: `It's ${Math.round(duration)} seconds. Choose a video under ${Math.round(maxDurationSeconds / 60)} min.`,
           });
           continue;
         }
@@ -208,7 +208,7 @@ export const VideoUpload = forwardRef<VideoUploadHandle, Props>(function VideoUp
           )}
         </button>
         <p className={`text-[11px] text-muted ${hideButton ? "hidden" : ""}`}>
-          Compressed to 720p MP4 in your browser. Max{" "}
+          We shrink videos before upload to save data. Up to{" "}
           {Math.round(maxDurationSeconds / 60)} min.
         </p>
       </div>

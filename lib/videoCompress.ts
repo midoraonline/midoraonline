@@ -117,7 +117,7 @@ export async function compressVideo(
   const started = Date.now();
   const profile: VideoCompressionProfile = { ...DEFAULT_PROFILE, ...(opts.profile ?? {}) };
 
-  opts.onProgress?.({ stage: "loading", percent: 0, message: "Preparing compressor…" });
+  opts.onProgress?.({ stage: "loading", percent: 0, message: "Getting ready…" });
   const util = await loadUtil();
 
   const ff = await getFFmpeg((pct) => {
@@ -131,7 +131,7 @@ export async function compressVideo(
     const inputData = await util.fetchFile(file);
     await ff.writeFile(inputName, inputData);
 
-    opts.onProgress?.({ stage: "transcoding", percent: 0, message: "Transcoding…" });
+    opts.onProgress?.({ stage: "transcoding", percent: 0, message: "Making your video smaller…" });
 
     const scale = `scale='if(gt(iw,ih),min(${profile.maxEdge},iw),-2)':'if(gt(ih,iw),min(${profile.maxEdge},ih),-2)',scale=trunc(iw/2)*2:trunc(ih/2)*2`;
 
@@ -164,7 +164,7 @@ export async function compressVideo(
       outputName,
     ]);
 
-    opts.onProgress?.({ stage: "finalizing", percent: 99, message: "Wrapping up…" });
+    opts.onProgress?.({ stage: "finalizing", percent: 99, message: "Almost done…" });
     const out = (await ff.readFile(outputName)) as Uint8Array;
     const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
     const blob = new Blob([arrayBuffer], { type: "video/mp4" });

@@ -18,6 +18,7 @@ import { ShopAvatar } from "@/components/shop/ShopAvatar";
 import { OTHER_LISTINGS_LABEL, shopTypeLabel } from "@/lib/shop/shopFit";
 import Link from "next/link";
 import type { ListingShopSummary } from "./types";
+import { platformActionMessage } from "@/lib/platformMessages";
 import {
   BTN_PRIMARY,
   BTN_TEXT,
@@ -44,7 +45,7 @@ const TAB_META: {
   { key: "rejected", label: "Not approved", test: (s) => s === "rejected" },
   {
     key: "drafts",
-    label: "Drafts & hidden",
+    label: "Drafts and hidden",
     test: (s) => s === "draft" || s === "hidden" || s === "expired" || s === "sold",
   },
 ];
@@ -150,7 +151,7 @@ export default function MerchantListingsClient({
     try {
       setItems(await loadOwnerListings(shops));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to refresh listings");
+      toast.error(platformActionMessage(e, "We couldn't refresh your listings. Check your connection and try again."));
     } finally {
       setRefreshing(false);
     }
@@ -169,9 +170,9 @@ export default function MerchantListingsClient({
     setDeleting(true);
     const request = apiProducts.deleteProduct(p.id);
     toast.promise(request, {
-      loading: "Removing listing…",
-      success: "Listing removed",
-      error: (e) => (e instanceof Error ? e.message : "Delete failed."),
+      loading: "Deleting listing…",
+      success: "Listing deleted.",
+      error: (e) => (platformActionMessage(e, "We couldn't delete this listing. Try again.")),
     });
     try {
       await request;
@@ -215,9 +216,9 @@ export default function MerchantListingsClient({
   const visibleCount = groups.reduce((n, g) => n + g.items.length, 0);
 
   const emptyMessage: Record<Tab, string> = {
-    all: "Post your first product, service or opportunity. It goes live after a quick automated check.",
-    reviewing: "Nothing is in review.",
-    live: "Nothing is live yet.",
+    all: "Post your first product, service, job or opportunity. It goes live after a quick automatic check.",
+    reviewing: "No listings are in review.",
+    live: "No live listings yet.",
     rejected: "No listings were turned down.",
     drafts: "No drafts or hidden listings.",
   };
@@ -228,13 +229,13 @@ export default function MerchantListingsClient({
         title="My listings"
         description={
           shops.length > 1
-            ? `${fmt(items.length)} listings across ${shops.length} shops.`
-            : `${fmt(items.length)} listings. Approved listings go live automatically.`
+            ? `${fmt(items.length)} ${items.length === 1 ? "listing" : "listings"} across ${shops.length} shops.`
+            : `${fmt(items.length)} ${items.length === 1 ? "listing" : "listings"}. Approved listings go live automatically.`
         }
         action={
           <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
             <Plus className="size-4" aria-hidden />
-            Post an ad
+            Post a listing
           </button>
         }
       />
@@ -245,7 +246,7 @@ export default function MerchantListingsClient({
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[color:var(--success)]" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground">
-                {posted.status === "active" ? "Your ad is live" : "Your ad is posted"}
+                {posted.status === "active" ? "Your listing is live" : "Listing posted"}
               </p>
               <p className="mt-0.5 truncate text-sm text-muted">{posted.title}</p>
               {posted.status === "active" && posted.is_published !== false ? (
@@ -257,7 +258,7 @@ export default function MerchantListingsClient({
                 </div>
               ) : (
                 <p className="mt-1 text-xs text-muted">
-                  It&apos;s being checked. Boost, Repost and Find in feed appear once it&apos;s live.
+                  We&apos;re checking it now. You can boost or repost it once it&apos;s live.
                 </p>
               )}
             </div>
@@ -265,7 +266,7 @@ export default function MerchantListingsClient({
               type="button"
               onClick={() => setDismissedPosted(true)}
               className="dm-focus grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-muted"
-              aria-label="Dismiss"
+              aria-label="Close"
             >
               <X className="size-4" aria-hidden />
             </button>
@@ -292,7 +293,7 @@ export default function MerchantListingsClient({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={showMultipleShops ? "Search listings or shop" : "Search listings"}
+          placeholder={showMultipleShops ? "Search listings or shops" : "Search listings"}
           aria-label="Search listings"
           className={`${INPUT} pl-9`}
         />
@@ -344,7 +345,7 @@ export default function MerchantListingsClient({
             tab === "all" ? (
               <button type="button" onClick={openAdd} className={BTN_PRIMARY}>
                 <Plus className="size-4" aria-hidden />
-                Post an ad
+                Post a listing
               </button>
             ) : null
           }
@@ -405,9 +406,9 @@ export default function MerchantListingsClient({
       {pendingDelete ? (
         <ConfirmDialog
           title="Delete listing?"
-          message={`"${pendingDelete.title || "This listing"}" and its photos will be removed. This can't be undone.`}
-          confirmLabel={deleting ? "Deleting…" : "Delete"}
-          cancelLabel="Cancel"
+          message={`"${pendingDelete.title || "This listing"}" and its photos will be deleted. Buyers won't see it again. You can't undo this.`}
+          confirmLabel={deleting ? "Deleting…" : "Delete listing"}
+          cancelLabel="Keep listing"
           destructive
           busy={deleting}
           onConfirm={() => void handleDelete(pendingDelete)}

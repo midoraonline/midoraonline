@@ -22,7 +22,7 @@ import ExtraPhoneNumbers, {
 import CategoryPicker from "@/components/CategoryPicker";
 import { useAppSession } from "@/lib/state";
 import { canManageShopStorefront } from "@/lib/shop/storefront-access";
-import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { platformActionMessage } from "@/lib/platformMessages";
 import {
   buildShopLocationPayload,
   locationCoords as readLocationCoords,
@@ -108,7 +108,7 @@ function NotLoggedIn({ shopSlug }: { shopSlug: string }) {
       <div className="dm-card space-y-4 p-8 text-center">
         <AlertCircle className="mx-auto size-8 text-muted" aria-hidden="true" />
         <p className="text-sm font-semibold">Sign in required</p>
-        <p className="text-xs text-muted">Log in to edit your shop.</p>
+        <p className="text-xs text-muted">Sign in to edit your shop.</p>
         <Link
           href={`/login?next=/shops/${shopSlug}/edit`}
           className="dm-btn dm-btn-primary inline-flex"
@@ -125,9 +125,9 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
     <div className="mx-auto w-full max-w-2xl">
       <div className="dm-card space-y-4 p-8 text-center">
         <AlertCircle className="mx-auto size-8 text-muted" aria-hidden="true" />
-        <p className="text-sm font-semibold">Access denied</p>
+        <p className="text-sm font-semibold">You can’t edit this shop</p>
         <p className="text-xs text-muted">
-          You must be the shop owner or an admin to edit this page.
+          Only the shop owner can edit this shop.
         </p>
         <button type="button" onClick={onBack} className="dm-btn dm-btn-ghost dm-btn-sm">
           <ArrowLeft className="size-3.5" aria-hidden="true" />
@@ -181,7 +181,7 @@ function DetailsTab({
 
   const errors = useMemo(() => {
     const e: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) e.name = "Shop name is required.";
+    if (!form.name.trim()) e.name = "Enter a name for your shop.";
     return e;
   }, [form.name]);
 
@@ -192,7 +192,7 @@ function DetailsTab({
       const ok =
         typeof window === "undefined"
           ? true
-          : window.confirm("Discard your changes?");
+          : window.confirm("Leave without saving your changes?");
       if (!ok) return;
       discardUnsavedImages(form, shopToFormState(shop));
     }
@@ -246,9 +246,9 @@ function DetailsTab({
       const updated = await apiShops.updateShop(shop.id, payload);
       onSaved(form, updated);
       setJustSaved(true);
-      toast.success("Saved");
+      toast.success("Saved. Your changes are live.");
     } catch (err) {
-      setSaveError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not save changes. Please try again.");
+      setSaveError(platformActionMessage(err, "We couldn't save your changes. Check your connection and try again."));
     } finally {
       setSaving(false);
     }
@@ -269,7 +269,7 @@ function DetailsTab({
             <input
               id="edit-shop-name"
               className="dm-input"
-              placeholder="e.g. My Coffee Shop"
+              placeholder="e.g. Mama Rose Fashions"
               value={form.name}
               onChange={(e) => change("name", e.target.value)}
               aria-invalid={showErrors && Boolean(errors.name)}
@@ -291,7 +291,7 @@ function DetailsTab({
             <input
               id="edit-shop-description"
               className="dm-input"
-              placeholder="Tagline shown on the shop page"
+              placeholder="e.g. Quality shoes at fair prices"
               value={form.description}
               onChange={(e) => change("description", e.target.value)}
             />
@@ -303,7 +303,7 @@ function DetailsTab({
             <textarea
               id="edit-shop-about"
               className="dm-textarea"
-              placeholder="Longer description of your shop"
+              placeholder="What you sell, how long you've traded, how to find you"
               rows={3}
               value={form.about}
               onChange={(e) => change("about", e.target.value)}
@@ -332,7 +332,7 @@ function DetailsTab({
             >
               <option value="product">Products</option>
               <option value="service">Services</option>
-              <option value="both">Products &amp; Services</option>
+              <option value="both">Products and services</option>
             </select>
           </div>
           <div className="space-y-1.5">
@@ -356,7 +356,7 @@ function DetailsTab({
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Shop logo</h2>
           <p className="mt-0.5 text-[11px] text-muted">
-            Changes apply when you save.
+            Your new logo shows after you save.
           </p>
         </div>
         <SingleImageField
@@ -368,7 +368,7 @@ function DetailsTab({
             change("logoUrl", url ?? "");
           }}
           emptyLabel="Add logo"
-          hint="Square works best. Shown in the shop header and cards."
+          hint="A square photo works best. It shows on your shop page and shop card."
         />
       </section>
 
@@ -376,7 +376,7 @@ function DetailsTab({
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Shop banner</h2>
           <p className="mt-0.5 text-[11px] text-muted">
-            A wide image across the top of your shop page.
+            A wide photo across the top of your shop page.
           </p>
         </div>
         <SingleImageField
@@ -399,7 +399,7 @@ function DetailsTab({
               id="edit-shop-email"
               type="email"
               className="dm-input"
-              placeholder="hello@shop.com"
+              placeholder="e.g. hello@yourshop.com"
               value={form.shopEmail}
               onChange={(e) => change("shopEmail", e.target.value)}
             />
@@ -415,7 +415,7 @@ function DetailsTab({
               id="edit-shop-whatsapp"
               value={form.whatsappNumber}
               onChange={(val) => change("whatsappNumber", val)}
-              placeholder="700 000 000"
+              placeholder="772 123 456"
             />
             <WhatsAppStatus
               shopId={shop.id}
@@ -447,9 +447,9 @@ function DetailsTab({
         <h2 className="mb-4 text-sm font-semibold tracking-tight">Shop status</h2>
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-0.5">
-            <p className="text-sm font-medium text-foreground">Shop is active</p>
+            <p className="text-sm font-medium text-foreground">Shop is open</p>
             <p className="text-xs text-muted">
-              When off, your shop shows as temporarily closed to customers.
+              Turn this off to show your shop as temporarily closed to buyers.
             </p>
           </div>
           <button
@@ -457,7 +457,7 @@ function DetailsTab({
             id="shop-is-active"
             role="switch"
             aria-checked={form.isActive}
-            aria-label="Shop is active"
+            aria-label="Shop is open"
             onClick={() => change("isActive", !form.isActive)}
             className="dm-toggle"
           >
@@ -485,7 +485,7 @@ function DetailsTab({
           disabled={saving || (showErrors && !canSubmit)}
           className="dm-btn dm-btn-primary"
         >
-          {saving ? "Saving…" : justSaved ? "Saved" : "Save"}
+          {saving ? "Saving…" : justSaved ? "Saved" : "Save changes"}
         </button>
       </div>
     </form>
@@ -579,7 +579,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
       const ok =
         typeof window === "undefined"
           ? true
-          : window.confirm("You have unsaved changes. Discard them?");
+          : window.confirm("You have changes you haven't saved. Leave without saving?");
       if (!ok) return;
       discardUnsavedImages(form, initialForm);
       setForm(initialForm);
@@ -593,7 +593,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
       const ok =
         typeof window === "undefined"
           ? true
-          : window.confirm("Discard your changes?");
+          : window.confirm("Leave without saving your changes?");
       if (!ok) return;
       discardUnsavedImages(form, initialForm);
     }
@@ -606,7 +606,7 @@ export default function EditShopForm({ shop }: { shop: Shop }) {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Edit shop</h1>
           <p className="mt-0.5 text-sm text-muted">
-            Manage {shopState.name}&apos;s details, products, and services.
+            Manage {shopState.name}&apos;s details, products and services.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -64,19 +64,19 @@ export default function ListingReachFields({ kind, meta, onChange }: Props) {
     return (
       <div className="space-y-3 rounded-md border border-border p-3">
         <AreaChips
-          label="Areas you serve"
+          label="Areas you serve (optional)"
           value={meta.service_areas ?? []}
           onChange={(service_areas) => onChange({ ...meta, service_areas })}
         />
         <Toggle checked={meta.travels_to_customer === "yes"} onChange={(on) => flag("travels_to_customer", on)} label="I travel to the customer" />
-        <Toggle checked={meta.remote_service === "yes"} onChange={(on) => flag("remote_service", on)} label="I can do this remotely / online" />
+        <Toggle checked={meta.remote_service === "yes"} onChange={(on) => flag("remote_service", on)} label="I can do this online or by phone" />
       </div>
     );
   }
   return (
     <div className="space-y-3 rounded-md border border-border p-3">
       <fieldset className="space-y-1.5">
-        <legend className="text-sm font-medium text-foreground">Work mode</legend>
+        <legend className="text-sm font-medium text-foreground">Where is the work? (optional)</legend>
         <div className="flex flex-wrap gap-1.5">
           {(
             [
@@ -100,7 +100,7 @@ export default function ListingReachFields({ kind, meta, onChange }: Props) {
           })}
         </div>
       </fieldset>
-      <Toggle checked={meta.relocation_supported === "yes"} onChange={(on) => flag("relocation_supported", on)} label="Relocation supported" />
+      <Toggle checked={meta.relocation_supported === "yes"} onChange={(on) => flag("relocation_supported", on)} label="Help with moving to the job" />
     </div>
   );
 }

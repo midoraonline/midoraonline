@@ -27,7 +27,7 @@ export default function LocationInput({
   value,
   onChange,
   onResolved,
-  placeholder = "Search location (e.g. Kisasi)",
+  placeholder = "e.g. Kisasi, Kampala",
   className = "",
   onlineValue = "Online Shop",
   onlineLabel = "Online shop",
@@ -117,7 +117,7 @@ export default function LocationInput({
             className="accent-primary"
           />
           <span className="group-hover:text-foreground/90 text-foreground/80 transition-colors">
-            Physical location
+            Area or town
           </span>
         </label>
         <label className="flex items-center gap-2 text-xs cursor-pointer group">
@@ -156,11 +156,11 @@ export default function LocationInput({
             <div className="absolute z-50 w-full mt-1 bg-surface border border-border rounded-xl shadow-lg max-h-[240px] overflow-y-auto">
               {loading && (
                 <div className="p-3 text-xs text-muted text-center animate-pulse">
-                  Searching OpenStreetMap…
+                  Searching places…
                 </div>
               )}
               {!loading && results.length === 0 && (
-                <div className="p-3 text-xs text-muted text-center">No locations found.</div>
+                <div className="p-3 text-xs text-muted text-center">No places found. Try a nearby town or landmark.</div>
               )}
               {!loading &&
                 results.map((res, i) => (

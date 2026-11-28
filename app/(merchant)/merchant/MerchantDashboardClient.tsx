@@ -10,6 +10,7 @@ import type { MerchantAnalytics, MerchantStats, Shop } from "@/lib/api/shops";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { useAppSession } from "@/lib/state";
 import { ActivityChart, ActivityHeadline, PERIODS, type Period } from "@/components/dashboard/ListingActivity";
+import { platformActionMessage } from "@/lib/platformMessages";
 import {
   BTN_PRIMARY,
   BTN_SECONDARY,
@@ -66,7 +67,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
                 return null;
               }
               if (err instanceof ApiError && (err.code === "timeout" || err.code === "network_error")) {
-                setError("Analytics took too long to load. Try 7 days, or retry.");
+                setError("Analytics took too long to load. Choose 7 days or try again.");
                 return null;
               }
               return null;
@@ -85,10 +86,10 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError("Your session expired. Sign in again to load analytics.");
+        setError("You've been signed out. Sign in again to see your dashboard.");
         return;
       }
-      setError(err instanceof Error ? err.message : "Couldn't load your business");
+      setError(platformActionMessage(err, "We couldn't load your shops. Try again."));
     }
   }, [windowDays, session.hydrated, analyticsOn]);
 
@@ -106,7 +107,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
         description={
           shops.length
             ? `${fmt(shops.length)} ${shops.length === 1 ? "shop" : "shops"}, ${fmt(active.length)} live`
-            : "Post ads now, or create a business for a storefront and analytics."
+            : "Post listings now, or open a shop to get a shop page and analytics."
         }
         action={
           <Link href="/open-shop" className={BTN_PRIMARY}>
@@ -129,7 +130,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       ) : null}
 
       {pending.length > 0 ? (
-        <Section title="Needs attention" description="These shops are not live yet.">
+        <Section title="Needs attention" description="These shops aren't live yet.">
           <ul className={LIST}>
             {pending.map((s) => (
               <li key={s.id}>
@@ -166,8 +167,8 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       {analyticsOn && analytics ? (
         <>
           <Section
-            title={`How your ads did in the last ${analytics.window_days} days`}
-            description="Impressions count every time an ad was on someone's screen for at least a second, even without a tap."
+            title={`How your listings did in the last ${analytics.window_days} days`}
+            description="An impression is each time your listing was on someone's screen for at least 1 second, even if they didn't tap it."
             action={
               <Select
                 label="Period"
@@ -230,7 +231,7 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       ) : null}
 
       <Section
-        title="My business"
+        title="My shops"
         action={
           shops.length > 0 ? (
             <Link href="/merchant/shops" className={BTN_TEXT}>
@@ -241,10 +242,10 @@ export default function MerchantDashboardClient({ initialShops, initialStats }: 
       >
         {shops.length === 0 ? (
           <EmptyState
-            message="No business yet. You can still post ads."
+            message="No shop yet. You can still post listings without one."
             action={
               <Link href="/post-item" className={BTN_SECONDARY}>
-                Post an ad
+                Post a listing
               </Link>
             }
           />

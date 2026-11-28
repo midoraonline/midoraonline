@@ -130,7 +130,7 @@ export const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(funct
               {stage}
             </>
           ) : full ? (
-            `${cap} of ${cap} added`
+            `${cap} of ${cap} photos added`
           ) : (
             label
           )}

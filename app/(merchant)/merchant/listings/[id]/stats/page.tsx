@@ -6,6 +6,7 @@ import useSWR from "swr";
 
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { platformActionMessage } from "@/lib/platformMessages";
 import {
   ActivityBreakdown,
   ActivityChart,
@@ -47,7 +48,7 @@ export default function ListingStatsPage({ params }: { params: Promise<{ id: str
     );
   }
   if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : "Couldn't load stats."} onRetry={() => void mutate()} />;
+    return <ErrorState message={platformActionMessage(error, "We couldn't load stats for this listing. Try again.")} onRetry={() => void mutate()} />;
   }
   if (!data || apiShops.isAnalyticsDisabledBody(data)) {
     return (
@@ -84,7 +85,7 @@ export default function ListingStatsPage({ params }: { params: Promise<{ id: str
       </Section>
       <Section
         title="Everything people did"
-        description="Your own views and taps are not counted. An impression is counted at most once per person every 10 minutes."
+        description="Your own views and taps don't count. We count at most 1 impression per person every 10 minutes."
       >
         <ActivityBreakdown stats={stats} />
       </Section>

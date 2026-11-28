@@ -58,7 +58,7 @@ export default function ShopActions({
   const followerCount = Number(data?.follower_count ?? 0);
 
   function promptSignIn(action: string) {
-    toast.message(`Sign in to ${action} this business`, {
+    toast.message(`Sign in to ${action} this shop.`, {
       action: {
         label: "Sign in",
         onClick: () => router.push(`/login?next=${encodeURIComponent(pathname || `/shops/${shopSlug}`)}`),
@@ -96,7 +96,7 @@ export default function ShopActions({
       );
       if (kind === "follow") track(on ? "shop:followed" : "shop:unfollowed", { shopId });
     } catch {
-      toast.error(kind === "like" ? "Couldn't update your like. Try again." : "Couldn't update follow. Try again.");
+      toast.error(kind === "like" ? "We couldn't save your like. Try again." : "We couldn't update your follow. Try again.");
     } finally {
       setBusy(null);
     }
@@ -130,7 +130,7 @@ export default function ShopActions({
         type="button"
         onClick={() => void toggle("like")}
         disabled={busy === "like"}
-        aria-label={liked ? "Unlike business" : "Like business"}
+        aria-label={liked ? "Unlike shop" : "Like shop"}
         aria-pressed={liked}
         className={`dm-btn dm-btn-secondary dm-btn-sm min-h-10 ${
           liked ? "border-[color:var(--error)] bg-error-subtle text-[color:var(--error)]" : ""
@@ -145,7 +145,7 @@ export default function ShopActions({
         type="button"
         onClick={() => void toggle("follow")}
         disabled={busy === "follow"}
-        aria-label={followed ? "Unfollow business" : "Follow business"}
+        aria-label={followed ? "Unfollow shop" : "Follow shop"}
         aria-pressed={followed}
         className={`dm-btn dm-btn-sm min-h-10 ${followed ? "dm-btn-secondary border-accent bg-accent/10 text-accent" : "dm-btn-primary"}`}
       >
@@ -162,13 +162,13 @@ export default function ShopActions({
       <button
         type="button"
         onClick={() => void handleShare()}
-        aria-label={shareState === "copied" ? "Link copied" : "Share business"}
+        aria-label={shareState === "copied" ? "Link copied" : "Share shop"}
         className={`dm-btn dm-btn-secondary dm-btn-sm min-h-10 ${
           shareState === "copied" ? "border-[color:var(--success)] text-[color:var(--success)]" : ""
         }`}
       >
         <MaterialSymbol name={shareState === "copied" ? "check" : "share"} className="!text-sm" aria-hidden="true" />
-        {shareState === "copied" ? "Copied" : "Share"}
+        {shareState === "copied" ? "Link copied" : "Share"}
       </button>
     </div>
   );

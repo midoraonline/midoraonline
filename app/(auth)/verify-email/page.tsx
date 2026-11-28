@@ -4,6 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiAuth } from "@/lib/api";
 import { establishClientSession } from "@/lib/auth/establish-session";
+import { platformActionMessage } from "@/lib/platformMessages";
+
+const HEADINGS = {
+  verifying: "Verifying your email…",
+  success: "Email verified",
+  error: "We couldn't verify your email",
+} as const;
 
 function VerifyEmailPageInner() {
   const router = useRouter();
@@ -14,7 +21,7 @@ function VerifyEmailPageInner() {
     token ? "verifying" : "error"
   );
   const [message, setMessage] = useState<string | null>(
-    token ? null : "Missing verification token."
+    token ? null : "This verification link is incomplete. Open the link from your email again, or ask for a new one."
   );
 
   useEffect(() => {
@@ -34,7 +41,7 @@ function VerifyEmailPageInner() {
           refresh_token: res.refresh_token,
         });
         setStatus("success");
-        setMessage(res.message || "Email verified successfully.");
+        setMessage(res.message || "Email verified.");
         setTimeout(() => {
           router.push("/");
         }, 1500);
@@ -42,9 +49,10 @@ function VerifyEmailPageInner() {
         if (cancelled) return;
         setStatus("error");
         setMessage(
-          err instanceof Error
-            ? err.message
-            : "We could not verify your email. The link may have expired."
+          platformActionMessage(
+            err,
+            "We couldn't verify your email. The link may have expired. Ask for a new one and try again."
+          )
         );
       }
     })();
@@ -56,13 +64,12 @@ function VerifyEmailPageInner() {
 
   return (
     <div className="dm-card p-6 sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">
-        Verifying your email…
-      </h1>
-      <p className="mt-2 text-sm text-muted">
-        Midora Online is confirming your email address. You can close this tab after it
-        completes.
-      </p>
+      <h1 className="text-xl font-semibold tracking-tight">{HEADINGS[status]}</h1>
+      {status === "verifying" ? (
+        <p className="mt-2 text-sm text-muted">
+          We&apos;re confirming your email address. You can close this tab when it&apos;s done.
+        </p>
+      ) : null}
 
       <div className="mt-6 text-sm">
         {status === "verifying" ? (
@@ -76,7 +83,7 @@ function VerifyEmailPageInner() {
         {status === "error" ? (
           <p className="text-red-600">
             {message ||
-              "We could not verify your email. Try requesting a new link from the app."}
+              "We couldn't verify your email. Ask for a new link and try again."}
           </p>
         ) : null}
       </div>

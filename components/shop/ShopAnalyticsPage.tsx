@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiShops } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { usePlatformAnalytics } from "@/lib/hooks/usePlatformAnalytics";
 import type { Shop, ShopEngagement } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
@@ -49,9 +50,9 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       if (err instanceof ApiError && (err.status === 403 || err.code === "plan_upgrade_required")) {
         setPlanLocked(true);
       } else if (err instanceof ApiError && err.code === "timeout") {
-        setError("Analytics took too long to load. Retry in a moment.");
+        setError("Analytics is taking too long to load. Try again in a moment.");
       } else {
-        setError(err instanceof Error ? err.message : "Failed to load analytics");
+        setError(platformActionMessage(err, "We couldn't load your analytics. Check your connection and try again."));
       }
     } finally {
       setLoading(false);
@@ -82,7 +83,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       { name: "Page views", value: views },
       { name: "Likes", value: Number(engagement?.like_count ?? 0) },
       { name: "Followers", value: Number(engagement?.follower_count ?? 0) },
-      { name: "WhatsApp", value: Number(engagement?.whatsapp_clicks ?? 0) },
+      { name: "WhatsApp taps", value: Number(engagement?.whatsapp_clicks ?? 0) },
       { name: "Messages", value: Number(engagement?.messages ?? 0) },
     ];
   }, [engagement, shopProfile, products]);
@@ -103,12 +104,12 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
       .slice(0, 16);
   }, [products]);
 
-  if (!hydrated) return <PageSkeleton stats label="Loading analytics" />;
+  if (!hydrated) return <PageSkeleton stats label="Loading analytics…" />;
 
   if (!canManage) {
     return (
       <EmptyState
-        message="Sign in as this shop's owner or an admin to see analytics."
+        message="Only the shop owner can see these analytics. Sign in with the owner's account."
         action={
           <Link href={`/shops/${shop.slug}`} className={BTN_SECONDARY}>
             Back to shop
@@ -135,7 +136,7 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
     );
   }
 
-  if (loading) return <PageSkeleton stats label="Loading analytics" />;
+  if (loading) return <PageSkeleton stats label="Loading analytics…" />;
 
   return (
     <div>
@@ -143,9 +144,9 @@ export default function ShopAnalyticsPage({ shop }: { shop: Shop }) {
 
       <StatStrip items={shopBars.map((row) => ({ label: row.name, value: formatCount(row.value) }))} />
 
-      <Section title="Listings" description="Times shown counts every time a listing was on someone's screen for at least a second (last 30 days).">
+      <Section title="Listings" description="Shown: each time a listing was on someone's screen for at least 1 second, in the last 30 days.">
         {productViewRows.length === 0 ? (
-          <EmptyState message="No listings in this shop yet." />
+          <EmptyState message="No listings in this shop yet. Post one to start seeing numbers here." />
         ) : (
           <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
             <table className="w-full text-sm">

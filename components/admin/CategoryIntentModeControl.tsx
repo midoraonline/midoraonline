@@ -31,7 +31,7 @@ export default function CategoryIntentModeControl({
 
   async function choose(mode: IntentMode) {
     if (mode === row.intent_mode || saving || locked) return;
-    if (mode === "offering_only" && !window.confirm(`Make ${row.label} offering only? New and edited listings can no longer seek.`)) return;
+    if (mode === "offering_only" && !window.confirm(`Make ${row.label} offering only? New and edited listings in it can no longer be marked as seeking.`)) return;
     setSaving(true);
     setError(null);
     setNote(null);
@@ -39,10 +39,10 @@ export default function CategoryIntentModeControl({
       const out = await apiAdmin.adminSetCategoryIntentMode(row.slug, mode);
       onSaved(out);
       const n = out.affected_seeking_listings;
-      setNote(mode === "offering_only" ? `Existing seeking listings left unchanged: ${n}.` : null);
-      toast.success("Offer/Seek mode saved");
+      setNote(mode === "offering_only" ? `${n} existing seeking listing${n === 1 ? " was" : "s were"} left unchanged.` : null);
+      toast.success("Offer/Seek mode saved.");
     } catch (err) {
-      const message = apiErrorMessage(err, "Could not save the Offer/Seek mode.");
+      const message = apiErrorMessage(err, "We couldn't save the Offer/Seek mode. Try again.");
       setError(message);
       toast.error(message);
     } finally {
@@ -72,7 +72,7 @@ export default function CategoryIntentModeControl({
           );
         })}
       </div>
-      {locked ? <span className="text-muted">Offering only: there is no &ldquo;seeking&rdquo; card label for this category.</span> : null}
+      {locked ? <span className="text-muted">Offering only. This category has no &ldquo;seeking&rdquo; card label.</span> : null}
       {note ? <span className="text-muted" role="status">{note}</span> : null}
       {error ? <span className="text-[color:var(--error)]" role="alert">{error}</span> : null}
     </div>

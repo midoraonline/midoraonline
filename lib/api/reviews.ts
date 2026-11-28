@@ -1,3 +1,4 @@
+import { platformActionMessage } from "@/lib/platformMessages";
 import { ApiError, apiFetch } from "./base";
 
 export type Review = {
@@ -113,30 +114,22 @@ export function createProductReview(
   });
 }
 
+const REVIEW_FALLBACK = "We couldn't save your review. Try again in a moment.";
+
 export function reviewFailureMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return "Sign in to leave a review.";
     if (err.code === "invalid_rating") return "Choose a rating from 1 to 5 stars.";
-    if (err.code === "rating_required") return "Add a star rating before you submit.";
-    if (err.code === "review_trigger") {
-      return "We couldn't save your review because of a temporary problem. Please try again in a moment.";
-    }
+    if (err.code === "rating_required") return "Choose a star rating first.";
+    if (err.code === "review_trigger") return REVIEW_FALLBACK;
     if (err.code === "review_schema") {
-      return "Reviews aren't available right now. Please try again later.";
+      return "Reviews aren't available right now. Try again later.";
     }
-    if (err.status >= 500 || err.code === "internal_error") {
-      return "We couldn't save your review. Please try again in a moment.";
+    if (err.code === "internal_error" || /internal server error/i.test(err.message)) {
+      return REVIEW_FALLBACK;
     }
-    const detail = err.message?.trim() ?? "";
-    if (/internal server error/i.test(detail) || /^HTTP \d+/.test(detail) || /^Request failed/i.test(detail)) {
-      return "We couldn't save your review. Please try again in a moment.";
-    }
-    if (detail) return detail;
   }
-  if (err instanceof Error && err.message.trim() && !/internal server error/i.test(err.message)) {
-    return err.message;
-  }
-  return "We couldn't save your review. Please try again in a moment.";
+  return platformActionMessage(err, REVIEW_FALLBACK);
 }
 
 export function getMyProductReview(productId: string, token?: string | null) {

@@ -6,7 +6,8 @@ older code in scope, follow this file and update the old code.
 
 Companion docs:
 - `AGENTS.UI.md` — UI density, stacking, and visual polish details
-- Backend lives in sibling repo `midoraapi` (FastAPI); apply §5 there
+- `AGENTS.COPY.md` — voice, tone, UI copy and Uganda-first writing rules (read before writing any user-facing text)
+- Backend lives in sibling repo `../nestapi` (NestJS); follow `nestapi/AGENTS.md` there
 
 ---
 
@@ -17,12 +18,12 @@ Companion docs:
 | Web app | **Next.js 16** (App Router), **React 19**, **TypeScript**, **Tailwind CSS v4** |
 | HTTP client | **axios** via `lib/api/base.ts` (`apiFetch` / `apiHttp`) — not raw `fetch` for Midora API |
 | Data UX | **SWR**, **Zustand** (`useSessionStore`) |
-| Auth | **Custom JWT** (access + refresh) issued by FastAPI; HttpOnly cookies `midora_access` / `midora_refresh` |
+| Auth | **Custom JWT** (access + refresh) issued by the NestJS API; HttpOnly cookies `midora_access` / `midora_refresh` |
 | Uploads | **UploadThing** (bearer verified against `/auth/me`) |
 | Realtime | **Supabase Realtime** with short-lived JWT from `/auth/me` |
-| API | **FastAPI** + **Pydantic** + **Supabase/PostgREST** (`midoraapi`) |
+| API | **NestJS** + **TypeORM** + **Supabase Postgres** (`../nestapi`, `/api/v1`) |
 | Payments | **Pesapal** (subscribe + IPN webhook) |
-| Deploy | **Vercel** (frontend + Python API) |
+| Deploy | **Vercel** (frontend); API on a DigitalOcean droplet via `nestapi/deploy/deploy.sh` |
 
 Do **not** introduce Auth.js, Drizzle, NestJS, or React Native patterns into this repo unless the product explicitly adds that surface.
 
@@ -34,7 +35,7 @@ Do **not** introduce Auth.js, Drizzle, NestJS, or React Native patterns into thi
 2. [UI tokens & precision craft](#2-ui-tokens--precision-craft)
 3. [Next.js App Router (this repo)](#3-nextjs-app-router-this-repo)
 4. [Auth, cookies & API client](#4-auth-cookies--api-client)
-5. [FastAPI backend (`midoraapi`)](#5-fastapi-backend-midoraapi)
+5. [Legacy FastAPI notes (superseded by nestapi)](#5-fastapi-backend-midoraapi)
 6. [Quality, git & checklist](#6-quality-git--checklist)
 
 ---
@@ -43,7 +44,7 @@ Do **not** introduce Auth.js, Drizzle, NestJS, or React Native patterns into thi
 
 ### 1.1 Clean boundaries & DRY
 
-- **Separation of concerns**: UI components do not own HTTP details; call `lib/api/*`. Domain/authz rules live on the API (`core/authz.py`, route dependencies), not only in the UI.
+- **Separation of concerns**: UI components do not own HTTP details; call `lib/api/*`. Domain/authz rules live on the API (nestapi guards and services), not only in the UI.
 - **Single responsibility**: one focused module per concern (`lib/api/shops.ts`, `payments/service.py`).
 - **DRY**: if navigation, API shapes, category maps, or filter logic appear twice, extract (`lib/browseCategories.ts`, `lib/productCardMap.ts`, shared authz helpers).
 - **Composition over inheritance**: prefer small props/children wrappers. Backend modules follow `AppModule` registration in `app/factory/routers.py`.
@@ -63,7 +64,7 @@ Do **not** introduce Auth.js, Drizzle, NestJS, or React Native patterns into thi
 
 - **Zero secrets in git**. Use `.env` / Vercel env; keep `.env*` gitignored.
 - Never put `SUPABASE_SERVICE_ROLE_KEY` (or mail passwords) in the Next.js client bundle. Service role belongs only on the API.
-- Validate inputs with **Zod** (frontend forms) and **Pydantic** (API).
+- Validate inputs with **Zod** (frontend forms) and DTO / schema validation in nestapi.
 - Passwords: **bcrypt** on the API; never log tokens, OTPs, or raw payment payloads.
 - Propagate **`X-Correlation-Id`** on API calls (`apiFetch` already sets it).
 
@@ -218,7 +219,7 @@ More UI density rules: `AGENTS.UI.md`.
 ## Anti-patterns (do not do)
 
 - Second always-visible mobile `ProductSearchBar` on home in addition to the navbar icon
-- Calling FastAPI with raw `fetch` from feature code instead of `apiFetch`
+- Calling the API with raw `fetch` from feature code instead of `apiFetch`
 - Trusting only `proxy.ts` cookie presence for authorization
 - Growing 800+ line form/admin files without splitting when editing them
 - Documenting Auth.js/Drizzle/NestJS as Midora’s stack (it is not)

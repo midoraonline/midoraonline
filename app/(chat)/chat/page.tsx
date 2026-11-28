@@ -30,7 +30,7 @@ function ChatShellFallback() {
         <section className="flex h-full min-h-0 min-w-0 flex-1 items-center justify-center text-sm text-muted">
           <span className="inline-flex items-center gap-2">
             <span className="size-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-            Loading conversation…
+            Loading chat…
           </span>
         </section>
       </div>
@@ -119,7 +119,7 @@ function ChatPageInner() {
           Messages
         </h1>
         <p className="mt-2 max-w-sm text-sm text-muted">
-          Sign in to message sellers and keep your conversations in one place.
+          Sign in to message sellers and keep all your chats in one place.
         </p>
         <button
           type="button"
@@ -171,7 +171,7 @@ function ChatPageInner() {
             </div>
           ) : threadOpen ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-sm text-muted">
-              <p>This conversation is unavailable.</p>
+              <p>We couldn’t open this chat. It may have been removed.</p>
               <button
                 type="button"
                 onClick={handleBack}
@@ -183,9 +183,9 @@ function ChatPageInner() {
           ) : (
             <div className="hidden flex-1 flex-col items-center justify-center px-6 text-center text-sm text-muted md:flex">
               <MaterialSymbol name="chat" className="mb-3 !text-4xl opacity-30" />
-              <p className="font-medium text-foreground/80">Select a conversation</p>
+              <p className="font-medium text-foreground/80">Choose a chat</p>
               <p className="mt-1 max-w-xs text-xs">
-                Message sellers from a product or shop page to start chatting.
+                To start a chat, tap Message seller on a listing or shop page.
               </p>
             </div>
           )}

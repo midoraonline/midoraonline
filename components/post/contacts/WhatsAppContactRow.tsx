@@ -9,7 +9,7 @@ import type { Shop } from "@/lib/api/shops";
 import { displayPhone } from "@/lib/shop/contactCheck";
 
 const LINK = "dm-focus rounded text-sm font-medium text-accent underline-offset-2 hover:underline";
-const SKIP_NOTE = "Listings with WhatsApp get more replies. Without it buyers message you on Midora.";
+const SKIP_NOTE = "Many buyers prefer WhatsApp. Without it, buyers can still message you on Midora.";
 
 /** WhatsApp for this shop/profile, proved with a code sent on WhatsApp (not the account SMS check). */
 export default function WhatsAppContactRow({
@@ -53,7 +53,7 @@ export default function WhatsAppContactRow({
           </p>
         </div>
         <button type="button" onClick={() => setEditing(true)} className={LINK}>
-          Change
+          Change number
         </button>
       </div>
     );
@@ -76,7 +76,7 @@ export default function WhatsAppContactRow({
       <div className="space-y-1">
         {heading}
         <p className="text-sm text-muted">
-          You can verify WhatsApp from your profile after your first listing goes live. {SKIP_NOTE}
+          You can verify WhatsApp in your profile after your first listing goes live. {SKIP_NOTE}
         </p>
       </div>
     );
@@ -115,7 +115,7 @@ export default function WhatsAppContactRow({
           </button>
         ) : (
           <button type="button" onClick={() => onSkip(true)} className={LINK}>
-            I don&apos;t use WhatsApp / skip for now
+            Skip for now
           </button>
         )}
       </div>

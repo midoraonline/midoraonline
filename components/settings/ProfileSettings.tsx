@@ -10,6 +10,7 @@ import PhoneNumberInput from "@/components/PhoneNumberInput";
 import ProfileAvatarUpload from "@/components/ProfileAvatarUpload";
 import VerifyContactButton from "@/components/VerifyContactButton";
 import { confirmPhoneCode, startPhoneVerification, verificationMessage } from "@/lib/verification";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export default function ProfileSettings() {
   const session = useAppSession();
@@ -37,7 +38,7 @@ export default function ProfileSettings() {
       notifyAuthChanged();
       setMessage("Profile saved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save profile.");
+      setError(platformActionMessage(err, "We couldn't save your profile. Try again."));
     } finally {
       setSaving(false);
     }
@@ -80,11 +81,11 @@ export default function ProfileSettings() {
         {session.user?.user_role === "customer" ? null : (
         <SettingsRow
           title="Phone verification"
-          description="We text you a code. A verified number lets buyers trust WhatsApp contact from you."
+          description="We'll send you a code by SMS. Buyers trust a verified number more when they call or WhatsApp you."
         >
           <div className="space-y-2 md:max-w-md">
             <label htmlFor="settings-phone" className="sr-only">
-              Phone
+              Phone number
             </label>
             <PhoneNumberInput id="settings-phone" value={phone} onChange={setPhone} autoComplete="tel" />
             <VerifyContactButton
@@ -116,7 +117,7 @@ export default function ProfileSettings() {
           {message ? <p className="mr-auto text-sm text-[color:var(--success)]">{message}</p> : null}
           {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </SettingsActions>
       </SettingsPanel>

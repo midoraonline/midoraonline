@@ -160,7 +160,7 @@ export default function ShopChat({
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          aria-label="Send"
+          aria-label="Send question"
           className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground dm-focus disabled:opacity-60"
         >
           {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <SendHorizontal className="size-4" aria-hidden />}

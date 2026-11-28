@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { SingleImageField } from "@/components/upload/SingleImageField";
 import { SettingsActions, SettingsPanel, SettingsRow } from "@/components/settings/SettingsSection";
 import LocationInput from "@/components/LocationInput";
@@ -22,14 +23,14 @@ import {
   withBannerUrl,
 } from "@/components/shop/shopUtils";
 import type { LatLng } from "@/lib/geo";
-import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE, platformActionMessage } from "@/lib/platformMessages";
 import { BTN_PRIMARY, BTN_SECONDARY, ErrorState, PageSkeleton, UnderlineTabs, useTabParam } from "@/components/dashboard/ui";
 
 const SETTINGS_TABS = [
   { value: "general", label: "General" },
   { value: "branding", label: "Logo and banner" },
   { value: "contact", label: "Contact and location" },
-  { value: "assistant", label: "AI concierge" },
+  { value: "assistant", label: "AI assistant" },
 ] as const;
 const SETTINGS_KEYS = SETTINGS_TABS.map((t) => t.value);
 
@@ -80,7 +81,7 @@ export default function MerchantShopSettingsPage() {
     if (!session.hydrated) return;
     if (!session.isAuthenticated) {
       setLoading(false);
-      setError("Please log in to manage shop settings.");
+      setError("Sign in to manage your shop settings.");
       return;
     }
     let cancelled = false;
@@ -116,7 +117,7 @@ export default function MerchantShopSettingsPage() {
         setContextEntries(contextList);
       } catch (err) {
         if (!cancelled)
-          setError(err instanceof Error ? err.message : "Failed to load shop.");
+          setError(platformActionMessage(err, "We couldn't load your shop settings. Check your connection and try again."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -150,8 +151,9 @@ export default function MerchantShopSettingsPage() {
       setWhatsappNumber(updated.whatsapp_number ?? "");
       setWhatsappVerified(Boolean(updated.whatsapp_verified));
       setExtraPhones(extraPhonesFromContacts(updated.contacts));
+      toast.success("Saved. Your changes are live.");
     } catch (err) {
-      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : err instanceof Error ? err.message : "Could not save.");
+      setError(isMaintenanceMode(err) ? MAINTENANCE_MESSAGE : platformActionMessage(err, "We couldn't save your changes. Check your connection and try again."));
     } finally {
       setSaving(false);
     }
@@ -170,7 +172,7 @@ export default function MerchantShopSettingsPage() {
       setContextEntries((prev) => [...prev, entry]);
       setNewContextContent("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add context.");
+      setError(platformActionMessage(err, "We couldn't add this note. Try again."));
     } finally {
       setAddingContext(false);
     }
@@ -190,8 +192,8 @@ export default function MerchantShopSettingsPage() {
       {tab === "assistant" ? (
         <SettingsPanel>
           <SettingsRow
-            title="AI concierge context"
-            description="Policies, FAQs and notes the in-shop concierge uses to answer questions."
+            title="Notes for your AI assistant"
+            description="Add your policies, common questions and other notes. The assistant on your shop page uses them to answer buyers."
           >
         <ul className="divide-y divide-border rounded-xl border border-border bg-surface shadow-xs">
           {contextEntries.map((entry) => (
@@ -200,7 +202,7 @@ export default function MerchantShopSettingsPage() {
               className="px-3 py-2 text-sm"
             >
               <span className="font-medium text-foreground/80">
-                {entry.context_type ?? entry.key ?? "context"}:
+                {entry.context_type ?? entry.key ?? "Note"}:
               </span>{" "}
               {(entry.content ?? entry.value ?? "").slice(0, 120)}
               {(entry.content ?? entry.value ?? "").length > 120 ? "…" : ""}
@@ -216,17 +218,17 @@ export default function MerchantShopSettingsPage() {
               onChange={(e) => setNewContextType(e.target.value)}
             >
               <option value="policy">Policy</option>
-              <option value="faq">FAQ</option>
-              <option value="tone">Tone / brief</option>
+              <option value="faq">Common question</option>
+              <option value="tone">Tone and style</option>
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium">Content</label>
+            <label className="text-sm font-medium">Note</label>
             <textarea
               className="dm-textarea mt-1 !min-h-[100px] dm-focus"
               value={newContextContent}
               onChange={(e) => setNewContextContent(e.target.value)}
-              placeholder="e.g. We ship worldwide within 5–7 days."
+              placeholder="e.g. We deliver within Kampala in 1–2 days."
             />
           </div>
           <button
@@ -234,7 +236,7 @@ export default function MerchantShopSettingsPage() {
             disabled={addingContext || !newContextContent.trim()}
             className={BTN_SECONDARY}
           >
-            {addingContext ? "Adding…" : "Add context"}
+            {addingContext ? "Adding…" : "Add note"}
           </button>
         </form>
           </SettingsRow>
@@ -247,7 +249,7 @@ export default function MerchantShopSettingsPage() {
                 <SettingsRow title="Name and link" description="Your shop name and the web address buyers use.">
                   <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Shop name *</label>
+              <label className="text-sm font-medium">Shop name</label>
               <input
                 className="dm-input dm-focus"
                 value={name}
@@ -255,7 +257,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Slug *</label>
+              <label className="text-sm font-medium">Shop link</label>
               <input
                 className="dm-input dm-focus"
                 value={slug}
@@ -264,10 +266,10 @@ export default function MerchantShopSettingsPage() {
             </div>
                   </div>
                 </SettingsRow>
-                <SettingsRow title="Description" description="A one-liner for cards, plus a longer about section for your shop page.">
+                <SettingsRow title="Description" description="A short line for listing cards, and a longer section about your shop for your shop page.">
                   <div className="grid gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Description</label>
+              <label className="text-sm font-medium">Short description (optional)</label>
               <input
                 className="dm-input dm-focus"
                 value={description}
@@ -275,7 +277,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">About</label>
+              <label className="text-sm font-medium">About your shop (optional)</label>
               <textarea
                 className="dm-textarea !min-h-[80px] dm-focus"
                 value={about}
@@ -293,9 +295,9 @@ export default function MerchantShopSettingsPage() {
                 value={shopType}
                 onChange={(e) => setShopType(e.target.value as apiShops.ShopType)}
               >
-                <option value="product">Product</option>
-                <option value="service">Service</option>
-                <option value="both">Both</option>
+                <option value="product">Products</option>
+                <option value="service">Services</option>
+                <option value="both">Products and services</option>
               </select>
             </div>
             <div className="space-y-1.5">
@@ -315,7 +317,7 @@ export default function MerchantShopSettingsPage() {
             ) : null}
             {tab === "branding" ? (
               <>
-                <SettingsRow title="Logo" description="Square works best. Shown on your shop and listing cards.">
+                <SettingsRow title="Logo" description="A square photo works best. It shows on your shop page and listing cards.">
             <div className="space-y-1.5">
               <SingleImageField
                 endpoint="shopLogo"
@@ -325,7 +327,7 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
                 </SettingsRow>
-                <SettingsRow title="Banner" description="A wide image across the top of your shop page.">
+                <SettingsRow title="Banner" description="A wide photo across the top of your shop page.">
             <div className="space-y-1.5">
               <SingleImageField
                 endpoint="shopBanner"
@@ -340,10 +342,10 @@ export default function MerchantShopSettingsPage() {
             ) : null}
             {tab === "contact" ? (
               <>
-                <SettingsRow title="Business contacts" description="How buyers reach you. The WhatsApp button shows once your number is verified with a WhatsApp code.">
+                <SettingsRow title="Shop contacts" description="How buyers reach you. Buyers see a WhatsApp button once you verify your number with a WhatsApp code.">
                   <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Business email</label>
+              <label className="text-sm font-medium">Shop email (optional)</label>
               <input
                 type="email"
                 className="dm-input dm-focus"
@@ -352,11 +354,11 @@ export default function MerchantShopSettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Business phone number</label>
+              <label className="text-sm font-medium">WhatsApp number</label>
               <PhoneNumberInput
                 value={whatsappNumber}
                 onChange={setWhatsappNumber}
-                placeholder="700 000 000"
+                placeholder="772 123 456"
               />
               <WhatsAppStatus
                 shopId={shopId}
@@ -380,7 +382,7 @@ export default function MerchantShopSettingsPage() {
             </div>
                   </div>
                 </SettingsRow>
-                <SettingsRow title="Location" description="Shown on your shop and used for near-me results.">
+                <SettingsRow title="Location" description="Your area or town, and a landmark if it helps. It shows on your shop page and helps buyers nearby find you.">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Location</label>
               <LocationInput
@@ -389,7 +391,7 @@ export default function MerchantShopSettingsPage() {
                 onResolved={(place) =>
                   setLocationCoordsState(place ? { lat: place.lat, lng: place.lng } : null)
                 }
-                placeholder="e.g. Kisasi, Kampala"
+                placeholder="e.g. Kisasi, near Total, Kampala"
               />
             </div>
                 </SettingsRow>
@@ -398,7 +400,7 @@ export default function MerchantShopSettingsPage() {
         <SettingsActions>
           {error ? <p className="mr-auto text-sm text-[color:var(--error)]">{error}</p> : null}
           <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </SettingsActions>
           </SettingsPanel>

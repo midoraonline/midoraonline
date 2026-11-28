@@ -148,7 +148,7 @@ export default function CategoryPicker({
               disabled={loading}
             >
               <option value="">
-                {loading ? "Loading categories…" : "Select a category"}
+                {loading ? "Loading categories…" : "Choose a category"}
               </option>
               {visibleTree.map(({ parent }) => (
                 <option key={parent.slug} value={parent.slug}>
@@ -191,7 +191,7 @@ export default function CategoryPicker({
               required={required}
               aria-invalid={needsSubcategory}
             >
-              <option value="">Select a subcategory</option>
+              <option value="">Choose a subcategory</option>
               {children.map((child) => (
                 <option key={child.slug} value={child.label}>
                   {child.label}
@@ -206,7 +206,7 @@ export default function CategoryPicker({
           </div>
           {needsSubcategory ? (
             <p className="text-xs text-[color:var(--warning)]">
-              Pick a subcategory to complete the category.
+              Choose a subcategory to finish.
             </p>
           ) : null}
         </div>
@@ -243,7 +243,7 @@ export default function CategoryPicker({
                 className="ml-1 text-[color:var(--warning)]"
                 style={{ opacity: 0.9 }}
               >
-                — subcategory required
+                · choose a subcategory
               </span>
             ) : null}
           </div>

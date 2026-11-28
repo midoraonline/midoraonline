@@ -7,8 +7,8 @@ export default function CategorySection({ draft, setDraft, showErrors, errors, i
     <FormSection invalid={invalid} serverMessage={serverMessage}>
       <SectionHeading title="Category">
         {draft.kind === "product"
-          ? "Assign a category so buyers can filter and discover your item."
-          : "Category is set to Services based on your listing type. Pick a subcategory."}
+          ? "Pick a category so buyers can find your item."
+          : "This listing is under Services. Pick the type of service."}
       </SectionHeading>
       <div className="space-y-1.5">
         <CategoryPicker

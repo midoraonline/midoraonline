@@ -37,7 +37,7 @@ import {
   stockLabel,
   withdrawListingPatch,
 } from "@/lib/listingStatus";
-import { isStockRequired, STOCK_REQUIRED_MESSAGE } from "@/lib/platformMessages";
+import { isStockRequired, platformActionMessage, STOCK_REQUIRED_MESSAGE } from "@/lib/platformMessages";
 
 function formatUGX(n: number) {
   return new Intl.NumberFormat("en-UG", {
@@ -114,7 +114,7 @@ export default function ListingManageCard({
       if (next) onUpdated({ ...product, ...next });
       toast.success(label);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update listing.");
+      toast.error(platformActionMessage(e, "We couldn't update this listing. Try again."));
     } finally {
       setBusy(false);
     }
@@ -146,8 +146,8 @@ export default function ListingManageCard({
         is_published: live,
         stock_quantity: stock ?? updated.stock_quantity ?? null,
       });
-      if (live) toast.success(mode === "available" ? "Marked available" : "Listing published");
-      else toast.message("Stock saved. This listing stays off the public feed until it can go live again.");
+      if (live) toast.success(mode === "available" ? "Marked available. Buyers can see it again." : "Listing is live.");
+      else toast.message("Stock saved. This listing isn't live yet, so buyers can't see it.");
     } catch (e) {
       if (isStockRequired(e) || (e instanceof ApiError && e.status === 400 && e.code === "stock_required")) {
         toast.error(STOCK_REQUIRED_MESSAGE);
@@ -157,7 +157,7 @@ export default function ListingManageCard({
         toast.error(verificationMessage(e));
         return;
       }
-      toast.error(e instanceof Error ? e.message : "Could not update listing.");
+      toast.error(platformActionMessage(e, "We couldn't update this listing. Try again."));
     } finally {
       setBusy(false);
     }
@@ -177,7 +177,7 @@ export default function ListingManageCard({
   function submitStock() {
     const qty = Number(stockValue.trim());
     if (!Number.isInteger(qty) || qty < 1) {
-      setStockError("Enter how many are in stock.");
+      setStockError("Enter how many you have in stock, like 5.");
       return;
     }
     const mode = stockAsk;
@@ -209,7 +209,7 @@ export default function ListingManageCard({
   if (status === "rejected") {
     items.push({
       key: "resubmit",
-      label: "Resubmit",
+      label: "Fix and send again",
       onSelect: () => {
         setOpen(false);
         router.push(editHref);
@@ -235,22 +235,22 @@ export default function ListingManageCard({
   if (published && !isRestockStatus(status) && status !== "pending_review" && status !== "rejected") {
     items.push({
       key: "hide",
-      label: "Hide",
-      onSelect: () => void withdraw("hidden", "Listing hidden"),
+      label: "Hide listing",
+      onSelect: () => void withdraw("hidden", "Listing hidden. Buyers can't see it now."),
     });
   } else if (!isRestockStatus(status) && (status === "hidden" || status === "draft" || product.is_published === false)) {
     items.push({
       key: "show",
-      label: "Show",
+      label: "Show listing",
       onSelect: () => void askOrReactivate("show"),
     });
   }
   if (status === "active" && product.is_published !== false) {
     items.push({
       key: "promote",
-      label: "Promote",
+      label: "Repost",
       onSelect: () =>
-        void run("Promoted to the latest feed", async () => {
+        void run("Reposted. Your listing shows as new again.", async () => {
           await repostListing(product.id);
           refreshAfterRankChange();
           return null;
@@ -259,7 +259,7 @@ export default function ListingManageCard({
   }
   items.push({
     key: "delete",
-    label: "Delete",
+    label: "Delete listing",
     danger: true,
     onSelect: () => {
       setOpen(false);
@@ -324,7 +324,7 @@ export default function ListingManageCard({
             href={editHref}
             className="line-clamp-2 text-sm font-medium leading-snug text-foreground hover:underline"
           >
-            {product.title || "Untitled"}
+            {product.title || "Untitled listing"}
           </Link>
           <p className="shrink-0 text-sm font-medium tabular-nums text-foreground">
             {formatUGX(productPriceUgx(product))}
@@ -446,7 +446,7 @@ export default function ListingManageCard({
                 Cancel
               </button>
               <button type="button" className="dm-btn dm-btn-primary dm-btn-sm" disabled={busy} onClick={submitStock}>
-                Publish
+                Save and go live
               </button>
             </div>
           }

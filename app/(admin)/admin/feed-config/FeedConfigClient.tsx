@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { apiAdmin } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api/base";
 import type { FeedConfigResponse, FeedConfigTestResponse } from "@/lib/api/admin";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, ErrorState, PageHeader, PageSkeleton } from "@/components/dashboard/ui";
 
 const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   {
     title: "Score weights by stage",
     description:
-      "Quality / freshness / fair-exposure weights for 1–49, 50–99 and 100+ qualified listings. Trust and engagement stay off in the MVP.",
+      "Quality, freshness and fair-exposure weights for 1–49, 50–99 and 100+ qualifying listings. Trust and engagement stay off for now.",
     keys: [
       "EARLY_QUALITY_WEIGHT",
       "EARLY_FRESHNESS_WEIGHT",
@@ -32,7 +34,7 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   },
   {
     title: "Freshness",
-    description: "Services and opportunities age more slowly. Meaningful edits refresh freshness at most once per cooldown.",
+    description: "Services and opportunities age more slowly. A real edit makes a listing fresh again, at most once per cooldown period.",
     keys: ["SERVICE_FRESHNESS_STRETCH", "OPPORTUNITY_FRESHNESS_STRETCH", "FRESHNESS_RESET_COOLDOWN_HOURS"],
   },
   {
@@ -42,7 +44,7 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   },
   {
     title: "Quality gates",
-    description: "Minimum listing quality for the feed, the first block, exploration and paid spots.",
+    description: "Minimum listing quality for the feed, the first block, new-listing exploration and paid spots.",
     keys: ["QUALITY_MIN", "FIRST_BLOCK_QUALITY_FLOOR", "EXPLORATION_MIN_QUALITY", "EXPLORATION_MAX_IMPRESSIONS", "PAID_MIN_QUALITY"],
   },
   {
@@ -77,7 +79,7 @@ const GROUPS: Array<{ title: string; description: string; keys: string[] }> = [
   },
   {
     title: "Exposure",
-    description: "Listings seen less in this window get a fair-exposure lift. Seller-own views never count.",
+    description: "Listings seen less in this period get a fair-exposure lift. Sellers' views of their own listings never count.",
     keys: ["EXPOSURE_WINDOW_HOURS"],
   },
   {
@@ -146,6 +148,7 @@ export default function FeedConfigClient() {
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [test, setTest] = useState<FeedConfigTestResponse | null>(null);
   const [mix, setMix] = useState<MixCounts>({ PRODUCT_SHARE: "", SERVICE_SHARE: "", OPPORTUNITY_SHARE: "" });
 
@@ -164,7 +167,7 @@ export default function FeedConfigClient() {
       const counts = sharesToCounts(shares, Number(initial.BLOCK_SIZE));
       setMix(Object.fromEntries(MIX_LANES.map(({ key }) => [key, String(counts[key])])) as MixCounts);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load feed config");
+      setError(apiErrorMessage(err, "We couldn't load feed settings. Try again."));
     }
   }, []);
 
@@ -176,11 +179,11 @@ export default function FeedConfigClient() {
   const mixNumbers = MIX_LANES.map(({ key }) => (mix[key].trim() === "" ? NaN : Number(mix[key])));
   const mixTotal = mixNumbers.reduce((a, n) => a + (Number.isFinite(n) ? n : 0), 0);
   const mixError = mixNumbers.some((n) => !Number.isInteger(n) || n < 0)
-    ? "Use whole numbers of 0 or more for each type."
+    ? "Enter a whole number of 0 or more for each type."
     : blockSize <= 0
-      ? "Set a block size above 0."
+      ? "Set a block size of 1 or more."
       : mixTotal !== blockSize
-        ? `Counts add up to ${mixTotal}; they must add up to the block size (${blockSize}).`
+        ? `These add up to ${mixTotal}. Change them so they add up to the block size (${blockSize}).`
         : null;
 
   // Type shares are edited as cards-per-block and saved as count / BLOCK_SIZE.
@@ -227,10 +230,10 @@ export default function FeedConfigClient() {
     try {
       const overrides = buildOverrides();
       const res = await apiAdmin.putFeedConfig(overrides);
-      setStatus(`Saved. ${Object.keys(res.applied).length} override(s) active.`);
+      setStatus(`Saved. ${Object.keys(res.applied).length} override${Object.keys(res.applied).length === 1 ? "" : "s"} active.`);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(apiErrorMessage(err, "We couldn't save feed settings. Try again."));
     } finally {
       setSaving(false);
     }
@@ -242,13 +245,14 @@ export default function FeedConfigClient() {
     setError(null);
     try {
       await apiAdmin.resetFeedConfig();
-      setStatus("Reset to code defaults.");
+      setStatus("Reset to the built-in defaults.");
       await load();
       setTest(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset");
+      setError(apiErrorMessage(err, "We couldn't reset feed settings. Try again."));
     } finally {
       setSaving(false);
+      setConfirmReset(false);
     }
   }, [load]);
 
@@ -260,7 +264,7 @@ export default function FeedConfigClient() {
       const res = await apiAdmin.testFeedConfig(overrides, 25);
       setTest(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Test run failed");
+      setError(apiErrorMessage(err, "We couldn't run the test. Try again."));
     } finally {
       setTesting(false);
     }
@@ -268,7 +272,7 @@ export default function FeedConfigClient() {
 
   if (!config) {
     return (
-      error ? <ErrorState message={error} /> : <PageSkeleton rows={6} label="Loading feed configuration" />
+      error ? <ErrorState message={error} onRetry={() => void load()} /> : <PageSkeleton rows={6} label="Loading feed settings" />
     );
   }
 
@@ -276,22 +280,33 @@ export default function FeedConfigClient() {
     <div className="space-y-8">
       <PageHeader
         title="Feed tuning"
-        description="Weights, quality gates, growth stages and block rules for the shared feed. Changes rebuild the feed order."
+        description="Weights, quality limits, growth stages and block rules for the shared feed. Saving rebuilds the feed order."
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={reset} disabled={saving} className={BTN_TEXT}>
+            <button onClick={() => setConfirmReset(true)} disabled={saving} className={BTN_TEXT}>
               Reset to defaults
             </button>
             <button onClick={runTest} disabled={testing || Boolean(mixError)} className={BTN_SECONDARY}>
-              {testing ? "Testing…" : "Dry run"}
+              {testing ? "Testing…" : "Test changes"}
             </button>
             <button onClick={save} disabled={saving || changedKeys.length === 0 || Boolean(mixError)} className={BTN_PRIMARY}>
-              {saving ? "Saving…" : changedKeys.length ? `Save ${changedKeys.length} changes` : "Save changes"}
+              {saving ? "Saving…" : changedKeys.length ? `Save ${changedKeys.length} change${changedKeys.length === 1 ? "" : "s"}` : "Save changes"}
             </button>
           </div>
         }
       />
 
+      {confirmReset ? (
+        <ConfirmDialog
+          title="Reset feed settings?"
+          message="This removes every saved change and goes back to the built-in defaults. The feed order will be rebuilt. You can't undo this."
+          confirmLabel="Reset to defaults"
+          destructive
+          busy={saving}
+          onConfirm={() => void reset()}
+          onClose={() => setConfirmReset(false)}
+        />
+      ) : null}
       {error ? <ErrorState message={error} /> : null}
       {status ? (
         <p className="rounded-lg border border-emerald-500/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{status}</p>
@@ -304,8 +319,8 @@ export default function FeedConfigClient() {
             <h2 className="text-sm font-semibold">Currently applied</h2>
             <p className="mt-0.5 text-xs text-muted">
               {Object.keys(config.applied).length === 0
-                ? "No overrides — using code defaults."
-                : `${Object.keys(config.applied).length} override(s) active.`}
+                ? "No overrides. Using the built-in defaults."
+                : `${Object.keys(config.applied).length} override${Object.keys(config.applied).length === 1 ? "" : "s"} active.`}
               {config.updated_at ? ` Updated ${new Date(config.updated_at).toLocaleString()}.` : ""}
             </p>
           </div>
@@ -329,7 +344,7 @@ export default function FeedConfigClient() {
         <h2 className="text-sm font-semibold">Home type mix</h2>
         <p className="mt-0.5 text-xs text-muted">
           How many cards of each type to aim for in every block of {blockSize || "—"} on Home. When a type runs out,
-          the others fill its slots. Saving rebuilds the feed; buyers get the new mix the next time Home loads.
+          the others fill its slots. Saving rebuilds the feed. Buyers see the new mix the next time Home loads.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {MIX_LANES.map(({ key, label }) => {
@@ -339,7 +354,7 @@ export default function FeedConfigClient() {
               <label key={key} className="block">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-foreground/80">{label} per block</span>
-                  {isChanged ? <span className="text-xs text-[color:var(--warning)]">changed</span> : null}
+                  {isChanged ? <span className="text-xs text-[color:var(--warning)]">Changed</span> : null}
                 </div>
                 <input
                   type="number"
@@ -349,18 +364,18 @@ export default function FeedConfigClient() {
                   value={mix[key]}
                   onChange={(e) => setMix((prev) => ({ ...prev, [key]: e.target.value }))}
                   className={`mt-1.5 w-full rounded-lg border px-3 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-accent/50 ${
-                    isChanged ? "border-amber-500/40 bg-amber-500/[0.04]" : "border-border bg-white"
+                    isChanged ? "border-amber-500/40 bg-amber-500/[0.04]" : "border-border bg-surface"
                   }`}
                 />
                 <p className="mt-1 text-[10px] text-muted">
-                  default {defCount} · {blockSize > 0 && !mixError ? `${Math.round((Number(mix[key]) / blockSize) * 100)}%` : "—"}
+                  Default {defCount} · {blockSize > 0 && !mixError ? `${Math.round((Number(mix[key]) / blockSize) * 100)}%` : "—"}
                 </p>
               </label>
             );
           })}
         </div>
         <p className={`mt-3 text-xs ${mixError ? "text-rose-600" : "text-muted"}`}>
-          {mixError ?? `Total ${mixTotal} of ${blockSize} cards per block.`}
+          {mixError ?? `${mixTotal} of ${blockSize} cards per block.`}
         </p>
       </section>
 
@@ -404,7 +419,7 @@ export default function FeedConfigClient() {
                         </span>
                         {isChanged ? (
                           <span className="text-xs text-[color:var(--warning)]">
-                            changed
+                            Changed
                           </span>
                         ) : null}
                       </div>
@@ -418,11 +433,11 @@ export default function FeedConfigClient() {
                         className={`mt-1.5 w-full rounded-lg border px-3 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-accent/50 ${
                           isChanged
                             ? "border-amber-500/40 bg-amber-500/[0.04]"
-                            : "border-border bg-white"
+                            : "border-border bg-surface"
                         }`}
                       />
                       <p className="mt-1 text-[10px] text-muted">
-                        default {String(def)}
+                        Default {String(def)}
                       </p>
                     </label>
                   );
@@ -438,21 +453,21 @@ export default function FeedConfigClient() {
         <section className="rounded-xl border border-border bg-surface shadow-xs p-5">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold">Dry-run results</h2>
+              <h2 className="text-sm font-semibold">Test results</h2>
               <p className="mt-0.5 text-xs text-muted">
-                Scored {test.summary.sample_size} of the newest live listings
-                against the proposed values.
+                Scored the {test.summary.sample_size} newest live listings
+                with the values on this page. Nothing was saved.
               </p>
             </div>
             <div className="flex flex-wrap gap-4 text-xs">
               <div className="text-muted">
-                avg new: <span className="tabular-nums">{fmt(test.summary.avg_score)}</span>
+                Average new score: <span className="tabular-nums">{fmt(test.summary.avg_score)}</span>
               </div>
               <div className="text-muted">
-                avg baseline: <span className="tabular-nums">{fmt(test.summary.avg_baseline)}</span>
+                Average current score: <span className="tabular-nums">{fmt(test.summary.avg_baseline)}</span>
               </div>
               <div className="text-muted">
-                Δ range: <span className="tabular-nums">{fmt(test.summary.min_delta)} → {fmt(test.summary.max_delta)}</span>
+                Change range: <span className="tabular-nums">{fmt(test.summary.min_delta)} → {fmt(test.summary.max_delta)}</span>
               </div>
             </div>
           </div>
@@ -461,10 +476,10 @@ export default function FeedConfigClient() {
               <thead className="border-b border-border bg-surface-subtle text-left text-xs font-medium text-muted">
                 <tr>
                   <th className="px-3 py-2">Listing</th>
-                  <th className="px-3 py-2 text-right">New</th>
-                  <th className="px-3 py-2 text-right">Baseline</th>
-                  <th className="px-3 py-2 text-right">Δ</th>
-                  <th className="px-3 py-2">Top components</th>
+                  <th className="px-3 py-2 text-right">New score</th>
+                  <th className="px-3 py-2 text-right">Current score</th>
+                  <th className="px-3 py-2 text-right">Change</th>
+                  <th className="px-3 py-2">Biggest factors</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

@@ -1,5 +1,6 @@
 import { apiFetch, ApiError } from "@/lib/api/base";
 import { me, type MeResponse } from "@/lib/api/auth";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export type VerificationChannel = "phone" | "email";
 
@@ -13,14 +14,14 @@ export type VerificationStatus = {
 };
 
 const COPY: Record<string, string> = {
-  invalid_phone: "Enter a valid phone number.",
+  invalid_phone: "Enter a phone number like 0772 123 456.",
   invalid_email: "Use the email address on this account.",
   code_invalid: "That code doesn't match. Check the message and try again.",
-  code_expired: "That code has expired. Request a new one.",
-  sms_unavailable: "We couldn't send a text right now. Try again in a moment.",
+  code_expired: "That code has expired. Ask for a new one.",
+  sms_unavailable: "We couldn't send the SMS right now. Try again in a moment.",
   email_unavailable: "We couldn't send the email right now. Try again in a moment.",
-  resend_too_soon: "Wait a moment before requesting another code.",
-  too_many_attempts: "Too many tries. Request a new code.",
+  resend_too_soon: "Wait a moment, then ask for a new code.",
+  too_many_attempts: "Too many tries. Ask for a new code.",
   phone_in_use:
     "That phone number is already linked to another Midora account. Sign in with that account, or use a different number.",
   verification_required: "Verify your phone and email before you post.",
@@ -49,10 +50,7 @@ export function isResendTooSoon(err: unknown): boolean {
 export function verificationMessage(err: unknown): string {
   const code = verificationErrorCode(err);
   if (code && COPY[code]) return COPY[code];
-  if (err instanceof Error && err.message.trim() && !/^HTTP \d+/.test(err.message) && !/^Request failed/i.test(err.message)) {
-    return err.message;
-  }
-  return "Something went wrong. Please try again.";
+  return platformActionMessage(err, "We couldn't finish verifying. Check your connection and try again.");
 }
 
 function statusFromProfile(profile: MeResponse): VerificationStatus {

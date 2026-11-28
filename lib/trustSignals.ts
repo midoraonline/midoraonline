@@ -4,7 +4,7 @@ export function formatMemberSince(iso: string | null | undefined): string | null
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 }
 
 export function formatLastActive(iso: string | null | undefined): string | null {

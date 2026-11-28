@@ -27,7 +27,7 @@ export default function PhoneNumberInput({
   onChange,
   id,
   name,
-  placeholder = "700 000 000",
+  placeholder = "772 123 456",
   className = "",
   disabled,
   required,

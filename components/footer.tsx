@@ -3,15 +3,8 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { BRAND_TAGLINE } from "@/lib/brand";
-import { Mail, MapPin, Facebook, Instagram, ChevronUp } from "lucide-react";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { Mail, MapPin, ChevronUp } from "lucide-react";
 import HomeFeedbackWidget from "@/components/home/HomeFeedbackWidget";
-
-const TikTokIcon = ({ className = "size-4" }: { className?: string }) => (
-  <svg className={`${className} shrink-0 fill-current`} viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.08-1.4-1.22-.8-2.15-2.02-2.58-3.41-.02 1.83.01 3.66-.02 5.49 0 2.21-.55 4.45-1.74 6.22-1.19 1.77-3.08 2.94-5.18 3.26-2.1.32-4.38-.07-6.09-1.34C1.045 17.58.125 15.28.175 12.87c.05-2.41 1.09-4.8 2.96-6.32 1.87-1.52 4.44-2.06 6.81-1.47.02 1.41.01 2.82.02 4.23-1.32-.41-2.83-.17-3.92.65-1.09.82-1.63 2.28-1.38 3.65.25 1.37 1.34 2.52 2.69 2.81 1.35.29 2.88-.12 3.73-1.22.85-1.1 1.02-2.61.97-3.98.02-4.07-.01-8.14.02-12.21z" />
-  </svg>
-);
 
 type LinkGroup = { heading: string; links: { label: string; href: string }[] };
 
@@ -28,27 +21,22 @@ const LINK_GROUPS: LinkGroup[] = [
     heading: "Company",
     links: [
       { label: "About Midora", href: "/aboutus" },
-      { label: "How it works", href: "/onboarding" },
-      { label: "Create business", href: "/open-shop" },
-      { label: "Blog", href: "#" },
+      { label: "How Midora works", href: "/onboarding" },
+      { label: "Open a shop", href: "/open-shop" },
     ],
   },
   {
     heading: "Support",
     links: [
       { label: "Contact us", href: "/contactus" },
-      { label: "Help Center", href: "/onboarding" },
-      { label: "Safety tips", href: "/policies" },
-      { label: "Report an issue", href: "/contactus" },
+      { label: "Report a problem", href: "/contactus" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { label: "Terms & Conditions", href: "/termsandconditions" },
-      { label: "Privacy Policy", href: "/policies" },
-      { label: "Cookies Policy", href: "/policies" },
-      { label: "Seller Policy", href: "/policies" },
+      { label: "Terms and conditions", href: "/termsandconditions" },
+      { label: "Policies", href: "/policies" },
     ],
   },
 ];
@@ -75,8 +63,8 @@ export default function Footer() {
               </Link>
               <p className="mt-3 font-display text-base font-bold tracking-tight text-accent">{BRAND_TAGLINE}</p>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
-                The marketplace where African brands and shoppers connect —
-                discover local shops, products, services and opportunities in one place.
+                The marketplace where African sellers and buyers meet. Find local shops,
+                products, services and opportunities in one place.
               </p>
 
               <div className="mt-5 space-y-2.5">
@@ -91,25 +79,6 @@ export default function Footer() {
                   <MapPin className="size-4 text-accent" aria-hidden />
                   Kampala, Uganda
                 </div>
-              </div>
-
-              {/* Socials */}
-              <div className="mt-5 flex items-center gap-2.5">
-                {[
-                  { href: "#", label: "Facebook", icon: <Facebook className="size-4" /> },
-                  { href: "#", label: "Instagram", icon: <Instagram className="size-4" /> },
-                  { href: "#", label: "TikTok", icon: <TikTokIcon /> },
-                  { href: "#", label: "WhatsApp", icon: <WhatsAppIcon className="size-4" /> },
-                ].map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    aria-label={s.label}
-                    className="grid size-9 place-items-center rounded-full border border-border bg-surface text-muted transition-all hover:border-accent hover:text-accent"
-                  >
-                    {s.icon}
-                  </a>
-                ))}
               </div>
             </div>
 

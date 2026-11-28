@@ -17,7 +17,7 @@ export default function LocationSection({
   return (
     <FormSection invalid={invalid} serverMessage={serverMessage}>
       <SectionHeading title="Location">
-        City or area, or Online if buyers do not visit a place. Country-only (e.g. Uganda) is not enough.
+        Your area and town, e.g. Ntinda, Kampala. Choose Online if buyers don&apos;t visit you. &ldquo;Uganda&rdquo; alone isn&apos;t enough.
       </SectionHeading>
       <LocationInput
         value={draft.location_name}

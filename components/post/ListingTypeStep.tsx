@@ -14,12 +14,12 @@ const TILE: Record<string, { icon: IconType; chip: string; hint: string }> = {
   service: {
     icon: PiWrenchFill,
     chip: "bg-listing-service text-listing-service-foreground",
-    hint: "Work you do for clients.",
+    hint: "Work you do for customers.",
   },
   opportunity: {
     icon: PiBriefcaseFill,
     chip: "bg-listing-opportunity text-listing-opportunity-foreground",
-    hint: "Jobs, gigs and other openings.",
+    hint: "Jobs, short-term work and other openings.",
   },
 };
 const FALLBACK = { icon: PiSparkleFill, chip: "bg-accent/10 text-accent", hint: "" };
@@ -34,7 +34,7 @@ export default function ListingTypeStep({
   onBack: () => void;
 }) {
   return (
-    <StepFrame title="What are you posting?" subtitle="You can change this before you publish." onBack={onBack} wide plain>
+    <StepFrame title="What are you posting?" subtitle="You can change this before you post." onBack={onBack} wide plain>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {LISTING_KIND_OPTIONS.map((opt) => {
           const t = TILE[opt.value] ?? FALLBACK;

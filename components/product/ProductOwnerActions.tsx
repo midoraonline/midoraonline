@@ -38,11 +38,11 @@ function evaluate(priceStr: string, price: number | undefined): SaleState {
   const trimmed = priceStr.trim();
   if (!trimmed) return { kind: "empty" };
   const sale = parseAmount(trimmed);
-  if (sale === null) return { kind: "invalid", message: "Enter a valid amount." };
+  if (sale === null) return { kind: "invalid", message: "Enter the price in numbers, like 40000." };
   if (!price || price <= 0)
-    return { kind: "invalid", message: "No original price to discount from." };
+    return { kind: "invalid", message: "Add a price to this listing first, then set a discount." };
   if (sale >= price)
-    return { kind: "invalid", message: "After discount price must be less than the price." };
+    return { kind: "invalid", message: "The new price must be lower than the original price." };
   return {
     kind: "ok",
     savings: price - sale,
@@ -91,9 +91,9 @@ export default function ProductOwnerActions({
     setPending("availability");
     const request = apiProducts.toggleAvailability(productId);
     toast.promise(request, {
-      loading: isPublished !== false ? "Unpublishing…" : "Publishing…",
-      success: isPublished !== false ? "Listing hidden" : "Listing published",
-      error: "Could not update visibility.",
+      loading: isPublished !== false ? "Hiding listing…" : "Publishing listing…",
+      success: isPublished !== false ? "Listing hidden. Buyers can't see it now." : "Listing published. Buyers can see it now.",
+      error: "We couldn't update your listing. Check your connection and try again.",
     });
     try {
       await request;
@@ -115,8 +115,8 @@ export default function ProductOwnerActions({
     });
     toast.promise(request, {
       loading: "Applying discount…",
-      success: `Discount applied — ${sale.percent}% off`,
-      error: "Could not apply discount.",
+      success: `Discount applied: ${sale.percent}% off.`,
+      error: "We couldn't apply the discount. Check your connection and try again.",
     });
     try {
       await request;
@@ -135,8 +135,8 @@ export default function ProductOwnerActions({
     const request = apiProducts.setDiscount(productId, { discount_price: null });
     toast.promise(request, {
       loading: "Removing discount…",
-      success: "Discount removed",
-      error: "Could not remove discount.",
+      success: "Discount removed.",
+      error: "We couldn't remove the discount. Check your connection and try again.",
     });
     try {
       await request;
@@ -164,7 +164,7 @@ export default function ProductOwnerActions({
                 className="!text-sm"
                 aria-hidden="true"
               />
-              {isPublished !== false ? "Unpublish" : "Publish"}
+              {isPublished !== false ? "Hide listing" : "Publish listing"}
             </button>
             <button
               type="button"
@@ -227,7 +227,7 @@ export default function ProductOwnerActions({
                 htmlFor="owner-sale-price"
                 className="text-sm font-medium text-foreground"
               >
-                After discount price (what the buyer pays)
+                New price (what the buyer pays)
               </label>
               <input
                 id="owner-sale-price"
@@ -247,7 +247,7 @@ export default function ProductOwnerActions({
                 <p className="text-xs text-[color:var(--error)]">{sale.message}</p>
               ) : (
                 <p className="text-xs text-muted">
-                  Enter the final price after the discount.
+                  Enter the price the buyer will pay after the discount.
                 </p>
               )}
             </div>

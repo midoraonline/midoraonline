@@ -10,6 +10,7 @@ import ExtraPhoneNumbers, { extraPhonesFromContacts, extraPhonesToContacts, type
 import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/dashboard/ui";
 import { track } from "@/lib/analytics";
 import { contactPreviewParts, displayPhone, fetchContactCheck, saveShopContacts, type ContactCheck } from "@/lib/shop/contactCheck";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -65,7 +66,7 @@ export default function ContactsStep({
     if (!check || !initial.current) return;
     const email = shopEmail.trim();
     if (email && !EMAIL.test(email)) {
-      setError("Enter a valid public email, or leave it empty.");
+      setError("Enter an email like name@example.com, or leave it empty.");
       return;
     }
     const extrasChanged = JSON.stringify(extras) !== initial.current.extras;
@@ -94,7 +95,7 @@ export default function ContactsStep({
       });
       onContinue();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not save your contacts.";
+      const message = platformActionMessage(err, "We couldn't save your contact details. Check your connection and try again.");
       setError(message);
       toast.error(message);
     } finally {
@@ -105,8 +106,8 @@ export default function ContactsStep({
   const accountPhone = check?.account_phone.number;
   return (
     <StepFrame
-      title="How will customers reach you?"
-      subtitle={compact ? "Everything is set. Check it once more before you post." : "Check how buyers can contact you about this listing."}
+      title="How will buyers reach you?"
+      subtitle={compact ? "You're all set. Check it once more before you post." : "Check how buyers can contact you about this listing."}
       onBack={onBack}
     >
       {!check ? (
@@ -148,7 +149,7 @@ export default function ContactsStep({
                       <CheckCircle2 className="size-4 text-[color:var(--success)]" aria-label="Verified" />
                     ) : null}
                     {displayPhone(accountPhone)}
-                    <span className="text-xs text-muted">· account number</span>
+                    <span className="text-xs text-muted">· your account number</span>
                   </p>
                 ) : null}
                 {target ? <ExtraPhoneNumbers value={extras} onChange={setExtras} idPrefix="contacts-extra-phone" /> : null}
@@ -166,7 +167,7 @@ export default function ContactsStep({
             </div>
           )}
           <div className="rounded-lg bg-surface-subtle px-3 py-2.5 text-sm text-foreground" aria-live="polite">
-            <span className="text-muted">Customers will see: </span>
+            <span className="text-muted">Buyers will see: </span>
             {live ? contactPreviewParts(live).join(" · ") : null}
           </div>
           {compact ? (

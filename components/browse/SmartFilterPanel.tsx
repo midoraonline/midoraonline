@@ -348,7 +348,7 @@ export default function SmartFilterPanel({
       ) : null}
 
       {showCompensation ? (
-        <Section title="Compensation">
+        <Section title="Pay">
           <div className="space-y-0.5">
             {compensationOptions.map((o) => (
               <Row
@@ -378,7 +378,7 @@ export default function SmartFilterPanel({
                   label={
                     <span className="inline-flex items-center gap-1">
                       {r.value}
-                      <Star className="size-3 fill-current text-amber-500" aria-hidden />& up
+                      <Star className="size-3 fill-current text-amber-500" aria-hidden />and up
                     </span>
                   }
                   count={r.count}
@@ -413,7 +413,7 @@ export default function SmartFilterPanel({
       ) : null}
 
       {nothingToFilter && active === 0 ? (
-        <p className="text-xs leading-relaxed text-muted">These results are already narrow — nothing more to filter.</p>
+        <p className="text-xs leading-relaxed text-muted">No more filters for these results.</p>
       ) : null}
     </aside>
   );

@@ -78,7 +78,7 @@ export default function GoogleSignInProgress({
     (status === "success"
       ? "Welcome to Midora. Taking you to the marketplace…"
       : status === "error"
-        ? "Something went wrong while finishing Google sign-in."
+        ? "We couldn't finish signing you in with Google. Try again."
         : "This only takes a moment. Please keep this tab open.");
 
   return (

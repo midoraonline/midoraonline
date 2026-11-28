@@ -5,7 +5,7 @@ import type { Shop } from "@/lib/api/shops";
 import type { Product } from "@/lib/api/products";
 import { productMediaItems } from "@/lib/api/products";
 import ShopHeroCarousel, { type HeroMedia } from "./ShopHeroCarousel";
-import { locationDisplay, shopBannerUrl } from "./shopUtils";
+import { locationDisplay, shopBannerUrl, verifiedWhatsapp } from "./shopUtils";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { publicSiteOrigin } from "@/lib/publicSite";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
@@ -40,12 +40,9 @@ export default async function ShopHeader({
   const immersive = !usePlainHero;
 
   const shopPageUrl = `${publicSiteOrigin()}/shops/${shop.slug}`;
-  const waHref =
-    shop.whatsapp_number
-      ? shopInquiryWhatsAppUrl(shop.whatsapp_number, {
-        shopName: shop.name,
-        shopUrl: shopPageUrl,
-      })
+  const whatsapp = verifiedWhatsapp(shop);
+  const waHref = whatsapp
+    ? shopInquiryWhatsAppUrl(whatsapp, { shopName: shop.name, shopUrl: shopPageUrl })
     : null;
 
   const productMedia: HeroMedia[] = products.slice(0, 16).flatMap((p) =>
@@ -236,7 +233,7 @@ export default async function ShopHeader({
           <ShopContactButtons
             shopId={shop.id}
             ownerId={shop.owner_id}
-            whatsappNumber={shop.whatsapp_number}
+            whatsappNumber={whatsapp}
             whatsappVerified={shop.whatsapp_verified}
             waHref={waHref}
             immersive={immersive}

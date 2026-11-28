@@ -14,10 +14,10 @@ const MIN_LEN = 8;
 function errorMessage(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err ?? "");
   if (/reset_expired|expired/i.test(raw)) return "This reset link has expired. Request a new one below.";
-  if (/reset_used|already been used/i.test(raw)) return "This reset link was already used. Request a new one below.";
-  if (/reset_invalid|invalid/i.test(raw)) return "This reset link is not valid. Request a new one below.";
+  if (/reset_used|already been used/i.test(raw)) return "This reset link has already been used. Request a new one below.";
+  if (/reset_invalid|invalid/i.test(raw)) return "This reset link doesn't work. Request a new one below.";
   if (/429|too many/i.test(raw)) return "Too many attempts. Please wait a minute and try again.";
-  return "Something went wrong. Please try again.";
+  return "We couldn't reset your password. Check your connection and try again.";
 }
 
 function RequestForm() {

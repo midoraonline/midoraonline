@@ -24,18 +24,18 @@ export default function HeroActions() {
       <button
         type="button"
         onClick={handleAddItemClick}
-        aria-label="Add an item to your listings"
+        aria-label="Post a listing"
         className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-accent/90 active:scale-95"
       >
         <PiPlusCircleFill className="size-[18px]" aria-hidden />
-        Add an Item
+        Post a listing
       </button>
 
       {shopCount === 0 ? (
         <Link
           href="/open-shop"
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold text-muted transition-all hover:border-border-strong hover:text-foreground active:scale-95"
-          title="Analytics, organization, and a shareable storefront"
+          title="Stats, tidy listings and a shop link to share"
         >
           <PiStorefrontFill className="size-[18px] text-accent" aria-hidden />
           Open a shop

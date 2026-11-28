@@ -21,7 +21,7 @@ async function fetchUrl(): Promise<GoogleAuthUrlResponse> {
     redirect_uri: `${origin}/login`,
   });
   const res = await fetch(`/api/auth/google-url?${query}`);
-  if (!res.ok) throw new Error("Google sign-in is unavailable");
+  if (!res.ok) throw new Error("Google sign-in isn't working right now. Try again, or sign in with your email.");
   return (await res.json()) as GoogleAuthUrlResponse;
 }
 

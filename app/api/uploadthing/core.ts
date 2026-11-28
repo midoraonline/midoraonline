@@ -8,7 +8,7 @@ const f = createUploadthing();
 
 async function requireUser(req: Request): Promise<{ userId: string }> {
   const auth = await verifyUploadBearer(req);
-  if (!auth) throw new UploadThingError("Please sign in again to upload.");
+  if (!auth) throw new UploadThingError("Sign in again to upload.");
   return { userId: auth.userId };
 }
 

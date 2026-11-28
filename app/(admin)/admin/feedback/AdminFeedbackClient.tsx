@@ -23,7 +23,7 @@ export default function AdminFeedbackClient({ initialItems }: Props) {
 
   return (
     <div>
-      <PageHeader title="Feedback" description={`${fmt(feedbackList.length)} messages from users, newest first.`} />
+      <PageHeader title="Feedback" description={`${fmt(feedbackList.length)} message${feedbackList.length === 1 ? "" : "s"} from users, newest first.`} />
       {feedbackList.length === 0 ? (
         <EmptyState message="No feedback yet." />
       ) : (

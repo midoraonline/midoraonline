@@ -57,12 +57,12 @@ export default function AiReviewSection({
         <div className="min-w-0">
           <h2 id="ai-review-heading" className="text-sm font-semibold text-foreground">Check quality with AI</h2>
           <p className="mt-0.5 text-sm text-muted">
-            Reviews your photos, text and every field above, then points out what&apos;s missing or weak.
+            Checks your photos, text and every field above, then tells you what&apos;s missing or weak.
           </p>
         </div>
         <button type="button" onClick={() => void ai.runQualityCheck()} disabled={aiChecking} className={BTN_SECONDARY}>
           <Sparkles className="size-4" aria-hidden />
-          {aiChecking ? "Reviewing…" : aiCheck ? "Check again" : "Check quality"}
+          {aiChecking ? "Checking…" : aiCheck ? "Check again" : "Check quality"}
         </button>
       </div>
 
@@ -74,9 +74,11 @@ export default function AiReviewSection({
               <span className="text-sm text-muted">/100</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <StatusDot tone={aiCheck.title_matches && aiCheck.images_match ? "ok" : "warn"}>Title matches photos</StatusDot>
+              <StatusDot tone={aiCheck.title_matches && aiCheck.images_match ? "ok" : "warn"}>
+                {aiCheck.title_matches && aiCheck.images_match ? "Title matches photos" : "Title may not match photos"}
+              </StatusDot>
               <StatusDot tone={aiCheck.description_quality !== "poor" ? "ok" : "warn"}>
-                {`Description ${aiCheck.description_quality}`}
+                {`Description: ${aiCheck.description_quality}`}
               </StatusDot>
             </div>
           </div>

@@ -11,6 +11,6 @@ export function normalizePhone(raw: string | null | undefined, defaultCountry = 
   } else if (text.startsWith(defaultCountry)) text = `+${text}`;
   else if (text.startsWith("0")) text = `+${defaultCountry}${text.slice(1)}`;
   else text = `+${defaultCountry}${text}`;
-  if (!E164.test(text)) throw new Error("Enter a valid phone number.");
+  if (!E164.test(text)) throw new Error("Enter a phone number like 0772 123 456.");
   return text;
 }

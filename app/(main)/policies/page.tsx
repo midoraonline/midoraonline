@@ -4,62 +4,72 @@ export default function Policies() {
       <section className="dm-card p-6 sm:p-8 lg:p-10">
         <p className="text-sm font-semibold text-muted">Policies</p>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-          Trust & Safety on Midora Online
+          Trust and safety on Midora Online
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
-          These sections are scaffolding for your full legal copy. They reflect
-          the platform principles: vendor protection, customer protection, and
-          privacy-first commerce.
+          This is a short summary of how we protect sellers, buyers and your
+          privacy. We&apos;re still preparing the full policies, and we&apos;ll
+          publish them on this page.
         </p>
       </section>
 
       <section className="grid gap-4 sm:gap-5 lg:grid-cols-2">
         <div className="dm-card p-6 sm:p-7">
           <h2 className="text-base font-semibold tracking-tight">
-            Vendor Protection Policy
+            How we protect sellers
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-muted">
             <li>
               <span className="font-semibold text-foreground/85">
-                KYC verification:
+                Identity checks:
               </span>{" "}
-              Merchants verify ID/phone before payouts.
+              Shop owners can send us their ID and a selfie for our team to
+              check. New shops show in the shop list only after we approve them.
             </li>
             <li>
               <span className="font-semibold text-foreground/85">
-                Data sovereignty:
+                Your customers stay yours:
               </span>{" "}
-              Merchants own their customer lists.
+              Shop owners own their customer lists.
             </li>
             <li>
               <span className="font-semibold text-foreground/85">
-                Multi-tenant isolation:
+                Separate shop data:
               </span>{" "}
-              Shop data is isolated via RLS in Supabase.
+              Each shop&apos;s data is kept separate, so other shops can&apos;t
+              see it.
             </li>
           </ul>
         </div>
 
         <div className="dm-card p-6 sm:p-7">
           <h2 className="text-base font-semibold tracking-tight">
-            Customer Protection Policy
+            How we protect buyers
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-muted">
             <li>
               <span className="font-semibold text-foreground/85">
                 Verified badges:
               </span>{" "}
-              Consistent subscriptions and good ratings earn verification.
+              Badges show what we checked. &ldquo;ID verified&rdquo; means our
+              team checked the owner&apos;s ID. &ldquo;Verified business&rdquo;
+              and &ldquo;Verified professional&rdquo; mean we also checked a
+              shop photo or business registration, or a professional licence. A verified
+              WhatsApp number means the shop confirmed it with a code we sent
+              through WhatsApp. If a shop&apos;s WhatsApp isn&apos;t verified,
+              you can message the seller on Midora instead.
             </li>
             <li>
               <span className="font-semibold text-foreground/85">
-                Report mechanism:
+                Reporting:
               </span>{" "}
-              A prominent report button for scam prevention.
+              Use the report button if you see a scam or something wrong. We&apos;ll
+              review it.
             </li>
             <li>
               <span className="font-semibold text-foreground/85">Privacy:</span>{" "}
-              Customer phone numbers stay hidden until a transaction starts.
+              When you message a seller on Midora, they see your name and photo,
+              not your phone number.
             </li>
           </ul>
         </div>
@@ -67,11 +77,12 @@ export default function Policies() {
 
       <section className="dm-card p-6 sm:p-8">
         <h2 className="text-base font-semibold tracking-tight">
-          Platform Security
+          Keeping your account secure
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
-          Sessions are secured via JWT/OAuth, rate limiting protects onboarding
-          endpoints, and all data in transit is encrypted via HTTPS.
+          We protect your sign-in with secure, industry-standard methods. We
+          limit repeated attempts to stop abuse, and all data sent between your
+          phone and Midora is encrypted.
         </p>
       </section>
     </div>

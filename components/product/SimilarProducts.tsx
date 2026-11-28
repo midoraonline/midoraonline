@@ -35,7 +35,7 @@ export default function SimilarProducts({ productId, initialItems }: Props) {
 
   return (
     <div className="dm-card p-4 sm:p-6">
-      <h2 className="text-sm font-semibold tracking-tight">Similar products</h2>
+      <h2 className="text-sm font-semibold tracking-tight">Similar listings</h2>
       <div className={`mt-4 ${browseProductGridClass}`}>
         {items.map((p) => {
           const card = similarProductToCard(p);

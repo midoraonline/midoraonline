@@ -9,7 +9,7 @@ import { mediaUnreachableMessage, missingListingFields } from "@/lib/api/categor
 import { confirmCreatedListing, confirmUpdatedListing, isAmbiguousSaveError } from "@/lib/api/listingSave";
 import type { Product } from "@/lib/api/products";
 import { LISTING_KIND_LABEL } from "@/lib/listingMeta";
-import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
+import { isMaintenanceMode, MAINTENANCE_MESSAGE, platformActionMessage } from "@/lib/platformMessages";
 import { ShopRequiredError, publishNewListing } from "@/lib/shop/publishListing";
 import { useSessionStore } from "@/lib/state/session-store";
 import { isVerificationRequired, verificationMessage } from "@/lib/verification";
@@ -61,7 +61,7 @@ export function useListingSubmit(opts: Options) {
 
   function handleCancel() {
     if (saving || submitLock.current) return;
-    if (form.isDirty && !window.confirm("Discard your changes?")) return;
+    if (form.isDirty && !window.confirm("Leave without saving your changes?")) return;
     router.push(backUrl);
   }
 
@@ -74,19 +74,19 @@ export function useListingSubmit(opts: Options) {
         verdict = await checkListingQuality(opts.buildRequest());
         ai.setAiCheck(verdict);
       } catch {
-        toast.message("AI review skipped", {
-          description: "Couldn't reach the AI checker — continuing without it.",
+        toast.message("AI check skipped", {
+          description: "We couldn't reach the AI check, so we're saving without it.",
         });
         verdict = null;
       }
       ai.setAiChecking(false);
     }
     if (verdict?.critical) {
-      toast.error("Listing needs edits before it can be posted", { description: verdict.feedback });
+      toast.error("Fix your listing before you post it.", { description: verdict.feedback });
       return false;
     }
     if (verdict && !verdict.ok) {
-      toast.message("AI tips before you publish", { description: verdict.feedback });
+      toast.message("Tips to improve your listing", { description: verdict.feedback });
     }
     return true;
   }
@@ -109,15 +109,15 @@ export function useListingSubmit(opts: Options) {
       saveId: mode === "add" ? clientSaveIdRef.current : null,
     });
     setSaving(true);
-    const label = mode === "add" ? `Adding ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}` : "Saving changes";
-    const done = mode === "add" ? `${LISTING_KIND_LABEL[draft.kind]} added` : "Changes saved";
+    const label = mode === "add" ? `Posting ${LISTING_KIND_LABEL[draft.kind].toLowerCase()}` : "Saving changes";
+    const done = mode === "add" ? `${LISTING_KIND_LABEL[draft.kind]} posted.` : "Changes saved.";
     const toastId = toast.loading(`${label}…`);
     const request =
       mode === "add"
         ? publishNewListing(body, opts.shopId, { personal: opts.noShop })
         : product
           ? apiProducts.updateProduct(product.id, body)
-          : Promise.reject(new Error("Missing product"));
+          : Promise.reject(new Error("We couldn't find this listing. Go back and try again."));
     try {
       const saved = await request;
       toast.success(done, { id: toastId });
@@ -139,17 +139,17 @@ export function useListingSubmit(opts: Options) {
         return;
       }
       if (err instanceof ShopRequiredError) {
-        toast.message("Choose a business", {
+        toast.message("Choose a shop", {
           id: toastId,
-          description: "Pick which business this ad belongs to, then save again.",
+          description: "Pick the shop this listing belongs to, then save again.",
         });
         opts.onShopRequired?.();
         return;
       }
       const missing = missingListingFields(err);
       if (missing) {
-        const next = Object.fromEntries(missing.map((f) => [f.key, `${f.label} is required for this category.`]));
-        const message = err instanceof Error ? err.message : "Add the required category fields.";
+        const next = Object.fromEntries(missing.map((f) => [f.key, "This category needs this detail."]));
+        const message = platformActionMessage(err, "Add the missing details for this category.");
         flagInvalid(toastId, message, () => setServerFieldErrors(next));
         return;
       }
@@ -172,7 +172,7 @@ export function useListingSubmit(opts: Options) {
           return;
         }
       }
-      const message = err instanceof Error ? err.message : "Could not save. Try again.";
+      const message = platformActionMessage(err, "We couldn't save your listing. Check your connection and try again.");
       if (err instanceof ApiError && err.code === "invalid_application_link") {
         flagInvalid(toastId, message, () => setLinkServerError(message));
         return;
@@ -198,7 +198,7 @@ export function useListingSubmit(opts: Options) {
     setServerSection(null);
     try {
       if (!form.canSubmit) {
-        toast.error("Fix the highlighted fields before saving.");
+        toast.error("Some details need fixing. Check the highlighted sections.");
         scrollToFirstInvalid();
         return;
       }

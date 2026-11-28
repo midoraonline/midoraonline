@@ -50,7 +50,7 @@ describe("listing attachments", () => {
     const s: FileFieldSpec = { accept: ["pdf", "doc"], maxSizeMb: 1 };
     expect(fileProblem({ name: "a.pdf", size: 1000, type: "application/pdf" }, s)).toBeNull();
     expect(fileProblem({ name: "a.docx", size: 1000, type: mimeFor({ name: "a.docx", type: "" }) }, s)).toBeNull();
-    expect(fileProblem({ name: "a.png", size: 1000, type: "image/png" }, s)).toMatch(/PDF, Word/);
+    expect(fileProblem({ name: "a.png", size: 1000, type: "image/png" }, s)).toMatch(/PDF or Word/);
     expect(fileProblem({ name: "a.pdf", size: 2 * 1024 * 1024, type: "application/pdf" }, s)).toMatch(/over 1 MB/);
     expect(mimeFor({ name: "scan.JPG", type: "application/octet-stream" })).toBe("image/jpeg");
     expect(acceptAttribute({ accept: ["pdf"], maxSizeMb: 1 })).toBe("application/pdf,.pdf");

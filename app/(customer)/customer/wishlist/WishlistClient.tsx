@@ -7,6 +7,7 @@ import type { LikedProduct } from "@/lib/api/products";
 import { BTN_SECONDARY, EmptyState, ErrorState, PageHeader, formatCount as fmt } from "@/components/dashboard/ui";
 import ProductCard, { productCardSlotClass } from "@/components/productcard";
 import { likedProductToCard } from "@/lib/productCardMap";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 type Props = {
   initialItems: LikedProduct[];
@@ -24,7 +25,7 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
       setItems(res.items ?? []);
       setTotal(res.total ?? 0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not refresh wishlist");
+      setError(platformActionMessage(err, "We couldn't load your saved listings. Try again."));
     }
   }, []);
 
@@ -35,8 +36,8 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
   return (
     <div>
       <PageHeader
-        title="Wishlist"
-        description={`${fmt(total)} saved ${total === 1 ? "item" : "items"}.`}
+        title="Saved listings"
+        description={`${fmt(total)} saved ${total === 1 ? "listing" : "listings"}.`}
         action={
           <Link href="/" className={BTN_SECONDARY}>
             Browse listings
@@ -47,7 +48,7 @@ export default function WishlistClient({ initialItems, initialTotal }: Props) {
         <ErrorState message={error} onRetry={() => void refresh()} />
       ) : items.length === 0 ? (
         <EmptyState
-          message="Nothing saved yet. Tap the heart on any listing to save it here."
+          message="No saved listings yet. Tap the heart on any listing to save it here."
           action={
             <Link href="/" className={BTN_SECONDARY}>
               Browse listings

@@ -41,7 +41,7 @@ export default function CustomerOverviewClient({ initialFollowed, initialLiked }
 
   return (
     <div>
-      <PageHeader title="Overview" description="Shops you follow, items you saved and your settings." />
+      <PageHeader title="Overview" description="Shops you follow, listings you saved and your settings." />
       <StatStrip
         items={[
           { label: "Following", value: fmt(followed) },
@@ -51,8 +51,8 @@ export default function CustomerOverviewClient({ initialFollowed, initialLiked }
       <Section title="Go to">
         <ul className={LIST}>
           {[
-            { href: "/customer/saved", title: "Saved shops", meta: "Shops you follow or liked" },
-            { href: "/customer/wishlist", title: "Wishlist", meta: "Items you tapped the heart on" },
+            { href: "/customer/saved", title: "Saved shops", meta: "Shops you follow or like" },
+            { href: "/customer/wishlist", title: "Saved listings", meta: "Listings you tapped the heart on" },
             { href: "/customer/settings", title: "Settings", meta: "Your name, photo, theme and notifications" },
             { href: "/shops", title: "Discover shops", meta: "Browse shops on Midora" },
           ].map((l) => (

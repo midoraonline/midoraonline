@@ -2,11 +2,21 @@ import type { Contact, Shop, ShopLocation } from "@/lib/api/shops";
 import type { LatLng } from "@/lib/geo/types";
 import { isOnlineLocation } from "@/lib/listingLocation";
 
+/** The shop WhatsApp number only once it's verified with a WhatsApp code; otherwise buyers use Midora messages. */
+export function verifiedWhatsapp(
+  shop: Pick<Shop, "whatsapp_number" | "whatsapp_verified">,
+): string | null {
+  const n = shop.whatsapp_number?.trim();
+  return n && shop.whatsapp_verified ? n : null;
+}
+
+/** Extra contacts buyers may see: no duplicates, and no extra WhatsApp numbers (they can't be verified). */
 export function filterDuplicateContacts(shop: Shop): Contact[] {
   const emailNorm = shop.shop_email?.trim().toLowerCase() ?? "";
-  const waNorm = shop.whatsapp_number?.replace(/\D/g, "") ?? "";
+  const waNorm = verifiedWhatsapp(shop)?.replace(/\D/g, "") ?? "";
   return (
     shop.contacts?.filter((c) => {
+      if (c.type === "whatsapp") return false;
       const v = c.value.trim();
       if (emailNorm && v.toLowerCase() === emailNorm) return false;
       if (waNorm && v.replace(/\D/g, "") === waNorm) return false;

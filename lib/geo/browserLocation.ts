@@ -17,7 +17,7 @@ export function getBrowserLocation(
     return Promise.reject(
       new GeoLocationError(
         "unsupported",
-        "Location is not supported in this browser.",
+        "This browser can't share your location. Choose a place from the list.",
       ),
     );
   }
@@ -36,7 +36,7 @@ export function getBrowserLocation(
             reject(
               new GeoLocationError(
                 "denied",
-                "Location permission denied. Enable it in browser settings, or pick a place from the list.",
+                "Location is turned off for Midora. Turn it on in your browser settings, or choose a place from the list.",
               ),
             );
             break;
@@ -44,7 +44,7 @@ export function getBrowserLocation(
             reject(
               new GeoLocationError(
                 "unavailable",
-                "Couldn’t determine your location. Try again or pick a place from the list.",
+                "We couldn’t find your location. Try again, or choose a place from the list.",
               ),
             );
             break;
@@ -52,7 +52,7 @@ export function getBrowserLocation(
             reject(
               new GeoLocationError(
                 "timeout",
-                "Location request timed out. Try again or pick a place from the list.",
+                "Finding your location took too long. Try again, or choose a place from the list.",
               ),
             );
             break;
@@ -60,7 +60,7 @@ export function getBrowserLocation(
             reject(
               new GeoLocationError(
                 "unknown",
-                "Something went wrong getting your location.",
+                "We couldn’t get your location. Try again, or choose a place from the list.",
               ),
             );
         }

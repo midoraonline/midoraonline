@@ -22,11 +22,11 @@ import { blankHoursDraft, hoursAreBlank, hoursDraftError, shopHoursWritePayload,
 import { isMaintenanceMode, MAINTENANCE_MESSAGE } from "@/lib/platformMessages";
 
 const STEPS = [
-  { title: "Name your business", subtitle: "Buyers see this name first. You can change it later." },
+  { title: "Name your shop", subtitle: "Buyers see this name first. You can change it later." },
   { title: "Where buyers can find you", subtitle: "Add a location and how buyers can reach you." },
-  { title: "Add a logo and banner", subtitle: "Photos keep their full quality. You can add these later." },
-  { title: "Opening hours", subtitle: "Times are in Kampala time (EAT). You can add these later." },
-  { title: "Check and create", subtitle: "Make sure everything looks right, then create your business." },
+  { title: "Add a logo and banner", subtitle: "Your photos keep their full quality. You can add these later." },
+  { title: "Opening hours", subtitle: "Use Uganda time (EAT). You can add these later." },
+  { title: "Check and open your shop", subtitle: "Make sure everything looks right, then open your shop." },
 ] as const;
 
 const STEP_LABELS = ["Name", "Contacts", "Logo and banner", "Hours", "Review"] as const;
@@ -52,14 +52,14 @@ function slugFromName(name: string): string {
 function emailError(value: string): string | null {
   const v = value.trim();
   if (!v) return null;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Enter a valid email address.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Enter an email like name@example.com.";
   return null;
 }
 
 function phoneError(value: string): string | null {
   const digits = value.replace(/\D/g, "");
   if (!value.trim()) return null;
-  if (digits.length < 9) return "Enter a full WhatsApp number.";
+  if (digits.length < 9) return "Enter the full WhatsApp number, like 772 123 456.";
   return null;
 }
 
@@ -126,7 +126,7 @@ export default function OpenShopWizard({
   function validate(index: number): string | null {
     if (index === 0) {
       if (!name.trim()) return "Enter a shop name.";
-      if (!slugFromName(name)) return "Shop name must contain at least one letter or number.";
+      if (!slugFromName(name)) return "Use at least 1 letter or number in your shop name.";
       return null;
     }
     if (index === 1) return emailError(shopEmail) ?? phoneError(whatsappNumber);
@@ -153,7 +153,7 @@ export default function OpenShopWizard({
       return;
     }
     if (!session.isAuthenticated) {
-      setError("Please log in to create a business.");
+      setError("Sign in to open your shop.");
       return;
     }
     setError(null);
@@ -185,7 +185,7 @@ export default function OpenShopWizard({
           ? MAINTENANCE_MESSAGE
           : err instanceof Error
             ? err.message
-            : "Could not create your business. Please try again.",
+            : "We couldn't open your shop. Check your connection and try again.",
       );
     } finally {
       setCreating(false);
@@ -259,17 +259,17 @@ export default function OpenShopWizard({
             <input
               id="wizard-shop-desc"
               className={FIELD}
-              placeholder="A line buyers see first"
+              placeholder="e.g. Fresh bread and cakes, baked daily"
               value={description}
               maxLength={160}
               onChange={(e) => setDescription(e.target.value)}
             />
           </Field>
-          <Field label="About your business" htmlFor="wizard-shop-about" optional>
+          <Field label="About your shop" htmlFor="wizard-shop-about" optional>
             <textarea
               id="wizard-shop-about"
               className={TEXTAREA}
-              placeholder="What you sell, and how you deliver"
+              placeholder="What you sell, and how buyers get it"
               value={about}
               onChange={(e) => setAbout(e.target.value)}
             />
@@ -277,7 +277,7 @@ export default function OpenShopWizard({
           {onPreferAi ? (
             <button type="button" onClick={onPreferAi} className={`${BTN_OUTLINE_ACCENT_LG} w-full`}>
               <Sparkles className="size-4" aria-hidden />
-              Describe your shop to AI instead
+              Use AI to set up instead
             </button>
           ) : null}
         </>
@@ -286,27 +286,27 @@ export default function OpenShopWizard({
       {step === 1 ? (
         <>
           <div>
-            <Field label="Town or address" optional>
+            <Field label="Area or town" optional hint="Add a landmark if it helps buyers find you.">
               <LocationInput
                 value={locationDisplay}
                 onChange={setLocationDisplay}
                 onResolved={(place) => setLocationCoords(place ? { lat: place.lat, lng: place.lng } : null)}
-                placeholder="e.g. Ntinda, Kampala"
+                placeholder="e.g. Ntinda, near Shell, Kampala"
               />
             </Field>
           </div>
-          <Field label="Business email (optional)" htmlFor="wizard-shop-email">
+          <Field label="Shop email" htmlFor="wizard-shop-email" optional hint="Buyers can see this email.">
             <input
               id="wizard-shop-email"
               type="email"
               className={FIELD}
-              placeholder="hello@yourshop.com"
+              placeholder="e.g. hello@yourshop.com"
               value={shopEmail}
               onChange={(e) => setShopEmail(e.target.value)}
             />
           </Field>
-          <Field label="Business phone number (optional)">
-            <PhoneNumberInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="700 000 000" />
+          <Field label="WhatsApp number" optional hint="Buyers can call or WhatsApp you on this number.">
+            <PhoneNumberInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="772 123 456" />
           </Field>
         </>
       ) : null}
@@ -341,8 +341,8 @@ export default function OpenShopWizard({
           <ReviewRow label="Sells" value={SHOP_TYPE_LABEL[shopType]} />
           <ReviewRow label="Category" value={category.trim() || "Not set"} onChange={() => setStep(0)} />
           <ReviewRow label="Location" value={locationDisplay.trim() || "Not set"} onChange={() => setStep(1)} />
-          <ReviewRow label="Business email" value={shopEmail.trim() || "Not set"} onChange={() => setStep(1)} />
-          <ReviewRow label="Business phone number" value={whatsappNumber.trim() || "Not set"} onChange={() => setStep(1)} />
+          <ReviewRow label="Shop email" value={shopEmail.trim() || "Not set"} onChange={() => setStep(1)} />
+          <ReviewRow label="WhatsApp" value={whatsappNumber.trim() || "Not set"} onChange={() => setStep(1)} />
           <ReviewRow label="Logo" value={logoUrl ? "Added" : "Not set"} onChange={() => setStep(2)} />
           <ReviewRow label="Banner" value={bannerUrl ? "Added" : "Not set"} onChange={() => setStep(2)} />
           <ReviewRow label="Hours" value={hoursSummary(hours)} onChange={() => setStep(3)} />
@@ -366,7 +366,7 @@ export default function OpenShopWizard({
         ) : (
           <button type="button" onClick={handleCreateShop} disabled={creating} className={BTN_PRIMARY_LG}>
             {creating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            {creating ? "Creating business…" : "Create business"}
+            {creating ? "Opening your shop…" : "Open my shop"}
           </button>
         )}
       </ActionBar>
@@ -430,7 +430,7 @@ function ShopPreview({
             (name.trim().charAt(0) || "M")
           )}
         </div>
-        <p className="mt-2 truncate text-sm font-semibold text-foreground">{name.trim() || "Your business name"}</p>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">{name.trim() || "Your shop name"}</p>
         <p className="mt-0.5 line-clamp-2 text-xs text-muted">{description.trim() || "A short line about what you sell."}</p>
         <p className="mt-2 truncate text-xs text-muted">{[category, location].filter(Boolean).join(" · ") || "Category · Location"}</p>
       </div>

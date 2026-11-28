@@ -20,19 +20,19 @@ const AVATAR_MAX = 16 * 1024 * 1024;
 function avatarErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 413 || err.code === "avatar_too_large") {
-      return "This photo is too large to upload here. Choose a file under 16MB.";
+      return "That photo is too big. Choose one under 16 MB.";
     }
-    if (err.status === 415) return "Use a JPEG, PNG, WebP, GIF, or HEIC photo.";
+    if (err.status === 415) return "Use a JPEG, PNG, WebP, GIF or HEIC photo.";
     if (err.status === 401) return "Sign in again to update your profile photo.";
     if (err.status >= 500 || /internal server error/i.test(err.message)) {
-      return "We couldn't save that photo. Please try again.";
+      return "We couldn't save that photo. Check your connection and try again.";
     }
     if (err.message.trim() && !/^Request failed/i.test(err.message) && !/^HTTP \d+/.test(err.message)) {
       return err.message;
     }
   }
   if (err instanceof Error && err.message.trim()) return err.message;
-  return "We couldn't save that photo. Please try again.";
+  return "We couldn't save that photo. Check your connection and try again.";
 }
 
 export default function ProfileAvatarUpload({ className = "" }: Props) {
@@ -65,16 +65,16 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
     onClientUploadComplete: (res) => {
       const url = res?.[0]?.ufsUrl ?? res?.[0]?.url;
       if (!url) {
-        setError("Upload finished but no photo URL was returned.");
+        setError("We couldn't save that photo. Try uploading it again.");
         clearPreview();
         return;
       }
       void persistAvatar(url);
     },
     onUploadError: (e) => {
-      const msg = e.message || "We couldn't save that photo. Please try again.";
+      const msg = e.message || "We couldn't save that photo. Check your connection and try again.";
       setError(msg);
-      toast.error("Could not save photo", { description: msg });
+      toast.error("We couldn't save your photo", { description: msg });
       clearPreview();
     },
   });
@@ -87,12 +87,12 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
       if (!url) clearPreview();
       useSessionStore.getState().setSession({ user: me });
       notifyAuthChanged();
-      toast.success(url ? "Profile photo updated" : "Profile photo removed");
+      toast.success(url ? "Profile photo updated." : "Profile photo removed.");
       setProgress(100);
     } catch (err) {
       const msg = avatarErrorMessage(err);
       setError(msg);
-      toast.error("Could not save photo", { description: msg });
+      toast.error("We couldn't save your photo", { description: msg });
     } finally {
       setSaving(false);
     }
@@ -115,13 +115,13 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
     try {
       const prepared = await avatarFileForUpload(file);
       if (prepared.size > AVATAR_MAX) {
-        throw new Error("This photo is larger than 16MB. Choose a smaller file.");
+        throw new Error("That photo is too big. Choose one under 16 MB.");
       }
       await uploadViaUploadThing(prepared);
     } catch (err) {
       const msg = avatarErrorMessage(err);
       setError(msg);
-      toast.error("Could not save photo", { description: msg });
+      toast.error("We couldn't save your photo", { description: msg });
       clearPreview();
     } finally {
       setSaving(false);
@@ -153,7 +153,7 @@ export default function ProfileAvatarUpload({ className = "" }: Props) {
         <div className="min-w-0 flex-1 space-y-2">
           <p className="text-sm font-medium text-foreground">Profile photo</p>
           <p className="text-xs text-muted">
-            Shown on your messages and listings. Square images work best.
+            Shown on your messages and listings. Square photos work best.
           </p>
           <div className="flex flex-wrap gap-2">
             <input

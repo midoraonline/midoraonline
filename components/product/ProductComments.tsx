@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api/base";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
@@ -54,7 +56,8 @@ export default function ProductComments({ productId }: Props) {
       });
       setText("");
       load();
-    } catch {
+    } catch (err) {
+      toast.error(platformActionMessage(err, "We couldn't post your comment. Try again."));
     } finally {
       setSubmitting(false);
     }
@@ -76,7 +79,7 @@ export default function ProductComments({ productId }: Props) {
           {loading ? (
             <p className="text-xs text-muted">Loading comments…</p>
           ) : comments.length === 0 ? (
-            <p className="text-xs text-muted">No comments yet.</p>
+            <p className="text-xs text-muted">No comments yet. Ask the seller a question here.</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {comments.map((c) => (
@@ -110,11 +113,11 @@ export default function ProductComments({ productId }: Props) {
                 disabled={submitting || !text.trim()}
                 className="dm-pill dm-focus shrink-0 bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
               >
-                Post
+                Post comment
               </button>
             </form>
           ) : (
-            <p className="text-xs text-muted">Log in to leave a comment.</p>
+            <p className="text-xs text-muted">Sign in to leave a comment.</p>
           )}
         </div>
       )}

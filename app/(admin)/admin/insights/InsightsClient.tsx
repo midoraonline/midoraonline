@@ -65,7 +65,7 @@ function useLoader<T>(
       const res = await fetcher();
       setData(res);
     } catch (e) {
-      setError(platformActionMessage(e, "Request failed"));
+      setError(platformActionMessage(e, "We couldn't load this data. Try again."));
     } finally {
       setLoading(false);
     }
@@ -131,7 +131,7 @@ export default function InsightsClient() {
       {/* Discovery — category fill rate */}
       <Section
         title="Category fill rate"
-        description="Share of category/search browses that surface enough real listings. Low fill rate → thin supply → merchant recruitment target."
+        description="Share of category and search browses that show enough real listings. A low fill rate means too few listings, so recruit sellers there."
         error={fillRate.error}
         loading={fillRate.loading}
         onRefresh={fillRate.refresh}
@@ -170,7 +170,7 @@ export default function InsightsClient() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <Empty message="No search events yet — waiting for shoppers to browse categories." />
+          <Empty message="No search data yet. It appears once buyers browse categories." />
         )}
       </Section>
 
@@ -190,7 +190,7 @@ export default function InsightsClient() {
                   <th className="pb-2">What</th>
                   <th className="pb-2">Where</th>
                   <th className="pb-2">Source</th>
-                  <th className="pb-2 text-right">Times</th>
+                  <th className="pb-2 text-right">Count</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,7 +198,7 @@ export default function InsightsClient() {
                   <tr key={`${r.kind}:${r.what}:${r.where}`} className="border-b border-border/30">
                     <td className="py-2 pr-3 font-medium text-foreground">{r.what}</td>
                     <td className="py-2 pr-3 capitalize">{r.where}</td>
-                    <td className="py-2 pr-3 text-muted">{r.kind === "request" ? "Asked" : "Search, no results"}</td>
+                    <td className="py-2 pr-3 text-muted">{r.kind === "request" ? "Asked" : "Searched, no results"}</td>
                     <td className="py-2 text-right tabular-nums">{fmt(r.count)}</td>
                   </tr>
                 ))}
@@ -206,7 +206,7 @@ export default function InsightsClient() {
             </table>
           </div>
         ) : (
-          <Empty message="No unmet demand recorded in this window." />
+          <Empty message="No unmet demand in this period." />
         )}
       </Section>
 
@@ -214,7 +214,7 @@ export default function InsightsClient() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Section
           title="Verification funnel"
-          description="Merchant journey from starting verification to approval. Big drop between started → submitted = bad UX or docs friction."
+          description="Shop owners from starting verification to approval. A big drop between started and submitted points to a confusing form or hard document steps."
           error={verification.error}
           loading={verification.loading}
           onRefresh={verification.refresh}
@@ -227,7 +227,7 @@ export default function InsightsClient() {
                   <Funnel
                     dataKey="count"
                     data={verification.data.steps.map((s, i) => ({
-                      name: s.step,
+                      name: s.step ? s.step.charAt(0).toUpperCase() + s.step.slice(1).replace(/_/g, " ") : s.step,
                       count: s.count,
                       fill: PALETTE[i % PALETTE.length],
                     }))}
@@ -245,18 +245,18 @@ export default function InsightsClient() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <Empty message="No verification events logged yet." />
+            <Empty message="No verification activity yet." />
           )}
         </Section>
 
         <Section
           title="Discount engagement"
-          description="Does the discount badge move buyers? Compare view→WhatsApp click for discounted vs non-discounted listings."
+          description="Does the discount badge help? Compare views and WhatsApp clicks for listings with and without a discount."
           error={discount.error}
           loading={discount.loading}
           onRefresh={discount.refresh}
         >
-          {discount.data ? (
+          {discount.data && discount.data.with_discount.views + discount.data.without_discount.views > 0 ? (
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -289,14 +289,16 @@ export default function InsightsClient() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          ) : null}
+          ) : (
+            <Empty message="No listing views in this period yet." />
+          )}
         </Section>
       </div>
 
       {/* Shop conversion */}
       <Section
         title="Top shops by conversion"
-        description={`Best view-to-WhatsApp-click ratios over the last ${window_} days — the shops actually turning views into deals.`}
+        description={`Shops with the best view-to-WhatsApp-click rate in the last ${window_} days. These shops turn views into contacts.`}
         error={shopConv.error}
         loading={shopConv.loading}
         onRefresh={shopConv.refresh}
@@ -330,14 +332,14 @@ export default function InsightsClient() {
             </table>
           </div>
         ) : (
-          <Empty message="No shop-level view/click data yet." />
+          <Empty message="No shop views or clicks yet." />
         )}
       </Section>
 
       {/* Report rate */}
       <Section
         title="Report rate"
-        description="Reports per 1,000 active listings — a spike is an early warning before it becomes churn."
+        description="Reports per 1,000 live listings. A sudden rise is an early warning before people start leaving."
         error={reports.error}
         loading={reports.loading}
         onRefresh={reports.refresh}
@@ -346,6 +348,7 @@ export default function InsightsClient() {
             value={reportDim}
             onChange={(e) => setReportDim(e.target.value as "category" | "shop")}
             className="dm-input h-9 w-36 text-sm"
+            aria-label="Group reports"
           >
             <option value="category">By category</option>
             <option value="shop">By shop</option>
@@ -375,9 +378,9 @@ export default function InsightsClient() {
                 <YAxis tick={{ fontSize: 11 }} stroke={AXIS_STROKE} />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  formatter={(v: number, name: string) => (name === "perK" ? `${v} / 1k` : fmt(v))}
+                  formatter={(v: number, name: string) => (name === "perK" ? `${v} per 1,000` : fmt(v))}
                 />
-                <Bar dataKey="perK" name="Reports / 1k listings" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="perK" name="Reports per 1,000 listings" radius={[6, 6, 0, 0]}>
                   {reports.data.rows.slice(0, 12).map((_, i) => (
                     <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
                   ))}
@@ -386,7 +389,7 @@ export default function InsightsClient() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <Empty message="No reports in this window." />
+          <Empty message="No reports in this period." />
         )}
       </Section>
     </div>
@@ -395,8 +398,9 @@ export default function InsightsClient() {
 
 const tooltipStyle: React.CSSProperties = {
   borderRadius: 12,
-  border: "1px solid rgba(102, 121, 143, 0.25)",
-  backgroundColor: "rgba(255,255,255,0.98)",
+  border: "1px solid var(--border)",
+  backgroundColor: "var(--surface-raised)",
+  color: "var(--foreground)",
   fontSize: 12,
 };
 
@@ -405,7 +409,7 @@ function Header({ window: w, onChange }: { window: number; onChange: (n: number)
     <div>
       <PageHeader
         title="Insights"
-        description="Discovery, conversion (WhatsApp clicks), verification drop-off and trust health from analytics events."
+        description="How buyers find listings, how often they contact sellers on WhatsApp, where verification stalls, and trust signals."
       />
       <FilterBar>
         <Select
@@ -442,7 +446,7 @@ function KpiStrip({
           label: "Search to contact",
           value: searchToContact ? pct(searchToContact.conversion_rate) : "…",
           hint: searchToContact
-            ? `${fmt(searchToContact.sessions_with_contact)} of ${fmt(searchToContact.sessions_with_search)} sessions`
+            ? `${fmt(searchToContact.sessions_with_contact)} of ${fmt(searchToContact.sessions_with_search)} visits with a search`
             : undefined,
         },
         {
@@ -452,12 +456,12 @@ function KpiStrip({
               {stale ? pct(stale.stale_rate) : "…"}
             </span>
           ),
-          hint: stale ? `${fmt(stale.stale_listings)} of ${fmt(stale.active_listings)} live` : undefined,
+          hint: stale ? `${fmt(stale.stale_listings)} of ${fmt(stale.active_listings)} live listings` : undefined,
         },
         {
           label: "Rating coverage",
           value: rating ? pct(rating.coverage_rate) : "…",
-          hint: rating ? `${fmt(rating.submitted)} of ${fmt(rating.prompted)} prompts` : undefined,
+          hint: rating ? `${fmt(rating.submitted)} of ${fmt(rating.prompted)} asked to rate` : undefined,
         },
         {
           label: "Verification completed",

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { useAppSession } from "@/lib/state";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api/base";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 type ReviewStats = {
   total_reviews: number;
@@ -68,8 +70,10 @@ export default function ShopHeaderRating({
       );
       setMyReview({ rating } as ShopReview);
       load();
-    } catch {
-      /* ignore */
+    } catch (err) {
+      toast.error(
+        platformActionMessage(err, "We couldn't save your rating. Check your connection and try again."),
+      );
     }
     setSubmitting(false);
   }

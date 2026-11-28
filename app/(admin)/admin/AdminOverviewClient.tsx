@@ -6,7 +6,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 
 import { apiAdmin } from "@/lib/api";
 import type { AdminStatsOverview } from "@/lib/api/admin";
-import { ApiError } from "@/lib/api/base";
+import { apiErrorMessage } from "@/lib/api/base";
 import { useRealtimeTable, usePresenceBreakdown } from "@/lib/realtime/hooks";
 import {
   BTN_SECONDARY,
@@ -26,6 +26,10 @@ import {
 const GRID = "var(--border)";
 const AXIS = "var(--foreground-muted)";
 
+function count(n: number | null | undefined, one: string, many: string) {
+  return `${fmt(n)} ${n === 1 ? one : many}`;
+}
+
 function formatDay(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -44,13 +48,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
       const res = await apiAdmin.statsOverview();
       setData(res);
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to load platform stats",
-      );
+      setError(apiErrorMessage(err, "We couldn't load platform stats. Try again."));
     } finally {
       setRefreshing(false);
     }
@@ -135,7 +133,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
         title="Platform overview"
         description={
           <>
-            {fmt(presence.total)} online now, {fmt(presence.merchants)} merchants.
+            {fmt(presence.total)} online now, including {count(presence.merchants, "shop owner", "shop owners")}.
             {data.generated_at ? (
               <span title={new Date(data.generated_at).toLocaleString()}> Updated {relativeTime(data.generated_at)}.</span>
             ) : null}
@@ -149,13 +147,13 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
       <StatStrip
         items={[
           { label: "Shops", value: fmt(s.total_shops), hint: `${fmt(s.active_shops)} live` },
-          { label: "Listings", value: fmt(s.total_products), hint: `${fmt(s.total_product_views)} views` },
+          { label: "Listings", value: fmt(s.total_products), hint: count(s.total_product_views, "view", "views") },
           { label: "Users", value: fmt(s.total_users) },
           { label: "Subscription revenue", value: formatUGXShort(s.total_subscription_revenue_ugx) },
           {
-            label: `Times listings were shown (${data.window_days}d)`,
+            label: `Times listings were shown (last ${data.window_days} days)`,
             value: fmt(s.total_impressions ?? 0),
-            hint: `${fmt(s.impressions_last_24h ?? 0)} in the last 24 h`,
+            hint: `${fmt(s.impressions_last_24h ?? 0)} in the last 24 hours`,
           },
           { label: "People reached", value: fmt(s.total_reach ?? 0), hint: "Different people or devices" },
         ]}
@@ -163,7 +161,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
 
       <Section title="Needs attention">
         {attention.length === 0 ? (
-          <EmptyState message="Nothing waiting on you." />
+          <EmptyState message="Nothing needs attention right now." />
         ) : (
           <ul className={LIST}>
             {attention.map((a) => (
@@ -180,7 +178,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
 
       {trendData.length > 0 ? (
         <Section
-          title={`${fmt(trendData.reduce((n, d) => n + d.products, 0))} new listings in this window`}
+          title={`${count(trendData.reduce((n, d) => n + d.products, 0), "new listing", "new listings")} in this period`}
           description="New listings per day, with new users in grey."
         >
           <div className="h-56 w-full">
@@ -204,7 +202,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
       {data.most_seen && data.most_seen.length > 0 ? (
         <Section
           title="Most seen listings"
-          description={`Times each listing was on someone's screen for at least a second, last ${data.window_days} days.`}
+          description={`Times each listing was on someone's screen for at least 1 second, last ${data.window_days} days.`}
         >
           <ul className={LIST}>
             {data.most_seen.map((p) => (
@@ -216,7 +214,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
                   </span>
                   <span className="text-right text-xs tabular-nums">
                     <span className="block font-semibold text-foreground">{fmt(p.impressions)} shown</span>
-                    <span className="block text-muted">{fmt(p.reach)} people</span>
+                    <span className="block text-muted">{count(p.reach, "person", "people")}</span>
                   </span>
                 </Link>
               </li>
@@ -236,12 +234,12 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{shop.name || shop.slug}</span>
                     <span className="block text-xs tabular-nums text-muted">
-                      {fmt(shop.product_count)} listings · {fmt(shop.follower_count)} followers
+                      {count(shop.product_count, "listing", "listings")} · {count(shop.follower_count, "follower", "followers")}
                     </span>
                   </span>
                   <span className="text-right text-xs tabular-nums text-muted">
                     <span className="block">{fmt(shop.impressions ?? 0)} shown</span>
-                    <span className="block">{fmt(shop.view_count)} views</span>
+                    <span className="block">{count(shop.view_count, "view", "views")}</span>
                   </span>
                 </li>
               ))}
@@ -259,7 +257,7 @@ export default function AdminOverviewClient({ initialData }: { initialData: Admi
                     <span className="block truncate text-sm font-semibold">{p.title}</span>
                     <span className="block truncate text-xs text-muted">{p.shop_name || "No shop"}</span>
                   </span>
-                  <span className="text-xs tabular-nums text-muted">{fmt(p.view_count)} views</span>
+                  <span className="text-xs tabular-nums text-muted">{count(p.view_count, "view", "views")}</span>
                 </li>
               ))}
             </ul>

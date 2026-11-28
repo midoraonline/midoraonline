@@ -51,7 +51,7 @@ export function mediaUnreachableMessage(err: unknown): string | null {
   if (typeof detail === "string" && detail.trim() && detail !== "media_unreachable") {
     return detail.trim();
   }
-  return "A photo on this listing could not be opened. Remove it and upload the photo again.";
+  return "We couldn't open one of the photos on this listing. Remove it and add it again.";
 }
 
 export function missingListingFields(err: unknown): MissingListingField[] | null {

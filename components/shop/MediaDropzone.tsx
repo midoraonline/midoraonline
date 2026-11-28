@@ -9,6 +9,7 @@ import { discardUploads } from "@/lib/uploads/discard";
 import { ImageUpload, type ImageUploadHandle } from "@/components/image-upload";
 import { VideoUpload, type VideoUploadHandle } from "@/components/video-upload";
 import MediaLightbox from "@/components/shop/MediaLightbox";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 type MediaDropzoneProps = {
   urls: string[];
@@ -78,12 +79,12 @@ export function MediaDropzone({
     (fileList: FileList | File[]) => {
       const { images, videos } = partitionFiles(Array.from(fileList));
       if (images.length > photosLeft) {
-        toast.message(`Only ${maxPhotos} ${maxPhotos === 1 ? "photo" : "photos"} per listing`, {
-          description: photosLeft ? `Added the first ${photosLeft}.` : "Remove one to add another.",
+        toast.message(`You can add up to ${maxPhotos} ${maxPhotos === 1 ? "photo" : "photos"} per listing.`, {
+          description: photosLeft ? `We added the first ${photosLeft}.` : "Remove a photo to add another.",
         });
       }
       if (videos.length > videosLeft) {
-        toast.message(maxVideos ? `Only ${maxVideos} ${maxVideos === 1 ? "video" : "videos"} per listing` : "Videos aren't allowed on listings right now");
+        toast.message(maxVideos ? `You can add up to ${maxVideos} ${maxVideos === 1 ? "video" : "videos"} per listing.` : "You can't add videos to listings right now.");
       }
       const pickedImages = images.slice(0, photosLeft);
       const pickedVideos = videos.slice(0, videosLeft);
@@ -149,11 +150,11 @@ export function MediaDropzone({
     try {
       const res = await removeBackground({ image_url: url, bg_color: "#ffffff" });
       const next = res?.image_url;
-      if (!next) throw new Error("No photo came back.");
+      if (!next) throw new Error("We couldn't remove the background. Try again.");
       setOriginals((m) => ({ ...m, [next]: url }));
       onReplace(index, next);
     } catch (err) {
-      toast.error(err instanceof Error && err.message ? err.message : "Couldn't remove the background. Try again.");
+      toast.error(platformActionMessage(err, "We couldn't remove the background. Try again."));
     } finally {
       setBgBusy((m) => {
         const next = { ...m };
@@ -276,7 +277,7 @@ export function MediaDropzone({
       {urls.length > 0 ? (
         <ul
           className="grid grid-cols-3 gap-2 min-[480px]:grid-cols-4 sm:grid-cols-5"
-          aria-label="Your photos. Drag (long press on phones) or use the arrows to reorder; the first photo is the cover."
+          aria-label="Your photos. Use the arrows to change the order. The first photo is the cover."
         >
           {urls.map((url, i) => {
             const video = isVideoUrl(url);
@@ -401,7 +402,7 @@ export function MediaDropzone({
       ) : null}
       {urls.length > 0 ? (
         <p className="text-[11px] text-muted">
-          Tap a photo to view it full size. Hold and drag (or use the arrows) to reorder. The first photo is the cover.
+          Tap a photo to see it full size. Hold and drag, or use the arrows, to change the order. The first photo is the cover.
         </p>
       ) : null}
 
@@ -447,10 +448,10 @@ export function MediaDropzone({
           <p className="text-xs text-muted">
             {atCapacity
               ? `Maximum ${maxPhotos} ${maxPhotos === 1 ? "photo" : "photos"}${maxVideos ? ` and ${maxVideos} ${maxVideos === 1 ? "video" : "videos"}` : ""} per listing.`
-              : `Tap to choose, or drag & drop. ${photosLeft} of ${maxPhotos} photos left${maxVideos ? ` · ${videosLeft} video${videosLeft === 1 ? "" : "s"} left` : ""}.`}
+              : `Tap to choose, or drag and drop. ${photosLeft} of ${maxPhotos} photos left${maxVideos ? ` · ${videosLeft} video${videosLeft === 1 ? "" : "s"} left` : ""}.`}
           </p>
           <p className="text-[11px] text-muted">
-            {photosRequired ? "At least 2 photos to publish" : "Photos optional"} · The first photo is the cover.
+            {photosRequired ? "Add at least 2 photos to post" : "Photos are optional"} · The first photo is the cover.
           </p>
         </div>
       </div>
@@ -458,12 +459,12 @@ export function MediaDropzone({
       {planName ? (
         <p className="text-xs text-muted">
           Your {planName} plan allows {maxPhotos} {maxPhotos === 1 ? "photo" : "photos"}
-          {maxVideos ? ` and ${maxVideos} ${maxVideos === 1 ? "video" : "videos"}` : ""} per ad.
+          {maxVideos ? ` and ${maxVideos} ${maxVideos === 1 ? "video" : "videos"}` : ""} per listing.
           {upgradeHref ? (
             <>
               {" "}
               <a href={upgradeHref} className="font-medium text-accent underline underline-offset-2">
-                Upgrade for more
+                Upgrade your plan
               </a>
             </>
           ) : null}

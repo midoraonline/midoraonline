@@ -51,7 +51,7 @@ export const OPPORTUNITY_CATEGORIES: Record<OpportunityCategory, OpportunityCate
     ctaOffer: "apply",
     ctaSeek: "contact",
     offerOption: "I have a professional job opening",
-    seekOption: "I am looking for professional work",
+    seekOption: "I'm looking for professional work",
     legacyKind: "job",
   },
   casual_daily_work: {
@@ -63,7 +63,7 @@ export const OPPORTUNITY_CATEGORIES: Record<OpportunityCategory, OpportunityCate
     ctaOffer: "respond",
     ctaSeek: "contact",
     offerOption: "I have casual or daily work available",
-    seekOption: "I am looking for casual or daily work",
+    seekOption: "I'm looking for casual or daily work",
     legacyKind: "job",
   },
   gigs_freelance: {
@@ -75,7 +75,7 @@ export const OPPORTUNITY_CATEGORIES: Record<OpportunityCategory, OpportunityCate
     ctaOffer: "respond",
     ctaSeek: "contact",
     offerOption: "I have a short-term project or gig",
-    seekOption: "I am looking for gigs or freelance work",
+    seekOption: "I'm looking for gigs or freelance work",
     legacyKind: "gig",
   },
   internships_graduate_training: {
@@ -111,7 +111,7 @@ export const OPPORTUNITY_CATEGORIES: Record<OpportunityCategory, OpportunityCate
     ctaOffer: "respond",
     ctaSeek: "contact",
     offerOption: "I need a business partner or collaborator",
-    seekOption: "I am looking for a business partnership",
+    seekOption: "I'm looking for a business partnership",
     legacyKind: "collaboration",
   },
   domestic_jobs: {
@@ -123,7 +123,7 @@ export const OPPORTUNITY_CATEGORIES: Record<OpportunityCategory, OpportunityCate
     ctaOffer: "apply",
     ctaSeek: "contact",
     offerOption: "I have a domestic job opening",
-    seekOption: "I am looking for domestic work",
+    seekOption: "I'm looking for domestic work",
     legacyKind: "maids",
   },
   volunteer: {

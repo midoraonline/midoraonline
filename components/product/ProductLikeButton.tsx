@@ -122,11 +122,12 @@ export default function ProductLikeButton({
 
   const disabledClasses = isPending ? "opacity-70 cursor-wait" : "cursor-pointer active:scale-95";
 
+  const likeText = `${count ?? 0} ${count === 1 ? "like" : "likes"}`;
   const ariaLabel = session.isAuthenticated
     ? liked
-      ? `Remove from watchlist. ${count ?? 0} likes`
-      : `Save for later. ${count ?? 0} likes`
-    : "Sign in to save for later";
+      ? `Remove from saved. ${likeText}`
+      : `Save listing. ${likeText}`
+    : "Sign in to save this listing";
 
   if (variant === "floating") {
     return (
@@ -141,7 +142,8 @@ export default function ProductLikeButton({
           liked ? "text-rose-500" : "text-neutral-500"
         } ${className}`}
         aria-pressed={liked}
-        title={liked ? "Remove from watchlist" : "Save for later"}
+        aria-label={ariaLabel}
+        title={liked ? "Remove from saved" : "Save listing"}
       >
         <MaterialSymbol name="favorite" className="!text-[20px]" filled={liked} />
       </button>

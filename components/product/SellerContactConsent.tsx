@@ -81,7 +81,7 @@ export default function SellerContactConsent({
                 </h3>
                 <p className="mt-0.5 text-xs text-muted">
                   Opening WhatsApp for <strong className="text-foreground">{title}</strong>.
-                  Your inquiry is logged so the seller can follow up.
+                  We let the seller know you asked, so they can follow up.
                 </p>
               </div>
               <button
@@ -95,12 +95,15 @@ export default function SellerContactConsent({
             </div>
 
             <p className="mt-4 text-[11px] leading-relaxed text-muted">
-              Only genuine inquiries please — spam or fraud may suspend your account.
+              Stay safe: meet in a public place and see the item before you pay. Don&apos;t send money in advance.
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              Please only send real enquiries. We may suspend accounts that send spam or try to cheat.
             </p>
 
             {!avatarUrl && !photoNudgeDismissed ? (
               <div className="mt-3 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-[11px] text-foreground/85">
-                Tip: a profile photo helps sellers trust your message.{" "}
+                Tip: a profile photo helps sellers trust you.{" "}
                 <Link href={profilePhotoHref} className="font-semibold text-accent underline">
                   Add one
                 </Link>
@@ -133,7 +136,7 @@ export default function SellerContactConsent({
                 style={{ background: "#25D366" }}
               >
                 <WhatsAppIcon className="size-3.5" />
-                Continue
+                Open WhatsApp
               </button>
             </div>
           </div>

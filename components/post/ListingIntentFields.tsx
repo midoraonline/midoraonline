@@ -102,8 +102,8 @@ export default function ListingIntentFields({
           name="opportunity-intent"
           legend="Are you offering or looking?"
           options={[
-            { value: "offering", label: cfg.offerOption ?? "I am offering this" },
-            { value: "seeking", label: cfg.seekOption ?? "I am looking for this" },
+            { value: "offering", label: cfg.offerOption ?? "I'm offering this" },
+            { value: "seeking", label: cfg.seekOption ?? "I'm looking for this" },
           ]}
           value={intent}
           invalid={Boolean(showErrors && error)}
@@ -115,8 +115,8 @@ export default function ListingIntentFields({
           role="status"
           className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
         >
-          {cfg.label} now only takes listings that offer an opportunity. When you save, this listing will show as
-          {" "}<strong>{cfg.offering}</strong> instead of a &quot;looking for&quot; listing. Pick another category if you are still looking.
+          {cfg.label} now only takes listings that offer something. When you save, this listing will show as
+          {" "}<strong>{cfg.offering}</strong>, not as &quot;looking for&quot;. If you&apos;re looking, pick another category.
         </p>
       ) : null}
       {message}

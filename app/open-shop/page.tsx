@@ -64,7 +64,7 @@ function OpenShopFlow() {
         setVerificationStatus(status);
       })
       .catch(() => {
-        if (active) setVerificationError("We couldn't check verification. Try again.");
+        if (active) setVerificationError("We couldn't check your account. Check your connection and try again.");
       });
     return () => {
       active = false;
@@ -73,11 +73,11 @@ function OpenShopFlow() {
 
   if (stillResolving) {
     return (
-      <StandaloneShell eyebrow="Merchant Studio">
+      <StandaloneShell eyebrow="Open a shop">
         <div className="grid min-h-[calc(100dvh-64px)] place-items-center p-6">
           <div className="flex flex-col items-center gap-3 text-muted">
             <div className="dm-skeleton h-5 w-48 rounded-lg" />
-            <p className="text-sm font-medium">Opening shop builder…</p>
+            <p className="text-sm font-medium">Loading…</p>
           </div>
         </div>
       </StandaloneShell>
@@ -88,7 +88,7 @@ function OpenShopFlow() {
 
   if (!verificationStatus) {
     return (
-      <StandaloneShell eyebrow="Merchant Studio">
+      <StandaloneShell eyebrow="Open a shop">
         <div className="grid min-h-[calc(100dvh-64px)] place-items-center p-6">
           <div className="flex flex-col items-center gap-3 text-center text-muted">
             {verificationError ? (
@@ -101,7 +101,7 @@ function OpenShopFlow() {
             ) : (
               <>
                 <Loader2 className="size-5 animate-spin" aria-hidden />
-                <p className="text-sm font-medium">Checking verified contact…</p>
+                <p className="text-sm font-medium">Checking your account…</p>
               </>
             )}
           </div>
@@ -112,7 +112,7 @@ function OpenShopFlow() {
 
   if (!verificationStatus.can_post) {
     return (
-      <StandaloneShell eyebrow="Merchant Studio">
+      <StandaloneShell eyebrow="Open a shop">
         <VerifyChannelStep
           status={verificationStatus}
           onVerified={setVerificationStatus}
@@ -128,7 +128,7 @@ function OpenShopFlow() {
   };
 
   return (
-    <StandaloneShell eyebrow="Merchant Studio">
+    <StandaloneShell eyebrow="Open a shop">
       {createdShop ? (
         <CreatedSuccess shop={createdShop} onCreateAnother={() => { setCreatedShop(null); flow.go("choose", { replace: true, extra: { part: null } }); }} />
       ) : (
@@ -171,22 +171,22 @@ function ChooseStart({ onPick, onBack }: { onPick: (m: CreationMode) => void; on
       mode: "quick" as const,
       icon: Sparkles,
       title: "Use AI",
-      text: "Describe your business in a sentence or two. We draft the shop and you check it before it goes live.",
+      text: "Tell us about your business in a sentence or two. We draft your shop, and you check it before it goes live.",
       badge: "Fastest",
       cta: "Start with AI",
     },
     {
       mode: "manual" as const,
       icon: PenLine,
-      title: "Set up manually",
-      text: "Fill in your business details yourself, one short step at a time.",
+      title: "Fill in a form",
+      text: "Add your shop details yourself, one short step at a time.",
       badge: null,
-      cta: "Fill in the form",
+      cta: "Use the form",
     },
   ];
   return (
     <StepFrame
-      title="How do you want to set up your business?"
+      title="How do you want to set up your shop?"
       subtitle="You can change everything later."
       onBack={onBack}
       wide
@@ -232,24 +232,24 @@ function CreatedSuccess({ shop, onCreateAnother }: { shop: apiShops.Shop; onCrea
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="text-sm text-muted">
-        {shop.is_active === false ? "Your business is being reviewed" : "Your business is live"}
+        {shop.is_active === false ? "We're reviewing your shop" : "Your shop is live!"}
       </p>
       <h1 className="mt-1 text-xl font-semibold text-foreground">{shop.name}</h1>
       <p className="mt-1 text-sm text-muted">
         {shop.is_active === false
-          ? "Something in the name, description or images needs a quick check. We'll notify you once it's live; you can still set it up meanwhile."
-          : "Post your first ad or finish your business details whenever you're ready."}
+          ? "We need to check the name, description or photos. We'll let you know when it's live. You can keep setting it up while you wait."
+          : "Post your first listing, or finish your shop details when you're ready."}
       </p>
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <Link href={`/merchant/shops/${shop.id}`} className={BTN_PRIMARY}>
           Manage shop
         </Link>
         <Link href={`/shops/${encodeURIComponent(shop.slug)}`} className={BTN_SECONDARY}>
-          View public page
+          View shop page
         </Link>
       </div>
       <button type="button" onClick={onCreateAnother} className={`${BTN_TEXT} mt-6`}>
-        Create another shop
+        Open another shop
       </button>
     </div>
   );

@@ -38,16 +38,16 @@ type Props = {
 // Map route → screen name shown in the header
 const SCREEN_NAMES: Record<string, string> = {
   "/merchant":               "Overview",
-  "/merchant/listings":      "My Listings",
-  "/merchant/shops":         "My business",
+  "/merchant/listings":      "My listings",
+  "/merchant/shops":         "My shops",
   "/merchant/conversations": "Conversations",
   "/merchant/leads":         "Leads",
-  "/merchant/billing":       "Billing & Plans",
+  "/merchant/billing":       "Billing and plans",
   "/merchant/settings":      "Settings",
   // customer
   "/customer":               "Overview",
-  "/customer/saved":         "Saved Shops",
-  "/customer/wishlist":      "Wishlist",
+  "/customer/saved":         "Saved shops",
+  "/customer/wishlist":      "Saved listings",
   "/customer/settings":      "Settings",
   // admin
   "/admin":                  "Platform overview",
@@ -69,16 +69,16 @@ function resolveScreenName(pathname: string): string {
   if (SCREEN_NAMES[pathname]) return SCREEN_NAMES[pathname];
   // merchant shop sub-pages
   if (pathname.includes("/analytics"))    return "Analytics";
-  if (pathname.includes("/catalog"))      return "Catalog";
+  if (pathname.includes("/catalog"))      return "Catalogue";
   if (pathname.startsWith("/merchant/listings/") && pathname.endsWith("/edit")) {
     return "Edit listing";
   }
   if (pathname.startsWith("/merchant/listings/") && pathname.endsWith("/stats")) {
     return "Listing stats";
   }
-  if (pathname.startsWith("/merchant/shops/") && pathname.includes("/settings")) return "Shop Settings";
+  if (pathname.startsWith("/merchant/shops/") && pathname.includes("/settings")) return "Shop settings";
   if (pathname.includes("/verification")) return "Verification";
-  if (pathname.startsWith("/merchant/shops/")) return "Shop Dashboard";
+  if (pathname.startsWith("/merchant/shops/")) return "Shop dashboard";
   return "Dashboard";
 }
 
@@ -238,10 +238,9 @@ export default function DashboardShell({
     return (
       <div className="grid min-h-[100dvh] place-items-center bg-background p-6">
         <div className="max-w-md space-y-3 rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
-          <h1 className="text-xl font-semibold tracking-tight">Access restricted</h1>
+          <h1 className="text-xl font-semibold tracking-tight">You can&apos;t open this page</h1>
           <p className="text-sm text-muted">
-            Your account role ({userRole || "unknown"}) can&apos;t open the{" "}
-            {roleLabel.toLowerCase()} dashboard.
+            Your account can&apos;t open the {roleLabel.toLowerCase()} dashboard. Go back to Midora to keep browsing.
           </p>
           <Link href="/" className={BTN_SECONDARY}>
             Go home

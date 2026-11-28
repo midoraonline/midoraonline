@@ -41,10 +41,10 @@ export function ActivityHeadline({ stats }: { stats: ListingActivity }) {
 
 export function ActivityBreakdown({ stats }: { stats: ListingActivity }) {
   const rows = [
-    { label: "Impressions", hint: "Times the ad was on someone's screen for at least a second", value: stats.impressions, icon: Eye },
-    { label: "People reached", hint: "Different people or devices that saw it", value: stats.reach, icon: Users },
-    { label: "Boosted impressions", hint: "Impressions from boosted spots", value: stats.boosted_impressions, icon: Eye },
-    { label: "Listing views", hint: "Times someone opened the ad", value: stats.views, icon: MousePointerClick },
+    { label: "Impressions", hint: "Times your listing was on someone's screen for at least 1 second", value: stats.impressions, icon: Eye },
+    { label: "People reached", hint: "Different people or phones that saw it", value: stats.reach, icon: Users },
+    { label: "Boosted impressions", hint: "Impressions from your boost", value: stats.boosted_impressions, icon: Eye },
+    { label: "Listing views", hint: "Times someone opened your listing", value: stats.views, icon: MousePointerClick },
     { label: "Unique viewers", hint: "Different people who opened it", value: stats.unique_viewers, icon: Users },
     { label: "WhatsApp clicks", value: stats.whatsapp_clicks, icon: MessageCircle },
     { label: "Messages", value: stats.messages, icon: MessagesSquare },
@@ -52,7 +52,7 @@ export function ActivityBreakdown({ stats }: { stats: ListingActivity }) {
     { label: "Likes", value: stats.likes, icon: Heart },
     { label: "Comments", value: stats.comments, icon: MessagesSquare },
     { label: "Reviews", value: stats.reviews, icon: Star },
-    { label: "Reports", hint: "People who reported the ad to Midora", value: stats.reports, icon: Flag },
+    { label: "Reports", hint: "People who reported your listing to Midora", value: stats.reports, icon: Flag },
   ];
   return (
     <ul className={LIST}>

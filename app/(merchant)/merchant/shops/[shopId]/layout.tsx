@@ -7,10 +7,11 @@ import { useCallback, useEffect, useState } from "react";
 import { apiShops } from "@/lib/api";
 import type { Shop } from "@/lib/api/shops";
 import { BTN_SECONDARY, ErrorState, PageHeader, StatusDot, UnderlineTabs } from "@/components/dashboard/ui";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 const TABS = [
   { slug: "", label: "Overview" },
-  { slug: "catalog", label: "Catalog" },
+  { slug: "catalog", label: "Catalogue" },
   { slug: "analytics", label: "Analytics" },
   { slug: "verification", label: "Verification" },
   { slug: "settings", label: "Settings" },
@@ -33,7 +34,7 @@ export default function ShopDetailLayout({ children }: { children: React.ReactNo
       const s = await apiShops.getShop(shopId);
       setShop(s);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load shop");
+      setError(platformActionMessage(err, "We couldn't load this shop. Try again."));
     } finally {
       setLoading(false);
     }

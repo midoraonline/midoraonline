@@ -134,7 +134,7 @@ export default function MerchantLeadsClient({
 
   return (
     <div>
-      <PageHeader title="Leads" description="Inquiries from buyers, per shop." />
+      <PageHeader title="Leads" description="Buyers who contacted your shop." />
 
       <FilterBar>
         {shops.length > 1 ? (
@@ -163,7 +163,7 @@ export default function MerchantLeadsClient({
       </FilterBar>
 
       {!stats ? (
-        <EmptyState message={shops.length ? "No lead data for this shop yet." : "Create a business to start tracking leads."} />
+        <EmptyState message={shops.length ? "No leads for this shop yet." : "Open a shop to start tracking leads."} />
       ) : (
         <>
           <StatStrip
@@ -175,15 +175,15 @@ export default function MerchantLeadsClient({
           />
           <Section title="Recent leads">
             {leads.length === 0 ? (
-              <EmptyState message="No leads yet. They appear when buyers tap WhatsApp or message you." />
+              <EmptyState message="No leads yet. They show here when buyers tap WhatsApp or message you." />
             ) : visibleLeads.length === 0 ? (
-              <EmptyState message="No leads match these filters." />
+              <EmptyState message="No leads match these filters. Try a different status or type." />
             ) : (
               <ul className={LIST}>
                 {visibleLeads.map((lead) => (
                   <li key={lead.id} className="flex items-center gap-3 px-4 py-3">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{SOURCE_LABEL[lead.source] ?? lead.source} inquiry</span>
+                      <span className="block truncate text-sm font-semibold">{SOURCE_LABEL[lead.source] ?? lead.source} enquiry</span>
                       <span
                         className="block text-xs tabular-nums text-muted"
                         title={new Date(lead.created_at).toLocaleString()}
@@ -192,7 +192,7 @@ export default function MerchantLeadsClient({
                       </span>
                     </span>
                     <StatusDot tone={lead.lead_status === "new" ? "warn" : lead.lead_status === "responded" ? "ok" : "neutral"}>
-                      <span className="capitalize">{lead.lead_status}</span>
+                      {STATUS_OPTIONS.find((o) => o.value === lead.lead_status)?.label ?? lead.lead_status}
                     </StatusDot>
                   </li>
                 ))}

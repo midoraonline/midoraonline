@@ -36,10 +36,10 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
     <div>
       <PageHeader
         title="Conversations"
-        description={`${fmt(sellerConvs.length)} conversations with buyers, ${fmt(unread)} unread messages.`}
+        description={`${fmt(sellerConvs.length)} ${sellerConvs.length === 1 ? "conversation" : "conversations"} with buyers, ${fmt(unread)} unread.`}
       />
       {sellerConvs.length === 0 ? (
-        <EmptyState message="No buyer conversations yet. Buyers can message you from listing pages." />
+        <EmptyState message="No messages from buyers yet. Buyers can message you from your listing pages." />
       ) : (
         <ul className={LIST}>
           {sellerConvs.map((c) => (
@@ -49,7 +49,7 @@ export default function MerchantConversationsClient({ initialConversations }: Pr
                   <span className={`block truncate text-sm ${c.seller_unread > 0 ? "font-semibold" : "font-medium"}`}>
                     {c.buyer?.full_name || "Buyer"}
                   </span>
-                  <span className="block truncate text-xs text-muted">{c.last_message || "No messages"}</span>
+                  <span className="block truncate text-xs text-muted">{c.last_message || "No messages yet"}</span>
                 </span>
                 {c.seller_unread > 0 ? (
                   <span className="text-xs font-medium tabular-nums text-accent">{c.seller_unread} new</span>

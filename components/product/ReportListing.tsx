@@ -42,8 +42,8 @@ export default function ReportListing({ productId }: Props) {
     const request = apiListingEvents.reportProduct(productId, reason, details.trim() || undefined);
     toast.promise(request, {
       loading: "Sending report…",
-      success: "Report submitted — our team will review it.",
-      error: (err: unknown) => apiErrorMessage(err, "Couldn't submit report. Try again."),
+      success: "Thanks. Our team will review this listing.",
+      error: (err: unknown) => apiErrorMessage(err, "We couldn't send your report. Check your connection and try again."),
     });
     try {
       await request;
@@ -63,7 +63,7 @@ export default function ReportListing({ productId }: Props) {
         className="dm-focus inline-flex items-center gap-1 text-[11px] text-muted transition-colors hover:text-[color:var(--error)]"
       >
         <MaterialSymbol name="flag" className="!text-sm" aria-hidden="true" />
-        Report
+        Report listing
       </button>
 
       {open && (
@@ -88,15 +88,14 @@ export default function ReportListing({ productId }: Props) {
                 className="dm-btn dm-btn-primary"
                 style={{ background: "var(--error)" }}
               >
-                {submitting ? "Sending…" : "Submit report"}
+                {submitting ? "Sending…" : "Send report"}
               </button>
             </div>
           }
         >
           <div className="space-y-3">
             <p className="text-xs text-muted">
-              Why are you reporting this listing? Your report will be reviewed by
-              our team.
+              Why are you reporting this listing? Our team will review your report.
             </p>
             <div className="space-y-1">
               {REPORT_REASONS.map((r) => {
@@ -134,7 +133,7 @@ export default function ReportListing({ productId }: Props) {
                   className="dm-textarea text-sm"
                   aria-invalid={details.trim().length < 3}
                 />
-                <p className="text-[11px] text-muted">Required when you choose Other.</p>
+                <p className="text-[11px] text-muted">Please add a few words when you choose Other.</p>
               </div>
             ) : null}
           </div>

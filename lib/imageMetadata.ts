@@ -277,7 +277,7 @@ export async function inspectImage(file: File): Promise<MetadataInspection> {
     return {
       ok: false,
       code: "banned_software",
-      reason: `We can't accept this image: its "${field}" metadata field mentions "${keyword}", which suggests it was generated or sourced from another platform rather than a photo you took. Please upload an original photo taken directly with your phone or camera — you can also strip metadata by taking a fresh screenshot-free photo instead of re-saving an existing file.`,
+      reason: "This photo looks like it was made or edited by an app, not taken by you. Take a new photo with your phone camera and upload that.",
       details: [`Metadata field "${field}" contains banned term: "${keyword}"`],
     };
   }
@@ -287,7 +287,7 @@ export async function inspectImage(file: File): Promise<MetadataInspection> {
     return {
       ok: false,
       code: "foreign_link",
-      reason: `We can't accept this image: its "${field}" metadata field contains a link to "${url.slice(0, 60)}", which suggests it was copied from another website rather than a photo you took. Please upload your own original photo instead.`,
+      reason: "This photo looks like it was copied from another website. Take your own photo with your phone camera and upload that.",
       details: [`Metadata field "${field}" contains external link: "${url}"`],
     };
   }
@@ -319,7 +319,7 @@ export async function inspectImage(file: File): Promise<MetadataInspection> {
 
         if (hasUniformEdgeBands(bmp, width, height)) {
           score += 2;
-          details.push("The very top and bottom of the image are flat, solid colors — typical of a phone status bar, browser toolbar, or app navigation bar in a screenshot.");
+          details.push("The very top and bottom of the image are flat, solid colours — typical of a phone status bar, browser toolbar, or app navigation bar in a screenshot.");
         }
       }
 
@@ -336,7 +336,7 @@ export async function inspectImage(file: File): Promise<MetadataInspection> {
       code: "screenshot_or_downloaded",
       reason:
         `This looks like a screenshot or an image saved from somewhere else, not a photo you took, because:\n${bulletList}\n\n` +
-        `Please open your phone or camera's camera app, take a fresh photo, and upload that instead.`,
+        `Open your phone's camera, take a new photo, and upload that instead.`,
       details,
     };
   }

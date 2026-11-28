@@ -15,6 +15,8 @@ import { browseShopGridClass, shopMatchesCategoryFilter, type CategoryFilterSele
 import { useCategoryItems } from "@/lib/hooks/useCategoryItems";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { apiShops } from "@/lib/api";
+import { resolveShopTrustLevel } from "@/lib/productCardMap";
+import { verifiedWhatsapp } from "@/components/shop/shopUtils";
 
 function locationDisplay(loc: unknown): string {
   if (typeof loc === "string") return loc;
@@ -247,14 +249,13 @@ export default function ShopListRealtime({
   if (activeShops.length === 0) {
     return (
       <div className="dm-card p-6 sm:p-8">
-        <p className="text-sm font-medium text-foreground">No active shops yet.</p>
+        <p className="text-sm font-medium text-foreground">No shops to show yet.</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Shops become visible to the public after they are verified. If you
-          already opened a shop, check your{" "}
+          Shops show here once Midora approves them. If you have a shop, check your{" "}
           <Link href="/merchant" className="font-semibold text-foreground underline-offset-2 hover:underline">
             merchant dashboard
           </Link>{" "}
-          to track the verification status, or{" "}
+          to see its status, or{" "}
           <Link href="/merchant/new" className="font-semibold text-foreground underline-offset-2 hover:underline">
             open a new one
           </Link>
@@ -269,7 +270,7 @@ export default function ShopListRealtime({
       <div className="space-y-3">
         {toolbar}
       <div className="dm-card p-6 sm:p-8">
-        <p className="text-sm text-muted">No shops match your search or filters. Try clearing filters.</p>
+        <p className="text-sm text-muted">No shops match your search. Try another word or clear the filters.</p>
         {hasMore ? (
           <button
             type="button"
@@ -299,11 +300,11 @@ export default function ShopListRealtime({
               category: categories[shop.id]?.[0] ?? shop.category ?? "Shop",
               location: locationDisplay(shop.location),
               tagline: shop.description ?? "",
-              verified: shop.is_active ?? true,
+              verified: resolveShopTrustLevel(shop.trust_badges) !== "registered",
               logoUrl: shop.logo_url ?? null,
               shopType: shop.shop_type ?? null,
               viewCount: shop.view_count ?? null,
-              whatsappNumber: shop.whatsapp_number ?? null,
+              whatsappNumber: verifiedWhatsapp(shop),
               email: shop.shop_email ?? null,
               rating: shop.trust_score != null ? Math.min(5, shop.trust_score / 20) : null,
               reviewCount: null,
@@ -325,7 +326,7 @@ export default function ShopListRealtime({
           {totalLabel > visible.length ? (
             <p className="text-xs text-muted">
               Showing {visible.length}
-              {initialTotal != null ? ` of ${initialTotal}` : ""} shops
+              {initialTotal != null ? ` of ${initialTotal}` : ""} shop{(initialTotal ?? visible.length) === 1 ? "" : "s"}
             </p>
           ) : null}
         </div>

@@ -12,10 +12,10 @@ export default function Error({
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background text-foreground">
       <div className="text-center max-w-md">
         <h1 className="text-xl font-semibold tracking-tight">
-          Something went wrong
+          We couldn’t load this page
         </h1>
         <p className="mt-2 text-sm text-foreground/70">
-          We couldn’t load this page. You can try again or go back home.
+          Check your data or Wi-Fi, then try again. Or go back to the home page.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <button

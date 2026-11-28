@@ -21,7 +21,7 @@ export default function ShopsBrowseSkeleton({ showPageHeader = true }: Props) {
       {showPageHeader ? (
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-wrap items-baseline gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Browse Shops</h1>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Browse shops</h1>
             <Skeleton className="h-5 w-24" rounded="md" />
           </div>
           <p className="mt-1.5 text-sm text-muted">

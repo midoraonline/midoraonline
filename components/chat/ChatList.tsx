@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
+import { platformActionMessage } from "@/lib/platformMessages";
 import type { Conversation } from "@/lib/api/chat";
 import { sameUserId, unreadForViewer } from "@/lib/chat/participants";
 import { CHAT_READ_EVENT } from "@/lib/chat/readState";
@@ -39,6 +40,7 @@ export default function ChatList({ activeId, onSelect }: Props) {
   const session = useAppSession();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchGen = useRef(0);
 
@@ -49,8 +51,10 @@ export default function ChatList({ activeId, onSelect }: Props) {
       const list = await apiChat.listConversations();
       if (gen !== fetchGen.current) return;
       setConversations(list);
-    } catch {
-      /* ignore */
+      setLoadError(null);
+    } catch (err) {
+      if (gen !== fetchGen.current) return;
+      setLoadError(platformActionMessage(err, "We couldn't load your chats. Try again."));
     } finally {
       if (gen === fetchGen.current) setLoading(false);
     }
@@ -100,7 +104,7 @@ export default function ChatList({ activeId, onSelect }: Props) {
 
   if (loading && conversations.length === 0) {
     return (
-      <ul className="flex flex-col gap-1 p-1" aria-busy="true" aria-label="Loading conversations">
+      <ul className="flex flex-col gap-1 p-1" aria-busy="true" aria-label="Loading chats">
         {Array.from({ length: 6 }).map((_, i) => (
           <li key={i} className="flex items-center gap-3 rounded-xl p-3">
             <div className="size-11 shrink-0 animate-pulse rounded-full bg-foreground/10" />
@@ -114,13 +118,38 @@ export default function ChatList({ activeId, onSelect }: Props) {
     );
   }
 
+  const retry = () => {
+    setLoading(true);
+    setLoadError(null);
+    void fetchList();
+  };
+
+  if (loadError && conversations.length === 0) {
+    return (
+      <div
+        role="alert"
+        className="flex flex-col items-center justify-center py-12 text-center text-sm text-muted"
+      >
+        <MaterialSymbol name="cloud_off" className="!text-3xl mb-2 opacity-30" />
+        <p>{loadError}</p>
+        <button
+          type="button"
+          onClick={retry}
+          className="dm-focus mt-3 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-accent/40 hover:text-accent"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
   if (!conversations.length) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center text-sm text-muted">
         <MaterialSymbol name="chat" className="!text-3xl mb-2 opacity-30" />
-        <p>No conversations yet</p>
+        <p>No chats yet</p>
         <p className="mt-1 text-xs">
-          Message a seller from any product page to start chatting.
+          Tap Message seller on any listing to start a chat.
         </p>
       </div>
     );
@@ -184,7 +213,7 @@ export default function ChatList({ activeId, onSelect }: Props) {
                   <span
                     className="absolute -right-1 -top-1 grid min-w-[18px] h-[18px] place-items-center rounded-full px-1 text-[9px] font-bold text-white shadow-sm"
                     style={{ background: "var(--error)" }}
-                    aria-label={`${unread} unread`}
+                    aria-label={`${unread} unread ${unread === 1 ? "message" : "messages"}`}
                   >
                     {unread > 9 ? "9+" : unread}
                   </span>
@@ -198,7 +227,7 @@ export default function ChatList({ activeId, onSelect }: Props) {
                       unread > 0 ? "font-bold" : "font-semibold",
                     ].join(" ")}
                   >
-                    {otherUser?.full_name || "Unknown"}
+                    {otherUser?.full_name || "Midora user"}
                   </p>
                   <span className="shrink-0 text-[10px] text-muted">
                     {timeAgo(conv.last_message_at)}

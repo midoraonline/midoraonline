@@ -47,13 +47,13 @@ export default function OnboardingPage() {
           <div className="relative z-10 max-w-2xl space-y-6">
             <p className="inline-flex items-center gap-2 rounded-full bg-orange-500/20 border border-orange-500/30 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-orange-400">
               <Sparkles className="size-3.5 shrink-0" aria-hidden />
-              Brand-First Marketplace
+              Shops first
             </p>
             <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-white">
-              Your brand deserves the spotlight—not buried in an endless grid.
+              Give your business its own shop, not just another listing.
             </h1>
             <p className="max-w-md text-xs sm:text-sm text-neutral-300 leading-relaxed">
-              Discover listings from local sellers. Merchants can build a storefront; shoppers can see who is behind each listing.
+              Find listings from sellers near you. Sellers can open a shop, and buyers can see who is behind each listing.
             </p>
             
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -73,7 +73,7 @@ export default function OnboardingPage() {
             </div>
             
             <div className="flex flex-wrap gap-2 pt-2">
-              {["Free plan available", "Optional shop verification", "Direct seller contact"].map((t) => (
+              {["Free plan", "Optional shop verification", "Contact sellers directly"].map((t) => (
                 <span
                   key={t}
                   className="rounded-full bg-white/5 border border-white/5 px-3 py-1 text-[10px] font-bold text-neutral-300"
@@ -94,11 +94,11 @@ export default function OnboardingPage() {
               id="why-midora-heading"
               className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             >
-              Why Midora Online
+              Why Midora
             </h2>
             <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
-              Generic marketplaces optimize for the cheapest click. We optimize for{" "}
-              <span className="font-semibold text-orange-600">brand memory</span>—so repeat customers know exactly who they bought from.
+              Many marketplaces only show the cheapest item. We help buyers{" "}
+              <span className="font-semibold text-orange-600">remember your shop</span>, so they know who they bought from and can come back.
             </p>
           </div>
         </Reveal>
@@ -108,17 +108,17 @@ export default function OnboardingPage() {
           {[
             {
               title: "Discovery, not noise",
-              body: "Shops are first-class. Browsing feels like walking a mall, not scraping a spreadsheet.",
+              body: "Every shop gets its own page. Browsing feels like walking through a market, not reading a long list.",
               icon: Compass,
             },
             {
-              title: "Built for emerging brands",
-              body: "Lower overhead than a custom site, more personality than a bare listing.",
+              title: "Built for growing businesses",
+              body: "Cheaper and easier than building your own website, with more room to show your business than a single listing.",
               icon: Sparkles,
             },
             {
               title: "Trust by design",
-              body: "Clear contact paths and optional shop trust checks help buyers make informed decisions.",
+              body: "Clear contact details and optional shop verification help buyers decide who to trust.",
               icon: Shield,
             },
           ].map((item, i) => (
@@ -152,7 +152,7 @@ export default function OnboardingPage() {
               How to use Midora
             </h2>
             <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
-              Same platform, two simple paths—whether you sell or shop.
+              One place, two simple paths: one for selling, one for buying.
             </p>
           </div>
         </Reveal>
@@ -161,15 +161,15 @@ export default function OnboardingPage() {
           <Reveal delayMs={50}>
             <div className={`${softCard}`}>
               <p className="w-fit rounded-md bg-accent/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-accent">
-                Merchants
+                Sellers
               </p>
               <ol className="mt-5 space-y-4">
                 {[
-                  "Create an account or sign in. A shopper account can open a shop later.",
-                  "Before your first shop or listing, verify one account phone or email if it is not already verified.",
-                  "Open a storefront with the step-by-step form or AI concierge, or post directly with a personal seller profile.",
-                  "Add listings. If you have multiple shops, choose which storefront owns each listing.",
-                  "Complete the publishing checks, then share your shop or listing with buyers.",
+                  "Create an account or sign in. Any account can open a shop later.",
+                  "Before your first shop or listing, confirm your phone number or email with a code. This helps keep fake sellers off Midora.",
+                  "Open a shop with the step-by-step form or our AI helper. Or post listings on your own, without a shop.",
+                  "Add listings. If you have more than one shop, choose which shop each listing goes in.",
+                  "After a quick check, your listing goes live. Share your shop or listing with buyers.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-accent/20 bg-accent/10 text-sm font-bold text-accent">
@@ -187,14 +187,14 @@ export default function OnboardingPage() {
           <Reveal delayMs={100}>
             <div className={`${softCard}`}>
               <p className="w-fit rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                Shoppers
+                Buyers
               </p>
               <ol className="mt-5 space-y-4">
                 {[
                   "Browse shops and listings without signing in.",
-                  "Compare listing details and shop information, including ratings and trust badges when available.",
-                  "Contact the seller through Midora messages or WhatsApp when offered.",
-                  "Agree on payment and delivery directly with the seller; Midora does not process checkout.",
+                  "Compare listings and shops, including ratings and verified badges where shops have them.",
+                  "Message the seller on Midora, or chat on WhatsApp if the seller offers it.",
+                  "Agree on payment and delivery with the seller. Midora doesn't take payment for items, so meet in a safe place and check the item before you pay.",
                 ].map((step, idx) => (
                   <li key={step} className="flex gap-4">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-sm font-bold text-emerald-700 dark:text-emerald-300">
@@ -210,7 +210,7 @@ export default function OnboardingPage() {
           </Reveal>
         </div>
         <p className="border-l-2 border-accent/50 pl-4 text-xs leading-relaxed text-foreground/80 sm:text-sm">
-          Account contact verification is shared between opening a shop and posting listings. Shop identity or business verification is a separate, optional process for trust badges and some plan benefits; it is not the account OTP step.
+          You only confirm your phone number or email once, for both opening a shop and posting listings. Shop verification (identity or business) is separate and optional. It gives your shop a badge and some plan benefits.
         </p>
       </section>
 
@@ -225,23 +225,23 @@ export default function OnboardingPage() {
           
           <div className="relative z-10 max-w-lg space-y-4">
             <h2 className="font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-              Ready to grow your business or browse Kampala&apos;s best?
+              Ready to grow your business, or find something near you?
             </h2>
             <p className="text-xs text-neutral-300 leading-normal max-w-sm">
-              Start with the free plan; paid plans may offer higher limits and additional tools. Buyers contact sellers through the channels available on each listing.
+              Start on the free plan. Paid plans let you add more shops and listings, and some include analytics.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href="/open-shop"
                 className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs rounded-full transition-all shadow-lg hover:shadow-orange-600/10 cursor-pointer"
               >
-                Get Started
+                Open your shop
               </Link>
               <Link
                 href="/"
                 className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-xs rounded-full backdrop-blur-xs transition-all cursor-pointer"
               >
-                Browse Feed
+                Browse listings
               </Link>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
               Track your performance
             </h2>
             <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
-              Analytics are available on eligible plans, with views into shop activity and listing engagement.
+              Some plans include analytics, so you can see how your shop and listings are doing.
             </p>
           </div>
         </Reveal>
@@ -268,17 +268,17 @@ export default function OnboardingPage() {
           {[
             {
               title: "Shop views",
-              body: "See how many visitors have landed on your storefront and which days drive the most traffic.",
+              body: "See how many people visited your shop and which days were busiest.",
               icon: BarChart2,
             },
             {
-              title: "Listing engagement",
-              body: "Track listing views and likes to see what your audience responds to.",
+              title: "Listing views and likes",
+              body: "See views and likes on each listing, so you know what buyers like.",
               icon: Package,
             },
             {
-              title: "Follower growth",
-              body: "Watch your follower count grow as returning shoppers subscribe to your brand.",
+              title: "Followers",
+              body: "See how many buyers follow your shop.",
               icon: UserPlus,
             },
           ].map((item, i) => (
@@ -302,14 +302,14 @@ export default function OnboardingPage() {
         
         <Reveal>
           <p className="text-xs text-muted">
-            Access your analytics from{" "}
+            To see analytics, go to{" "}
             <Link
               href="/merchant"
               className="font-bold text-orange-600 underline-offset-2 hover:underline"
             >
-              your merchant dashboard
-            </Link>{" "}
-            → select a shop → Analytics tab.
+              your dashboard
+            </Link>
+            , choose a shop, then open Analytics.
           </p>
         </Reveal>
       </section>
@@ -322,10 +322,10 @@ export default function OnboardingPage() {
               id="value-heading"
               className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             >
-              Value we add
+              What you get
             </h2>
             <p className="mt-2 max-w-2xl text-xs text-muted sm:text-sm">
-              One neutral mall, two audiences—each gets structure that respects their goals.
+              For sellers and buyers alike.
             </p>
           </div>
         </Reveal>
@@ -337,20 +337,20 @@ export default function OnboardingPage() {
                 <div className="rounded-lg bg-accent/10 p-2 text-accent">
                   <Store className="size-5 shrink-0" aria-hidden />
                 </div>
-                <h3 className="font-bold text-sm sm:text-base">For merchants</h3>
+                <h3 className="font-bold text-sm sm:text-base">For sellers</h3>
               </div>
               <ul className="mt-4 space-y-3 text-xs leading-relaxed text-foreground/80 sm:text-sm">
                 <li className="pl-1">
-                  Faster launch than a bespoke site; stronger brand than a lone listing.
+                  Quicker to start than your own website, and it shows more of your business than a single listing.
                 </li>
                 <li className="pl-1">
-                  Room for story, visuals, and policy—so you look established.
+                  Space for your story, photos and policies, so buyers can trust you.
                 </li>
                 <li className="pl-1">
-                  One hub for discovery, questions, and repeat visits.
+                  One place for buyers to find you, ask questions and come back.
                 </li>
                 <li className="pl-1">
-                  Analytics on eligible plans to track shop views, listing engagement, and follower growth.
+                  Analytics on some plans: shop views, listing views and likes, and followers.
                 </li>
               </ul>
             </div>
@@ -362,18 +362,18 @@ export default function OnboardingPage() {
                 <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-700 dark:text-emerald-300">
                   <ShoppingBag className="size-5 shrink-0" aria-hidden />
                 </div>
-                <h3 className="font-bold text-sm sm:text-base">For shoppers</h3>
+                <h3 className="font-bold text-sm sm:text-base">For buyers</h3>
               </div>
               <ul className="mt-4 space-y-3 text-xs leading-relaxed text-foreground/80 sm:text-sm">
-                <li className="pl-1">See who you&apos;re buying from before you commit.</li>
+                <li className="pl-1">See who you&apos;re buying from before you decide.</li>
                 <li className="pl-1">
-                  Browse listings with context—less guesswork, fewer regrets.
+                  See full details on each listing, so there are fewer surprises.
                 </li>
                 <li className="pl-1">
-                  A calmer, more legible alternative to chaotic marketplaces.
+                  A calmer, easier place to shop than crowded marketplaces.
                 </li>
                 <li className="pl-1">
-                  Follow your favourite shops and get alerted to new listings.
+                  Follow shops you like and find them again easily.
                 </li>
               </ul>
             </div>
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
             </div>
             <p className="text-xs text-foreground/80 sm:text-sm">
               <span className="font-bold">Need a hand?</span>{" "}
-              <span className="text-muted">Use the floating assistant or </span>
+              <span className="text-muted">Use the chat assistant or </span>
               <Link
                 href="/contactus"
                 className="font-bold text-accent underline-offset-2 hover:underline"
@@ -412,7 +412,7 @@ export default function OnboardingPage() {
               className="inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 text-xs font-bold transition-all shadow-md hover:shadow-orange-600/10 cursor-pointer"
             >
               <UserPlus className="size-4" aria-hidden />
-              Get started
+              Create account
             </Link>
           </div>
         </section>

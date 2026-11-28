@@ -20,6 +20,7 @@ import {
   useTabParam,
 } from "@/components/dashboard/ui";
 import { RowThumb } from "@/components/dashboard/ui";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 const TAB_KEYS = ["all", "live", "pending"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -39,7 +40,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
       const res = await apiShops.myShops();
       setShops(res.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't load your business.");
+      setError(platformActionMessage(err, "We couldn't load your shops. Try again."));
     }
   }, []);
 
@@ -65,10 +66,10 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
   return (
     <div>
       <PageHeader
-        title={newProductMode ? "Choose a business" : "My business"}
+        title={newProductMode ? "Choose a shop" : "My shops"}
         description={
           newProductMode
-            ? "Pick the shop this listing belongs to and we'll open its catalog."
+            ? "Pick the shop this listing belongs to and we'll open its catalogue."
             : `${fmt(shops.length)} ${shops.length === 1 ? "shop" : "shops"}, ${fmt(live)} live`
         }
         action={
@@ -103,7 +104,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
 
       {shops.length === 0 ? (
         <EmptyState
-          message="You don't have a shop yet."
+          message="You don't have a shop yet. Open one to get a shop page for your listings."
           action={
             <Link href="/open-shop" className={BTN_PRIMARY}>
               Open a shop
@@ -111,7 +112,7 @@ export default function MerchantShopsListClient({ initialShops }: { initialShops
           }
         />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No shops match this filter." />
+        <EmptyState message="No shops match this filter. Try another tab or search." />
       ) : (
         <ul className={LIST}>
           {filtered.map((s) => (

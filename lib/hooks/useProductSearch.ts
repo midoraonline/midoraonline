@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 
 import { apiSearch } from "@/lib/api";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { catalogQueryKey, type CatalogQuery } from "@/lib/api/catalogFilters";
 import type { SearchMode, SearchProductsResponse } from "@/lib/api/search";
 import { searchItemToCard } from "@/lib/searchMap";
@@ -49,7 +50,7 @@ export function useProductSearch({
       ? (["search:products", debouncedQ, filterKey, limit] as const)
       : null;
 
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     key,
     ([, searchQ, , lim]) =>
       apiSearch.searchProducts(searchQ, {
@@ -131,7 +132,8 @@ export function useProductSearch({
     items: active ? items : [],
     loading: active && (debouncedQ !== q || isLoading),
     loadingMore,
-    error: error instanceof Error ? error.message : error ? "Search failed" : null,
+    error: error ? platformActionMessage(error, "We couldn't search right now. Try again.") : null,
+    retry: () => void mutate(),
     mode: (data?.mode ?? null) as SearchMode | null,
     queryLocation: active ? (data?.query_location ?? null) : null,
     searchedText: data?.query ?? null,

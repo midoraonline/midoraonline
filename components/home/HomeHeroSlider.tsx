@@ -17,9 +17,9 @@ type Slide = {
 const slides: Slide[] = [
   {
     id: "discover",
-    headline: "Find what you need near you –",
+    headline: "Find what you need near you,",
     highlightWord: "fast.",
-    subtitle: "Real sellers. Clear prices. No scams. No stress.",
+    subtitle: "Real sellers and clear prices. Chat before you buy.",
     bgImage: "/hero_lady_market.png",
     gradient: "from-black/90 via-black/50 to-transparent",
   },
@@ -27,7 +27,7 @@ const slides: Slide[] = [
     id: "sell",
     headline: "Open your online shop in",
     highlightWord: "minutes.",
-    subtitle: "Join thousands of African merchants. List products, reach customers, and grow.",
+    subtitle: "Post your products and services, and reach buyers near you.",
     bgImage: "", // fallback to solid/gradient or feed image
     gradient: "from-[#0F172A] via-[#1E3A5F] to-[#059669]/30",
   },
@@ -35,7 +35,7 @@ const slides: Slide[] = [
     id: "community",
     headline: "Shop local, support your",
     highlightWord: "community.",
-    subtitle: "Every purchase helps a local business thrive. Midora connects you with shops near you.",
+    subtitle: "Every purchase helps a local business grow. Midora connects you with shops near you.",
     bgImage: "",
     gradient: "from-[#0F172A] via-[#1A2A3A] to-[#8B5CF6]/30",
   },
@@ -72,7 +72,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             href="/post-item"
             className="px-6 py-3 bg-black/60 border border-neutral-700 hover:border-neutral-500 text-white font-bold text-xs rounded-full backdrop-blur-xs transition-all hover:bg-black/80 active:scale-95 cursor-pointer"
           >
-            Sell an Item
+            Post a listing
           </Link>
         </div>
 
@@ -84,7 +84,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-neutral-100 leading-none">Verified sellers</p>
-              <p className="text-[9px] text-neutral-400 mt-0.5">Shop with confidence</p>
+              <p className="text-[9px] text-neutral-400 mt-0.5">Look for the Verified badge</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-neutral-100 leading-none">Local deals</p>
-              <p className="text-[9px] text-neutral-400 mt-0.5">Near you in Kampala</p>
+              <p className="text-[9px] text-neutral-400 mt-0.5">Listings near you</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -101,8 +101,8 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
               <PiLightningFill className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-neutral-100 leading-none">Fast response</p>
-              <p className="text-[9px] text-neutral-400 mt-0.5">Chat directly with sellers</p>
+              <p className="text-[10px] font-bold text-neutral-100 leading-none">Chat with sellers</p>
+              <p className="text-[9px] text-neutral-400 mt-0.5">On WhatsApp or in Midora</p>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ function SlideContent({ slide, isActive }: { slide: Slide; isActive: boolean }) 
         {/* Bottom capsule */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/45 backdrop-blur-xs text-[10px] font-semibold text-neutral-200 rounded-full border border-white/5 shadow-sm">
           <PiFireFill className="size-3.5 text-orange-500" aria-hidden />
-          <span>128 new listings added today in Kampala</span>
+          <span>New listings from sellers in Kampala</span>
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ export default function VerifyEmailCallbackPage() {
   const router = useRouter();
   const processedRef = useRef(false);
   const [status, setStatus] = useState<VerifyStatus>("processing");
-  const [message, setMessage] = useState("Finalizing email verification...");
+  const [message, setMessage] = useState("Confirming your email…");
 
   useEffect(() => {
     if (processedRef.current) return;
@@ -29,7 +29,7 @@ export default function VerifyEmailCallbackPage() {
       // Defer state updates to prevent potential cascading renders
       Promise.resolve().then(() => {
         setStatus("error");
-        setMessage(error || "Email verification failed.");
+        setMessage("We couldn't verify your email. The link may have expired. Sign in to ask for a new one.");
       });
       return;
     }
@@ -38,7 +38,7 @@ export default function VerifyEmailCallbackPage() {
       // Defer state updates to prevent potential cascading renders
       Promise.resolve().then(() => {
         setStatus("error");
-        setMessage("Missing verification status. Please use the verification link again.");
+        setMessage("We couldn't verify your email. Open the link from your email again, or sign in to ask for a new one.");
       });
       return;
     }
@@ -49,7 +49,7 @@ export default function VerifyEmailCallbackPage() {
     // Defer state updates to prevent potential cascading renders
     Promise.resolve().then(() => {
       setStatus("success");
-      setMessage("Email verified successfully. Redirecting...");
+      setMessage("Email verified. Taking you to Midora…");
       setTimeout(() => {
         router.replace("/");
       }, 1200);
@@ -59,10 +59,10 @@ export default function VerifyEmailCallbackPage() {
   return (
     <div className="dm-card p-6 sm:p-8">
       <h1 className="text-xl font-semibold tracking-tight">Verify your email</h1>
-      <p className="mt-2 text-sm text-muted">{message}</p>
+      {status === "error" ? null : <p className="mt-2 text-sm text-muted">{message}</p>}
 
       {status === "processing" ? (
-        <p className="mt-4 text-sm text-muted">Please wait a moment...</p>
+        <p className="mt-4 text-sm text-muted">Please wait a moment…</p>
       ) : null}
 
       {status === "error" ? (
@@ -72,7 +72,7 @@ export default function VerifyEmailCallbackPage() {
           </p>
           <p className="text-xs text-muted">
             <Link href="/login" className="font-semibold text-foreground/80 hover:text-foreground">
-              Return to sign in
+              Back to sign in
             </Link>
           </p>
         </div>

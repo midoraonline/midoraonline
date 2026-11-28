@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { Rocket } from "lucide-react";
 import FormModal from "@/components/FormModal";
-import { ApiError } from "@/lib/api/base";
+import { ApiError, apiErrorMessage } from "@/lib/api/base";
 import AdminBoostStatus from "@/components/admin/AdminBoostStatus";
 import { refreshAfterRankChange } from "@/lib/api/listingActions";
 import {
@@ -21,8 +21,8 @@ import { BTN_PRIMARY, BTN_SECONDARY, BTN_TEXT, INPUT } from "@/components/dashbo
 const CUSTOM = "custom";
 
 function message(err: unknown) {
-  if (err instanceof ApiError) return err.status === 503 ? "Run the pending boost migrations (059, 064) first." : err.message;
-  return "Something went wrong.";
+  if (err instanceof ApiError && err.status === 503) return "Boosts aren't set up on the server yet. Run the boost database migrations, then try again.";
+  return apiErrorMessage(err, "We couldn't update the boost. Try again.");
 }
 
 /** Admin-only free boost for a listing or a whole business (all its live listings). */
@@ -71,7 +71,7 @@ function BoostDialog({
   const h = Number(hours);
   const s = Number(score);
   const valid = !custom || (Number.isInteger(h) && h >= 1 && h <= 2160 && Number.isInteger(s) && s >= 0 && s <= 500);
-  const what = target === "shop" ? "business" : "listing";
+  const what = target === "shop" ? "shop" : "listing";
 
   async function grant() {
     if (!valid) return;
@@ -82,7 +82,7 @@ function BoostDialog({
         id,
         custom ? { hours: h, score_bonus: s, kind } : { package_id: selected },
       );
-      toast.success(target === "shop" ? `Boosted ${out.boosted} live listings` : "Listing boosted");
+      toast.success(target === "shop" ? `Boosted ${out.boosted} live listing${out.boosted === 1 ? "" : "s"}.` : "Listing boosted.");
       refreshAfterRankChange();
       onClose();
     } catch (err) {
@@ -96,7 +96,7 @@ function BoostDialog({
     setBusy("end");
     try {
       const out = await adminEndBoosts(target, id);
-      toast.success(out.ended ? `Ended ${out.ended} boost${out.ended === 1 ? "" : "s"}` : "Nothing was boosted");
+      toast.success(out.ended ? `Ended ${out.ended} boost${out.ended === 1 ? "" : "s"}.` : "There was no active boost to end.");
       refreshAfterRankChange();
       onClose();
     } catch (err) {
@@ -113,22 +113,22 @@ function BoostDialog({
       footer={
         <div className="flex flex-wrap items-center justify-between gap-2">
           <button type="button" onClick={() => void end()} disabled={busy !== null} className={BTN_TEXT}>
-            {busy === "end" ? "Ending…" : target === "shop" ? "End business boost" : "End boost"}
+            {busy === "end" ? "Ending…" : target === "shop" ? "End shop boost" : "End boost"}
           </button>
           <div className="flex gap-2">
             <button type="button" onClick={onClose} className={BTN_SECONDARY}>
               Cancel
             </button>
             <button type="button" onClick={() => void grant()} disabled={!valid || busy !== null} className={BTN_PRIMARY}>
-              {busy === "grant" ? "Boosting…" : "Boost free"}
+              {busy === "grant" ? "Boosting…" : "Boost for free"}
             </button>
           </div>
         </div>
       }
     >
       <p className="text-sm text-muted">
-        Admin test boost: no payment and no plan allowance used. Replaces any current boost.
-        {target === "shop" ? " Applies to every live listing of this business right now." : ""}
+        Free admin boost: no payment, and it doesn&apos;t use the plan&apos;s boost allowance. It replaces any current boost.
+        {target === "shop" ? " It applies to every live listing in this shop right now." : ""}
       </p>
       <AdminBoostStatus
         listingId={target === "listing" ? id : undefined}
@@ -172,18 +172,18 @@ function BoostDialog({
             </select>
           </label>
           <label className="text-xs font-medium text-foreground-muted">
-            Hours (1–2160)
+            Hours (1–2,160)
             <input type="number" inputMode="numeric" min={1} max={2160} value={hours}
               onChange={(e) => setHours(e.target.value)} className={`${INPUT} mt-1`} />
           </label>
           <label className="text-xs font-medium text-foreground-muted">
-            Score weight (0–500)
+            Ranking points (0–500)
             <input type="number" inputMode="numeric" min={0} max={500} value={score}
               onChange={(e) => setScore(e.target.value)} className={`${INPUT} mt-1`} />
           </label>
         </div>
       ) : null}
-      {!valid ? <p className="mt-2 text-xs text-[color:var(--error)]">Hours 1–2160, score 0–500.</p> : null}
+      {!valid ? <p className="mt-2 text-xs text-[color:var(--error)]">Enter whole numbers: hours from 1 to 2,160 and ranking points from 0 to 500.</p> : null}
     </FormModal>
   );
 }

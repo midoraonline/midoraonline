@@ -60,7 +60,7 @@ export default function ProductRatingRow({
   if (!(avg > 0) || total <= 0) {
     return (
       <a href="#reviews" className="font-medium text-foreground transition-colors hover:text-accent">
-        No reviews
+        No reviews yet
       </a>
     );
   }
@@ -70,7 +70,7 @@ export default function ProductRatingRow({
     <a
       href="#reviews"
       className="inline-flex items-center gap-1 font-medium text-foreground transition-colors hover:text-accent"
-      aria-label={`Rated ${score} out of 5, ${total} reviews`}
+      aria-label={`Rated ${score} out of 5, ${total} ${total === 1 ? "review" : "reviews"}`}
     >
       <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden />
       <span className="tabular-nums">

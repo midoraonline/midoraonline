@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { checkListingQuality, type ListingQualityRequest, type ListingQualityResponse } from "@/lib/api/aiListing";
 import type { FormDraft, SetDraft } from "./types";
 
@@ -27,7 +28,7 @@ export function useAiReview(draft: FormDraft, setDraft: SetDraft, buildRequest: 
   async function runQualityCheck() {
     if (aiChecking) return;
     if (!draft.title.trim() || !draft.description.trim()) {
-      toast.error("Add a title and description before running the AI check.");
+      toast.error("Add a title and description first, then run the AI check.");
       return;
     }
     setAiChecking(true);
@@ -35,13 +36,13 @@ export function useAiReview(draft: FormDraft, setDraft: SetDraft, buildRequest: 
       const result = await checkListingQuality(buildRequest());
       setAiCheck(result);
       if (result.ok) {
-        toast.success("AI review passed", { description: result.feedback });
+        toast.success("Your listing looks good", { description: result.feedback });
       } else {
-        toast.warning("AI review found issues", { description: result.feedback });
+        toast.warning("The AI check found things to improve", { description: result.feedback });
       }
     } catch (err) {
-      toast.error("AI review failed", {
-        description: err instanceof Error ? err.message : "Try again in a moment.",
+      toast.error("We couldn't run the AI check", {
+        description: platformActionMessage(err, "Try again in a moment."),
       });
     } finally {
       setAiChecking(false);

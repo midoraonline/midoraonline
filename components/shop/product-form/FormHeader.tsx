@@ -30,7 +30,7 @@ export default function FormHeader({
           </Link>
         )}
         {flush ? null : <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>}
-        <p className="text-sm text-muted">Listings are checked automatically before they go live, usually within a minute.</p>
+        <p className="text-sm text-muted">We check listings before they go live. This usually takes under a minute.</p>
       </div>
     </div>
   );

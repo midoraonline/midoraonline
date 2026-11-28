@@ -21,8 +21,8 @@ export default function ShopsDirectoryLoading() {
             </span>
           </div>
           <div className="text-xs text-white/80">
-            Rent a shop for{" "}
-            <span className="font-semibold text-accent">5,000 UGX/month</span>
+            Open a shop for{" "}
+            <span className="font-semibold text-accent">UGX 5,000 a month</span>
           </div>
         </div>
       </div>

@@ -36,7 +36,7 @@ export default function AdminChatClient({
     <div>
       <PageHeader
         title="Chat monitoring"
-        description={`${fmt(conversations.length)} conversations, ${fmt(msgCount)} messages.`}
+        description={`${fmt(conversations.length)} conversation${conversations.length === 1 ? "" : "s"}, ${fmt(msgCount)} message${msgCount === 1 ? "" : "s"}.`}
       />
       {conversations.length === 0 ? (
         <EmptyState message="No conversations yet." />

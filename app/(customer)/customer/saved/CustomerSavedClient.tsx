@@ -18,6 +18,7 @@ import {
   useTabParam,
 } from "@/components/dashboard/ui";
 import { RowThumb } from "@/components/dashboard/ui";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 type Tab = "followed" | "liked";
 const TAB_KEYS = ["followed", "liked"] as const;
@@ -42,7 +43,7 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
       setFollowed(f.items ?? []);
       setLiked(l.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not refresh saved shops");
+      setError(platformActionMessage(err, "We couldn't load your saved shops. Try again."));
     }
   }, []);
 
@@ -54,7 +55,7 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
 
   return (
     <div>
-      <PageHeader title="Saved shops" description="Shops you follow or liked." />
+      <PageHeader title="Saved shops" description="Shops you follow or like." />
       {error ? <ErrorState message={error} onRetry={() => void refresh()} /> : null}
       <UnderlineTabs
         tabs={[
@@ -66,7 +67,7 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
       />
       {activeList.length === 0 ? (
         <EmptyState
-          message={tab === "followed" ? "You aren't following any shops yet." : "You haven't liked any shops yet."}
+          message={tab === "followed" ? "You aren't following any shops yet. Follow a shop to see it here." : "You haven't liked any shops yet. Like a shop to see it here."}
           action={
             <Link href="/shops" className={BTN_SECONDARY}>
               Discover shops
@@ -82,7 +83,7 @@ export default function CustomerSavedClient({ initialFollowed, initialLiked }: P
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{shop.name}</span>
                   <span className="block truncate text-xs tabular-nums text-muted">
-                    {fmt(shop.follower_count)} followers · {fmt(shop.view_count)} views
+                    {fmt(shop.follower_count)} {shop.follower_count === 1 ? "follower" : "followers"} · {fmt(shop.view_count)} {shop.view_count === 1 ? "view" : "views"}
                   </span>
                 </span>
                 {shop.is_active ? null : <StatusDot tone="neutral">Inactive</StatusDot>}

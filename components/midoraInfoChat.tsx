@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiMidoraInfoChat } from "@/lib/api";
 import { useAppSession } from "@/lib/state";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 type InfoMessage = {
   id: string;
@@ -74,11 +75,7 @@ export default function MidoraInfoChat() {
         return prev.filter((m) => m.id !== pendingAssistantId);
       });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "The Midora info assistant could not reply."
-      );
+      setError(platformActionMessage(err, "The Midora assistant couldn't reply. Try again."));
       setMessages((prev) =>
         prev.filter((m) => m.id !== pendingAssistantId)
       );
@@ -90,10 +87,10 @@ export default function MidoraInfoChat() {
   return (
     <div className="dm-card sm:p-5 flex flex-col gap-3 max-h-[580px]">
 
-      <div className="mt-1 flex-1 min-height-[180px] max-h-[300px] overflow-y-auto px-3 py-2 space-y-2">
+      <div className="mt-1 flex-1 min-h-[180px] max-h-[300px] overflow-y-auto px-3 py-2 space-y-2">
         {messages.length === 0 ? (
-          <p className="text-xm text-muted flex justify-end">
-            Hey, {session.user?.full_name}.
+          <p className="text-sm text-muted flex justify-end">
+            {session.user?.full_name ? `Hi, ${session.user.full_name}. ` : "Hi. "}Ask me anything about Midora Online.
           </p>
         ) : (
           messages.map((m) => (

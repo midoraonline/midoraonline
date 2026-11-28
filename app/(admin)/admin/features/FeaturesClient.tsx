@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { mutate } from "swr";
 import SettingsSwitch from "@/components/settings/SettingsSwitch";
-import { ApiError } from "@/lib/api/base";
+import { ApiError, apiErrorMessage } from "@/lib/api/base";
 import {
   listAdminSwitches,
   MEDIA_LIMITS_KEY,
@@ -26,11 +26,11 @@ function changedLine(item: FeatureSwitch): string {
 
 function failureMessage(label: string, err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 401 || err.status === 403) return "Your admin session expired. Sign in again and retry.";
-    if (err.code === "migration_required") return "Settings storage isn't set up on the server yet.";
-    if (err.code === "unknown_setting") return "The API doesn't know this setting yet. Deploy the latest API (PR #16) and try again.";
+    if (err.status === 401 || err.status === 403) return "Your admin session has ended. Sign in again, then try again.";
+    if (err.code === "migration_required") return "Settings storage isn't set up on the server yet. Run the settings database migration, then try again.";
+    if (err.code === "unknown_setting") return "The server doesn't have this setting yet. Deploy the latest API, then try again.";
   }
-  return `Couldn't update ${label}. It's back to how it was. Try again.`;
+  return `We couldn't update ${label}, so it's back to how it was. Try again.`;
 }
 
 export default function FeaturesClient() {
@@ -47,9 +47,9 @@ export default function FeaturesClient() {
       setItems(await listAdminSwitches());
     } catch (err) {
       if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-        setError("Feature switches are not available yet.");
+        setError("Feature switches aren't available on the server yet. Deploy the latest API, then try again.");
       } else {
-        setError(err instanceof Error ? err.message : "Could not load feature switches.");
+        setError(apiErrorMessage(err, "We couldn't load feature switches. Try again."));
       }
     } finally {
       setLoading(false);
@@ -86,7 +86,7 @@ export default function FeaturesClient() {
     <div>
       <PageHeader
         title="Features"
-        description="Platform switches. They save as soon as you flip them."
+        description="Turn platform features on or off. Changes save straight away."
       />
       <Link
         id="media-limits"
@@ -95,9 +95,9 @@ export default function FeaturesClient() {
       >
         <span>
           <span className="block font-semibold text-foreground">Media limits moved to Plans</span>
-          <span className="block text-muted">Max photos and videos are now set per plan, with prices, caps and boosts</span>
+          <span className="block text-muted">The most photos and videos per listing are now set in each plan, with prices, listing limits and boosts</span>
         </span>
-        <span className="shrink-0 font-medium text-accent">Open Plans →</span>
+        <span className="shrink-0 font-medium text-accent">Open plans →</span>
       </Link>
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading && items.length === 0 ? <PageSkeleton rows={4} label="Loading switches" /> : null}

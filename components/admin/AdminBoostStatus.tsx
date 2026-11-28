@@ -34,7 +34,7 @@ export default function AdminBoostStatus({
   const text = listingId
     ? describeBoost(first)
     : businessWide
-      ? `Business boost on ${businessWide} listing${businessWide === 1 ? "" : "s"} · ${describeBoost(rows.find((b) => b.business_wide) ?? first)}`
+      ? `Shop boost on ${businessWide} listing${businessWide === 1 ? "" : "s"} · ${describeBoost(rows.find((b) => b.business_wide) ?? first)}`
       : `${rows.length} boosted listing${rows.length === 1 ? "" : "s"} · next: ${describeBoost(first)}`;
   return (
     <p className={`flex min-w-0 items-center gap-1.5 text-xs text-foreground ${className}`}>

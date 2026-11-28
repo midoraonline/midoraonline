@@ -14,17 +14,17 @@ type Props = SectionProps & {
 function mediaCopy(kind: SectionProps["draft"]["kind"], maxPhotos: number, maxVideos: number) {
   const video = maxVideos ? " or a short video" : "";
   if (kind === "opportunity") {
-    return { title: "Media (optional)", hint: `Photos are optional. You can still add up to ${maxPhotos} photos${video}.` };
+    return { title: "Photos (optional)", hint: `Photos are optional. You can add up to ${maxPhotos} photos${video}.` };
   }
   if (kind === "service") {
     return {
       title: "Photos and video (optional)",
-      hint: `Photos are optional for services. Add up to ${maxPhotos} if they help clients trust your work. The first photo is the cover; drag to reorder.`,
+      hint: `Photos are optional for services. Add up to ${maxPhotos} to show buyers your work. The first photo is the cover.`,
     };
   }
   return {
     title: "Photos and video",
-    hint: `Add up to ${maxPhotos} photos${video}. At least 2 photos are required to publish. The first photo is the cover; drag to reorder.`,
+    hint: `Add up to ${maxPhotos} photos${video}. You need at least 2 photos to post. The first photo is the cover.`,
   };
 }
 

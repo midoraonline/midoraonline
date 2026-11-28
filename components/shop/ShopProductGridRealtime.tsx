@@ -12,6 +12,8 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { shopInquiryWhatsAppUrl } from "@/lib/whatsappProduct";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { useAppSession } from "@/lib/state";
+import { toast } from "sonner";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 type ShopContext = {
   id: string;
@@ -105,8 +107,10 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
     try {
       const updated = await apiProducts.toggleAvailability(productId);
       setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, is_published: updated.is_published } : p)));
-    } catch {
-      // silently fail
+    } catch (err) {
+      toast.error(
+        platformActionMessage(err, "We couldn't update this listing. Check your connection and try again."),
+      );
     } finally {
       setTogglingId(null);
     }
@@ -131,8 +135,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
       <div className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.02] px-6 py-10 text-center sm:px-10">
         <p className="text-sm font-medium text-foreground">No listings yet</p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">
-          This shop hasn&apos;t published products, services or opportunities. Check back later, or message the owner if
-          you&apos;d like to enquire.
+          This shop hasn&apos;t posted anything yet. Check back later, or contact the seller to ask what they have.
         </p>
         {shopWa ? (
           <a
@@ -142,7 +145,7 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
             className="dm-focus mx-auto mt-6 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95"
           >
             <WhatsAppIcon className="size-3.5 shrink-0 text-white" />
-            WhatsApp
+            Chat on WhatsApp
           </a>
         ) : null}
         <p className="mt-6 text-xs text-muted">
@@ -170,14 +173,14 @@ export default function ShopProductGridRealtime({ shop, initialProducts }: Props
                 onClick={() => void handleToggleAvailability(p.id)}
                 disabled={togglingId === p.id}
                 className="absolute right-2 top-2 z-10 inline-flex items-center justify-center rounded-full bg-background/90 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-background disabled:opacity-50 px-2 py-1"
-                title={isUnpublished ? "Publish" : "Unpublish"}
+                title={isUnpublished ? "Show this listing to buyers" : "Hide this listing from buyers"}
               >
                 {togglingId === p.id ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : isUnpublished ? (
-                  <span className="text-[10px] font-semibold whitespace-nowrap">Publish</span>
+                  <span className="text-[10px] font-semibold whitespace-nowrap">Show</span>
                 ) : (
-                  <span className="text-[10px] font-semibold whitespace-nowrap">Unpublish</span>
+                  <span className="text-[10px] font-semibold whitespace-nowrap">Hide</span>
                 )}
               </button>
             )}

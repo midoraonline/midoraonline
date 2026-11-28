@@ -41,13 +41,13 @@ export default function ApplicationLinkField({
           const next = normalizeApplicationLink(value);
           if (next.value && next.value !== value) onChange(next.value);
         }}
-        placeholder="https://yourcompany.com/careers"
+        placeholder="e.g. https://yourcompany.com/jobs"
         aria-invalid={Boolean(message)}
         aria-describedby={`${id}-hint`}
       />
       <p id={`${id}-hint`} className="text-xs text-muted">
-        Your website, form or careers page. Buyers tap Apply now to open it.
-        {recommended ? null : " Leave it empty and buyers contact you instead."}
+        Your website, form or jobs page. People tap Apply now to open it.
+        {recommended ? null : " Leave it empty and people will contact you instead."}
       </p>
       {message ? <p className="text-xs text-[color:var(--error)]" role="alert">{message}</p> : null}
     </div>

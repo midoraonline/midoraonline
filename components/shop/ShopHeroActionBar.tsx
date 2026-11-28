@@ -59,7 +59,7 @@ export default function ShopHeroActionBar({
                 className="dm-btn dm-btn-primary dm-btn-sm min-h-10"
               >
                 <Plus className="size-4" aria-hidden="true" />
-                Post an ad
+                Post a listing
               </Link>
               <Link
                 href={`/shops/${shopSlug}/edit`}
@@ -70,7 +70,7 @@ export default function ShopHeroActionBar({
                   className="!text-sm"
                   aria-hidden="true"
                 />
-                Edit
+                Edit shop
               </Link>
               <Link
                 href={`/shops/${shopSlug}/analytics`}

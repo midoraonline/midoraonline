@@ -14,9 +14,10 @@ type Props = {
 };
 
 const TIPS = [
-  "Verify the seller before paying",
-  "Never send money upfront",
-  "Report anything suspicious",
+  "Meet in a safe, public place",
+  "See the item before you pay",
+  "Don't send money in advance",
+  "Report anything that feels wrong",
 ];
 
 export default function TradeDisclaimer({ onConfirm, type, whatsappVerified, children }: Props) {
@@ -80,7 +81,7 @@ export default function TradeDisclaimer({ onConfirm, type, whatsappVerified, chi
             />
             {whatsappVerified
               ? "This WhatsApp number is verified"
-              : "This WhatsApp number isn't verified yet"}
+              : "We haven't verified this WhatsApp number yet"}
           </p>
         ) : null}
 

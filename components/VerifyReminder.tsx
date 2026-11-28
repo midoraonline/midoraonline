@@ -53,7 +53,7 @@ export default function VerifyReminder() {
       const msg = err instanceof Error ? err.message : "";
       toast.error(
         /429|too many/i.test(msg)
-          ? "Please wait a minute before requesting another email."
+          ? "Wait a minute, then ask for another email."
           : "We couldn't send the email right now. Try again in a moment.",
       );
     } finally {
@@ -64,7 +64,7 @@ export default function VerifyReminder() {
   const steps: Step[] = [{ key: "email", label: "Verify your email", done: !!user.email_verified }];
   if (isMerchant) {
     if (settings.flags.phone_verification_required) {
-      steps.push({ key: "phone", label: "Verify your phone", done: !!user.phone_verified, href: settingsLink });
+      steps.push({ key: "phone", label: "Verify your phone number", done: !!user.phone_verified, href: settingsLink });
     }
     const firstShop = shops?.[0];
     const identityDone = !!shops?.some((s) => s.trust_badges?.includes("identity_verified"));
@@ -88,7 +88,7 @@ export default function VerifyReminder() {
       <Mail className="hidden size-5 shrink-0 text-accent sm:block" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="font-medium text-foreground">
-          {isMerchant ? "Finish verifying to build buyer trust" : "Verify your email to secure your account"}
+          {isMerchant ? "Finish verifying so buyers can trust your shop" : "Verify your email to keep your account safe"}
         </p>
         <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           {pending.map((s) =>
@@ -102,7 +102,7 @@ export default function VerifyReminder() {
                   className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-60"
                 >
                   {sending ? <Loader2 className="size-3 animate-spin" aria-hidden /> : null}
-                  {cooldown ? "Sent" : "Resend"}
+                  {cooldown ? "Email sent" : "Resend email"}
                 </button>
                 <Link href={settingsLink} className="text-xs font-medium text-accent underline-offset-2 hover:underline">
                   Use a code instead
@@ -121,7 +121,7 @@ export default function VerifyReminder() {
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        aria-label="Dismiss"
+        aria-label="Close"
         className="self-end rounded-lg p-1.5 text-muted hover:bg-foreground/5 hover:text-foreground sm:self-center"
       >
         <X className="size-4" />

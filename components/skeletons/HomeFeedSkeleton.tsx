@@ -11,7 +11,7 @@ import { browseProductGridClass } from "@/lib/browseCategories";
 /** Home feed loading — compact chrome; product grid shimmers. */
 export default function HomeFeedSkeleton() {
   return (
-    <SkeletonRegion label="Loading home feed" className="w-full">
+    <SkeletonRegion label="Loading listings" className="w-full">
       <div className="mb-3 md:hidden">
         <Skeleton className="h-10 w-full" rounded="full" />
       </div>

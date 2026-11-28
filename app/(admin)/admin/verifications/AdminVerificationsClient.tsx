@@ -9,7 +9,7 @@ import type {
   AdminVerificationDoc,
   VerificationStatus,
 } from "@/lib/api/admin";
-import { ApiError } from "@/lib/api/base";
+import { apiErrorMessage } from "@/lib/api/base";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { BTN_SECONDARY, EmptyState, ErrorState, PageHeader, StatusDot, UnderlineTabs, useTabParam, type StatusTone } from "@/components/dashboard/ui";
 
@@ -19,7 +19,7 @@ const TAB_KEYS = ["pending", "submitted", "unverified", "verified", "rejected", 
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "pending", label: "Review queue" },
-  { key: "submitted", label: "Captured (no review)" },
+  { key: "submitted", label: "Saved, no review needed" },
   { key: "unverified", label: "Not submitted" },
   { key: "verified", label: "Verified" },
   { key: "rejected", label: "Rejected" },
@@ -34,11 +34,19 @@ const STATUS_TONE: Record<VerificationStatus, StatusTone> = {
   rejected: "bad",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  unverified: "Not submitted",
+  submitted: "Submitted",
+  pending: "Waiting for review",
+  verified: "Verified",
+  rejected: "Rejected",
+};
+
 function VStatus({ status, prefix }: { status: string; prefix?: string }) {
   return (
     <StatusDot tone={STATUS_TONE[status as VerificationStatus] ?? "neutral"}>
       {prefix ? `${prefix}: ` : ""}
-      <span className="capitalize">{status}</span>
+      <span className={STATUS_LABELS[status] ? undefined : "capitalize"}>{STATUS_LABELS[status] ?? status}</span>
     </StatusDot>
   );
 }
@@ -62,7 +70,7 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   tin: "TIN",
   tax_doc: "Tax document",
   professional_cred: "Professional credential",
-  professional_license: "Professional license",
+  professional_license: "Professional licence",
 };
 
 type StageStatus = VerificationStatus | string;
@@ -223,13 +231,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
       });
       setItems(res.items ?? []);
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to load verifications",
-      );
+      setError(apiErrorMessage(err, "We couldn't load verifications. Try again."));
     } finally {
       setRefreshing(false);
     }
@@ -299,7 +301,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
     try {
       const notes = noteDraft[shopId]?.trim() || undefined;
       if (action === "reject" && !notes) {
-        toast.error("Please add a short reason before rejecting.");
+        toast.error("Add a short reason in the notes before you reject.");
         return;
       }
       if (action === "approve") {
@@ -313,7 +315,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
       toast.success(successMsg);
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Action failed");
+      toast.error(apiErrorMessage(err, "We couldn't update this verification. Try again."));
     } finally {
       setBusyShopId(null);
     }
@@ -323,7 +325,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
     <div>
       <PageHeader
         title="Verifications"
-        description="Identity, business and professional submissions from merchants."
+        description="Identity, business and professional verification requests from shop owners."
         action={
           <button onClick={() => load()} disabled={refreshing} className={BTN_SECONDARY}>
             {refreshing ? "Refreshing…" : "Refresh"}
@@ -331,14 +333,14 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
         }
       />
       <UnderlineTabs
-        tabs={TABS.map((t) => ({ value: t.key, label: `${t.label} ${counts[t.key] ?? 0}` }))}
+        tabs={TABS.map((t) => ({ value: t.key, label: `${t.label} (${counts[t.key] ?? 0})` }))}
         value={tab}
         onChange={(v) => setTab(v as TabKey)}
       />
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search shop, phone or location"
+        placeholder="Shop name, phone number or area"
         aria-label="Search verifications"
         className="mb-4 h-10 w-full max-w-xs rounded-lg border border-border bg-surface shadow-xs px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       />
@@ -346,7 +348,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
       {error ? <ErrorState message={error} onRetry={() => load()} /> : null}
 
       {visible.length === 0 ? (
-        <EmptyState message="No shops match this filter." />
+        <EmptyState message="No shops match this filter. Try another tab or search." />
       ) : (
         <ul className="space-y-3">
           {visible.map((v) => {
@@ -385,7 +387,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                       <VStatus status={v.status} />
                       {stageLabel ? (
                         <span className="text-xs text-muted">
-                          Applied: {stageLabel}
+                          Applied for: {stageLabel}
                         </span>
                       ) : null}
                       {v.shops?.is_active ? (
@@ -405,10 +407,10 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                     <p className="mt-0.5 text-[11px] text-muted">
                       {v.shops?.shop_email ? `Contact: ${v.shops.shop_email}` : null}
                       {v.requested_at
-                        ? ` · requested ${formatDate(v.requested_at)}`
+                        ? ` · Requested ${formatDate(v.requested_at)}`
                         : ""}
                       {v.reviewed_at
-                        ? ` · reviewed ${formatDate(v.reviewed_at)}`
+                        ? ` · Reviewed ${formatDate(v.reviewed_at)}`
                         : ""}
                     </p>
                   </div>
@@ -420,7 +422,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         rel="noreferrer"
                         className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-subtle"
                       >
-                        View ↗
+                        View shop ↗
                       </a>
                     ) : null}
                     <button
@@ -454,7 +456,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                   <div className="space-y-4 border-t border-border pt-4">
                     {sub.appliedFor.length > 0 ? (
                       <p className="text-xs text-muted">
-                        Merchant applied for:{" "}
+                        Shop owner applied for:{" "}
                         <span className="font-semibold text-foreground">
                           {sub.appliedFor.join(" · ")}
                         </span>
@@ -468,7 +470,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                     {(sub.phone || sub.whatsapp || sub.location) && (
                       <section className="space-y-2">
                         <h4 className="text-xs font-medium text-muted">
-                          Submitted contact (Identity)
+                          Contact details sent for identity check
                         </h4>
                         <dl className="grid gap-2 text-sm sm:grid-cols-2">
                           {sub.phone ? (
@@ -542,7 +544,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                     v.notes !== sub.stage4Notes ? (
                       <p className="rounded-lg border border-border bg-background p-3 text-xs text-muted">
                         <strong className="font-semibold text-foreground/80">
-                          Latest notes:
+                          Latest note:
                         </strong>{" "}
                         {v.notes}
                       </p>
@@ -552,9 +554,9 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
 
                 <label className="block space-y-1">
                   <span className="text-sm font-medium">
-                    Admin notes{" "}
+                    Note to shop owner{" "}
                     <span className="font-normal text-muted">
-                      (required to reject)
+                      (needed to reject)
                     </span>
                   </span>
                   <textarea
@@ -567,7 +569,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                     }
                     rows={2}
                     className="w-full rounded-md border border-border bg-background p-2 text-sm"
-                    placeholder="Share context with the merchant…"
+                    placeholder="e.g. The ID photo is blurry. Please upload a clearer one."
                   />
                 </label>
 
@@ -587,8 +589,8 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
                       >
                         {isBusy
-                          ? "Working…"
-                          : `Approve ${pendingName}`}
+                          ? "Saving…"
+                          : `Approve ${pendingName.toLowerCase()}`}
                       </button>
                       <button
                         disabled={isBusy}
@@ -602,7 +604,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         }
                         className="text-sm font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
                       >
-                        Reject {pendingName}
+                        Reject {pendingName.toLowerCase()}
                       </button>
                     </>
                   ) : (
@@ -614,13 +616,13 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                             runAction(
                               v.shop_id,
                               "approve",
-                              `${shopName}: Identity approved.`,
+                              `${shopName}: identity approved.`,
                               2,
                             )
                           }
                           className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
                         >
-                          {isBusy ? "Working…" : "Approve Identity"}
+                          {isBusy ? "Saving…" : "Approve identity"}
                         </button>
                       ) : null}
                       {sub.stage2Status === "verified" &&
@@ -631,13 +633,13 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                             runAction(
                               v.shop_id,
                               "approve",
-                              `${shopName}: Business approved.`,
+                              `${shopName}: business approved.`,
                               3,
                             )
                           }
                           className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
                         >
-                          {isBusy ? "Working…" : "Approve Business"}
+                          {isBusy ? "Saving…" : "Approve business"}
                         </button>
                       ) : null}
                       {sub.stage2Status === "verified" &&
@@ -648,13 +650,13 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                             runAction(
                               v.shop_id,
                               "approve",
-                              `${shopName}: Professional approved.`,
+                              `${shopName}: professional approved.`,
                               4,
                             )
                           }
                           className="inline-flex h-9 items-center rounded-md border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-subtle disabled:opacity-50"
                         >
-                          {isBusy ? "Working…" : "Approve Professional"}
+                          {isBusy ? "Saving…" : "Approve professional"}
                         </button>
                       ) : null}
                       <button
@@ -663,7 +665,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                           runAction(
                             v.shop_id,
                             "reject",
-                            `${shopName} has been rejected.`,
+                            `${shopName}: verification rejected.`,
                             sub.stage3Status === "pending" ||
                               sub.stage3Status === "verified"
                               ? 3
@@ -672,7 +674,7 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         }
                         className="text-sm font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
                       >
-                        Reject
+                        Reject verification
                       </button>
                     </>
                   )}
@@ -683,12 +685,12 @@ export default function AdminVerificationsClient({ initialItems }: Props) {
                         runAction(
                           v.shop_id,
                           "queue",
-                          `${shopName} queued for review.`,
+                          `${shopName} added to the review queue.`,
                         )
                       }
                       className="inline-flex h-9 items-center rounded-md border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-subtle disabled:opacity-50"
                     >
-                      Queue for review
+                      Add to review queue
                     </button>
                   ) : null}
                 </div>
@@ -706,7 +708,7 @@ const FIELD_LABELS: Record<string, string> = {
   registration_number: "URSB registration number",
   tin: "TIN",
   profession: "Profession",
-  licence_number: "Licence / membership number",
+  licence_number: "Licence or membership number",
   issuing_body: "Issuing body",
 };
 
@@ -730,7 +732,7 @@ function DocLightbox({ doc, label, onClose }: { doc: AdminVerificationDoc; label
         <p className="truncate text-sm font-semibold">{label}</p>
         <div className="flex items-center gap-3">
           <a href={doc.url} target="_blank" rel="noreferrer" className="text-sm underline" onClick={(e) => e.stopPropagation()}>
-            Open original
+            Open full size
           </a>
           <button type="button" onClick={onClose} className="dm-focus rounded-md px-2 py-1 text-sm font-semibold hover:bg-white/10">
             Close
@@ -772,12 +774,12 @@ function StageDocsBlock({
       </div>
       {notes ? (
         <p className="rounded-lg border border-border bg-background p-2.5 text-xs text-foreground/80">
-          <span className="font-semibold">Merchant note:</span> {notes}
+          <span className="font-semibold">Shop owner&apos;s note:</span> {notes}
         </p>
       ) : null}
       {reviewNotes ? (
         <p className="rounded-lg border border-border bg-background p-2.5 text-xs text-foreground/80">
-          <span className="font-semibold">Reviewer note:</span> {reviewNotes}
+          <span className="font-semibold">Reviewer&apos;s note:</span> {reviewNotes}
         </p>
       ) : null}
       {fieldEntries.length ? (
@@ -831,7 +833,7 @@ function StageDocsBlock({
                     rel="noreferrer"
                     className="shrink-0 text-[11px] font-semibold text-accent underline-offset-2 hover:underline"
                   >
-                    Open
+                    Open file
                   </a>
                 </div>
               </li>

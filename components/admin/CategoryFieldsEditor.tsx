@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { apiAdmin } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api/base";
 import {
   addCategoryField,
   deleteCategoryField,
@@ -22,9 +23,9 @@ import {
 const KINDS: { value: CategoryMetaFieldKind; label: string }[] = [
   { value: "text", label: "Text" },
   { value: "number", label: "Number" },
-  { value: "select", label: "Select" },
+  { value: "select", label: "Dropdown" },
   { value: "date", label: "Date" },
-  { value: "boolean", label: "Boolean" },
+  { value: "boolean", label: "Yes / no" },
   { value: "file", label: "File (PDF, Word, image)" },
 ];
 
@@ -232,10 +233,10 @@ export default function CategoryFieldsEditor({
         if (!isFieldsRouteMissing(err)) throw err;
         await apiAdmin.adminUpdateCategory(slug, { metadata: payload(), fields: payload() });
       }
-      toast.success("Fields saved");
+      toast.success("Fields saved.");
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save fields");
+      toast.error(apiErrorMessage(err, "We couldn't save the fields. Try again."));
     } finally {
       setSaving(false);
     }
@@ -246,16 +247,16 @@ export default function CategoryFieldsEditor({
       <p className="text-xs text-muted">{scopeLabel}</p>
       {hasUnsavedBuiltIns ? (
         <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs font-medium text-warning">
-          These are the built-in fields sellers see for this category today. Save to store them here; new fields are added after them.
+          These are the built-in fields sellers see for this category today. Save to store them here. New fields are added after them.
         </p>
       ) : null}
       {parentUnsaved ? (
         <p className="text-xs font-medium text-foreground-muted">
-          Inherited fields come from the category&apos;s built-in list. Save the category&apos;s fields first to change them here.
+          Inherited fields come from the parent category&apos;s built-in list. Save the parent category&apos;s fields first to change them here.
         </p>
       ) : null}
       {fields.length === 0 ? (
-        <p className="text-xs italic text-muted">No extra fields configured.</p>
+        <p className="text-xs italic text-muted">No extra fields yet. Add one below.</p>
       ) : (
         <div className="space-y-2">
           {fields.map((field, index) => (
@@ -267,7 +268,7 @@ export default function CategoryFieldsEditor({
                   disabled={field.inherited}
                   onChange={(e) => update(index, { key: e.target.value })}
                   list="category-meta-field-keys"
-                  placeholder="Field key"
+                  placeholder="Field key, e.g. mileage"
                   aria-label="Field key"
                 />
                 <input
@@ -275,7 +276,7 @@ export default function CategoryFieldsEditor({
                   value={field.label}
                   disabled={field.inherited}
                   onChange={(e) => update(index, { label: e.target.value })}
-                  placeholder="Label"
+                  placeholder="Label, e.g. Mileage"
                   aria-label="Field label"
                 />
                 <select
@@ -301,7 +302,7 @@ export default function CategoryFieldsEditor({
                   value={field.help_text ?? ""}
                   disabled={Boolean(field.inherited && parentUnsaved)}
                   onChange={(e) => update(index, { help_text: e.target.value })}
-                  placeholder="Help text"
+                  placeholder="Help text (optional)"
                   aria-label="Help text"
                 />
               </div>
@@ -311,13 +312,13 @@ export default function CategoryFieldsEditor({
                   rows={2}
                   value={optionsToText(field.options)}
                   onChange={(e) => update(index, { options: textToOptions(e.target.value) })}
-                  placeholder={"value|Label\none per line"}
-                  aria-label="Select options"
+                  placeholder={"One option per line, as value|Label\ne.g. new|Brand new"}
+                  aria-label="Dropdown options"
                 />
               ) : null}
               <div className="flex flex-wrap items-center gap-2">
                 {field.inherited ? (
-                  <span className="text-[11px] font-medium text-muted">From category</span>
+                  <span className="text-[11px] font-medium text-muted">From parent category</span>
                 ) : (
                   <div className="flex items-center gap-1">
                     <button type="button" className="dm-btn dm-btn-ghost dm-btn-sm" onClick={() => move(index, -1)} aria-label="Move field up">
@@ -343,7 +344,7 @@ export default function CategoryFieldsEditor({
                     onClick={() => setFields((rows) => rows.filter((_, i) => i !== index))}
                     className="ml-auto text-xs font-semibold text-rose-600 hover:underline"
                   >
-                    Remove
+                    Remove field
                   </button>
                 )}
               </div>

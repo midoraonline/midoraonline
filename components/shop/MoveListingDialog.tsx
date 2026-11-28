@@ -7,6 +7,7 @@ import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
 import { OTHER_LISTINGS_LABEL, shopAcceptsKind, shopTypeLabel } from "@/lib/shop/shopFit";
 import { ShopAvatar } from "@/components/shop/ShopAvatar";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export type MoveTarget = { id: string; name: string; shop_type?: string | null; logo_url?: string | null };
 
@@ -33,11 +34,11 @@ export default function MoveListingDialog({
     setBusy(true);
     try {
       const moved = await apiProducts.moveProduct(product.id, choice === OTHER ? null : choice);
-      toast.success(choice === OTHER ? "Moved to Other listings" : "Listing moved");
+      toast.success(choice === OTHER ? `Moved to ${OTHER_LISTINGS_LABEL}.` : "Listing moved.");
       onMoved(moved);
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't move the listing.");
+      toast.error(platformActionMessage(e, "We couldn't move this listing. Try again."));
     } finally {
       setBusy(false);
     }
@@ -82,7 +83,7 @@ export default function MoveListingDialog({
             Cancel
           </button>
           <button type="button" onClick={() => void submit()} disabled={busy || choice === current} className="dm-btn dm-btn-primary dm-btn-sm">
-            {busy ? "Moving…" : "Move"}
+            {busy ? "Moving…" : "Move listing"}
           </button>
         </div>
       }

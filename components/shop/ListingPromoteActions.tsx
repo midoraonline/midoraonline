@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { Loader2, LocateFixed, RefreshCw, Rocket } from "lucide-react";
 import FormModal from "@/components/FormModal";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { describeBoost } from "@/lib/boostInfo";
 import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/dashboard/ui";
 import {
@@ -49,7 +50,7 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
     try {
       const res = await boostListing(listingId, packageId, useAllowance);
       if (res.status === "active") {
-        toast.success("Your ad is boosted");
+        toast.success("Your listing is boosted.");
         refreshAfterRankChange();
         await mutate();
         onClose();
@@ -57,20 +58,20 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
         toast.message("Payment needed", { description: res.message });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't boost this ad.");
+      toast.error(platformActionMessage(err, "We couldn't boost this listing. Try again."));
     } finally {
       setBusy(null);
     }
   }
 
   return (
-    <FormModal title="Boost this ad" onClose={onClose}>
+    <FormModal title="Boost this listing" onClose={onClose}>
       <div className="space-y-4">
         <p className="text-sm text-muted">
-          A boost moves your ad higher in the feed for a while and shows a Boosted tag. It doesn&apos;t change anything else.
+          A boost shows your listing higher in the feed for a set time, with a Boosted tag. Nothing else changes.
         </p>
         {isLoading ? <Skeleton /> : null}
-        {error ? <p className="text-sm text-[color:var(--error)]">{error instanceof Error ? error.message : "Couldn't load boosts."}</p> : null}
+        {error ? <p className="text-sm text-[color:var(--error)]">{platformActionMessage(error, "We couldn't load boost options. Close this and try again.")}</p> : null}
         {data?.active_boost ? (
           <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-foreground">
             <span className="font-semibold">Boosted:</span> {describeBoost(data.active_boost)}
@@ -78,8 +79,8 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
         ) : null}
         {data && !data.active_boost && data.boosts_open === false ? (
           <p className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground">
-            Boosts open once Midora has more listings. Until then every ad is ranked the same way, on quality,
-            freshness and fair exposure. Repost to freshen your ad.
+            Boosts aren&apos;t available yet. For now, every listing is ranked the same way: on quality, how new it
+            is and fair turns for all. Repost to make your listing new again.
           </p>
         ) : null}
         {data && !data.active_boost && data.boosts_open !== false ? (
@@ -112,7 +113,7 @@ function BoostDialog({ listingId, onClose }: { listingId: string; onClose: () =>
                   </li>
                 );
               })}
-              {data.packages.length === 0 ? <li className="text-sm text-muted">No boost packages are available right now.</li> : null}
+              {data.packages.length === 0 ? <li className="text-sm text-muted">No boosts are available right now. Check again later.</li> : null}
             </ul>
             {allowance && allowance.remaining === 0 ? (
               <a href="/merchant/billing" className="text-sm font-medium text-accent underline underline-offset-2">
@@ -151,10 +152,10 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
       }
     >
       {isLoading ? <Skeleton /> : null}
-      {error ? <p className="text-sm text-[color:var(--error)]">{error instanceof Error ? error.message : "Couldn't check the feed."}</p> : null}
+      {error ? <p className="text-sm text-[color:var(--error)]">{platformActionMessage(error, "We couldn't check the feed. Close this and try again.")}</p> : null}
       {data ? (
         !data.live ? (
-          <p className="text-sm text-muted">This ad isn&apos;t live, so it&apos;s not in the feed.</p>
+          <p className="text-sm text-muted">This listing isn&apos;t live, so it&apos;s not in the feed.</p>
         ) : (
           <div className="space-y-3">
             <p className="text-2xl font-semibold text-foreground">
@@ -162,11 +163,11 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
                 ? `#${data.position} in the home feed`
                 : data.in_ranking === false
                   ? "Not in the home feed yet"
-                  : `Not in the top ${data.scanned ?? 0} ads`}
+                  : `Not in the top ${data.scanned ?? 0} listings`}
             </p>
             {data.in_ranking === false ? (
               <p className="text-sm text-foreground">
-                Ads with more photos, a clear description, a price and a location are shown first. Add what&apos;s missing
+                Listings with more photos, a clear description, a price and a location show first. Add what&apos;s missing
                 and it will join the feed.
               </p>
             ) : null}
@@ -174,7 +175,7 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
               <p className="text-sm text-foreground">
                 {data.paid_placement
                   ? "Also shown in boosted spots across the feed."
-                  : "Boosted spots open once Midora has more listings. Until then every ad is ranked on quality and freshness."}
+                  : "Boosted spots aren't available yet. For now, every listing is ranked on quality and how new it is."}
               </p>
             ) : null}
             {data.category ? (
@@ -185,9 +186,9 @@ function PositionDialog({ listingId, onClose }: { listingId: string; onClose: ()
               </p>
             ) : null}
             <p className="text-xs text-muted">
-              This is the position for a shopper opening Midora for the first time. Each shopper sees cards they
+              This is the position for someone opening Midora for the first time. Each buyer sees listings they
               haven&apos;t seen yet first, and listings in their chosen area come earlier.
-              {data.boost ? ` Boosted (${describeBoost(data.boost)}).` : ""} Repost to freshen your ad.
+              {data.boost ? ` Boosted (${describeBoost(data.boost)}).` : ""} Repost to make your listing new again.
             </p>
           </div>
         )
@@ -204,11 +205,11 @@ export default function ListingPromoteActions({ listingId, onReposted }: { listi
     setReposting(true);
     try {
       const res = await repostListing(listingId);
-      toast.success("Reposted. Your ad is fresh again.");
+      toast.success("Reposted. Your listing shows as new again.");
       refreshAfterRankChange();
       onReposted?.(res.posted_at);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't repost this ad.");
+      toast.error(platformActionMessage(err, "We couldn't repost this listing. Try again."));
     } finally {
       setReposting(false);
     }

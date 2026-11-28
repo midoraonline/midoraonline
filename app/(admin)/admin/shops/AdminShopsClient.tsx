@@ -7,8 +7,9 @@ import { toast } from "sonner";
 
 import { apiAdmin } from "@/lib/api";
 import type { AdminShop, VerificationStatus } from "@/lib/api/admin";
-import { ApiError } from "@/lib/api/base";
+import { apiErrorMessage } from "@/lib/api/base";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
+import { shopTypeLabel } from "@/lib/shop/shopFit";
 import {
   BTN_SECONDARY,
   BTN_TEXT,
@@ -88,13 +89,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
       const res = await apiAdmin.listShops();
       setShops(res.items ?? []);
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to load shops",
-      );
+      setError(apiErrorMessage(err, "We couldn't load shops. Try again."));
     }
   }, []);
 
@@ -128,14 +123,14 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
       );
       toast.success(
         next
-          ? `${shop.name} is now active and visible to customers.`
-          : `${shop.name} has been deactivated.`,
+          ? `${shop.name} is now active. Buyers can see it.`
+          : `${shop.name} is now inactive. Buyers can't see it.`,
       );
     } catch (err) {
       setShops((s) =>
         s.map((x) => (x.id === shop.id ? { ...x, is_active: !next } : x)),
       );
-      toast.error(err instanceof Error ? err.message : "Failed to update shop");
+      toast.error(apiErrorMessage(err, "We couldn't update this shop. Try again."));
     } finally {
       setBusyId(null);
     }
@@ -148,20 +143,21 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
     if (busyId) return;
     if (action === "reject") {
       const reason = window.prompt(
-        `Reason for rejecting "${shop.name}":`,
+        `Why are you rejecting verification for "${shop.name}"?`,
         "",
       );
-      if (!reason || !reason.trim()) {
-        toast.error("A reason is required to reject.");
+      if (reason === null) return;
+      if (!reason.trim()) {
+        toast.error("Add a reason to reject this verification.");
         return;
       }
       setBusyId(shop.id);
       try {
         await apiAdmin.rejectVerification(shop.id, reason.trim());
-        toast.success(`${shop.name} rejected.`);
+        toast.success(`Verification for ${shop.name} rejected.`);
         await load();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to reject");
+        toast.error(apiErrorMessage(err, "We couldn't reject this verification. Try again."));
       } finally {
         setBusyId(null);
       }
@@ -174,11 +170,11 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
         toast.success(`${shop.name} verified.`);
       } else {
         await apiAdmin.queueVerification(shop.id);
-        toast.success(`${shop.name} queued for review.`);
+        toast.success(`${shop.name} added to the review queue.`);
       }
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Action failed");
+      toast.error(apiErrorMessage(err, "We couldn't update verification. Try again."));
     } finally {
       setBusyId(null);
     }
@@ -245,10 +241,10 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
     <div>
       <PageHeader
         title="Shops"
-        description={`${fmt(counts.total)} shops, ${fmt(counts.active)} active, ${fmt(counts.pending)} waiting for verification.`}
+        description={`${fmt(counts.total)} shop${counts.total === 1 ? "" : "s"}, ${fmt(counts.active)} active, ${fmt(counts.pending)} waiting for verification.`}
         action={
           <button type="button" onClick={() => void load()} className={BTN_SECONDARY}>
-            Refresh
+            Refresh list
           </button>
         }
       />
@@ -266,14 +262,14 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, slug or owner"
+          placeholder="Shop name, web address or owner email"
           aria-label="Search shops"
           className="h-10 w-full max-w-xs rounded-lg border border-border bg-surface shadow-xs px-3 text-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          aria-label="Active status"
+          aria-label="Filter by active status"
           className="h-10 rounded-lg border border-border bg-surface shadow-xs px-3 text-sm"
         >
           <option value="all">Any status</option>
@@ -309,9 +305,9 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
                   <p className="mt-0.5 truncate text-xs tabular-nums text-muted">
                     {[
                       s.owner_full_name || s.owner_email,
-                      s.shop_type,
-                      `${fmt(s.product_count)} listings`,
-                      `${fmt(s.view_count)} views`,
+                      shopTypeLabel(s.shop_type),
+                      `${fmt(s.product_count)} listing${s.product_count === 1 ? "" : "s"}`,
+                      `${fmt(s.view_count)} view${s.view_count === 1 ? "" : "s"}`,
                       s.verification_requested_at ? `submitted ${relativeTime(s.verification_requested_at)}` : null,
                     ]
                       .filter(Boolean)
@@ -332,12 +328,12 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
                   <AdminBoostButton target="shop" id={s.id} name={s.name} />
                   {verifyStatus !== "verified" ? (
                     <button disabled={busy} onClick={() => verifyAction(s, "approve")} className={BTN_SECONDARY}>
-                      Verify
+                      Verify shop
                     </button>
                   ) : null}
                   {verifyStatus === "unverified" ? (
                     <button disabled={busy} onClick={() => verifyAction(s, "queue")} className={BTN_TEXT}>
-                      Queue review
+                      Add to review queue
                     </button>
                   ) : null}
                   {verifyStatus !== "rejected" ? (
@@ -346,7 +342,7 @@ export default function AdminShopsClient({ initialShops }: { initialShops: Admin
                       onClick={() => verifyAction(s, "reject")}
                       className="text-sm font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
                     >
-                      Reject
+                      Reject verification
                     </button>
                   ) : null}
                 </div>

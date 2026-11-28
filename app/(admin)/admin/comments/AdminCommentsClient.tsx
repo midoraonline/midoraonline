@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiAdmin } from "@/lib/api";
+import { platformActionMessage } from "@/lib/platformMessages";
 import type { AdminComment } from "@/lib/api/admin";
 import { BTN_TEXT, EmptyState, LIST, PageHeader, Section, StatusDot, UnderlineTabs, relativeTime, useTabParam } from "@/components/dashboard/ui";
 
@@ -35,9 +37,12 @@ export default function AdminCommentsClient({
 
   const handleToggleFlag = async (id: string, table: "product_comments" | "shop_comments") => {
     try {
-      await apiAdmin.toggleCommentFlag(id, table);
+      const res = await apiAdmin.toggleCommentFlag(id, table);
+      toast.success(res.is_flagged ? "Comment flagged. It's hidden now." : "Comment unflagged.");
       load();
-    } catch {}
+    } catch (err) {
+      toast.error(platformActionMessage(err, "We couldn't update this comment. Try again."));
+    }
   };
 
   const renderComment = (c: AdminComment, table: "product_comments" | "shop_comments") => (
@@ -45,7 +50,7 @@ export default function AdminCommentsClient({
       <div className="min-w-0 flex-1">
         <p className="text-sm">{c.comment}</p>
         <p className="mt-1 truncate text-xs text-muted">
-          {[c.user?.full_name || "Unknown", c.product?.title, c.shop?.name].filter(Boolean).join(" · ")}
+          {[c.user?.full_name || "Unknown user", c.product?.title, c.shop?.name].filter(Boolean).join(" · ")}
           <span className="tabular-nums" title={new Date(c.created_at).toLocaleString()}>
             {" · "}
             {relativeTime(c.created_at)}
@@ -54,7 +59,7 @@ export default function AdminCommentsClient({
       </div>
       {c.is_flagged ? <StatusDot tone="bad">Flagged</StatusDot> : null}
       <button type="button" onClick={() => handleToggleFlag(c.id, table)} className={BTN_TEXT}>
-        {c.is_flagged ? "Unflag" : "Flag"}
+        {c.is_flagged ? "Unflag comment" : "Flag comment"}
       </button>
     </li>
   );
@@ -66,7 +71,7 @@ export default function AdminCommentsClient({
 
   return (
     <div>
-      <PageHeader title="Comments" description="Flag comments that break the rules. Flagged comments are hidden." />
+      <PageHeader title="Comments" description="Flag comments that break the rules. Flagged comments are hidden from everyone." />
       <UnderlineTabs
         tabs={[
           { value: "all", label: "All" },
@@ -76,9 +81,9 @@ export default function AdminCommentsClient({
         onChange={(v) => setShowFlagged(v === "flagged")}
       />
       {groups.map((g) => (
-        <Section key={g.table} title={`${g.title} ${g.items.length}`}>
+        <Section key={g.table} title={`${g.title} (${g.items.length})`}>
           {g.items.length === 0 ? (
-            <EmptyState message="No comments here." />
+            <EmptyState message={showFlagged ? "No flagged comments." : "No comments yet."} />
           ) : (
             <ul className={LIST}>{g.items.map((c) => renderComment(c, g.table))}</ul>
           )}

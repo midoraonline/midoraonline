@@ -426,7 +426,7 @@ export function PageError({ reset, backHref, backLabel }: { reset: () => void; b
   return (
     <div className="max-w-md py-10">
       <h1 className="text-2xl font-semibold tracking-tight">This page didn&apos;t load</h1>
-      <p className="mt-1 text-sm text-muted">Something went wrong while fetching it. Try again, or go back.</p>
+      <p className="mt-1 text-sm text-muted">Check your connection and try again, or go back.</p>
       <div className="mt-5 flex gap-2">
         <button type="button" onClick={reset} className={BTN_PRIMARY}>
           Try again

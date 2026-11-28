@@ -61,7 +61,7 @@ export default function LocationPill({ filters, onChange, area, onAreaChange, si
       setError(
         err instanceof GeoLocationError || err instanceof Error
           ? err.message
-          : "Couldn’t use your location.",
+          : "We couldn’t find your location. Choose a place from the list instead.",
       );
     } finally {
       setLocating(false);
@@ -118,7 +118,7 @@ export default function LocationPill({ filters, onChange, area, onAreaChange, si
               {onAreaChange ? (
                 <>
                   <p className="px-3 pb-1 pt-1 text-xs text-muted">
-                    Where would you like to browse? Listings there come first, then nearby and the rest of Uganda.
+                    Where do you want to browse? We show listings there first, then nearby, then the rest of Uganda.
                     {signedIn ? " We'll remember this on your account." : " Sign in to keep it on every device."}
                   </p>
                   {BROWSE_AREAS.map((a) => {

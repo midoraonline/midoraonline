@@ -6,6 +6,7 @@ import { BTN_SECONDARY, PageSkeleton } from "@/components/dashboard/ui";
 import ProductFormPage from "@/components/shop/ProductFormPage";
 import { apiProducts } from "@/lib/api";
 import type { Product } from "@/lib/api/products";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export default function EditListingPage({
   params,
@@ -36,7 +37,7 @@ export default function EditListingPage({
       })
       .catch((err) => {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Failed to load listing.");
+        setError(platformActionMessage(err, "We couldn't load this listing. Check your connection and try again."));
       })
       .finally(() => {
         if (active) setLoading(false);

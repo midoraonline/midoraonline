@@ -30,14 +30,14 @@ export default function ShopPickStep({
 }) {
   const fitting = shops.filter((s) => shopAcceptsKind(s.shop_type, kind));
   const skipped = shops.length - fitting.length;
-  const what = kind ? KIND_PLURAL[kind] : "ads";
+  const what = kind ? KIND_PLURAL[kind] : "listings";
   return (
     <StepFrame
-      title="Where should this ad go?"
+      title="Where should this listing go?"
       subtitle={
         fitting.length > 0
           ? "Pick one of your shops, or post it on its own."
-          : `None of your shops sell ${what}. You can still post it on its own.`
+          : `None of your shops are set up for ${what}. You can still post it on its own.`
       }
       onBack={onBack}
       wide
@@ -99,8 +99,8 @@ export default function ShopPickStep({
       {skipped > 0 ? (
         <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
           <PiInfoFill className="mt-px size-3.5 shrink-0" aria-hidden />
-          {skipped} of your shops {skipped === 1 ? "doesn't" : "don't"} sell {what}, so{" "}
-          {skipped === 1 ? "it isn't" : "they aren't"} listed.
+          {skipped} of your shops {skipped === 1 ? "isn't" : "aren't"} set up for {what}, so{" "}
+          {skipped === 1 ? "it isn't" : "they aren't"} shown.
         </p>
       ) : null}
     </StepFrame>

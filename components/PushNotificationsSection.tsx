@@ -17,18 +17,19 @@ export default function PushNotificationsSection() {
       const res = await sendTestPush();
       if (res.delivered) {
         toast.success(
-          `Sent a test push to ${res.delivered} device${res.delivered === 1 ? "" : "s"}.`,
+          `Test notification sent to ${res.delivered} device${res.delivered === 1 ? "" : "s"}.`,
         );
         return;
       }
       const reason = res.reason || "no_subscriptions";
       if (reason === "no_subscriptions") {
-        toast.error("No devices are subscribed yet. Turn notifications off and on again.");
+        toast.error("No devices have notifications on yet. Turn notifications off and on again.");
       } else {
-        toast.error(`Push not configured: ${reason}`);
+        console.error("Test push failed:", reason);
+        toast.error("We couldn't send a test notification right now. Try again later.");
       }
     } catch {
-      toast.error("Couldn't send a test push. Try again.");
+      toast.error("We couldn't send a test notification. Try again.");
     }
   };
 
@@ -41,24 +42,24 @@ export default function PushNotificationsSection() {
         <div>
           <h2 className="text-sm font-semibold">Browser notifications</h2>
           <p className="text-xs text-muted">
-            Get pinged when you receive a new message, even if this tab is
-            in the background.
+            Get an alert when you receive a new message, even when Midora
+            isn&apos;t open.
           </p>
         </div>
       </div>
 
       {support === "unsupported" ? (
         <p className="rounded-xl bg-foreground/[0.04] p-3 text-xs text-muted">
-          Your browser doesn&apos;t support push notifications. Try the latest
-          Chrome, Edge, Firefox, or Safari.
+          This browser can&apos;t show notifications. Try the latest
+          Chrome, Edge, Firefox or Safari.
         </p>
       ) : support === "insecure-context" ? (
         <p className="rounded-xl bg-foreground/[0.04] p-3 text-xs text-muted">
-          Push notifications require a secure (HTTPS) connection.
+          Notifications only work on a secure connection. Open Midora using a link that starts with https://.
         </p>
       ) : permission === "denied" ? (
         <p className="rounded-xl bg-amber-500/10 p-3 text-xs text-amber-700">
-          Notifications are blocked for this site. Enable them from your
+          Notifications are blocked for Midora. Allow them in your
           browser&apos;s site settings, then reload this page.
         </p>
       ) : (
@@ -69,8 +70,8 @@ export default function PushNotificationsSection() {
             </p>
             <p className="text-xs text-muted">
               {subscribed
-                ? "You'll receive push notifications for new chat messages."
-                : "Turn on to receive push notifications on this device."}
+                ? "You'll get an alert for new chat messages."
+                : "Turn them on to get alerts for new messages on this device."}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -81,7 +82,7 @@ export default function PushNotificationsSection() {
                   onClick={handleTest}
                   className="dm-focus rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
                 >
-                  Send test
+                  Send test notification
                 </button>
                 <button
                   type="button"
@@ -100,17 +101,17 @@ export default function PushNotificationsSection() {
                       const ok = await enable();
                       if (!ok) {
                         toast.error(
-                          "Couldn't enable notifications. Check permission, HTTPS, and VAPID keys.",
+                          "We couldn't turn on notifications. Tap Allow when your browser asks, then try again.",
                         );
                       } else {
-                        toast.success("Notifications enabled on this device.");
+                        toast.success("Notifications are on for this device.");
                       }
                     })();
                   }}
                   disabled={busy}
                   className="dm-focus rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                 >
-                  {busy ? "Enabling…" : "Enable notifications"}
+                  {busy ? "Turning on…" : "Turn on notifications"}
                 </button>
             )}
           </div>

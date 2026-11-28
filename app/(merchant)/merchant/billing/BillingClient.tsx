@@ -9,10 +9,11 @@ import type { Plan, PlanTier } from "@/lib/api/payments";
 import type { Shop } from "@/lib/api/shops";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { BTN_SECONDARY, EmptyState, PageHeader } from "@/components/dashboard/ui";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 function formatPrice(plan: Plan) {
   if (plan.price_ugx <= 0) return "Free";
-  return `UGX ${new Intl.NumberFormat().format(plan.price_ugx)} / ${plan.billing_period_days}d`;
+  return `UGX ${new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 }).format(plan.price_ugx)} for ${plan.billing_period_days} days`;
 }
 
 function Notice({ type, message }: { type: "success" | "error" | "info"; message: string }) {
@@ -23,6 +24,10 @@ function Notice({ type, message }: { type: "success" | "error" | "info"; message
         ? "border-rose-500/30 text-rose-700 dark:text-rose-300"
         : "border-border text-foreground";
   return <div className={`mb-6 rounded-lg border px-4 py-3 text-sm ${tone}`}>{message}</div>;
+}
+
+function planName(plans: Plan[], tier: string) {
+  return plans.find((p) => p.key === tier)?.name || tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
 export default function BillingClient() {
@@ -37,6 +42,8 @@ export default function BillingClient() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  // The payment poll can finish before or after plans load, so read the latest list.
+  const plansRef = useRef<Plan[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -45,11 +52,12 @@ export default function BillingClient() {
         apiShops.myShops(),
       ]);
       setPlans(plansRes);
+      plansRef.current = plansRes;
       const items = shopsRes.items ?? [];
       setShops(items);
       setSelectedShopId((prev) => prev || items[0]?.id || "");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load plans");
+      setError(platformActionMessage(err, "We couldn't load plans. Check your connection and try again."));
     }
   }, []);
 
@@ -74,14 +82,14 @@ export default function BillingClient() {
         if (match?.payment_status === "COMPLETED") {
           if (cancelled) return;
           await refresh();
-          setNotice(`Payment confirmed — you're now on the ${match.plan_tier ?? ""} plan.`);
+          setNotice(match.plan_tier ? `Payment confirmed. You're now on the ${planName(plansRef.current, match.plan_tier)} plan.` : "Payment confirmed. Your new plan is active.");
           setConfirming(false);
           router.replace("/merchant/billing");
           return;
         }
         if (match?.payment_status === "FAILED") {
           if (cancelled) return;
-          setError("The payment was not completed. You can try again below.");
+          setError("Your payment didn't go through. Choose a plan below to try again.");
           setConfirming(false);
           router.replace("/merchant/billing");
           return;
@@ -92,7 +100,7 @@ export default function BillingClient() {
       if (!cancelled && pollAttempts.current < 8) {
         setTimeout(poll, 2500);
       } else if (!cancelled) {
-        setNotice("Still confirming your payment. This can take a minute — check back shortly.");
+        setNotice("We're still waiting for Pesapal to confirm your payment. This can take a few minutes. Refresh this page to check.");
         setConfirming(false);
       }
     };
@@ -116,14 +124,14 @@ export default function BillingClient() {
           return;
         }
         await refresh();
-        setNotice(`You're now on the ${tier} plan.`);
+        setNotice(`You're now on the ${planName(plans, tier)} plan.`);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to start subscription");
+        setError(platformActionMessage(err, "We couldn't start your payment. Check your connection and try again."));
       } finally {
         setBusyTier(null);
       }
     },
-    [selectedShopId, refresh],
+    [selectedShopId, refresh, plans],
   );
 
   const currentTier = user?.plan_tier ?? "basic";
@@ -132,7 +140,7 @@ export default function BillingClient() {
     <div>
       <PageHeader
         title="Billing and plans"
-        description="Your plan sets how many shops and listings you can have, and whether shop analytics is on."
+        description="Your plan sets how many shops and listings you can have, and whether you get shop analytics. For a paid plan, you'll pay on Pesapal with mobile money or card. It starts as soon as payment is confirmed."
       />
 
       {confirming && <Notice type="info" message={notice ?? "Confirming…"} />}
@@ -141,7 +149,7 @@ export default function BillingClient() {
 
       {shops.length === 0 ? (
         <EmptyState
-          message="Create a business to subscribe to a plan."
+          message="Open a shop first, then choose a plan for it."
           action={
             <Link href="/open-shop" className={BTN_SECONDARY}>
               Open a shop
@@ -187,7 +195,7 @@ export default function BillingClient() {
                       Up to {plan.max_shops} shop{plan.max_shops === 1 ? "" : "s"}
                     </li>
                     <li className="tabular-nums">Up to {plan.max_products_per_shop} listings per shop</li>
-                    <li>Shop analytics {plan.analytics_enabled ? "included" : "not included"}</li>
+                    <li>{plan.analytics_enabled ? "Shop analytics included" : "No shop analytics"}</li>
                   </ul>
                   {isCurrent ? (
                     <p className="mt-auto text-sm font-medium">Current plan</p>
@@ -198,7 +206,7 @@ export default function BillingClient() {
                       onClick={() => onChoose(plan.key)}
                       className={`mt-auto ${BTN_SECONDARY}`}
                     >
-                      {busyTier === plan.key ? "Redirecting…" : `Switch to ${plan.name}`}
+                      {busyTier === plan.key ? (plan.price_ugx > 0 ? "Opening Pesapal…" : "Switching…") : plan.price_ugx > 0 ? `Pay for ${plan.name}` : `Switch to ${plan.name}`}
                     </button>
                   )}
                 </div>

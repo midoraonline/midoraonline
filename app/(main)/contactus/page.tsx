@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, FormEvent } from "react";
 import { apiContactus } from "@/lib/api";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export default function ContactUs() {
   const [fullName, setFullName] = useState("");
@@ -27,12 +28,12 @@ export default function ContactUs() {
         message,
       });
       if ("error" in res) {
-        setError(res.error as string);
+        setError(platformActionMessage(new Error(String(res.error)), "We couldn't send your message. Try again."));
         return;
       }
       setDone(true);
-    } catch {
-      setError("Failed to send. Please try again.");
+    } catch (err) {
+      setError(platformActionMessage(err, "We couldn't send your message. Check your connection and try again."));
     } finally {
       setSubmitting(false);
     }
@@ -47,10 +48,10 @@ export default function ContactUs() {
         <div className="relative z-10 flex h-full flex-col justify-center dm-container">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Get in touch</p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
-            Contact Us
+            Contact us
           </h1>
           <p className="mt-2 max-w-md text-sm text-white/75">
-            Questions about your shop, subscriptions, or partnerships? We&apos;re here to help.
+            Questions about your shop, plans or partnerships? We&apos;re here to help.
           </p>
         </div>
       </div>
@@ -62,7 +63,7 @@ export default function ContactUs() {
           Talk to the Midora Online team
         </h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Questions about opening a shop, subscriptions, or partnerships? Send us a message and we&apos;ll get back to you.
+          Send us a message about opening a shop, plans or partnerships, and we&apos;ll reply by email.
         </p>
       </section>
 
@@ -72,42 +73,68 @@ export default function ContactUs() {
           {done ? (
             <div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">
               <MaterialSymbol name="check_circle" className="!text-lg" />
-              Thank you! We&apos;ll get back to you soon.
+              Thanks. We&apos;ve got your message and will reply by email.
             </div>
           ) : (
             <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
               <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="contact-name" className="text-sm font-medium text-foreground/80">
+                    Full name
+                  </label>
+                  <input
+                    id="contact-name"
+                    className="dm-input"
+                    autoComplete="name"
+                    placeholder="e.g. Sarah Nakato"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="contact-email" className="text-sm font-medium text-foreground/80">
+                    Email
+                  </label>
+                  <input
+                    id="contact-email"
+                    className="dm-input"
+                    autoComplete="email"
+                    placeholder="e.g. you@example.com"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="contact-subject" className="text-sm font-medium text-foreground/80">
+                  Subject
+                </label>
                 <input
+                  id="contact-subject"
                   className="dm-input"
-                  placeholder="Full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-                <input
-                  className="dm-input"
-                  placeholder="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. Opening a shop on Midora"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
                   required
                 />
               </div>
-              <input
-                className="dm-input"
-                placeholder="Subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                required
-              />
-              <textarea
-                className="dm-textarea"
-                placeholder="Your message"
-                rows={5}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-              />
+              <div className="space-y-1.5">
+                <label htmlFor="contact-message" className="text-sm font-medium text-foreground/80">
+                  Message
+                </label>
+                <textarea
+                  id="contact-message"
+                  className="dm-textarea"
+                  placeholder="e.g. I'd like to know which plan fits my shop."
+                  rows={5}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                />
+              </div>
               {error && (
                 <p className="text-xs text-rose-500">{error}</p>
               )}
@@ -116,7 +143,7 @@ export default function ContactUs() {
                 disabled={submitting || !fullName || !email || !subject || !message}
                 className="dm-pill dm-focus w-full justify-self-start bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-95 disabled:opacity-50 sm:w-auto"
               >
-                {submitting ? "Sending..." : "Send message"}
+                {submitting ? "Sending…" : "Send message"}
               </button>
             </form>
           )}

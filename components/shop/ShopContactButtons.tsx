@@ -7,6 +7,8 @@ import { useAppSession } from "@/lib/state";
 import { apiChat } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import { track } from "@/lib/analytics";
+import { toast } from "sonner";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import TradeDisclaimer from "@/components/TradeDisclaimer";
 import SignInPrompt from "@/components/SignInPrompt";
@@ -52,7 +54,13 @@ export default function ShopContactButtons({
       track("listing:messaged", { shopId });
       router.push(`/chat?conversation=${conv.id}`);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) setAskSignIn(true);
+      if (err instanceof ApiError && err.status === 401) {
+        setAskSignIn(true);
+        return;
+      }
+      toast.error(
+        platformActionMessage(err, "We couldn't open a chat with this seller. Check your connection and try again."),
+      );
     }
   };
 
@@ -74,7 +82,7 @@ export default function ShopContactButtons({
               className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#22c35e] active:scale-[0.99]"
             >
               <WhatsAppIcon className="size-4 shrink-0 text-white" />
-              WhatsApp
+              Chat on WhatsApp
             </button>
           )}
         </TradeDisclaimer>
@@ -102,7 +110,7 @@ export default function ShopContactButtons({
               }
             >
               <MessageCircle className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
-              Message on Midora
+              Message seller
             </button>
           )}
         </TradeDisclaimer>

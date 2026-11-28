@@ -19,12 +19,13 @@ export function boostEndsLabel(iso?: string | null): string | null {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   return (
-    d.toLocaleString("en-US", {
+    d.toLocaleString("en-GB", {
       timeZone: "Africa/Kampala",
       month: "short",
       day: "numeric",
       hour: "numeric",
       minute: "2-digit",
+      hour12: true,
     }) + " EAT"
   );
 }
@@ -50,10 +51,10 @@ export function boostSourceLabel(b: BoostInfo): string {
 }
 
 export function boostScopeLabel(b: BoostInfo): string {
-  return b.scope === "shop" || b.shop_id ? "Business boost" : "Listing boost";
+  return b.scope === "shop" || b.shop_id ? "Shop boost" : "Listing boost";
 }
 
-/** e.g. "3 days · Business boost · Admin · ends Oct 19, 2:00 PM EAT (2d 3h left)" */
+/** e.g. "3 days · Business boost · Admin · ends 19 Oct, 2:00 pm EAT (2d 3h left)" */
 export function describeBoost(b: BoostInfo): string {
   const ends = boostEndsLabel(b.ends_at);
   const left = boostTimeLeft(b.ends_at);

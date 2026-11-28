@@ -8,7 +8,7 @@ function SaleHint({ sale, salePrice, showErrors }: { sale: SalePriceState; saleP
   if (sale.kind === "ok") {
     return (
       <p className="text-xs font-semibold text-[color:var(--success)]">
-        Buyer sees {UGX.format(parseAmount(salePrice) ?? 0)} — saves {UGX.format(sale.savings)} ({sale.percent}% off)
+        Buyers see {UGX.format(parseAmount(salePrice) ?? 0)}. They save {UGX.format(sale.savings)} ({sale.percent}% off).
       </p>
     );
   }
@@ -36,7 +36,7 @@ export default function PriceSection({
       <div className="space-y-4">
         <div className="space-y-1.5">
           <label htmlFor="product-price" className="block text-sm font-medium text-foreground">
-            {isOpportunity ? "Budget / pay (UGX)" : "Price (UGX)"}
+            {isOpportunity ? "Budget or pay (UGX)" : "Price (UGX)"}
           </label>
           <input
             id="product-price"
@@ -48,14 +48,14 @@ export default function PriceSection({
               setDraft((d) => ({ ...d, price_ugx: e.target.value }));
             }}
             aria-invalid={(showErrors && Boolean(errors.price_ugx)) || serverMessage !== null}
-            placeholder={isOpportunity ? "Optional — 0 if unpaid" : "50000"}
+            placeholder={isOpportunity ? "Optional. Enter 0 if unpaid" : "e.g. 50000"}
           />
           <FieldError message={showErrors ? errors.price_ugx : null} />
         </div>
         {isOpportunity ? null : (
           <div className="space-y-1.5">
             <label htmlFor="product-sale" className="block text-sm font-medium text-foreground">
-              After discount price <span className="font-normal text-muted">(optional)</span>
+              Discounted price <span className="font-normal text-muted">(optional)</span>
             </label>
             <input
               id="product-sale"
@@ -80,7 +80,7 @@ export default function PriceSection({
             inputMode="numeric"
             value={draft.stock_quantity}
             onChange={(e) => setDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
-            placeholder="10"
+            placeholder="e.g. 10"
           />
         </div>
       ) : null}

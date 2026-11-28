@@ -97,17 +97,17 @@ export const LISTING_KIND_OPTIONS: {
   {
     value: "product",
     label: "Product",
-    hint: "Physical or digital goods for sale",
+    hint: "Goods for sale, physical or digital.",
   },
   {
     value: "service",
     label: "Service",
-    hint: "Describe what you offer, who it helps, and where or when you work. Set a pricing model; photos are optional.",
+    hint: "Say what you offer, who it's for, and where and when you work. Choose how you charge. Photos are optional.",
   },
   {
     value: "opportunity",
     label: "Opportunity",
-    hint: "Share the role or offer, who can apply, requirements, compensation, and deadline. Photos are optional.",
+    hint: "Say what the role or offer is, who can apply, what they need, the pay and the deadline. Photos are optional.",
   },
 ];
 
@@ -159,7 +159,7 @@ export const CONDITION_OPTIONS = [
 export const PRICING_MODEL_OPTIONS = [
   { value: "fixed", label: "Fixed price" },
   { value: "hourly", label: "Hourly" },
-  { value: "starting_at", label: "Starting at" },
+  { value: "starting_at", label: "Starting from" },
   { value: "quote", label: "Get a quote" },
 ] as const;
 
@@ -168,7 +168,7 @@ export const OPPORTUNITY_KIND_OPTIONS = [
   { value: "gig", label: "Gig" },
   { value: "collaboration", label: "Collaboration" },
   { value: "internship", label: "Internship" },
-  { value: "maids", label: "Maids / Domestic Help" },
+  { value: "maids", label: "Maids / domestic help" },
   { value: "other", label: "Other" },
 ] as const;
 
@@ -239,7 +239,7 @@ export function categoryMetaFields(
   if (p === "fashion" || p === "jewelry & watches" || p === "kids & baby") {
     return [
       { key: "size", label: "Size", kind: "text", placeholder: "e.g. M, 42, UK 8" },
-      { key: "color", label: "Color", kind: "text", placeholder: "Optional" },
+      { key: "color", label: "Colour", kind: "text", placeholder: "Optional" },
       { key: "material", label: "Material", kind: "text", placeholder: "e.g. Cotton, leather" },
       { key: "brand", label: "Brand", kind: "text", placeholder: "Optional" },
     ];
@@ -250,7 +250,7 @@ export function categoryMetaFields(
       { key: "year", label: "Year", kind: "text", placeholder: "e.g. 2018" },
       { key: "make_model", label: "Make & model", kind: "text", placeholder: "e.g. Toyota Vitz" },
       { key: "mileage_km", label: "Mileage (km)", kind: "text", placeholder: "e.g. 85000" },
-      { key: "color", label: "Color", kind: "text", placeholder: "Optional" },
+      { key: "color", label: "Colour", kind: "text", placeholder: "Optional" },
     ];
   }
 
@@ -264,7 +264,7 @@ export function categoryMetaFields(
         options: PROPERTY_TYPE_OPTIONS,
       },
       { key: "size_acres", label: "Size (acres)", kind: "text", placeholder: "For land" },
-      { key: "size_sqm", label: "Size (sqm)", kind: "text", placeholder: "For buildings" },
+      { key: "size_sqm", label: "Size (m²)", kind: "text", placeholder: "For buildings" },
       { key: "bedrooms", label: "Bedrooms", kind: "text", placeholder: "Optional" },
       { key: "bathrooms", label: "Bathrooms", kind: "text", placeholder: "Optional" },
       {
@@ -315,13 +315,13 @@ export const CATEGORY_META_FIELD_KEY_OPTIONS: { value: string; label: string }[]
   { value: "storage", label: "Storage / capacity" },
   { value: "warranty", label: "Warranty" },
   { value: "size", label: "Size" },
-  { value: "color", label: "Color" },
+  { value: "color", label: "Colour" },
   { value: "material", label: "Material" },
   { value: "year", label: "Year" },
   { value: "make_model", label: "Make & model" },
   { value: "mileage_km", label: "Mileage (km)" },
   { value: "property_type", label: "Property type" },
-  { value: "size_sqm", label: "Size (sqm)" },
+  { value: "size_sqm", label: "Size (m²)" },
   { value: "size_acres", label: "Size (acres)" },
   { value: "bedrooms", label: "Bedrooms" },
   { value: "bathrooms", label: "Bathrooms" },
@@ -494,11 +494,11 @@ export function descriptionMeetsStandard(text: string): {
   message?: string;
 } {
   const t = text.trim();
-  if (!t) return { ok: false, message: "Description is required." };
+  if (!t) return { ok: false, message: "Add a description." };
   if (t.length < 40) {
     return {
       ok: false,
-      message: "Write a fuller description (at least ~40 characters).",
+      message: "Add a bit more detail. Use at least 40 characters.",
     };
   }
   const sentences = t
@@ -508,7 +508,7 @@ export function descriptionMeetsStandard(text: string): {
   if (sentences.length < 2) {
     return {
       ok: false,
-      message: "Use at least two clear sentences so buyers know what to expect.",
+      message: "Write at least 2 clear sentences so buyers know what to expect.",
     };
   }
   return { ok: true };

@@ -41,7 +41,7 @@ export default function BottomNav() {
         }
       : session.isAuthenticated && role === "customer"
         ? {
-            label: "Wishlist",
+            label: "Saved",
             href: "/customer/wishlist",
             icon: "favorite",
             isActive: (p) => p.startsWith("/customer/wishlist"),
@@ -109,7 +109,7 @@ export default function BottomNav() {
       },
       browseOrMessagesTab,
       {
-        label: "Post an ad",
+        label: "Post",
         href: postHref,
         icon: "add",
         center: true,

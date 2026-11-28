@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api/base";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { useAppSession } from "@/lib/state";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
 
@@ -53,7 +55,7 @@ function StarInput({
             }`}
             onClick={() => onChange(star === value ? 0 : star)}
             onMouseEnter={() => setHovered(star)}
-            aria-label={`${star} star${star > 1 ? "s" : ""}`}
+            aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
           >
             <MaterialSymbol
               name="star"
@@ -146,8 +148,10 @@ export default function ShopReviews({ shopId }: Props) {
       );
       setMyReview({ rating, comment: comment.trim() } as ShopReview);
       load();
-    } catch {
-      // handled
+    } catch (err) {
+      toast.error(
+        platformActionMessage(err, "We couldn't post your review. Check your connection and try again."),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -164,10 +168,10 @@ export default function ShopReviews({ shopId }: Props) {
             id="shop-reviews-heading"
             className="text-xs font-semibold uppercase tracking-wide text-muted"
           >
-            Ratings &amp; reviews
+            Ratings and reviews
           </h2>
           <p className="mt-0.5 text-[11px] text-muted">
-            How customers rate this shop.
+            What buyers say about this shop.
           </p>
         </div>
         {total > 0 ? (
@@ -203,7 +207,7 @@ export default function ShopReviews({ shopId }: Props) {
                           <Stars rating={r.rating} />
                         </div>
                         <span className="text-[10px] text-muted">
-                          {new Date(r.created_at).toLocaleDateString()}
+                          {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                         </span>
                       </div>
                       {r.comment && (
@@ -217,7 +221,7 @@ export default function ShopReviews({ shopId }: Props) {
               )}
 
               {reviews.length === 0 && !loading && (
-                <p className="text-xs text-muted">No reviews yet.</p>
+                <p className="text-xs text-muted">No reviews yet. Bought from this shop? Be the first to rate it.</p>
               )}
 
               {session.isAuthenticated ? (
@@ -240,7 +244,7 @@ export default function ShopReviews({ shopId }: Props) {
                         className="dm-input dm-focus min-w-0 flex-1 text-xs"
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="Write a review (optional)…"
+                        placeholder="Add a comment (optional)"
                         maxLength={500}
                       />
                       <button
@@ -248,13 +252,13 @@ export default function ShopReviews({ shopId }: Props) {
                         disabled={submitting || rating < 1}
                         className="dm-pill dm-focus shrink-0 bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
                       >
-                        Submit
+                        Post review
                       </button>
                     </div>
                   </form>
                 )
               ) : (
-                <p className="text-xs text-muted">Log in to leave a review.</p>
+                <p className="text-xs text-muted">Sign in to leave a review.</p>
               )}
             </>
           )}

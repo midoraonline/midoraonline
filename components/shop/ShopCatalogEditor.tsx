@@ -9,6 +9,7 @@ import { type ItemType, type Product } from "@/lib/api/products";
 import { LISTING_KIND_LABEL, normalizeListingKind } from "@/lib/listingMeta";
 import { useAppSession } from "@/lib/state";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { platformActionMessage } from "@/lib/platformMessages";
 import ListingManageCard from "@/components/shop/ListingManageCard";
 import { BTN_PRIMARY, EmptyState, PageSkeleton, Section } from "@/components/dashboard/ui";
 
@@ -43,7 +44,7 @@ export default function ShopCatalogEditor({
         all.filter((p) => normalizeListingKind(p.item_type) === want),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load catalog");
+      toast.error(platformActionMessage(e, "We couldn't load your listings. Check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -67,9 +68,9 @@ export default function ShopCatalogEditor({
     setDeleting(true);
     const request = apiProducts.deleteProduct(product.id);
     toast.promise(request, {
-      loading: "Removing listing…",
-      success: "Listing removed",
-      error: (e) => (e instanceof Error ? e.message : "Delete failed."),
+      loading: "Deleting listing…",
+      success: "Listing deleted.",
+      error: (e) => platformActionMessage(e, "We couldn't delete this listing. Try again."),
     });
     try {
       await request;
@@ -86,10 +87,10 @@ export default function ShopCatalogEditor({
     setItems((prev) => prev.map((item) => (item.id === next.id ? { ...item, ...next } : item)));
   }
 
-  const kindLabel =
-    LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase() + "s";
+  const kindName = LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase();
+  const kindLabel = kindName.endsWith("y") ? `${kindName.slice(0, -1)}ies` : `${kindName}s`;
 
-  if (!hydrated) return <PageSkeleton rows={4} label="Loading catalog" />;
+  if (!hydrated) return <PageSkeleton rows={4} label="Loading listings…" />;
 
   if (!isAuthed) return <EmptyState message={`Sign in to manage ${kindLabel}.`} />;
 
@@ -105,9 +106,9 @@ export default function ShopCatalogEditor({
         }
       >
         {loading ? (
-          <PageSkeleton rows={4} label="Loading catalog" />
+          <PageSkeleton rows={4} label="Loading listings…" />
         ) : items.length === 0 ? (
-          <EmptyState message={`No ${kindLabel} in this shop yet.`} />
+          <EmptyState message={`No ${kindLabel} in this shop yet. Tap “Add ${LISTING_KIND_LABEL[normalizeListingKind(itemType)].toLowerCase()}” to post one.`} />
         ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
             {items.map((p) => (
@@ -121,9 +122,9 @@ export default function ShopCatalogEditor({
 
       {pendingDelete && (
         <ConfirmDialog
-          title="Remove listing?"
-          message={`"${pendingDelete.title}" will be removed. This can't be undone.`}
-          confirmLabel="Remove listing"
+          title="Delete this listing?"
+          message={`"${pendingDelete.title}" will be deleted. Buyers won't see it again. You can't undo this.`}
+          confirmLabel="Delete listing"
           destructive
           busy={deleting}
           onConfirm={() => void removeProduct(pendingDelete)}

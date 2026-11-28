@@ -19,7 +19,7 @@ export function productInquiryWhatsAppUrl(
 
   let msg = "Hi, I saw your item on Midora — is it still available?";
   if (opts?.itemTitle?.trim()) {
-    msg += `\n\n(RE: ${opts.itemTitle.trim()})`;
+    msg += `\n\nItem: ${opts.itemTitle.trim()}`;
   }
   if (opts?.itemUrl?.trim()) {
     msg += `\n${opts.itemUrl.trim()}`;
@@ -37,7 +37,7 @@ export function shopInquiryWhatsAppUrl(
 
   let msg = "Hi, I found your shop on Midora and wanted to get in touch.";
   if (opts?.shopName?.trim()) {
-    msg += `\n\n(Shop: ${opts.shopName.trim()})`;
+    msg += `\n\nShop: ${opts.shopName.trim()}`;
   }
   if (opts?.shopUrl?.trim()) {
     msg += `\n${opts.shopUrl.trim()}`;

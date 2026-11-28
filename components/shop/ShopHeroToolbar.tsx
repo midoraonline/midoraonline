@@ -83,7 +83,7 @@ export default function ShopHeroToolbar({
           style={tone === "immersive" ? immersiveStyle : undefined}
           onClick={() => scrollToSection("shop-contacts")}
         >
-          Contacts
+          Contact
         </button>
       ) : null}
       {quickNav.concierge ? (

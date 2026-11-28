@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiShops } from "@/lib/api";
 import type { Verification, VerificationStatus } from "@/lib/api/shops";
 import { ApiError } from "@/lib/api/base";
+import { platformActionMessage } from "@/lib/platformMessages";
 import { useAppSession } from "@/lib/state";
 import { useRealtimeTable } from "@/lib/realtime/hooks";
 import { MaterialSymbol } from "@/components/MaterialSymbol";
@@ -16,36 +17,36 @@ import { PageSkeleton, StatusDot, type StatusTone } from "@/components/dashboard
 const BADGE_META: Record<string, { icon: string; label: string; color: string; desc: string }> = {
   shop_listed: {
     icon: "storefront",
-    label: "Shop Listed",
+    label: "Shop listed",
     color: "bg-primary/10 text-primary border-primary/20",
-    desc: "Your shop is registered on Midora. Earned automatically — no KYC required to publish.",
+    desc: "Your shop is on Midora. You get this badge straight away. You don't need ID to post listings.",
   },
   identity_verified: {
     icon: "verified_user",
-    label: "Identity Verified",
+    label: "ID verified",
     color: "dm-pill--success border-[color:color-mix(in_oklab,var(--success)_25%,transparent)]",
-    desc: "National ID / passport / driving permit confirmed. Unlocks higher listing volume and paid plans.",
+    desc: "We checked your national ID, passport or driving permit. This lets you post more listings and buy paid plans.",
   },
   business_verified: {
     icon: "domain_verification",
-    label: "Verified Business",
+    label: "Verified business",
     color: "bg-accent/15 text-accent border-accent/25",
-    desc: "Business registration / TIN / shop contacts verified by Midora.",
+    desc: "We checked your business registration, TIN or shop details.",
   },
   professional_verified: {
     icon: "workspace_premium",
-    label: "Verified Professional",
+    label: "Verified professional",
     color: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/25",
-    desc: "Professional credentials confirmed where relevant (licenses, certificates).",
+    desc: "We checked your professional licence or certificate.",
   },
 };
 
 function StatusPill({ status }: { status: VerificationStatus }) {
   const cfg: Record<VerificationStatus, { label: string; tone: StatusTone }> = {
     unverified: { label: "Not submitted", tone: "neutral" },
-    submitted: { label: "ID submitted", tone: "warn" },
-    pending: { label: "Verification pending", tone: "warn" },
-    verified: { label: "Approved", tone: "ok" },
+    submitted: { label: "Saved, not sent", tone: "warn" },
+    pending: { label: "In review", tone: "warn" },
+    verified: { label: "Verified", tone: "ok" },
     rejected: { label: "Changes requested", tone: "bad" },
   };
   const c = cfg[status] ?? cfg.unverified;
@@ -92,35 +93,35 @@ function StageCircle({
 }
 
 const STAGE2_DOCS = [
-  { type: "national_id_front", label: "National ID (Front)" },
-  { type: "national_id_back", label: "National ID (Back)" },
+  { type: "national_id_front", label: "National ID (front)" },
+  { type: "national_id_back", label: "National ID (back)" },
   { type: "passport", label: "Passport (optional)" },
   { type: "driving_permit", label: "Driving permit (optional)" },
-  { type: "selfie", label: "Selfie with ID" },
+  { type: "selfie", label: "Selfie holding your ID" },
 ] as const;
 
 const STAGE3_DOCS = [
-  { type: "shop_photo", label: "Physical Shop Photo" },
-  { type: "business_reg", label: "Business Registration (optional)" },
-  { type: "tin", label: "TIN document (optional)" },
-  { type: "tax_doc", label: "Tax Compliance (optional)" },
+  { type: "shop_photo", label: "Photo of your shop or workplace" },
+  { type: "business_reg", label: "Business registration (optional)" },
+  { type: "tin", label: "TIN certificate (optional)" },
+  { type: "tax_doc", label: "Tax clearance (optional)" },
 ] as const;
 
 const STAGE4_DOCS = [
   { type: "professional_cred", label: "Professional credential" },
-  { type: "professional_license", label: "License / certificate (optional)" },
+  { type: "professional_license", label: "Licence or certificate (optional)" },
 ] as const;
 
 const STAGE3_FIELDS = [
   { key: "registered_name", label: "Registered business name" },
   { key: "registration_number", label: "URSB registration number" },
-  { key: "tin", label: "TIN" },
+  { key: "tin", label: "TIN (tax number)" },
 ] as const;
 
 const STAGE4_FIELDS = [
   { key: "profession", label: "Profession" },
-  { key: "licence_number", label: "Licence / membership number" },
-  { key: "issuing_body", label: "Issuing body" },
+  { key: "licence_number", label: "Licence or membership number" },
+  { key: "issuing_body", label: "Who issued it" },
 ] as const;
 
 type DocType = string;
@@ -195,7 +196,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       if (err instanceof ApiError && err.status === 404) {
         setVerification(null);
       } else {
-        setError(err instanceof Error ? err.message : "Failed to load verification");
+        setError(platformActionMessage(err, "We couldn't load your verification. Check your connection and try again."));
       }
     } finally {
       setLoading(false);
@@ -244,7 +245,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       setVerification(v);
       setActiveForm(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit");
+      setError(platformActionMessage(err, "We couldn't save your documents. Check your connection and try again."));
     } finally {
       setSubmitting(false);
     }
@@ -257,14 +258,14 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       const v = await apiShops.requestVerificationReview(shopId, { stage });
       setVerification(v);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to request review");
+      setError(platformActionMessage(err, "We couldn't send your review request. Try again."));
     } finally {
       setSubmitting(false);
     }
   }
 
   // Realtime updates call load() again; only the first load shows a skeleton.
-  if (loading && !verification) return <PageSkeleton rows={4} label="Loading verification" />;
+  if (loading && !verification) return <PageSkeleton rows={4} label="Loading verification…" />;
 
   const badges = verification?.badges ?? ["shop_listed"];
   const stage2Status = verification?.stage2_status ?? "unverified";
@@ -288,67 +289,67 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
       <div className="dm-card overflow-hidden divide-y divide-border">
         <div className="bg-surface-subtle px-5 py-4 sm:px-6">
           <p className="text-sm text-muted">
-            Optional ID capture first — we store your selfie + ID without reviewing everyone.
-            Request review when you need unlocks (more listings, paid plans) or higher trust badges.
+            Verification is optional. You can save your ID now and ask us to review it later.
+            Ask for a review when you want more listings, a paid plan or a trust badge.
           </p>
         </div>
 
         <StageBlock
           number={1}
-          title="Shop Listed"
+          title="Shop listed"
           icon="storefront"
           status="verified"
           badgeKey="shop_listed"
           hasBadge={badges.includes("shop_listed")}
-          description="Your shop is live. Basic publish needs phone, place, price, and photos — not KYC."
+          description="Your shop is live. To post listings you need a phone number, location, price and photos. No ID needed."
           autoGranted
         >
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href={`/merchant/shops/${shopId}`} className="dm-btn dm-btn-secondary dm-btn-sm">
-              Manage catalog →
+              Manage listings
             </Link>
           </div>
         </StageBlock>
 
         <StageBlock
           number={2}
-          title="Identity Verified"
+          title="ID verified"
           icon="verified_user"
           status={stage2Status}
           badgeKey="identity_verified"
           hasBadge={badges.includes("identity_verified")}
-          description="Optional selfie + national ID / passport / driving permit. Required to list more than 5 items or upgrade to Standard/Premium."
+          description="A selfie and your national ID, passport or driving permit. You need this to post more than 5 listings or buy the Standard or Premium plan."
         >
           {stage2Status === "rejected" && reviewerNotes(verification, 2) && (
             <div className="dm-alert dm-alert--error mt-3 px-4 py-3 text-xs">
-              <strong>Why it was declined:</strong> {reviewerNotes(verification, 2)}
+              <strong>What to change:</strong> {reviewerNotes(verification, 2)}
             </div>
           )}
 
           {stage2Status === "submitted" && (
             <div className="mt-3 space-y-2">
-              <p className="text-sm text-muted">ID submitted — verification pending until you request review or hit an unlock.</p>
+              <p className="text-sm text-muted">Your ID is saved. We’ll review it when you ask, or when you need it for more listings or a paid plan.</p>
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => void handleRequestReview(2)}
                 className="dm-btn dm-btn-primary dm-btn-sm"
               >
-                {submitting ? "Requesting…" : "Request review now"}
+                {submitting ? "Sending…" : "Ask for review"}
               </button>
             </div>
           )}
 
           {stage2Status === "pending" && (
             <p className="mt-3 text-sm text-muted">
-              Verification pending — Midora is reviewing your ID. Usually within 1 business day.
+              We’re checking your ID. This usually takes 1 working day.
             </p>
           )}
 
           {stage2Status === "verified" && (
             <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: "var(--success)" }}>
               <MaterialSymbol name="check_circle" className="!text-base" aria-hidden="true" />
-              Identity Verified badge earned.
+              You have the ID verified badge.
             </div>
           )}
 
@@ -356,28 +357,28 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             <>
               {activeForm !== 2 ? (
                 <button type="button" onClick={() => setActiveForm(2)} className="dm-btn dm-btn-primary dm-btn-sm mt-4">
-                  {stage2Status === "rejected" ? "Resubmit ID documents" : stage2Status === "submitted" ? "Update documents" : "Capture ID + selfie →"}
+                  {stage2Status === "rejected" ? "Send ID again" : stage2Status === "submitted" ? "Update documents" : "Add ID and selfie"}
                 </button>
               ) : (
                 <form
                   onSubmit={(e) => { e.preventDefault(); void handleSubmit(2, false); }}
                   className="mt-4 space-y-4 rounded-xl border border-border bg-surface shadow-xs p-4"
                 >
-                  <p className="text-xs font-semibold text-foreground/80">Identity capture (optional)</p>
+                  <p className="text-xs font-semibold text-foreground/80">Your ID (optional)</p>
                   <p className="text-xs text-muted">
-                    Docs are stored privately. Saving does not put you in the admin queue — use Request review when you need the badge.
+                    We keep your documents private. Saving doesn’t send them for review. Tap “Save and ask for review” when you want the badge.
                   </p>
 
                   <label className="block space-y-1">
                     <span className="text-xs font-medium text-foreground/80">Phone number</span>
-                    <PhoneNumberInput value={s2Phone} onChange={setS2Phone} placeholder="700 000 000" />
+                    <PhoneNumberInput value={s2Phone} onChange={setS2Phone} placeholder="772 123 456" />
                   </label>
                   <label className="block space-y-1">
                     <span className="text-xs font-medium text-foreground/80">WhatsApp number</span>
-                    <PhoneNumberInput value={s2Whatsapp} onChange={setS2Whatsapp} placeholder="700 000 000" />
+                    <PhoneNumberInput value={s2Whatsapp} onChange={setS2Whatsapp} placeholder="772 123 456" />
                   </label>
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-foreground/80">Physical location</span>
+                    <span className="text-xs font-medium text-foreground/80">Shop location</span>
                     <input type="text" className="dm-input" value={s2Location} onChange={e => setS2Location(e.target.value)}
                       placeholder="e.g. Shop 12, Nakawa Market, Kampala" />
                   </label>
@@ -396,7 +397,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
 
                   <div className="flex flex-wrap items-center gap-3">
                     <button type="submit" disabled={submitting || s2Docs.length === 0} className="dm-btn dm-btn-secondary disabled:opacity-60">
-                      {submitting ? "Saving…" : "Save ID (no review yet)"}
+                      {submitting ? "Saving…" : "Save for later"}
                     </button>
                     <button
                       type="button"
@@ -404,7 +405,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
                       onClick={() => void handleSubmit(2, true)}
                       className="dm-btn dm-btn-primary disabled:opacity-60"
                     >
-                      {submitting ? "Submitting…" : "Save & request review"}
+                      {submitting ? "Sending…" : "Save and ask for review"}
                     </button>
                     <button type="button" onClick={() => setActiveForm(null)} className="dm-btn dm-btn-ghost dm-btn-sm">Cancel</button>
                   </div>
@@ -416,14 +417,14 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
 
         <StageBlock
           number={3}
-          title="Verified Business"
+          title="Verified business"
           icon="domain_verification"
           status={stage3Status}
           badgeKey="business_verified"
           hasBadge={badges.includes("business_verified")}
-          description="Business registration / TIN / shop photo when you need a business badge."
+          description="Your business registration, TIN or a shop photo, for the verified business badge."
           locked={stage2Status !== "verified"}
-          lockedMessage="Identity Verified required before business verification."
+          lockedMessage="Get your ID verified first."
         >
           <StageActions
             status={stage3Status}
@@ -445,20 +446,20 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             fieldsSpec={STAGE3_FIELDS}
             fields={s3Fields}
             setField={(key, value) => setS3Fields((f) => ({ ...f, [key]: value }))}
-            captureLabel="Capture business docs →"
+            captureLabel="Add business documents"
           />
         </StageBlock>
 
         <StageBlock
           number={4}
-          title="Verified Professional"
+          title="Verified professional"
           icon="workspace_premium"
           status={stage4Status}
           badgeKey="professional_verified"
           hasBadge={badges.includes("professional_verified")}
-          description="Optional professional credentials (licenses, certificates) where relevant."
+          description="Your professional licence or certificate, if your work needs one."
           locked={stage2Status !== "verified"}
-          lockedMessage="Identity Verified required before professional verification."
+          lockedMessage="Get your ID verified first."
         >
           <StageActions
             status={stage4Status}
@@ -480,7 +481,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
             fieldsSpec={STAGE4_FIELDS}
             fields={s4Fields}
             setField={(key, value) => setS4Fields((f) => ({ ...f, [key]: value }))}
-            captureLabel="Capture credentials →"
+            captureLabel="Add licence or certificate"
           />
         </StageBlock>
       </div>
@@ -497,7 +498,7 @@ export default function ShopVerificationCard({ shopId }: { shopId: string }) {
                 <p className="text-sm font-semibold">
                   {b.label}
                   {badges.includes(key) && (
-                    <span className="ml-2 text-[10px] font-semibold" style={{ color: "var(--success)" }}>✓ Earned</span>
+                    <span className="ml-2 text-[10px] font-semibold" style={{ color: "var(--success)" }}>✓ You have this</span>
                   )}
                 </p>
                 <p className="text-xs text-muted">{b.desc}</p>
@@ -585,31 +586,31 @@ function StageActions({
     <>
       {status === "rejected" && Boolean(metaNotes) && (
         <div className="dm-alert dm-alert--error mt-3 px-4 py-3 text-xs">
-          <strong>Why it was declined:</strong> {String(metaNotes)}
+          <strong>What to change:</strong> {String(metaNotes)}
         </div>
       )}
       {status === "submitted" && (
         <div className="mt-3 space-y-2">
-          <p className="text-sm text-muted">Documents submitted — verification pending until review is requested.</p>
+          <p className="text-sm text-muted">Your documents are saved. We’ll review them when you ask.</p>
           <button type="button" disabled={submitting} onClick={onRequestReview} className="dm-btn dm-btn-primary dm-btn-sm">
-            {submitting ? "Requesting…" : "Request review now"}
+            {submitting ? "Sending…" : "Ask for review"}
           </button>
         </div>
       )}
       {status === "pending" && (
-        <p className="mt-3 text-sm text-muted">Verification pending — under Midora review.</p>
+        <p className="mt-3 text-sm text-muted">We’re checking your documents.</p>
       )}
       {status === "verified" && (
         <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: "var(--success)" }}>
           <MaterialSymbol name="check_circle" className="!text-base" aria-hidden="true" />
-          Badge earned.
+          You have this badge.
         </div>
       )}
       {canCapture && status !== "pending" && (
         <>
           {!active ? (
             <button type="button" onClick={onOpen} className="dm-btn dm-btn-primary dm-btn-sm mt-4">
-              {status === "rejected" ? "Resubmit documents" : status === "submitted" ? "Update documents" : captureLabel}
+              {status === "rejected" ? "Send documents again" : status === "submitted" ? "Update documents" : captureLabel}
             </button>
           ) : (
             <form
@@ -637,10 +638,10 @@ function StageActions({
               </label>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="submit" disabled={submitting || docs.length === 0} className="dm-btn dm-btn-secondary disabled:opacity-60">
-                  {submitting ? "Saving…" : "Save (no review yet)"}
+                  {submitting ? "Saving…" : "Save for later"}
                 </button>
                 <button type="button" disabled={submitting || docs.length === 0} onClick={onReview} className="dm-btn dm-btn-primary disabled:opacity-60">
-                  {submitting ? "Submitting…" : "Save & request review"}
+                  {submitting ? "Sending…" : "Save and ask for review"}
                 </button>
                 <button type="button" onClick={onClose} className="dm-btn dm-btn-ghost dm-btn-sm">Cancel</button>
               </div>
@@ -678,10 +679,10 @@ function StageBlock({
             <p className="text-sm font-semibold">{title}</p>
             {autoGranted && (
               <span className="text-xs text-muted">
-                Auto
+                Automatic
               </span>
             )}
-            {hasBadge && meta && (
+            {hasBadge && meta && meta.label !== title && (
               <span className="text-xs text-foreground/80">
                 {meta.label}
               </span>

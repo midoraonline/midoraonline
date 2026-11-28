@@ -54,7 +54,8 @@ export function shopIsVerified(shop: {
   ) {
     return true;
   }
-  return shop.is_active === true;
+  // An active shop is not a verified shop: only admin-reviewed badges count.
+  return false;
 }
 
 /** Highest verification stage for display on cards. */
@@ -69,9 +70,9 @@ export function resolveShopTrustLevel(badges?: string[] | null): ShopTrustLevel 
 }
 
 export const SHOP_TRUST_LABEL: Record<ShopTrustLevel, string> = {
-  business: "Verified Business",
-  professional: "Verified Professional",
-  identity: "Identity Verified",
+  business: "Verified business",
+  professional: "Verified professional",
+  identity: "ID verified",
   registered: "Registered",
 };
 

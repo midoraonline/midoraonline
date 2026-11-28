@@ -23,8 +23,8 @@ export function primaryCloseAction(itemType?: string | null): {
       status: "unavailable",
       label: "Mark unavailable",
       done: "Marked unavailable",
-      title: "Mark this service unavailable?",
-      message: "It leaves the public feed.",
+      title: "Mark this service as unavailable?",
+      message: "Buyers won't see it in the feed any more.",
     };
   }
   if (kind === "job" || kind === "opportunity") {
@@ -32,8 +32,8 @@ export function primaryCloseAction(itemType?: string | null): {
       status: "filled",
       label: "Mark filled",
       done: "Marked filled",
-      title: "Mark this opportunity filled?",
-      message: "It leaves the public feed.",
+      title: "Mark this opportunity as filled?",
+      message: "People won't see it in the feed any more.",
     };
   }
   if (kind === "property") {
@@ -41,16 +41,16 @@ export function primaryCloseAction(itemType?: string | null): {
       status: "closed",
       label: "Mark closed",
       done: "Marked closed",
-      title: "Mark this listing closed?",
-      message: "It leaves the public feed.",
+      title: "Mark this listing as closed?",
+      message: "Buyers won't see it in the feed any more.",
     };
   }
   return {
     status: "sold",
     label: "Mark sold",
     done: "Marked sold",
-    title: "Mark this listing sold?",
-    message: "It leaves the public feed, and stock is set to 0.",
+    title: "Mark this listing as sold?",
+    message: "Buyers won't see it in the feed any more, and stock goes to 0.",
   };
 }
 

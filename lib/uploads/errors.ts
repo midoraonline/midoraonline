@@ -23,22 +23,22 @@ export function failureMessage(reason: UploadFailure, opts: { count?: number; ma
   switch (reason) {
     case "too-large":
       return n > 1
-        ? `${n} ${noun}s are over ${MAX_IMAGE_MB}MB. Pick smaller ones.`
-        : `That ${noun} is over ${MAX_IMAGE_MB}MB. Pick a smaller one.`;
+        ? `${n} ${noun}s are over ${MAX_IMAGE_MB} MB. Choose smaller ones.`
+        : `That ${noun} is too big. Choose one under ${MAX_IMAGE_MB} MB.`;
     case "wrong-type":
       return "That file isn't a photo we can use. Try a JPG, PNG or HEIC.";
     case "too-many":
       return opts.max === 1
-        ? `You can only add one ${noun}.`
+        ? `You can only add 1 ${noun}.`
         : `You can add up to ${opts.max ?? 3} ${noun}s.`;
     case "network":
-      return "Upload didn't finish. Check your connection and try again.";
+      return "The upload didn't finish. Check your data or Wi-Fi and try again.";
     case "auth":
-      return "Please sign in again to upload.";
+      return "Sign in again to upload.";
     case "stock-photo":
       return "This looks like a stock or downloaded photo. Use one you took yourself.";
     default:
-      return `Couldn't upload that ${noun}. Try again.`;
+      return `We couldn't upload that ${noun}. Try again.`;
   }
 }
 
@@ -55,6 +55,8 @@ export function classifyUploadError(err: unknown): UploadFailure {
   if (msg.includes("invalidfiletype") || msg.includes("couldn't open")) return "wrong-type";
   if (
     code === "UPLOAD_FAILED" ||
+    code === "network_error" ||
+    code === "timeout" ||
     e?.name === "TypeError" ||
     msg.includes("network") ||
     msg.includes("failed to fetch") ||
@@ -77,7 +79,7 @@ export function toastUploadFailure(
     id: `upload-${reason}`,
     action:
       reason === "network" && opts.onRetry
-        ? { label: "Retry", onClick: opts.onRetry }
+        ? { label: "Try again", onClick: opts.onRetry }
         : undefined,
   });
 }

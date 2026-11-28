@@ -5,8 +5,8 @@ import { useTheme, type ThemeMode } from "@/components/providers/ThemeProvider";
 
 const OPTIONS: { mode: ThemeMode; label: string; icon: string; hint: string }[] = [
   { mode: "system", label: "System", icon: "computer",    hint: "Match your device" },
-  { mode: "light",  label: "Light",  icon: "light_mode",  hint: "Bright surfaces" },
-  { mode: "dark",   label: "Dark",   icon: "dark_mode",   hint: "Reduced glare" },
+  { mode: "light",  label: "Light",  icon: "light_mode",  hint: "Bright screen" },
+  { mode: "dark",   label: "Dark",   icon: "dark_mode",   hint: "Easier on the eyes at night" },
 ];
 
 /**

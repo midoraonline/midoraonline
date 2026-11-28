@@ -63,7 +63,7 @@ function StarInput({
             }`}
             onClick={() => onChange(star === value ? 0 : star)}
             onMouseEnter={() => setHovered(star)}
-            aria-label={`${star} star${star > 1 ? "s" : ""}`}
+            aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
           >
             <Star
               className="size-5"
@@ -315,7 +315,7 @@ export default function ProductReviews({ productId, initialStats }: Props) {
                     value={comment}
                     disabled={submitting}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="What was quality, delivery, or value like? (optional but helpful)"
+                    placeholder="How was the quality, delivery or price? (optional)"
                     maxLength={500}
                   />
                   {error ? (
@@ -331,7 +331,7 @@ export default function ProductReviews({ productId, initialStats }: Props) {
                         ? "Saving…"
                         : myReview
                           ? "Save review"
-                          : "Submit review"}
+                          : "Post review"}
                     </button>
                     {editing ? (
                       <button
@@ -357,9 +357,9 @@ export default function ProductReviews({ productId, initialStats }: Props) {
                 href={`/login?next=${encodeURIComponent(pathname)}`}
                 className="font-semibold text-accent hover:text-accent-hover"
               >
-                Log in
+                Sign in
               </Link>{" "}
-              to leave a rating and review.
+              to rate and review this listing.
             </p>
           )}
         </>

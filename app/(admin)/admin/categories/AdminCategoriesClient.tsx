@@ -62,7 +62,7 @@ export default function AdminCategoriesClient() {
         }),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load categories");
+      setError(apiErrorMessage(err, "We couldn't load categories. Try again."));
     } finally {
       setLoading(false);
     }
@@ -98,10 +98,10 @@ export default function AdminCategoriesClient() {
         sort_order: parents.length + 1,
       });
       setNewParentLabel("");
-      toast.success("Category added");
+      toast.success("Category added.");
       void load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add category");
+      toast.error(apiErrorMessage(err, "We couldn't add that category. Try again."));
     }
   }
 
@@ -116,21 +116,21 @@ export default function AdminCategoriesClient() {
         sort_order: (childrenByParent[parentSlug]?.length ?? 0) + 1,
       });
       setNewChildLabel((s) => ({ ...s, [parentSlug]: "" }));
-      toast.success("Subcategory added");
+      toast.success("Subcategory added.");
       void load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add subcategory");
+      toast.error(apiErrorMessage(err, "We couldn't add that subcategory. Try again."));
     }
   }
 
   async function removeCategory(slug: string) {
-    if (!window.confirm("Delete this category?")) return;
+    if (!window.confirm("Delete this category? Sellers won't be able to choose it any more. You can't undo this.")) return;
     try {
       await apiAdmin.adminDeleteCategory(slug);
-      toast.success("Deleted");
+      toast.success("Category deleted.");
       void load();
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Failed to delete"));
+      toast.error(apiErrorMessage(err, "We couldn't delete that category. Try again."));
     }
   }
 
@@ -138,10 +138,10 @@ export default function AdminCategoriesClient() {
     if (!label.trim()) return;
     try {
       await apiAdmin.adminUpdateCategory(slug, { label: label.trim() });
-      toast.success("Saved");
+      toast.success("Name saved.");
       void load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(apiErrorMessage(err, "We couldn't save that name. Try again."));
     }
   }
 
@@ -163,7 +163,7 @@ export default function AdminCategoriesClient() {
           description="Categories, subcategories and the extra listing fields sellers fill in."
         />
 
-        {error ? <ErrorState message={error} /> : null}
+        {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -171,6 +171,7 @@ export default function AdminCategoriesClient() {
             value={newParentLabel}
             onChange={(e) => setNewParentLabel(e.target.value)}
             placeholder="New top-level category name"
+            aria-label="New top-level category name"
           />
           <button type="button" onClick={() => void addParent()} className="dm-btn dm-btn-primary dm-btn-sm">
             + Add category
@@ -188,6 +189,8 @@ export default function AdminCategoriesClient() {
                     type="button"
                     onClick={() => setExpanded((s) => ({ ...s, [parent.slug]: !isOpen }))}
                     className="text-xs font-semibold text-muted hover:text-foreground"
+                    aria-expanded={isOpen}
+                    aria-label={isOpen ? `Collapse ${parent.label}` : `Expand ${parent.label}`}
                   >
                     {isOpen ? "▾" : "▸"}
                   </button>
@@ -195,6 +198,7 @@ export default function AdminCategoriesClient() {
                     className="dm-input flex-1 min-w-[160px] font-semibold"
                     defaultValue={parent.label}
                     key={parent.label}
+                    aria-label="Category name"
                     onBlur={(e) => {
                       if (e.target.value.trim() !== parent.label) {
                         void renameCategory(parent.slug, e.target.value);
@@ -208,10 +212,10 @@ export default function AdminCategoriesClient() {
                     type="button"
                     onClick={() => void removeCategory(parent.slug)}
                     disabled={children.length > 0}
-                    title={children.length > 0 ? "Remove subcategories first" : undefined}
+                    title={children.length > 0 ? "Delete its subcategories first" : undefined}
                     className="text-xs font-semibold text-rose-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Delete
+                    Delete category
                   </button>
                 </div>
 
@@ -227,6 +231,7 @@ export default function AdminCategoriesClient() {
                                 className="dm-input flex-1"
                                 defaultValue={child.label}
                                 key={child.label}
+                                aria-label="Subcategory name"
                                 onBlur={(e) => {
                                   if (e.target.value.trim() !== child.label) {
                                     void renameCategory(child.slug, e.target.value);
@@ -243,7 +248,7 @@ export default function AdminCategoriesClient() {
                                 }
                                 className="text-xs font-semibold text-accent hover:underline"
                               >
-                                {childFieldsOpen ? "Hide fields" : "Fields"}
+                                {childFieldsOpen ? "Hide fields" : "Edit fields"}
                                 {child.metadata && child.metadata.length > 0 ? ` (${child.metadata.length})` : ""}
                               </button>
                               <button
@@ -251,7 +256,7 @@ export default function AdminCategoriesClient() {
                                 onClick={() => void removeCategory(child.slug)}
                                 className="text-xs font-semibold text-rose-600 hover:underline"
                               >
-                                Delete
+                                Delete subcategory
                               </button>
                             </div>
                             {intentModes[child.slug] ? (
@@ -268,7 +273,7 @@ export default function AdminCategoriesClient() {
                                   parentJson={JSON.stringify(parentFieldsInUse(parent))}
                                   parentUnsaved={(parent.metadata ?? []).length === 0 && parentFieldsInUse(parent).length > 0}
                                   onSaved={() => void load()}
-                                  scopeLabel="Inherited category fields, plus fields that apply only to this subcategory. Mark an inherited field required here when this subcategory needs it."
+                                  scopeLabel="Fields from the parent category, plus fields only for this subcategory. Mark a parent field required here if this subcategory needs it."
                                 />
                               </div>
                             ) : null}
@@ -283,13 +288,14 @@ export default function AdminCategoriesClient() {
                             setNewChildLabel((s) => ({ ...s, [parent.slug]: e.target.value }))
                           }
                           placeholder="New subcategory name"
+                          aria-label="New subcategory name"
                         />
                         <button
                           type="button"
                           onClick={() => void addChild(parent.slug)}
                           className="dm-btn dm-btn-ghost dm-btn-sm"
                         >
-                          + Add
+                          + Add subcategory
                         </button>
                       </div>
                     </div>
@@ -299,7 +305,7 @@ export default function AdminCategoriesClient() {
                       ownJson={JSON.stringify(parent.metadata ?? [])}
                       defaultJson={JSON.stringify(categoryMetaFields(parent.label))}
                       onSaved={() => void load()}
-                      scopeLabel="Fields for every subcategory under this category. A subcategory can add its own fields or mark these required."
+                      scopeLabel="Fields for every subcategory in this category. Each subcategory can add its own fields or make these required."
                     />
                   </div>
                 ) : null}

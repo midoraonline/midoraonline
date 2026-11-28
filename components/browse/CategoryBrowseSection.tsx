@@ -141,6 +141,7 @@ export default function CategoryBrowseSection({
           {showCreateShop ? (
             <CategoryChip
               label="Create an online shop"
+              tone="shop"
               icon={PiStorefrontFill}
               selected={false}
               active={false}
@@ -264,7 +265,6 @@ function prominentChipTone(label: string): ListingTone | null {
   const key = label.trim().toLowerCase();
   if (key === "services") return "service";
   if (key === "opportunities") return "opportunity";
-  if (key === "create an online shop") return "shop";
   return null;
 }
 
@@ -285,6 +285,7 @@ function CategoryChip({
   count,
   prominent = false,
   href,
+  tone: toneOverride,
 }: {
   label: string;
   icon: IconType;
@@ -294,9 +295,11 @@ function CategoryChip({
   count?: number;
   prominent?: boolean;
   href?: string;
+  /** Fixed tone for non-category chips, so copy changes don't change colour. */
+  tone?: ListingTone;
 }) {
   const emphasized = active || selected;
-  const tone = prominent ? prominentChipTone(label) : null;
+  const tone = prominent ? toneOverride ?? prominentChipTone(label) : null;
   const bubble = label === "All" ? ALL_CATEGORIES_TONE : resolveCategoryTone(label);
   const className = `inline-flex items-center gap-1.5 rounded-full font-semibold transition-all active:scale-95 ${
     prominent

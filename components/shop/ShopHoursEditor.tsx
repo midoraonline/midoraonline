@@ -69,7 +69,7 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
             onClick={() => onChange(copyMondayToWeek(value))}
             className="text-xs font-semibold text-accent underline-offset-2 hover:underline"
           >
-            Copy to all weekdays
+            Copy Monday to every day
           </button>
           {WEEKDAYS.map((day) => {
             const row = value.days[day];
@@ -111,7 +111,7 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
                         {row.ranges.length > 1 ? (
                           <button
                             type="button"
-                            aria-label={`Remove ${WEEKDAY_LABEL[day]} range`}
+                            aria-label={`Remove these ${WEEKDAY_LABEL[day]} hours`}
                             onClick={() =>
                               onChange(
                                 setDay(value, day, {
@@ -149,8 +149,8 @@ export default function ShopHoursEditor({ value, onChange }: Props) {
       ) : (
         <p className="text-xs text-muted">
           {value.mode === "always"
-            ? "Shown as open all day, Kampala time."
-            : "Customers see that visits are by appointment."}
+            ? "Buyers see your shop as open all day, every day."
+            : "Buyers see that they need to book a visit with you first."}
         </p>
       )}
 

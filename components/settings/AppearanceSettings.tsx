@@ -7,6 +7,7 @@ import type { ThemePreference } from "@/lib/api/auth";
 import { saveAccountPreferences } from "@/lib/accountPreferences";
 import { ALL_UGANDA, BROWSE_AREAS } from "@/lib/browseArea";
 import { useBrowseArea } from "@/lib/hooks/useBrowseArea";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 export default function AppearanceSettings() {
   const browse = useBrowseArea();
@@ -16,7 +17,7 @@ export default function AppearanceSettings() {
       const where = await saveAccountPreferences({ theme });
       if (where === "local") toast.message("Theme saved on this device.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save theme.");
+      toast.error(platformActionMessage(err, "We couldn't save your theme. Try again."));
     }
   }
 
@@ -35,7 +36,7 @@ export default function AppearanceSettings() {
           value={browse.saved ?? ALL_UGANDA}
           onChange={(e) => {
             browse.setArea(e.target.value, true);
-            toast.success("Browsing area saved");
+            toast.success("Browsing area saved.");
           }}
         >
           <option value={ALL_UGANDA}>All Uganda</option>

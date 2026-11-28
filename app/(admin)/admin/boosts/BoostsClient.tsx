@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ApiError } from "@/lib/api/base";
+import { ApiError, apiErrorMessage } from "@/lib/api/base";
 import { ADMIN_ACTIVE_BOOSTS_KEY, adminEndBoost, listActiveBoosts } from "@/lib/api/adminPlans";
 import { refreshAfterRankChange } from "@/lib/api/listingActions";
 import { boostEndsLabel, boostPackageLabel, boostScopeLabel, boostSourceLabel, boostTimeLeft } from "@/lib/boostInfo";
@@ -20,10 +20,10 @@ export default function BoostsClient() {
     try {
       await adminEndBoost(id);
       await mutate((prev) => prev?.filter((b) => b.id !== id), { revalidate: false });
-      toast.success("Boost ended");
+      toast.success("Boost ended.");
       refreshAfterRankChange();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Couldn't end boost.");
+      toast.error(apiErrorMessage(err, "We couldn't end that boost. Try again."));
     } finally {
       setEnding(null);
     }
@@ -33,11 +33,11 @@ export default function BoostsClient() {
     <div>
       <PageHeader
         title="Boosts"
-        description="Active boosts. Grant free test boosts from a listing, business or user."
+        description="Active boosts. To give a free boost, open a listing, shop or user and use Boost."
       />
       {error ? (
         <ErrorState
-          message={error instanceof ApiError && error.status === 503 ? "Run migration 059 first." : "Couldn't load boosts."}
+          message={error instanceof ApiError && error.status === 503 ? "Boosts aren't set up on the server yet. Run the boost database migration, then try again." : "We couldn't load boosts. Try again."}
           onRetry={() => void mutate()}
         />
       ) : null}
@@ -49,13 +49,15 @@ export default function BoostsClient() {
             <thead>
               <tr className="border-b border-border text-left text-xs text-foreground-muted">
                 <th className="px-4 py-2 font-semibold">Listing</th>
-                <th className="px-3 py-2 font-semibold">Business</th>
+                <th className="px-3 py-2 font-semibold">Shop</th>
                 <th className="px-3 py-2 font-semibold">Scope</th>
                 <th className="px-3 py-2 font-semibold">Package</th>
                 <th className="px-3 py-2 font-semibold">Source</th>
-                <th className="px-3 py-2 font-semibold">Score</th>
+                <th className="px-3 py-2 font-semibold">Ranking points</th>
                 <th className="px-3 py-2 font-semibold">Ends (EAT)</th>
-                <th className="px-3 py-2" />
+                <th className="px-3 py-2">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -92,7 +94,7 @@ export default function BoostsClient() {
                   </td>
                   <td className="px-3 py-2 text-right">
                     <button type="button" disabled={ending === b.id} onClick={() => void end(b.id)} className={BTN_TEXT}>
-                      {ending === b.id ? "Ending…" : "End"}
+                      {ending === b.id ? "Ending…" : "End boost"}
                     </button>
                   </td>
                 </tr>

@@ -29,7 +29,7 @@ export default function MainLayout({
             </span>
           </div>
           <div className="text-xs text-primary-foreground/80">
-            Create your business and post an ad
+            Open a shop or post a listing
           </div>
         </div>
       </div>

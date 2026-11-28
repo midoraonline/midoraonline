@@ -6,7 +6,7 @@ import DashboardShell, {
 
 const NAV: DashboardNavItem[] = [
   { href: "/customer", label: "Overview", icon: <IconHome />, exact: true },
-  { href: "/customer/wishlist", label: "Wishlist", icon: <IconHeart /> },
+  { href: "/customer/wishlist", label: "Saved listings", icon: <IconHeart /> },
   { href: "/customer/saved", label: "Saved shops", icon: <IconBookmark /> },
 ];
 
@@ -18,7 +18,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
   return (
     <DashboardShell
       role="customer"
-      roleLabel="Customer"
+      roleLabel="Buyer"
       requiredRoles={["customer", "merchant", "admin"]}
       navItems={NAV}
       secondaryNavItems={SECONDARY}

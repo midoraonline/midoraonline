@@ -11,7 +11,7 @@ import { setGoogleCallbackPending } from "@/lib/auth/google-callback-guard";
 import { startGoogleSignIn } from "@/lib/auth/google-start";
 import { isSignupsClosed, SIGNUPS_CLOSED_MESSAGE } from "@/lib/platformMessages";
 
-const SIGN_IN_ERROR = "We couldn't finish signing you in. Please try again.";
+const SIGN_IN_ERROR = "We couldn't finish signing you in. Try again.";
 
 export default function GoogleAuthCallbackPage() {
   const router = useRouter();

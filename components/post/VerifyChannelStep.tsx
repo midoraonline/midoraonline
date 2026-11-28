@@ -97,7 +97,7 @@ export default function VerifyChannelStep({
     phase === "code"
       ? "Enter the code"
       : channel === "phone"
-        ? "Verify your phone"
+        ? "Verify your phone number"
         : "Verify your email";
   const subtitle =
     phase === "code"
@@ -105,8 +105,8 @@ export default function VerifyChannelStep({
         ? `We sent a 6-digit code by SMS to ${phone}.`
         : `We sent a 6-digit code to ${email}.`
       : channel === "phone"
-        ? "Confirm a phone number before you continue. We'll text you a code."
-        : "Posting needs a verified email too. We'll email you a code.";
+        ? "To post, confirm your phone number first. This helps keep fake sellers off Midora. We'll text you a code."
+        : "To post, confirm your email first. We'll email you a code.";
 
   return (
     <StepFrame
@@ -141,10 +141,10 @@ export default function VerifyChannelStep({
             }}
             inputMode="tel"
             autoComplete="tel"
-            placeholder="0700 123 456"
+            placeholder="e.g. 0772 123 456"
             className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-foreground"
           />
-          <p className="text-xs text-muted">0700 123 456, 256700123456, and 700123456 all save as +256.</p>
+          <p className="text-xs text-muted">You can start with 07, 256 or +256.</p>
         </div>
       ) : null}
 
@@ -158,8 +158,8 @@ export default function VerifyChannelStep({
             Add an email in{" "}
             <Link href={settingsLink} className="font-medium text-foreground underline underline-offset-2">
               settings
-            </Link>{" "}
-            before posting.
+            </Link>
+            , then come back to post.
           </p>
         )
       ) : null}
@@ -199,7 +199,7 @@ export default function VerifyChannelStep({
             disabled={busy || code.length !== 6}
             className={BTN_PRIMARY}
           >
-            {busy ? "Checking…" : "Confirm"}
+            {busy ? "Checking…" : "Confirm code"}
           </button>
           <button
             type="button"

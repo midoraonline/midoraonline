@@ -46,10 +46,10 @@ export default function TitleField({
       <div id={hintId} className="flex items-start justify-between gap-3 text-xs">
         <p className={over ? "text-amber-700 dark:text-amber-300" : "text-muted"}>
           {over
-            ? `Shorter titles read better on cards. Recommended: ${TITLE_SOFT_LIMIT} characters or fewer, maximum ${TITLE_HARD_LIMIT}.`
-            : "Keep the title clear and specific. Recommended: 50 characters or fewer."}
+            ? `Short titles read better on cards. Aim for ${TITLE_SOFT_LIMIT} characters or fewer (${TITLE_HARD_LIMIT} at most).`
+            : `Keep it clear and specific. Aim for ${TITLE_SOFT_LIMIT} characters or fewer.`}
           <span className="mt-0.5 block text-muted">
-            Example: &ldquo;Business name registration help&rdquo; instead of a long sentence.
+            For example: &ldquo;Business name registration help&rdquo;, not a long sentence.
           </span>
         </p>
         <span

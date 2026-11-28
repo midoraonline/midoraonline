@@ -13,7 +13,7 @@ import { notifyAuthChanged } from "@/lib/auth/token-storage";
 import { setRealtimeAuth } from "@/lib/realtime/supabase";
 import { useSessionStore } from "@/lib/state/session-store";
 
-const SESSION_ERROR = "Could not establish your session. Please try again.";
+const SESSION_ERROR = "We couldn't sign you in. Check your connection and try again.";
 
 async function readMe(token?: string): Promise<MeResponse> {
   return apiFetch<MeResponse>("/api/v1/auth/me", {

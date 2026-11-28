@@ -29,13 +29,13 @@ export default function MidoraInfoChatWidget({
             <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-surface/95">
               <div>
                 <p className="text-xs font-semibold tracking-tight">
-                  Midora Online info bot
+                  Midora Online help
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-xs text-white text-muted hover:text-foreground dm-focus bg-orange-400 rounded-full px-2 py-1"
+                className="text-xs text-white hover:text-foreground dm-focus bg-orange-400 rounded-full px-2 py-1"
               >
                 Close
               </button>

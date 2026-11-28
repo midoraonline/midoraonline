@@ -12,7 +12,7 @@ export default function NotFound() {
           Page not found
         </h1>
         <p className="mt-2 text-sm text-foreground/70">
-          The page you’re looking for doesn’t exist or has been moved.
+          This page may have moved, or the link may be wrong. Go back home to keep browsing.
         </p>
         <Link
           href="/"

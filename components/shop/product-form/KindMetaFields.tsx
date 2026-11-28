@@ -73,7 +73,7 @@ function OpportunityFields({ meta, set, has }: { meta: ListingMeta; set: Setter;
       {!has("requirements") ? (
         <div className="space-y-1.5">
           <label htmlFor="opportunity-requirements" className="block text-sm font-medium text-foreground">
-            Applicant requirements {OPTIONAL}
+            Who can apply {OPTIONAL}
           </label>
           <textarea
             id="opportunity-requirements"
@@ -81,7 +81,7 @@ function OpportunityFields({ meta, set, has }: { meta: ListingMeta; set: Setter;
             rows={3}
             value={meta.requirements ?? ""}
             onChange={(e) => set({ requirements: e.target.value || undefined })}
-            placeholder="Experience, qualifications, documents, or availability applicants need"
+            placeholder="Experience, qualifications or documents needed"
           />
         </div>
       ) : null}
@@ -110,25 +110,25 @@ export default function KindMetaFields({
         <MetaSelect
           label="Condition"
           value={meta.condition}
-          placeholder="Select condition…"
+          placeholder="Choose condition"
           options={CONDITION_OPTIONS}
           onChange={(v) => set({ condition: v as ListingMeta["condition"] })}
         />
       ) : null}
       {kind === "service" ? (
         <MetaSelect
-          label="Pricing model"
+          label="How you charge"
           value={meta.pricing_model}
-          placeholder="Select model…"
+          placeholder="Choose how you charge"
           options={PRICING_MODEL_OPTIONS}
           onChange={(v) => set({ pricing_model: v as ListingMeta["pricing_model"] })}
         />
       ) : null}
       {kind === "opportunity" ? (
         <MetaSelect
-          label="Compensation"
+          label="Pay"
           value={meta.compensation}
-          placeholder="Select compensation…"
+          placeholder="Choose pay type"
           options={COMPENSATION_OPTIONS}
           onChange={(v) => set({ compensation: v as ListingMeta["compensation"] })}
         />
@@ -149,7 +149,7 @@ export default function KindMetaFields({
               <MetaText
                 label="Service area"
                 value={meta.service_area}
-                placeholder="e.g. Kampala & Wakiso"
+                placeholder="e.g. Kampala and Wakiso"
                 onChange={(service_area) => set({ service_area })}
               />
             </>

@@ -171,7 +171,7 @@ export default function ProductImageGallery({
   if (safeLen === 0) {
     return (
       <div className="relative grid aspect-[4/3] place-items-center rounded-2xl border border-dashed border-border bg-surface-subtle text-sm text-muted">
-        No media yet
+        No photos yet
         {children}
       </div>
     );
@@ -211,7 +211,7 @@ export default function ProductImageGallery({
             <FallbackImage
               key={`${url}-${i}`}
               urls={[url]}
-              alt={i === 0 ? title : `${title} — image ${i + 1}`}
+              alt={i === 0 ? title : `${title}, photo ${i + 1}`}
               fill
               className={[
                 "object-cover",
@@ -236,7 +236,7 @@ export default function ProductImageGallery({
               type="button"
               onClick={() => step(-1)}
               className="absolute left-2 top-1/2 z-[5] hidden size-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-foreground shadow-sm transition hover:bg-white sm:grid"
-              aria-label="Previous media"
+              aria-label="Previous photo"
             >
               <ChevronLeft className="size-4" strokeWidth={2} aria-hidden />
             </button>
@@ -244,7 +244,7 @@ export default function ProductImageGallery({
               type="button"
               onClick={() => step(1)}
               className="absolute right-2 top-1/2 z-[5] hidden size-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-foreground shadow-sm transition hover:bg-white sm:grid"
-              aria-label="Next media"
+              aria-label="Next photo"
             >
               <ChevronRight className="size-4" strokeWidth={2} aria-hidden />
             </button>
@@ -255,7 +255,7 @@ export default function ProductImageGallery({
       {safeLen > 1 ? (
         <ul
           className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
-          aria-label="Product media"
+          aria-label="Listing photos"
         >
           {live.map((url, i) => {
             const isVideo = isVideoSrc(url);
@@ -271,7 +271,7 @@ export default function ProductImageGallery({
                       ? "border-accent ring-2 ring-accent/30"
                       : "border-border opacity-75 hover:opacity-100",
                   ].join(" ")}
-                  aria-label={`View ${isVideo ? "video" : "image"} ${i + 1}`}
+                  aria-label={`View ${isVideo ? "video" : "photo"} ${i + 1}`}
                   aria-current={isActive ? "true" : undefined}
                 >
                   {isVideo ? (

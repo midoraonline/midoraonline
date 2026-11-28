@@ -8,9 +8,10 @@ import type { NotificationPreferences } from "@/lib/api/auth";
 import { notificationsFromUser, saveAccountPreferences } from "@/lib/accountPreferences";
 import { usePushNotifications } from "@/lib/hooks/usePushNotifications";
 import { useAppSession } from "@/lib/state";
+import { platformActionMessage } from "@/lib/platformMessages";
 
 const TYPES: { key: keyof NotificationPreferences; label: string; hint: string; adminOnly?: boolean }[] = [
-  { key: "messages", label: "New messages", hint: "Chat messages" },
+  { key: "messages", label: "New messages", hint: "When someone sends you a chat message" },
   { key: "listing_approved", label: "Listing approved", hint: "When a listing goes live" },
   { key: "listing_rejected", label: "Listing rejected", hint: "When a listing needs changes" },
   { key: "reviews", label: "Reviews", hint: "New reviews on your listings" },
@@ -36,7 +37,7 @@ export default function NotificationSettings() {
       if (where === "local") toast.message("Saved on this device.");
     } catch (err) {
       setPrefs(notificationsFromUser(session.user));
-      toast.error(err instanceof Error ? err.message : "Could not save notifications.");
+      toast.error(platformActionMessage(err, "We couldn't save your notification settings. Try again."));
     } finally {
       setBusy(false);
     }
@@ -45,15 +46,15 @@ export default function NotificationSettings() {
   async function setPush(on: boolean) {
     if (on) {
       if (push.support === "unsupported" || push.support === "insecure-context") {
-        toast.error("This browser cannot receive push notifications.");
+        toast.error("This browser can't show notifications. Try Chrome on your phone or computer.");
         return;
       }
       const ok = await push.enable();
       if (!ok) {
         toast.error(
           push.permission === "denied"
-            ? "Notifications are blocked in the browser. Allow them in site settings, then try again."
-            : "Push permission was not granted.",
+            ? "Notifications are blocked for Midora. Allow them in your browser's site settings, then try again."
+            : "Notifications weren't allowed. Tap Allow when your browser asks, then try again.",
         );
         return;
       }
@@ -65,23 +66,23 @@ export default function NotificationSettings() {
 
   return (
     <SettingsPanel>
-      <SettingsRow title="Channels" description="Push and email are the master switches for everything below.">
+      <SettingsRow title="Channels" description="Turn these off to stop all alerts or emails below.">
         {push.permission === "denied" ? (
           <p className="mb-3 rounded-lg border border-[color:var(--warning)]/30 p-3 text-xs text-[color:var(--warning)]">
-            Push is blocked for this site. Allow notifications in the browser, then turn it on here.
+            Notifications are blocked for Midora. Allow them in your browser&apos;s site settings, then turn them on here.
           </p>
         ) : null}
         <div className="divide-y divide-border">
           <SettingsSwitch
-            label="Push"
-            hint={push.subscribed ? "This browser can receive push." : "Asks the browser for permission."}
+            label="Browser notifications"
+            hint={push.subscribed ? "On for this browser." : "Your browser will ask for permission."}
             checked={prefs.push}
             disabled={busy || push.busy}
             onChange={(on) => void setPush(on)}
           />
           <SettingsSwitch
             label="Email"
-            hint="Account emails for the types below."
+            hint="Emails about the things below."
             checked={prefs.email}
             disabled={busy}
             onChange={(on) => void commit({ ...prefs, email: on }, { email: on })}

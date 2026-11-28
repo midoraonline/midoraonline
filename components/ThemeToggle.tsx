@@ -30,7 +30,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
       type="button"
       onClick={toggle}
       aria-label={`Switch to ${LABELS[nextMode].toLowerCase()}. Current: ${LABELS[mode].toLowerCase()}.`}
-      title={`Theme: ${LABELS[mode]}`}
+      title={LABELS[mode]}
       className={[
         "inline-flex size-9 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground dm-focus",
         className,

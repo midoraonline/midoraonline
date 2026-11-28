@@ -50,6 +50,28 @@ export class ApiError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 
+/** Shown when the request never reached the server (no data, Wi-Fi dropped). */
+export const NETWORK_ERROR_MESSAGE =
+  "You seem to be offline. Check your data or Wi-Fi and try again.";
+
+/** Shown when the server took too long to answer. */
+export const TIMEOUT_ERROR_MESSAGE =
+  "This is taking too long. Check your connection and try again.";
+
+/** Internal: the caller aborted the request. UI should ignore it, not show it. */
+export const CANCELED_ERROR_MESSAGE = "Request canceled.";
+
+export function isCanceledError(err: unknown): boolean {
+  return err instanceof ApiError && err.code === "canceled";
+}
+
+/** AbortSignal.timeout() also aborts the signal, but that's a real timeout. */
+function isCallerAbort(signal: AbortSignal | undefined | null): boolean {
+  if (!signal?.aborted) return false;
+  const reason: unknown = signal.reason;
+  return !(reason instanceof DOMException && reason.name === "TimeoutError");
+}
+
 /** Shared axios instance for Midora API / same-origin proxy calls. */
 export const apiHttp = axios.create({
   timeout: DEFAULT_TIMEOUT_MS,
@@ -272,12 +294,7 @@ export async function apiFetch<T>(
     }
   }
 
-  const withCredentials =
-    credentials === "omit" || anonymous
-      ? false
-      : credentials === "include" || credentials === "same-origin" || credentials == null
-        ? true
-        : true;
+  const withCredentials = credentials !== "omit" && !anonymous;
 
   const data = shouldSerialiseAsJson(body) ? body : body ?? undefined;
 
@@ -311,17 +328,17 @@ export async function apiFetch<T>(
     if (coldStartRetry && attempt < 1 && isColdStartError(e)) {
       return apiFetch<T>(path, opts, attempt + 1);
     }
+    if (isCallerAbort(signal)) {
+      throw new ApiError(CANCELED_ERROR_MESSAGE, 0, { code: "canceled" });
+    }
     if (axios.isCancel(e) || (e instanceof AxiosError && e.code === "ERR_CANCELED")) {
-      throw new ApiError("Request timed out", 0, { code: "timeout" });
+      throw new ApiError(TIMEOUT_ERROR_MESSAGE, 0, { code: "timeout" });
     }
     if (e instanceof AxiosError && e.code === "ECONNABORTED") {
-      throw new ApiError("Request timed out", 0, { code: "timeout" });
+      throw new ApiError(TIMEOUT_ERROR_MESSAGE, 0, { code: "timeout" });
     }
-    throw new ApiError(
-      e instanceof Error ? e.message : "Network error",
-      0,
-      { code: "network_error" },
-    );
+    // The raw axios/fetch message ("Network Error", "Failed to fetch") isn't for people.
+    throw new ApiError(NETWORK_ERROR_MESSAGE, 0, { code: "network_error" });
   }
 
   if (
@@ -415,7 +432,9 @@ export { AUTH_CHANGED_EVENT };
 
 /** Server-written 4xx message (e.g. "already reported"), else the caller's fallback. */
 export function apiErrorMessage(err: unknown, fallback: string): string {
-  if (!(err instanceof ApiError) || err.status >= 500) return fallback;
+  if (!(err instanceof ApiError) || err.status >= 500 || err.code === "canceled") return fallback;
   const message = err.message.trim();
-  return message && !/^Request failed with status/.test(message) ? message : fallback;
+  return message && !/^Request failed with status/.test(message) && !/^HTTP \d+/.test(message)
+    ? message
+    : fallback;
 }

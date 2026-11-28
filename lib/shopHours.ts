@@ -220,7 +220,7 @@ function spanMinutes(range: TimeRange): [number, number] | null {
 
 /** Same overlap rule as the API: a close before open crosses midnight. */
 export function hoursDraftError(draft: HoursDraft): string | null {
-  if (draft.note.trim().length > 160) return "Note must be 160 characters or fewer.";
+  if (draft.note.trim().length > 160) return "Keep the note to 160 characters or fewer.";
   if (draft.mode !== "weekly" || !draft.daysKnown) return null;
   for (const day of WEEKDAYS) {
     const row = draft.days[day];

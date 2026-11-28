@@ -1,7 +1,9 @@
 "use client";
 
 import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiAdmin } from "@/lib/api";
+import { platformActionMessage } from "@/lib/platformMessages";
 import type { AdminNearDupe, AdminReport, AdminSellerReport } from "@/lib/api/admin";
 import ListingTypeTag from "@/components/ListingTypeTag";
 import { listingTypeTagKind } from "@/lib/listingType";
@@ -80,22 +82,28 @@ export default function AdminReportsClient({ initialReports }: Props) {
   const handleResolveListing = async (id: string) => {
     try {
       await apiAdmin.resolveReport(id);
+      toast.success("Report resolved.");
       void load();
-    } catch {}
+    } catch (err) {
+      toast.error(platformActionMessage(err, "We couldn't resolve this report. Try again."));
+    }
   };
 
   const handleResolveSeller = async (id: string) => {
     try {
       await apiAdmin.resolveSellerReport(id);
+      toast.success("Report resolved.");
       void load();
-    } catch {}
+    } catch (err) {
+      toast.error(platformActionMessage(err, "We couldn't resolve this report. Try again."));
+    }
   };
 
   const tabs: { id: Tab; label: string; count: number }[] = [
     { id: "listings", label: "Listing reports", count: counts.product_reports },
     { id: "sellers", label: "Seller reports", count: counts.seller_reports },
     { id: "manual_review", label: "In review", count: counts.manual_review },
-    { id: "near_dupes", label: "Near-duplicates", count: counts.near_dupes },
+    { id: "near_dupes", label: "Possible duplicates", count: counts.near_dupes },
   ];
 
   const reporterLine = (rep: AdminReport["reporter"], iso: string) => (
@@ -104,7 +112,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
     </p>
   );
 
-  const ugx = (n?: number | null) => (n == null ? null : `UGX ${Number(n).toLocaleString()}`);
+  const ugx = (n?: number | null) => (n == null ? null : `UGX ${Number(n).toLocaleString("en-UG", { maximumFractionDigits: 0 })}`);
 
   const date = (iso: string) => (
     <span className="tabular-nums" title={new Date(iso).toLocaleString()}>
@@ -116,10 +124,10 @@ export default function AdminReportsClient({ initialReports }: Props) {
     <div>
       <PageHeader
         title="Reports"
-        description="Buyer reports, plus listings waiting on an admin after auto-moderation."
+        description="Reports from buyers, plus listings that automatic checks sent to an admin for review."
       />
       <UnderlineTabs
-        tabs={tabs.map((t) => ({ value: t.id, label: `${t.label} ${t.count}` }))}
+        tabs={tabs.map((t) => ({ value: t.id, label: `${t.label} (${t.count})` }))}
         value={tab}
         onChange={(v) => setTab(v as Tab)}
       />
@@ -142,7 +150,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
                           {l?.title || r.product?.title || "Deleted listing"}
                         </p>
                         {l ? <ListingTypeTag kind={kind} /> : null}
-                        {l?.status ? <StatusDot tone={l.status === "active" ? "ok" : "neutral"}>{l.status}</StatusDot> : null}
+                        {l?.status ? <StatusDot tone={l.status === "active" ? "ok" : "neutral"}>{humanize(l.status)}</StatusDot> : null}
                       </div>
                       <p className="mt-0.5 text-xs text-muted">
                         {[l?.discount_price ? ugx(l.discount_price) : ugx(l?.price_ugx), l?.seller_name && `Seller: ${l.seller_name}`]
@@ -157,7 +165,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
                   <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-stretch">
                     <a href={`/admin/listings/${l?.id ?? r.product_id}`} className={BTN_SECONDARY}>
                       <Eye className="size-4" aria-hidden />
-                      Admin view
+                      View in admin
                     </a>
                     {l?.title && l.status === "active" ? (
                       <a
@@ -167,14 +175,14 @@ export default function AdminReportsClient({ initialReports }: Props) {
                         className={BTN_SECONDARY}
                       >
                         <ExternalLink className="size-4" aria-hidden />
-                        Public page
+                        View public page
                       </a>
                     ) : null}
                     {r.resolved ? (
                       <StatusDot tone="neutral">Resolved</StatusDot>
                     ) : (
                       <button type="button" onClick={() => void handleResolveListing(r.id)} className={BTN_SECONDARY}>
-                        Resolve
+                        Resolve report
                       </button>
                     )}
                   </div>
@@ -210,7 +218,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
                       <p className="mt-0.5 text-xs text-muted">
                         {[
                           sel?.owner_name && sel.owner_name !== sel.name ? `Owner: ${sel.owner_name}` : null,
-                          sel ? `${sel.listing_count} ${sel.listing_count === 1 ? "ad" : "ads"}` : null,
+                          sel ? `${sel.listing_count} ${sel.listing_count === 1 ? "listing" : "listings"}` : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -225,14 +233,14 @@ export default function AdminReportsClient({ initialReports }: Props) {
                     {sel?.slug ? (
                       <a href={`/shops/${sel.slug}`} target="_blank" rel="noreferrer" className={BTN_SECONDARY}>
                         <ExternalLink className="size-4" aria-hidden />
-                        View business
+                        View shop
                       </a>
                     ) : null}
                     {r.resolved ? (
                       <StatusDot tone="neutral">Resolved</StatusDot>
                     ) : (
                       <button type="button" onClick={() => void handleResolveSeller(r.id)} className={BTN_SECONDARY}>
-                        Resolve
+                        Resolve report
                       </button>
                     )}
                   </div>
@@ -246,7 +254,7 @@ export default function AdminReportsClient({ initialReports }: Props) {
       {tab === "manual_review" || tab === "near_dupes" ? (
         (tab === "manual_review" ? manualReview : nearDupes).length === 0 ? (
           <EmptyState
-            message={tab === "manual_review" ? "No listings waiting for manual review." : "No near-duplicates waiting for review."}
+            message={tab === "manual_review" ? "No listings waiting for manual review." : "No possible duplicates waiting for review."}
           />
         ) : (
           <ul className={LIST}>
@@ -271,6 +279,12 @@ export default function AdminReportsClient({ initialReports }: Props) {
   );
 }
 
+function humanize(value?: string | null) {
+  if (!value) return "";
+  const text = value.replace(/_/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 function fmtDate(iso?: string | null) {
   if (!iso) return null;
   const d = new Date(iso);
@@ -292,25 +306,25 @@ function SellerDetails({ seller }: { seller: NonNullable<AdminSellerReport["sell
   const verified = (v?: boolean | null) => (v ? " (verified)" : v === false ? " (not verified)" : "");
   return (
     <details className="mt-3 rounded-lg border border-border bg-surface-muted/40 px-3 py-2">
-      <summary className="cursor-pointer text-xs font-medium text-foreground">Seller &amp; business details</summary>
+      <summary className="cursor-pointer text-xs font-medium text-foreground">Seller and shop details</summary>
       <div className="mt-2 space-y-3">
         <dl className="space-y-1">
           <DetailRow label="Owner" value={seller.owner_name} />
           <DetailRow label="Email" value={o?.email ? `${o.email}${verified(o.email_verified)}` : null} />
           <DetailRow label="Phone" value={o?.phone_number ? `${o.phone_number}${verified(o.phone_verified)}` : null} />
-          <DetailRow label="Account" value={[o?.role, o?.status].filter(Boolean).join(" · ")} />
+          <DetailRow label="Account" value={[humanize(o?.role), humanize(o?.status)].filter(Boolean).join(" · ")} />
           <DetailRow label="Joined" value={fmtDate(o?.joined_at)} />
           <DetailRow label="Seller ID" value={<span className="font-mono">{seller.id}</span>} />
         </dl>
         {(seller.businesses ?? []).map((b) => (
           <dl key={b.id} className="space-y-1 border-t border-border pt-2">
-            <DetailRow label="Business" value={<span className="font-medium">{b.name}</span>} />
+            <DetailRow label="Shop" value={<span className="font-medium">{b.name}</span>} />
             <DetailRow label="Status" value={b.is_active ? "Active" : "Inactive"} />
             <DetailRow label="Location" value={b.location} />
             <DetailRow label="WhatsApp" value={b.whatsapp} />
             <DetailRow label="Email" value={b.email} />
-            <DetailRow label="Badges" value={(b.trust_badges ?? []).join(", ").replace(/_/g, " ")} />
-            <DetailRow label="Ads" value={b.listing_count} />
+            <DetailRow label="Badges" value={(b.trust_badges ?? []).map(humanize).join(", ")} />
+            <DetailRow label="Listings" value={b.listing_count} />
             <DetailRow label="Created" value={fmtDate(b.created_at)} />
             <DetailRow label="About" value={b.description} />
           </dl>

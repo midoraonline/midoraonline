@@ -9,7 +9,7 @@ export async function watermarkProductFilesIfShopLogo(
 
   const headers = await getUploadThingAuthHeaders();
   if (!headers.Authorization) {
-    throw new Error("Sign in to upload images.");
+    throw new Error("Sign in to upload photos.");
   }
 
   const out: File[] = [];
@@ -30,7 +30,7 @@ export async function watermarkProductFilesIfShopLogo(
     });
 
     if (!res.ok) {
-      let msg = "Could not apply shop logo to image.";
+      let msg = "We couldn't add your shop logo to the photo. Try again.";
       try {
         const j = (await res.json()) as { error?: string };
         if (typeof j.error === "string" && j.error) msg = j.error;

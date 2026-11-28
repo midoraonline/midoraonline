@@ -83,8 +83,8 @@ export function intentError(
   if (kind === "service") return intent ? null : "Choose whether you offer or need this service.";
   if (kind !== "opportunity") return null;
   const cat = draftOpportunityCategory(meta, category);
-  if (!cat) return "Pick the type of opportunity.";
-  return allowsSeeking(cat, modes) && !intent ? "Choose whether you are offering or looking." : null;
+  if (!cat) return "Choose the type of opportunity.";
+  return allowsSeeking(cat, modes) && !intent ? "Choose whether you're offering this or looking for it." : null;
 }
 
 export type IntentPreview = {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { apiAdmin } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api/base";
 import type { AdminSubscription } from "@/lib/api/admin";
 import { BTN_SECONDARY, EmptyState, ErrorState, LIST, PageHeader, StatusDot, formatCount as fmt } from "@/components/dashboard/ui";
 
@@ -18,7 +19,7 @@ export default function AdminSubscriptionsClient({ initialItems }: Props) {
       const res = await apiAdmin.listSubscriptions();
       setItems(res.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load subscriptions");
+      setError(apiErrorMessage(err, "We couldn't load subscriptions. Try again."));
     }
   }, []);
 
@@ -30,10 +31,10 @@ export default function AdminSubscriptionsClient({ initialItems }: Props) {
     <div>
       <PageHeader
         title="Subscriptions"
-        description={`${fmt(items.length)} Pesapal subscriptions.`}
+        description={`${fmt(items.length)} Pesapal subscription${items.length === 1 ? "" : "s"}.`}
         action={
           <button type="button" onClick={() => void load()} className={BTN_SECONDARY}>
-            Refresh
+            Refresh list
           </button>
         }
       />
@@ -49,11 +50,11 @@ export default function AdminSubscriptionsClient({ initialItems }: Props) {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold tabular-nums">#{s.id.slice(0, 8)}</span>
                   <span className="block truncate text-xs text-muted">
-                    Shop {s.shop_id ? s.shop_id.slice(0, 8) : "none"}
+                    {s.shop_id ? `Shop ${s.shop_id.slice(0, 8)}` : "No shop"}
                   </span>
                 </span>
                 <StatusDot tone={st === "active" || st === "completed" ? "ok" : st === "failed" ? "bad" : "neutral"}>
-                  <span className="capitalize">{st}</span>
+                  <span className="capitalize">{st === "unknown" ? "Unknown status" : st}</span>
                 </StatusDot>
               </li>
             );

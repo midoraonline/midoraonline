@@ -38,7 +38,7 @@ export async function ensureShopForListing(): Promise<string> {
     return state.ownedShopIds[0];
   }
   if (!state.user) {
-    throw new Error("Please sign in to add an item.");
+    throw new Error("Sign in to post a listing.");
   }
   const spec = derivePersonalShopSpec(state.user);
   const created = await apiShops.createShop({
